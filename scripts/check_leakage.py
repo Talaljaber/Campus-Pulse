@@ -242,13 +242,14 @@ def holdout_near(
         for measure, sims, threshold in (("char", char_sims, char_threshold),
                                          ("encoder", enc_sims, encoder_threshold)):
             above = np.nonzero(sims[h] >= threshold)[0]
-            # one pair per pool provenance (augmented first): an augmented hit must never hide behind an
-            # official one, because only the augmented one fails the gate
-            for official in (False, True):
-                cand = [int(p) for p in above if bool(frame.iloc[int(p)]["is_official"]) is official]
-                if cand:
-                    best = max(cand, key=lambda p: (sims[h, p], -p))
-                    out.append(pair(h, best, float(sims[h, best]), measure))
+            # every augmented hit is listed (each one must be fixed or dropped); for official rows only the
+            # closest one (set1 restates training scenarios by design, so they are context, not errors)
+            augmented = [int(p) for p in above if not bool(frame.iloc[int(p)]["is_official"])]
+            out.extend(pair(h, p, float(sims[h, p]), measure) for p in augmented)
+            official = [int(p) for p in above if bool(frame.iloc[int(p)]["is_official"])]
+            if official:
+                best = max(official, key=lambda p: (sims[h, p], -p))
+                out.append(pair(h, best, float(sims[h, best]), measure))
     return sorted(out, key=lambda q: (q.holdout_id, q.measure, q.pool_is_official, q.pool_id))
 
 
