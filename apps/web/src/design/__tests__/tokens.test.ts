@@ -94,6 +94,45 @@ describe.each([
   });
 });
 
+/**
+ * Named foreground/background pairs of the GJU-style shell (UI batch 6). Each is checked in both
+ * themes against its WCAG 2.2 AA minimum: 4.5 for text, 3 for large text, icons and borders.
+ * Orange itself is decorative; the pairs below are the only ways orange appears with text.
+ */
+const PAIRS: { name: string; fg: string; bg: string; min: number }[] = [
+  { name: "white text on the top band", fg: "--cp-on-band", bg: "--cp-band", min: 4.5 },
+  { name: "white text on the icon bar", fg: "--cp-on-band", bg: "--cp-band-2", min: 4.5 },
+  { name: "nav link (accent) on the page card", fg: "--cp-accent", bg: "--cp-surface-0", min: 4.5 },
+  { name: "nav link (accent) on the inactive tab", fg: "--cp-accent", bg: "--cp-surface-2", min: 4.5 },
+  { name: "nav link (accent) on a panel", fg: "--cp-accent", bg: "--cp-surface-1", min: 4.5 },
+  { name: "active tab text (accent) on the card", fg: "--cp-accent", bg: "--cp-surface-0", min: 4.5 },
+  { name: "inactive tab text on its grey", fg: "--cp-text-1", bg: "--cp-surface-2", min: 4.5 },
+  { name: "heading grey on the card", fg: "--cp-heading", bg: "--cp-surface-0", min: 4.5 },
+  { name: "heading grey on a panel", fg: "--cp-heading", bg: "--cp-surface-1", min: 4.5 },
+  { name: "heading grey on the inactive tab grey", fg: "--cp-heading", bg: "--cp-surface-2", min: 4.5 },
+  { name: "heading grey on the page background", fg: "--cp-heading", bg: "--cp-page", min: 4.5 },
+  { name: "body text on the page background", fg: "--cp-text-1", bg: "--cp-page", min: 4.5 },
+  { name: "muted text on the page background", fg: "--cp-text-3", bg: "--cp-page", min: 4.5 },
+  { name: "white caption on the grey-blue panel band", fg: "--cp-on-panel", bg: "--cp-panel", min: 4.5 },
+  { name: "dark text on orange (badges, highlights)", fg: "--cp-on-orange", bg: "--cp-orange", min: 4.5 },
+  { name: "orange ink (large text, icons) on the card", fg: "--cp-orange-ink", bg: "--cp-surface-0", min: 3 },
+  { name: "orange ink (large text, icons) on a panel", fg: "--cp-orange-ink", bg: "--cp-surface-1", min: 3 },
+  { name: "brand blue (graphics) on the card", fg: "--cp-brand", bg: "--cp-surface-0", min: 3 },
+  { name: "footer text on the footer", fg: "--cp-on-footer", bg: "--cp-footer", min: 4.5 },
+  { name: "footer link on the footer", fg: "--cp-footer-link", bg: "--cp-footer", min: 4.5 },
+  { name: "focus ring on the card", fg: "--cp-focus", bg: "--cp-surface-0", min: 3 },
+  { name: "focus ring on the top band", fg: "--cp-on-band", bg: "--cp-band", min: 3 },
+];
+
+describe.each([
+  ["light", light],
+  ["dark", dark],
+])("%s shell pairs", (_name, v) => {
+  it.each(PAIRS)("$name reaches its AA minimum", ({ fg, bg, min }) => {
+    expect(contrast(rgb(v[fg]!), rgb(v[bg]!)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(min);
+  });
+});
+
 describe("structure", () => {
   it("forced-dark block overrides the same keys as the media-query block", () => {
     const keys = (o: Vars) => Object.keys(o).filter((k) => !k.startsWith("--cp-space")).sort();
@@ -106,6 +145,8 @@ describe("structure", () => {
       ...SURFACES,
       ...TEXTS,
       ...TONES,
+      ...PAIRS.flatMap((p) => [p.fg, p.bg]),
+      "--cp-shadow-card",
       "--cp-border",
       "--cp-focus",
       ...Array.from({ length: 8 }, (_, i) => `--cp-space-${i + 1}`),
