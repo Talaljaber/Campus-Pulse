@@ -108,6 +108,7 @@ class KnnCfg(_Section):
     memory_weight_cap: Probability
     max_memory_neighbors: NonNegativeInt
     memory_min_sim: Probability
+    laplace_mass: PositiveFloat  # pseudo-votes spread evenly over the labels (no label gets probability 0)
 
 
 class HeadCfg(_Section):
