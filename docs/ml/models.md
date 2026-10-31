@@ -116,6 +116,20 @@ python scripts/add_derived_columns.py   # -> wrote data/clean/train_val_features
 
 It also runs under pytest: `pytest services/ai/tests/unit/test_clean_pipeline.py` (3 tests).
 
+### 3.1 Leakage gate: `scripts/check_leakage.py` (P0.3e)
+
+```bash
+python scripts/check_leakage.py --official
+# -> 0 identical text_norm across groups; 0 cross-group pairs >= 0.8 (max 0.375)   (exit 0)
+```
+
+On unique `text_norm` values it fails (exit 1) on (a) an identical `text_norm` in two `cv_group`s, or (b) any
+cross-group pair with char_wb 3–5-gram TF-IDF cosine ≥ `leakage.char_cosine` (0.8), printing each offending
+pair. Functions (importable from the script): `exact_cross_group(df) -> list[(text_norm, group_a, group_b)]`,
+`char_near_pairs(df, threshold) -> list[NearPair(sim, text_a, text_b, group_a, group_b)]`,
+`max_cross_group_cosine(df) -> float`. Audit check 4 uses the same functions. The augmented mode and the
+encoder-cosine merge list (`leakage.cosine_merge: 0.90`) arrive in P2.1.
+
 `pytest services/ai/tests/unit/test_clean_pipeline.py` runs `test_clean.py` in a subprocess and checks the
 combined file's shape (432 rows, 30 groups).
 

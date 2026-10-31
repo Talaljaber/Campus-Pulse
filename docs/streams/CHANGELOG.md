@@ -64,3 +64,12 @@
 - **Acceptance:** `python scripts/test_data_audit.py` → `ok 1 … ok 11` then `DATA AUDIT TESTS PASSED` (exit 0); check 4 reports `max 0.375`; check 6 `rows/fold 84/84/84/89/91; byte-identical re-run`. `pytest services/ai/tests/unit/test_clean_pipeline.py -q` → `3 passed`.
 - **Limitations / TODO / known issues:** check 1 accepts `cleaning_report.md` when it is equal up to line order, because pandas 3.0.6 orders tied `value_counts` rows differently from the committed (pandas 2.2.3) file; the four CSVs must be byte-equal. The check prints which case applied. Remove the tolerance once the lead regenerates the report with the pinned pandas.
 - **Affects streams:** Foundation (add `python scripts/test_data_audit.py` to CI, P0.9), ML.
+
+### P0.3e — Add the leakage gate `scripts/check_leakage.py` (official mode)  (ML, 2026-10-31)
+- **What now exists:** the §3.2 leakage gate in char n-gram mode (no encoder): it fails on identical `text_norm` across `cv_group`s and on cross-group char_wb 3–5-gram TF-IDF cosine ≥ 0.8, printing each offending pair. `test_data_audit.py` check 4 now reuses its functions, and a unit test proves it fires on planted leakage.
+- **Public interfaces added:** `python scripts/check_leakage.py --official`; `exact_cross_group(df)`, `char_near_pairs(df, threshold) -> list[NearPair]`, `max_cross_group_cosine(df)` ([docs/ml/models.md §3.1](../ml/models.md#31-leakage-gate-scriptscheck_leakagepy-p03e)).
+- **How to use it:** `python scripts/check_leakage.py --official` (exit 0 clean, 1 on leakage).
+- **Config / env added:** `config/datasets.yaml` `leakage.char_cosine: 0.8`, `leakage.cosine_merge: 0.90` (P2.1).
+- **Acceptance:** `python scripts/check_leakage.py --official` → `0 identical text_norm across groups; 0 cross-group pairs >= 0.8 (max 0.375)`, exit 0. `pytest services/ai/tests/unit/test_check_leakage.py -q` → `3 passed`. `python scripts/test_data_audit.py` → `DATA AUDIT TESTS PASSED`.
+- **Limitations / TODO / known issues:** official mode only. P2.1 adds augmented rows (text_norm from the package normalizer), holdout overlap and the encoder-cosine merge list. Char n-grams cannot see cross-lingual near-duplicates; the 12 AR↔EN pairs were found by reading.
+- **Affects streams:** ML (P2.1, P2.4); Foundation (CI gate).

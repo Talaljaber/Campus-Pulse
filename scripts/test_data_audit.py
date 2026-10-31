@@ -122,18 +122,20 @@ def check_labels_equal_raw(combined: pd.DataFrame) -> None:
 
 
 def check_near_duplicates(combined: pd.DataFrame, threshold: float) -> None:
-    """Check 4: no cross-group char 3-5-gram TF-IDF cosine >= threshold."""
-    from sklearn.feature_extraction.text import TfidfVectorizer
+    """Check 4: no identical text_norm across groups, no cross-group char 3-5-gram cosine >= threshold.
 
-    unique = combined.drop_duplicates("text_norm").reset_index(drop=True)
-    tfidf = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True)
-    matrix = tfidf.fit_transform(unique["text_norm"])
-    sims = (matrix @ matrix.T).toarray()
-    groups = unique["cv_group"].to_numpy()
-    cross = groups[:, None] != groups[None, :]
-    worst = float(sims[cross].max())
-    assert worst < threshold, f"check 4: cross-group char cosine {worst:.3f} >= {threshold}"
-    ok(4, f"no cross-group char 3-5-gram cosine >= {threshold} (max {worst:.3f})")
+    Uses the same functions as the leakage gate (scripts/check_leakage.py, P0.3e).
+    """
+    sys.path.insert(0, str(SCRIPTS))
+    import check_leakage
+
+    exact = check_leakage.exact_cross_group(combined)
+    near = check_leakage.char_near_pairs(combined, threshold)
+    worst = check_leakage.max_cross_group_cosine(combined)
+    assert not exact, f"check 4: identical text_norm across groups {exact[:3]}"
+    assert not near, f"check 4: cross-group char cosine >= {threshold}: {near[:3]}"
+    ok(4, f"no identical text_norm across groups; no cross-group char 3-5-gram cosine >= {threshold} "
+          f"(max {worst:.3f})")
 
 
 def check_groups(combined: pd.DataFrame, scenarios: pd.DataFrame) -> None:
