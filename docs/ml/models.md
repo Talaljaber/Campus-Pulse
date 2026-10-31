@@ -138,3 +138,48 @@ combined file's shape (432 rows, 30 groups).
 pandas 2.2.3). The four CSVs are byte-identical (modulo CRLF) under both versions. On Windows, pandas also
 writes CRLF, so `git status` lists the files as modified even though `git diff` is empty for the CSVs. Restore
 with `git checkout -- data/clean` after running the script locally.
+
+## 4. Preprocessing (`campuspulse_ai.adapters.preprocess`)
+
+Lexicons live in `config/lexicons/*.yaml`. `train.py` will snapshot them into `models/frozen/vN/lexicons/`, and
+containers will read the snapshot (LD-12), so pass a path to every `from_yaml` and never hard-code one.
+
+### 4.1 Wrapper stripping and normalization: `wrappers.py` (P1.1)
+
+```python
+from campuspulse_ai.adapters.preprocess.wrappers import WrapperStripper, normalize_text, script_lang
+from campuspulse_ai.config.paths import LEXICONS
+
+ws = WrapperStripper.from_yaml(LEXICONS / "wrappers.yaml")
+r = ws.strip("Hi team, URGENT: My account is locked Please respond when possible.")
+# StripResult(prefix='Hi team, URGENT:', suffix='Please respond when possible.',
+#             core='My account is locked', stated_urgency=True)
+normalize_text(r.core, script_lang(r.core))     # 'my account is locked'
+```
+
+- `collapse_ws`, `script_lang` (`ar` if Arabic-block characters outnumber Latin letters, else `en`) and
+  `normalize_text(core, lang)` are literal copies of `clean_data.collapse_ws/detect_lang/normalize`.
+  English is lowercased. Arabic loses diacritics and tatweel, and أ/إ/آ→ا, ى→ي, ة→ه, ؤ→و, ئ→ي. Both have
+  leading/trailing punctuation stripped. **Parity:** `core`, `prefix`, `suffix`, `text_norm` and `lang`
+  equal `data/clean` on all 432 official rows (`test_normalizer_parity.py`).
+- `WrapperStripper.strip(raw)` repeats, until nothing changes: (1) exact known prefix, longest first (the
+  `clean_data` loop); (2) if no exact match: a case-insensitive match of a known wrapper, or of its base with
+  one of `variant_punctuation` appended (`Hello!`, `hi team,`, `وشكرا.`); (3) the `urgent_regex` prefix. Then
+  the same for suffixes (steps 1–2). A wrapper is stripped only when text remains after it. A bare base without
+  punctuation is never stripped (`Please help me ...` is content).
+- `stated_urgency` is true when the raw text contains an `urgency_markers` entry (`URGENT`, `عاجل`, `!!!`,
+  case-sensitive) or a stripped prefix matches `urgent_regex`. It equals `has_urgent_marker` on all 432 rows.
+  It is a gaming signal only, **never a model feature** (§3.8).
+
+| unseen input | `core` | `stated_urgency` |
+| --- | --- | --- |
+| `urgent: The bus is late` | `The bus is late` | True |
+| `URGENT The bus is late` | `The bus is late` | True |
+| `Hello! The bus is late` | `The bus is late` | False |
+| `hi team, The bus is late` | `The bus is late` | False |
+| `مرحبا، الباص تأخر وشكرا.` | `الباص تأخر` | False |
+| `Urgently need the bus timetable` | unchanged | False |
+
+`config/lexicons/wrappers.yaml` keys: `prefixes`, `suffixes` (exactly `clean_data.KNOWN_PREFIXES/SUFFIXES`,
+asserted by a test), `urgency_markers`, `urgent_regex` (`(?i)^urgent\b[\s:!.,،-]*`), `prefix_variants: true`,
+`variant_punctuation: [",", "!", ":", ".", "?", "،", "؟"]`.
