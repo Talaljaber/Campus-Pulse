@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useFlagEvents } from "@/hooks/useFlagEvents";
 import { useIncidents } from "@/hooks/useIncidents";
@@ -15,6 +14,7 @@ import { incidentView } from "@/lib/incidents";
 import type { StaffErrorKind } from "@/lib/staff/service";
 import { filterTickets, type QueueFilter } from "@/lib/staff/tickets";
 import { useNow } from "../explain/useNow";
+import { RoleNav } from "../shell/RoleNav";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { LanguageSwitch } from "../ui/LanguageSwitch";
@@ -108,9 +108,7 @@ export function StaffScreen({ role, office }: StaffScreenProps) {
           </Badge>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/pulse" className="inline-flex min-h-9 items-center rounded-md px-3 text-sm font-medium text-accent underline">
-            {t("staff.pulseLink")}
-          </Link>
+          <RoleNav role={role} current="staff" />
           <LanguageSwitch />
           <Button variant="ghost" size="sm" onClick={() => void signOut()}>
             {t("auth.signOut")}

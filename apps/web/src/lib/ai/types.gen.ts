@@ -344,7 +344,7 @@ export interface components {
              * Dataset
              * @enum {string}
              */
-            dataset: "oof_official" | "oof_all" | "our_test" | "probes";
+            dataset: "oof_official" | "oof_all" | "our_test" | "our_test_set1" | "our_test_set2" | "our_test_set3" | "probes";
             /** Macro F1 */
             macro_f1: number | null;
             /**
@@ -419,7 +419,7 @@ export interface components {
              * Dataset
              * @enum {string}
              */
-            dataset: "oof_official" | "oof_all" | "our_test" | "probes";
+            dataset: "oof_official" | "oof_all" | "our_test" | "our_test_set1" | "our_test_set2" | "our_test_set3" | "probes";
             /** Macro F1 */
             macro_f1: number | null;
             /** Accuracy */
@@ -570,7 +570,7 @@ export interface components {
              * Dataset
              * @enum {string}
              */
-            dataset: "oof_official" | "oof_all" | "our_test" | "probes";
+            dataset: "oof_official" | "oof_all" | "our_test" | "our_test_set1" | "our_test_set2" | "our_test_set3" | "probes";
             /** Labels */
             labels: string[];
             /** Matrix */
@@ -623,7 +623,7 @@ export interface components {
              * Dataset
              * @enum {string}
              */
-            dataset: "oof_official" | "oof_all" | "our_test" | "probes";
+            dataset: "oof_official" | "oof_all" | "our_test" | "our_test_set1" | "our_test_set2" | "our_test_set3" | "probes";
             /**
              * Lang
              * @description `all`, `en`, `ar` or `arabizi`.
@@ -750,7 +750,7 @@ export interface components {
              * Dataset
              * @enum {string}
              */
-            dataset: "oof_official" | "oof_all" | "our_test" | "probes";
+            dataset: "oof_official" | "oof_all" | "our_test" | "our_test_set1" | "our_test_set2" | "our_test_set3" | "probes";
             /** Macro F1 */
             macro_f1: number | null;
             /** N Rows */

@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useMapBuildings } from "@/hooks/useMapBuildings";
 import { usePulse } from "@/hooks/usePulse";
 import { useSignOut } from "@/hooks/useSignIn";
 import { useLang, useT, type DictKey } from "@/i18n";
 import { dotsOf, openIncidents, ringsOf } from "@/lib/pulse/view";
+import { RoleNav } from "../shell/RoleNav";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -17,13 +17,19 @@ import { EventFeed } from "./EventFeed";
 import { IncidentList } from "./IncidentList";
 import { CampusMap, IncidentRing, MapLegend, RequestDot } from "./map";
 
+/** Props for {@link PulseScreen}. */
+export interface PulseScreenProps {
+  /** Decides which links the header offers (an admin also gets the model lab). */
+  role: "staff" | "admin";
+}
+
 /**
  * The Pulse page `/pulse`: the campus map with a dot per request and a pulsing ring per open
  * incident, the incident list (with resolve) and the live feed. Choosing a building narrows the
  * incident list to it. It only wires `usePulse` to presentational components; staff see the
  * rows of their office and an admin sees all, by row-level security.
  */
-export function PulseScreen() {
+export function PulseScreen({ role }: PulseScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const toast = useToast();
@@ -54,9 +60,7 @@ export function PulseScreen() {
           <p className="text-fg-2">{t("pulse.subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/staff" className="inline-flex min-h-9 items-center rounded-md px-3 text-sm font-medium text-accent underline">
-            {t("pulse.back")}
-          </Link>
+          <RoleNav role={role} current="pulse" />
           <LanguageSwitch />
           <Button variant="ghost" size="sm" onClick={() => void signOut()}>
             {t("auth.signOut")}

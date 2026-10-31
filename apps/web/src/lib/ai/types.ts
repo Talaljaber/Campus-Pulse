@@ -50,3 +50,17 @@ export type FeedbackResponse = S["FeedbackResponse"];
 export type ResolveIncidentResponse = S["ResolveIncidentResponse"];
 export type ErrorResponse = S["ErrorResponse"];
 export type HealthResponse = S["HealthResponse"];
+
+// Model lab (`GET /v1/metrics`, `POST /v1/redteam/run`).
+export type MetricsResponse = S["MetricsResponse"];
+export type BenchmarkRow = S["BenchmarkRowOut"];
+export type CoverageRow = S["CoverageRowOut"];
+export type CalibrationCurve = S["CalibrationOut"];
+export type FairnessSlice = S["FairnessSliceOut"];
+export type AblationRow = S["AblationRowOut"];
+export type Confusion = S["ConfusionOut"];
+export type RouterStats = S["RouterStatsOut"];
+export type MemoryStats = S["MemoryStatsOut"];
+export type Scorecard = S["ScorecardOut"];
+export type RedTeamFailure = S["RedTeamFailureOut"];
+export type RedTeamRunRequest = S["RedTeamRunRequest"];

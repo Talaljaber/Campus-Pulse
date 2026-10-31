@@ -999,6 +999,7 @@
 - **Acceptance:** committed size `0.3`; fresh-tree fetch and offline predict as above; P1 exit checks in the batch report.
 - **Limitations / TODO / known issues:** GitHub pre-release `models-v1-rc1` and the CI `artifacts` job are left to the lead.
 - **Affects streams:** Foundation (CI job, Docker fetch), Lead (release).
+
 ### P4.9 — office notifications, Realtime for reviews and links, admin-only distress items  (db, 2026-10-31, commits a03e57c, c226c3d and the docs follow-up)
 - **What now exists:** migrations `0010_office_notifications` and `0011_distress_reviews_admin_only`, applied to the linked project (history repaired to `0010` and `0011`).
   - `notifications_read` is altered in place: staff also read alias `office:<their profiles.office>` (escalation notes); students keep their own alias and admins everything.
@@ -1048,3 +1049,35 @@
   - `services/ai/evaluate.py` and `frameworks/cli/evaluate.py` are new with `--redteam` only; ML adds the P2.8 modes there.
   - Reply-text attacks ("make the reply promise a refund", P3.3a note) are not generated: the red team scores labels and flags only.
 - **Affects streams:** Lead (`build_online` sets `ApiServices.redteam`; D-013 numbering), ML (`evaluate.py` entry point exists; `build_offline` contract used: `.core`, `.config.thresholds.tau_ood`), UI (the Model lab red-team runner gets real scorecards and `/v1/metrics` history; the `redteam_run` 503 description now names `store_unavailable`), Foundation (`REDTEAM_SEED_CSV` and `config/` must be in the image for the online route), DB (no DDL needed).
+### P5.12 and P5.15 — Model lab `/lab` and outbox `/outbox`  (UI, 2026-10-31)
+- **What now exists:** the admin lands on a working model lab: benchmark per target with CV and our_test columns (set 1, 2, 3, pooled when the report has them), ablations, confusion matrices, conformal coverage and set size, calibration, per-language fairness, router and memory stats, a red-team runner and scorecard history. `/outbox` lists every outbox row with status filters and SIMULATED/REJECTED badges. A role-aware nav links `/lab`, `/staff`, `/pulse`, `/outbox`.
+- **Public interfaces added or changed:** `components/lab/*`, `components/outbox/*`, `components/shell/RoleNav`, `hooks/useLab`, `hooks/useOutbox`, `lib/lab/{metrics,redteam,service}`, `lib/outbox/view`, `formatDateTime` in `lib/time`; `PulseScreen` takes `role`; `lab.*`, `outbox.*`, `nav.*` i18n areas (`staff.pulseLink`, `pulse.back` removed). See [docs/ui/README.md](../ui/README.md#model-lab-lab-p512).
+- **How to use it:** sign in as `admin@demo.local` (lab) or any staff login (`/outbox`); with the mock API, metrics and the red-team run come from the fixtures.
+- **Config / env added:** none.
+- **Acceptance:** vitest, typecheck, lint and `e2e/admin-basic.spec.ts` (6 tests) pass; see the batch report for outputs.
+- **Limitations / TODO / known issues:** the metrics contract has no per-set dataset names (see ui README), so set 1, 2, 3 columns appear only if the ML report uses `our_test:set1`-style names; `MetricsResponse.redteam` is `[]` from the backend so history is session-only; the proxy's 20 s timeout can cut a large red-team run. Batch CSV upload (P5.18) and the sandbox (P5.16) are not built.
+- **Affects streams:** ML (name per-set datasets `our_test:set1` etc. or ask for a contract change), Backend (fill `redteam`; consider a longer proxy timeout for `redteam/run`), Lead (new Arabic strings need native review).
+
+### P4.5 — FAQ embedded with the v1-rc1 encoder, `tau_faq` tuned  (db, 2026-10-31)
+- **What now exists:** the 28 live `faq` rows carry embeddings from the frozen `OnnxEncoder` (models v1-rc1, tarball sha256 e9c57de6…532617, 29 files verified). `config/hand_tuned.yaml` `tau_faq` changes from 0.75 to **0.90**. Reference: [db/schema.md › FAQ retrieval](../db/schema.md#faq-retrieval).
+- **Public interfaces added or changed:**
+  - `OnnxEncoder(model_dir / "encoder")` is confirmed as the constructor `seed_faq.py` and `tune_faq.py` use (dim 384, unit-norm output, `query: ` prefix added inside).
+  - `tune_faq.py` now writes `hand_tuned.yaml` with LF and prints UTF-8 on cp1252 consoles.
+- **How to use it:**
+  - `python scripts/seed_faq.py` re-embeds the FAQ after any change to its question text.
+  - `python scripts/tune_faq.py [--dry-run]`.
+  - `train.py` copies `tau_faq` into `config.json` at the next freeze (LD-11).
+- **Config / env added:** none.
+- **Acceptance:**
+  - `seed_faq.py` → `embedded 28 faq rows (dim=384)`.
+  - `tune_faq.py` → `chosen tau_faq=0.90 precision=1.00 recall=0.47 -> config\hand_tuned.yaml`. Sweep: τ 0.85 p=0.73 r=0.73; 0.88 p=0.89 r=0.53; 0.89 p=0.88 r=0.47; 0.90 p=1.00 r=0.47; 0.91 p=1.00 r=0.33.
+  - Also reviewed ML's `local_numpy.save` LF change: correct (`newline="\n"`; `load` is unaffected).
+- **Limitations / TODO / known issues:**
+  - The margin is thin: the CE-hours paraphrase hits the CS-hours entry at 0.896, and the top uncovered question scores 0.874.
+  - Arabizi paraphrases (0.73–0.74) are never answered.
+  - The `config.json` in the frozen v1-rc1 still has the old `tau_faq` until the next freeze.
+  - `tau_inc` measured on the same encoder (offline, `config/simulation/wifi_m.yaml` against other IT complaints in building M):
+    - same-incident pairs 0.821–0.929, and every report ≥ 0.926 to the incident centroid;
+    - other IT problems in M score 0.856–0.909 to that centroid.
+    - The current 0.80 therefore clusters unrelated problems; reported to the lead (decision pending).
+- **Affects streams:** Backend (ActUseCase reads `tau_faq` from config), ML (re-freeze picks up 0.90), Lead (`tau_inc`).

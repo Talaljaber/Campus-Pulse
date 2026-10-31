@@ -627,7 +627,9 @@ class ScorecardOut(_Model):
     failures: list[RedTeamFailureOut]
 
 
-EvalDataset = Literal["oof_official", "oof_all", "our_test", "probes"]
+EvalDataset = Literal[
+    "oof_official", "oof_all", "our_test", "our_test_set1", "our_test_set2", "our_test_set3", "probes"
+]
 MetricTarget = Literal["category", "priority"]
 
 

@@ -16,6 +16,7 @@ Needs the frozen encoder and embedded FAQ rows (run scripts/seed_faq.py first).
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 import sys
@@ -67,7 +68,7 @@ def write_tau(value: float, path: Path = HAND_TUNED) -> None:
     new, n = re.subn(r"(?m)^(tau_faq:\s*)[0-9.]+", rf"\g<1>{value:.2f}", text)
     if n != 1:
         raise SystemExit(f"could not find a single tau_faq line in {path}")
-    path.write_text(new, encoding="utf-8")
+    path.write_text(new, encoding="utf-8", newline="\n")  # LF on every OS, as git stores it
 
 
 def main() -> int:
@@ -77,6 +78,8 @@ def main() -> int:
         "--dry-run", action="store_true", help="print the sweep, do not write hand_tuned.yaml"
     )
     args = parser.parse_args()
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")  # Arabic probes on cp1252 consoles
 
     spec = yaml.safe_load(QUESTIONS.read_text(encoding="utf-8"))
     probes = [
