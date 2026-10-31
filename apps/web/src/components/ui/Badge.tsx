@@ -39,7 +39,7 @@ export function Badge({ tone = "neutral", icon, children, className }: BadgeProp
     <span
       style={{ "--tone": toneColor(tone) } as CSSProperties}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium text-fg-1",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold text-fg-1",
         "border-[color-mix(in_srgb,var(--tone)_55%,transparent)]",
         tintClass(16),
         className,

@@ -52,20 +52,43 @@ Notes: the package manager is pnpm 10.17.0 (`packageManager` in `apps/web/packag
 
 ## Design tokens
 
-Source: `src/design/tokens.css`. Light is the default; dark applies under `prefers-color-scheme: dark` unless `<html data-theme="light">`, and is forced by `<html data-theme="dark">` (set by `ThemeSwitch`). Tailwind 4 maps them in `@theme inline` (no `tailwind.config.ts`). Contrast is enforced by `src/design/__tests__/tokens.test.ts`: text on every surface >= 4.5:1, tone colours on every surface >= 3:1, primary text on a 16% tint of every tone >= 4.5:1.
+Source: `src/design/tokens.css`. Light is the default; dark applies under `prefers-color-scheme: dark` unless `<html data-theme="light">`, and is forced by `<html data-theme="dark">` (set by `ThemeSwitch`). Tailwind 4 maps them in `@theme inline` (no `tailwind.config.ts`).
+
+**Look (UI batch 6).** A modern, accessible take on the GJU web identity: a blue top band and a darker icon bar, a white nav row with uppercase bold blue links, the MyGJU portal pattern (rounded-top tabs, icon tiles, fieldset-style info panels, a white card with a soft shadow on a grey page) and a dark footer. The palette is blue + orange-yellow + warm grey. Nothing here is the university's artwork: the mark, the wordmark and every colour value are our own (see [Branding rules](#branding-rules)).
+
+**Contrast is enforced** by `src/design/__tests__/tokens.test.ts`, in both themes: text tokens on every surface >= 4.5:1; tone colours (categories, priorities, semantic) on every surface >= 3:1; primary text on a 16% tint of every tone >= 4.5:1; and a table of **named shell pairs** (below) at their AA minimum. Orange on white is about 2:1, so `--cp-orange` is for borders, bars, icons and fills behind dark text only. Text in orange uses `--cp-orange-ink` (>= 3:1, large bold text only: the wordmark and big headings).
+
+### Brand and shell tokens
+
+| Token | Meaning | Light | Dark | Tailwind | Checked pair (light / dark) |
+| --- | --- | --- | --- | --- | --- |
+| `--cp-page` | grey page behind the white card | `#eef2f6` | `#0b0f14` | `bg-page` | body text 1 on it >= 4.5 |
+| `--cp-band` / `--cp-on-band` | top blue band / its white text | `#1f78c4` / `#ffffff` | `#14507f` / `#ffffff` | `bg-band`, `text-on-band` | 4.62 / 8.46 |
+| `--cp-band-2` | darker icon bar under the band | `#155a99` | `#0e3a5e` | `bg-band-2` | white on it 7.11 / 11.76 |
+| `--cp-accent` / `--cp-on-accent` | links, nav links, active tab text, primary button / its text | `#1a68ac` / `#ffffff` | `#8cc3f2` / `#0e1218` | `text-accent`, `bg-accent` | on card 5.80 / 9.78; on grey tab 4.80 / 7.81; button text 5.80 / 10.02 |
+| `--cp-brand` | decorative blue (mark, map buildings, icons) | `#1b84c9` | `#4ea6e6` | `text-brand`, `bg-brand` | graphics on card 4.05 / 6.91 (>= 3) |
+| `--cp-orange` / `--cp-on-orange` | orange-yellow fill (accent button, bars, tab top edge) / dark text on it | `#f0a81f` / `#1c2025` | `#f0a81f` / `#1c2025` | `bg-orange`, `border-orange` | text on it 8.05 / 8.05; **orange alone on white is 2.03, never used for text** |
+| `--cp-orange-ink` | orange for large bold text and icons | `#b86e00` | `#f0b84a` | `text-orange-ink` | on card 3.99 / 10.17 (>= 3) |
+| `--cp-heading` | warm grey for h1 and h2 | `#5b5d60` | `#c9ced6` | `text-heading` | on card 6.60 / 11.59; on grey tab 5.46 / 9.26 |
+| `--cp-panel` / `--cp-on-panel` | grey-blue badge-panel band / white caption | `#52769a` / `#ffffff` | `#3d5f80` / `#ffffff` | `bg-panel`, `text-on-panel` | 4.75 / 6.67 |
+| `--cp-footer` / `--cp-on-footer` / `--cp-footer-link` | dark footer / text / links | `#3a3a3a` / `#e8e8e8` / `#9dcdf5` | `#07090d` / `#d5d9df` / `#9dcdf5` | `bg-footer`, `text-on-footer` | 9.28 and 6.76 / 14.06 and 11.85 |
+
+The official-site blues (about `#2A86D5`, `#1F6DB5`) and the `#8AA6BF` panel grey do not reach AA with white text, so the band, the icon bar and the panel are the nearest values that do. The values above are what ships.
+
+### Surfaces, text, lines, semantic
 
 | Token | Meaning | Light | Dark | Tailwind utility |
 | --- | --- | --- | --- | --- |
-| `--cp-surface-0` | page background | `#ffffff` | `#0e1218` | `bg-surface-0` |
-| `--cp-surface-1` | cards, panels | `#f5f7fa` | `#161b23` | `bg-surface-1` |
-| `--cp-surface-2` | table header, hover, skeleton | `#e9edf2` | `#1f2631` | `bg-surface-2` |
-| `--cp-text-1` | primary text | `#12161d` | `#eef1f5` | `text-fg-1` |
-| `--cp-text-2` | secondary text | `#3a4351` | `#c5ccd7` | `text-fg-2` |
-| `--cp-text-3` | tertiary, hints | `#566070` | `#9aa4b3` | `text-fg-3` |
-| `--cp-border` | decorative divider | `#d2d8e0` | `#2e3744` | `border-line` |
+| `--cp-surface-0` | card and control background | `#ffffff` | `#10151c` | `bg-surface-0` |
+| `--cp-surface-1` | panels, zebra rows | `#f4f6f8` | `#171d26` | `bg-surface-1` |
+| `--cp-surface-2` | inactive tab, table header, hover, skeleton | `#e6eaee` | `#212936` | `bg-surface-2` |
+| `--cp-text-1` | primary text | `#1c2025` | `#eef1f5` | `text-fg-1` |
+| `--cp-text-2` | secondary text | `#3e444c` | `#c5ccd7` | `text-fg-2` |
+| `--cp-text-3` | tertiary, hints | `#545b65` | `#9aa4b3` | `text-fg-3` |
+| `--cp-border` | decorative divider | `#ccd3db` | `#2e3744` | `border-line` |
 | `--cp-border-strong` | control outline (>= 3:1) | `#76808f` | `#7f8a9b` | `border-line-strong` |
-| `--cp-focus` | focus ring | `#0b5cd5` | `#86b7ff` | `outline-focus` |
-| `--cp-accent` / `--cp-on-accent` | primary button fill / its text | `#0b5cd5` / `#ffffff` | `#86b7ff` / `#0e1218` | `bg-accent`, `text-on-accent` |
+| `--cp-focus` | focus ring (white on the blue bands) | `#1a68ac` | `#8cc3f2` | `outline-focus` |
+| `--cp-ok` `--cp-warn` `--cp-danger` `--cp-info` | semantic states | `#17713a` `#8f5900` `#c4161c` `#1a68ac` | `#55d08a` `#f0b040` `#ff8585` `#8cc3f2` | `text-ok` ... |
 | `--cp-cat-registration` | category Registration | `#0066b3` | `#5fadff` | `bg-cat-registration` |
 | `--cp-cat-it` | category IT Support | `#7a3ea1` | `#c996f2` | `bg-cat-it` |
 | `--cp-cat-finance` | category Finance | `#a84e00` | `#f2a65a` | `bg-cat-finance` |
@@ -75,45 +98,86 @@ Source: `src/design/tokens.css`. Light is the default; dark applies under `prefe
 | `--cp-pri-low` | priority low (arrow-down icon) | `#566a80` | `#9db0c6` | `bg-pri-low` |
 | `--cp-pri-medium` | priority medium (equal icon) | `#9a5a00` | `#f0b040` | `bg-pri-medium` |
 | `--cp-pri-high` | priority high (double-chevron-up icon) | `#c4161c` | `#ff8585` | `bg-pri-high` |
-| `--cp-ok` `--cp-warn` `--cp-danger` `--cp-info` | semantic states | `#17713a` `#8f5900` `#c4161c` `#0b5cd5` | `#55d08a` `#f0b040` `#ff8585` `#86b7ff` | `text-ok` ... |
 | `--cp-space-1..8` | 4px scale: 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4 rem | same | same | Tailwind `p-*`, `gap-*` |
 | `--cp-radius-sm/md/lg` | 0.375 / 0.625 / 1 rem | same | same | `rounded-sm/md/lg` |
 | `--cp-font-sans` | Inter, then IBM Plex Sans Arabic (Arabic glyphs), then system | same | same | `font-sans` |
 | `--cp-font-mono` | system monospace | same | same | `font-mono` |
 | `--cp-text-xs..2xl` | 0.75, 0.875, 1, 1.125, 1.375, 1.75 rem | same | same | `text-xs` ... `text-2xl` |
-| `--cp-shadow-1/2`, `--cp-overlay` | elevation, modal backdrop | rgb black alpha | stronger alpha | `shadow-1/2` |
+| `--cp-shadow-1/2/card`, `--cp-overlay` | elevation, the portal card's soft outer shadow, modal backdrop | rgb alpha | stronger alpha | `shadow-1/2/card` |
 | `--cp-motion-fast/slow` | 120 ms / 280 ms | same | same | `duration-(--cp-motion-fast)` |
 
-Rules: category colours are always shown next to a text label; priority is lightness plus an icon, never colour alone; reduced-motion disables animation globally (`globals.css`).
+Colour is never the only cue: category colours always sit next to a text label **and a shape** on the map (square, plus, diamond, triangle, cross, bar; see the Pulse map), priority is lightness plus an icon (and a ring weight on the map), the current nav link has an underline and a bar, the selected tab has a white fill and a top edge, toasts carry an icon. Reduced motion disables animation globally (`globals.css`). The category palette is the Okabe-Ito-derived set used since P5.1 (colour-blind safe), retuned only where needed for the contrast tests.
 
 RTL rule (ESLint `no-restricted-syntax`, `src/components/**` and `src/app/**`): no `ml- mr- pl- pr- left- right- border-l/r rounded-l/r text-left text-right`. Use `ms- me- ps- pe- start- end- border-s/e text-start text-end`. Another rule (type-only imports from `@/lib/ai/*` are allowed) bans `@/lib/supabase/*`, `@/lib/ai/*`, `@/lib/repos/*` imports from components.
 
-Fonts: Inter (latin) and IBM Plex Sans Arabic (arabic + latin, 400-700) through `next/font/google`, `display: swap`.
+### Typography
+
+- **Latin:** Inter (`next/font/google`, `--font-inter`). **Arabic:** IBM Plex Sans Arabic (400 to 700, arabic + latin subsets, `--font-plex-arabic`), listed second in `--cp-font-sans`, so Arabic text gets the Arabic face and Latin runs inside Arabic text keep Inter. Both `display: swap`.
+- h1 and h2 take `--cp-heading` (warm grey) from the base layer; component titles that need more weight use `text-fg-1` or `text-accent`. Nav links are uppercase through CSS only (`uppercase tracking-wide`), so accessible names are unchanged and Arabic is unaffected.
+- Arabic gets 1.8 line height and no negative letter-spacing.
+- The wordmark "CampusPulse" is Latin in every language (`lang="en"`, `dir="ltr"`): "Campus" in `--cp-accent`, "Pulse" in `--cp-orange-ink`, 21.6px extra-bold (large text, so the 3:1 pair applies).
+
+### Branding rules
+
+- **No GJU artwork and no claim to be a GJU system.** The mark (`components/brand/CampusPulseMark.tsx`) is original: one tilted blue square with a white heartbeat line through it and a small tilted orange square. It is deliberately not the university's two-square logo. The wordmark is "CampusPulse" with the subtitle "for GJU students" (`shell.subtitle`; Arabic "لطلبة الجامعة الألمانية الأردنية"). The name "GJU" appears only as the audience and in the disclaimer.
+- **The footer, on every page** (root layout, `SiteFooter`): "Prototype for GJU AI Quest 2026, not an official GJU service", always in English **and** Arabic whatever the UI language, plus "All data shown is fictional." and the stack line. The chat page keeps its own "Integration-ready prototype on synthetic data" line.
+- **No real people:** the header greets the demo alias (`talal`, `staff-it`, `admin`); every name, building and record is fictional.
+
+## Shell
+
+| Piece | File | What it does |
+| --- | --- | --- |
+| `SiteFooter` | `components/shell/SiteFooter.tsx` | dark footer with the bilingual prototype disclaimer; mounted once in `app/layout.tsx` under the page content (the layout is a `min-h-dvh` flex column, so the footer sits at the bottom of short pages) |
+| `AppShell` | `components/shell/AppShell.tsx` | `{ role, current, alias, width }`: the header, then the single `<main id="main">` holding a white card (`shadow-card`) on the grey page. `width`: `narrow` (chat, login), `default`, `wide` (Pulse). `role={null}` is the login page |
+| `SiteHeader` | `components/shell/SiteHeader.tsx` | blue top band with the logo card (white, rounded, soft shadow, straddling the band and the icon bar) and "Hello <alias>"; darker icon bar with Help (opens a role-specific dialog) and Sign out (icons only under 640 px, the text stays for assistive technology); white nav row with `RoleNav` and the `LanguageSwitch` at the end; a skip link. The only language switch on a page |
+| `RoleNav` | `components/shell/RoleNav.tsx` | uppercase bold blue links with thin vertical separators; student: New request; staff: Staff desk, Pulse map, Outbox; admin: Model lab first, then those. The current link has `aria-current="page"`, an underline and an orange bar |
+| `PageHeader` | `components/shell/PageHeader.tsx` | the page's `<h1>`, an optional subtitle and badges, with an orange bar at the start |
+
+Every screen now renders `<AppShell role current alias width>` instead of its own header. `StaffScreen`, `PulseScreen`, `OutboxScreen` and `LabScreen` gained an optional `alias` prop, which their pages pass from the profile.
 
 ## Component catalog (`src/components/ui`, all in `index.ts`)
 
-All are presentational: no fetching, no business logic, no keys. Every one exports its props type with TSDoc. Live demo of every state in EN and AR side by side, with a theme switch: `/dev/ui` (404 in production). Smoke test: `e2e/devui.spec.ts`.
+All are presentational: no fetching, no business logic, no keys. Every one exports its props type with TSDoc. Live demo of every state in EN and AR side by side, with the palette and a theme switch: `/dev/ui` (404 in production). Smoke test: `e2e/devui.spec.ts`.
 
 | Component | Purpose | Props type | Accessibility |
 | --- | --- | --- | --- |
-| `Button` | action; variants primary, secondary, ghost, danger; sizes sm, md | `ButtonProps` | native button, `type=button` default, `loading` sets `aria-busy` and disables, 44px target at md, focus ring |
-| `Chip`, `ChipGroup` | single choice (clarification options) | `ChipProps`, `ChipGroupProps` | `role=radio` in a labelled `radiogroup`, roving tabindex, arrows (mirrored in RTL), Home/End, check icon on selected |
+| `Button` | action; variants primary (blue), **accent (orange, one per view)**, secondary (blue outline), ghost, danger; sizes sm, md | `ButtonProps` | native button, `type=button` default, `loading` sets `aria-busy` and disables, 44px target at md, focus ring |
+| `Chip`, `ChipGroup` | single choice (clarification options, outbox filters) | `ChipProps`, `ChipGroupProps` | `role=radio` in a labelled `radiogroup`, roving tabindex, arrows (mirrored in RTL), Home/End, check icon on selected |
 | `Badge` | category, priority, state label | `BadgeProps` | text always present; priority/semantic tones add an `aria-hidden` icon |
-| `Card` | surface with title and actions | `CardProps` | titled card is a region labelled by its `h3` |
-| `Tabs`, `TabPanel` | tab list and linked panel | `TabsProps`, `TabPanelProps` | WAI-ARIA tabs, `aria-selected`/`aria-controls`, roving tabindex, RTL-aware arrows |
-| `Table<T>` | data table | `TableProps<T>`, `TableColumn<T>` | `th scope=col`, visually hidden caption, focusable scroll region, `text-start/end` alignment, translated empty row |
-| `ToastProvider`, `useToast()` | transient messages | `ToastProviderProps`, `ToastApi` | polite live region, dismiss button, auto-dismiss (timers cleaned up); no-op outside the provider |
-| `Dialog` | modal | `DialogProps` | `role=dialog aria-modal`, named by title, focus moves in, Tab trapped, Esc and backdrop close, focus restored, scroll locked |
+| `Card` | grey panel with a title (orange bar) and actions | `CardProps` | titled card is a region labelled by its `h3` |
+| `Tabs`, `TabPanel` | **portal tabs**: rounded-top grey tabs, the selected one white with blue text and an orange top edge, merging into the panel; scrolls sideways on narrow screens | `TabsProps`, `TabPanelProps` | WAI-ARIA tabs, `aria-selected`/`aria-controls`, roving tabindex, RTL-aware arrows; the focus ring is drawn inside the tab |
+| `IconTile` | **portal tile**: white card, thin grey border, a grey, orange or blue illustrative icon at the start and a blue label; a link (`href`), a button (`onClick`) or a static card; `hint`, `selected`, `disabled` | `IconTileProps` | the label is the name; `aria-pressed` / `aria-current` for `selected`; native disabled |
+| `InfoPanel`, `InfoGrid` | **fieldset-style panel** (thin grey border, legend title in blue) and a two-column label/value grid (bold label, normal value; stacks under 640 px). `InfoPanel` has an `actions` slot: the action-button pattern | `InfoPanelProps`, `InfoGridProps`, `InfoRow` | a real `<fieldset>` + `<legend>` (role `group`, named by the legend); the grid is a `<dl>` |
+| `Table<T>` | data table; bold header with a heavier rule, zebra rows | `TableProps<T>`, `TableColumn<T>` | `th scope=col`, visually hidden caption, focusable scroll region, `text-start/end` alignment, translated empty row |
+| `ToastProvider`, `useToast()` | transient messages; an icon per tone beside the thick start edge | `ToastProviderProps`, `ToastApi` | polite live region, dismiss button, auto-dismiss (timers cleaned up); no-op outside the provider |
+| `Dialog` | modal with an orange top edge | `DialogProps` | `role=dialog aria-modal`, named by title, focus moves in, Tab trapped, Esc and backdrop close, focus restored, scroll locked |
 | `Skeleton` | loading placeholder | `SkeletonProps` | one `role=status` with sr-only text, bars `aria-hidden` |
 | `EmptyState` | nothing-here message | `EmptyStateProps` | plain text, optional action |
-| `Icon` | built-in decorative icons | `IconProps`, `IconName` | `aria-hidden` |
-| `LanguageSwitch` | EN/AR toggle | `LanguageSwitchProps` | labelled group, `aria-pressed`, each name in its own language |
+| `Icon` | built-in decorative line icons (check, alert, info, close, help, logout, globe, user, graduation, briefcase, shield, chat, ticket, map, mail, flask, mic, chevrons, ...) | `IconProps`, `IconName` | `aria-hidden` |
+| `LanguageSwitch` | EN/AR toggle (blue outline pill) | `LanguageSwitchProps` | labelled group, `aria-pressed`, each name in its own language |
 | `ThemeSwitch` | system/light/dark | `ThemeSwitchProps` | labelled radiogroup; persisted in localStorage `cp_theme` (guarded) |
 | `RtlProvider` | owns language, syncs `<html lang dir>`, cookie `cp_lang` | `RtlProviderProps` | direction set server-side first, so there is no flash |
-| `TextField`, `TextArea` (P5.7/P5.8) | labelled input and textarea | `TextFieldProps`, `TextAreaProps` | visible `<label>` (textarea can hide it visually), `aria-describedby` for helper text, 44px target, `dir="auto"` on the textarea |
+| `TextField`, `TextArea` (P5.7/P5.8) | labelled input and textarea (bold label, blue border on hover and focus) | `TextFieldProps`, `TextAreaProps` | visible `<label>` (textarea can hide it visually), `aria-describedby` for helper text, 44px target, `dir="auto"` on the textarea |
 | `Select` (P5.10) | labelled native select | `SelectProps` (`label`, `options`, `hideLabel`, `description`) | real `<label>`, 44px target, native keyboard and screen-reader behaviour |
 | `Loadable` (P5.10) | the three list states: skeleton while loading, an alert with Retry on failure, the children when ready | `LoadableProps` (`state`, `onRetry`, `lines`) | skeleton is one `role=status`; the failure is `role=alert` |
 | `ServiceBanner` (P5.7) | "AI waking up" / "unavailable" strip | `ServiceBannerProps` | polite `role="status"` region always in the DOM; empty when `state="ok"` |
+
+Brand: `Brand` and `CampusPulseMark` in `components/brand/` (mark + wordmark + subtitle; the mark is `aria-hidden`).
+
+Building a page on the design system (this is the pattern the later advisor-routing and student-journey pages should follow):
+
+```tsx
+<AppShell role="staff" current="staff" alias={alias}>
+  <PageHeader title={t("…")} subtitle={t("…")} />
+  <Tabs … />                                   {/* portal tabs */}
+  <TabPanel …>
+    <div className="grid gap-2 sm:grid-cols-3"> <IconTile icon="chat" label="…" href="…" /> … </div>
+    <InfoPanel title="Assignment" actions={<><Button>Forward</Button><Button variant="secondary">Cancel</Button></>}>
+      <InfoGrid rows={[{ label: "Office", value: "IT" }, …]} />
+    </InfoPanel>
+  </TabPanel>
+</AppShell>
+```
 
 Helpers: `useDuration()` (ms to a short translated span, "5 min", "3 h", "2 d", using the `explain.ago.*` units; P5.10), `tone.ts` (`Tone`, `CATEGORY_TONE`, `PRIORITY_TONE`: exact backend label to tone), `cn.ts`.
 

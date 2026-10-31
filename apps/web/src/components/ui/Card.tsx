@@ -22,7 +22,7 @@ export function Card({ title, actions, children, className }: CardProps) {
       {(title || actions) && (
         <header className="mb-3 flex items-center justify-between gap-3">
           {title && (
-            <h3 id={titleId} className="text-lg font-semibold text-fg-1">
+            <h3 id={titleId} className="border-s-4 border-orange ps-2.5 text-lg font-bold text-fg-1">
               {title}
             </h3>
           )}

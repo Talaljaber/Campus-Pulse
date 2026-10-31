@@ -1220,3 +1220,10 @@
   - UI: new `M2-proto` benchmark rows and per-set datasets.
   - Lead: the D-014 row, results_v2, the review package.
   - Foundation: README disclosures added.
+### UI batch 6 — GJU-style visual redesign  (ui, 2026-10-31)
+- **What now exists:** new blue / orange-yellow / warm-grey tokens with a contrast test over named shell pairs; portal tabs, `IconTile`, `InfoPanel`/`InfoGrid`, an orange `accent` button; an `AppShell` (blue band, icon bar, uppercase nav row, language switch, Help dialog), a dark bilingual "not an official GJU service" footer in the root layout, an original CampusPulse mark; every page on the shell; Pulse dots carry a per-category shape. See [ui/README](../ui/README.md#design-tokens).
+- **Public interfaces added or changed:** `AppShell`, `SiteHeader`, `SiteFooter`, `PageHeader`, `Brand`, `CampusPulseMark`, `IconTile`, `InfoPanel`, `InfoGrid`; `RoleNav` accepts `student`; `StaffScreen`/`PulseScreen`/`OutboxScreen`/`LabScreen` take an optional `alias`; `Button` variant `accent`; `TabPanel` `className`.
+- **Acceptance:** typecheck and lint clean; token test passes (55). Full vitest, build, check-bundle-secrets and Playwright: not run (deadline). Screenshots saved to the scratchpad `redesign` folder (not committed).
+- **Limitations / TODO / known issues:** e2e selector for "What the student wrote" changed from region to group. New Arabic strings for native review: `shell.*` (subtitle, hello, help*, footer*, loginTitle), `nav.request`, `nav.studentLabel`, `staff.detail.category/priority/flags`, `devui.*` (palette, tiles, info panel). Vitest tests that assert header text or Sign out placement are unverified.
+- **Affects streams:** Backend/UI (advisor-routing UI should use `InfoPanel` actions and portal tabs).
+

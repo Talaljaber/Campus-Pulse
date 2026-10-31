@@ -4,11 +4,10 @@ import { useState } from "react";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useChat } from "@/hooks/useChat";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useSignOut } from "@/hooks/useSignIn";
 import { useLang, useT } from "@/i18n";
 import { speechLangFor } from "@/lib/voice/speech";
-import { Button } from "../ui/Button";
-import { LanguageSwitch } from "../ui/LanguageSwitch";
+import { AppShell } from "../shell/AppShell";
+import { PageHeader } from "../shell/PageHeader";
 import { BuildingPicker } from "./BuildingPicker";
 import { ChatThread } from "./ChatThread";
 import { Composer } from "./Composer";
@@ -30,23 +29,12 @@ export function ChatScreen({ alias }: ChatScreenProps) {
   const { lang } = useLang();
   const chat = useChat();
   const buildings = useBuildings();
-  const signOut = useSignOut();
   const [building, setBuilding] = useState<string | null>(null);
   useNotifications(alias, chat.notice);
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col gap-4 p-4 sm:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">{t("chat.title")}</h1>
-        <div className="flex items-center gap-2">
-          <LanguageSwitch />
-          <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-            {t("auth.signOut")}
-          </Button>
-        </div>
-      </header>
-
-      <p className="text-fg-2">{t("app.tagline")}</p>
+    <AppShell role="student" current="request" alias={alias} width="narrow">
+      <PageHeader title={t("chat.title")} subtitle={t("app.tagline")} />
 
       <div className="flex-1">
         <ChatThread
@@ -58,7 +46,7 @@ export function ChatScreen({ alias }: ChatScreenProps) {
         />
       </div>
 
-      <div className="sticky bottom-0 flex flex-col gap-3 bg-surface-0 pb-2 pt-3">
+      <div className="sticky bottom-0 flex flex-col gap-3 border-t border-line bg-surface-0 pb-2 pt-3">
         {buildings.length > 0 && <BuildingPicker buildings={buildings} value={building} onChange={setBuilding} disabled={chat.busy} />}
         <Composer
           busy={chat.busy}
@@ -67,6 +55,6 @@ export function ChatScreen({ alias }: ChatScreenProps) {
         />
         <Disclaimer />
       </div>
-    </main>
+    </AppShell>
   );
 }

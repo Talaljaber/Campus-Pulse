@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useT } from "@/i18n";
 import { cn } from "./cn";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 import { tintClass, toneColor, type Tone } from "./tone";
 
 interface ToastItem {
@@ -17,6 +17,8 @@ export interface ToastApi {
   /** Show a message. `ms` is the auto-dismiss delay (default 5000; `0` keeps it until dismissed). */
   show: (msg: string, tone?: Tone, ms?: number) => void;
 }
+
+const TOAST_ICON: Partial<Record<Tone, IconName>> = { ok: "check", warn: "alert", danger: "alert", info: "info" };
 
 const ToastContext = createContext<ToastApi>({ show: () => {} });
 
@@ -79,10 +81,11 @@ export function ToastProvider({ children }: ToastProviderProps) {
               role="status"
               style={{ "--tone": toneColor(i.tone) } as CSSProperties}
               className={cn(
-                "pointer-events-auto flex items-start gap-3 rounded-md border border-line border-s-4 border-s-(--tone) p-3 text-sm text-fg-1 shadow-2",
+                "pointer-events-auto flex items-start gap-3 rounded-md border border-line border-s-[6px] border-s-(--tone) p-3 text-sm font-medium text-fg-1 shadow-2",
                 tintClass(16),
               )}
             >
+              {TOAST_ICON[i.tone] && <Icon name={TOAST_ICON[i.tone]!} size={18} className="mt-0.5 shrink-0 text-(--tone)" />}
               <p className="flex-1">{i.msg}</p>
               <button
                 type="button"

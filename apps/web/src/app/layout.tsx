@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
 import { cookies, headers } from "next/headers";
 import { ServiceStatus } from "@/components/shell/ServiceStatus";
+import { SiteFooter } from "@/components/shell/SiteFooter";
 import { RtlProvider } from "@/components/ui/RtlProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import { LANG_COOKIE, dirOf, resolveLang } from "@/i18n";
@@ -17,7 +18,7 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 
 export const metadata: Metadata = {
   title: "CampusPulse",
-  description: "Bilingual campus-request triage",
+  description: "Bilingual campus-request triage for GJU students. A prototype, not an official GJU service.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -28,8 +29,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <RtlProvider lang={lang}>
           <ToastProvider>
-            <ServiceStatus />
-            {children}
+            <div className="flex min-h-dvh flex-col">
+              <ServiceStatus />
+              <div className="flex flex-1 flex-col">{children}</div>
+              <SiteFooter />
+            </div>
           </ToastProvider>
         </RtlProvider>
       </body>

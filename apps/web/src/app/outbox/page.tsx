@@ -15,5 +15,5 @@ export default async function OutboxPage() {
   const profile = await fetchProfile(sb, data.user.id);
   if (!profile) redirect("/login");
   if (profile.role === "student") redirect(homeFor(profile.role));
-  return <OutboxScreen role={profile.role} />;
+  return <OutboxScreen role={profile.role} alias={profile.alias} />;
 }

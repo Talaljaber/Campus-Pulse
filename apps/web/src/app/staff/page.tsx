@@ -16,5 +16,5 @@ export default async function StaffPage() {
   const profile = await fetchProfile(sb, data.user.id);
   if (!profile) redirect("/login");
   if (profile.role === "student") redirect(homeFor(profile.role));
-  return <StaffScreen role={profile.role} office={profile.role === "staff" ? profile.office : null} />;
+  return <StaffScreen role={profile.role} alias={profile.alias} office={profile.role === "staff" ? profile.office : null} />;
 }

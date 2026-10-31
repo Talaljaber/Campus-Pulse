@@ -59,7 +59,7 @@ export function BuildingShape({ b, selected = false, onSelect }: BuildingShapePr
         className={
           selected
             ? "fill-[color-mix(in_srgb,var(--cp-accent)_22%,var(--cp-surface-1))] stroke-accent"
-            : "fill-surface-1 stroke-line-strong group-hover:fill-surface-2"
+            : "fill-[color-mix(in_srgb,var(--cp-brand)_9%,var(--cp-surface-0))] stroke-line-strong group-hover:fill-[color-mix(in_srgb,var(--cp-brand)_20%,var(--cp-surface-0))]"
         }
         strokeWidth={selected ? 4 : 2}
       />

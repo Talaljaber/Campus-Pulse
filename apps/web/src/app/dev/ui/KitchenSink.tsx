@@ -8,18 +8,21 @@ import {
   ChipGroup,
   Dialog,
   EmptyState,
-  LanguageSwitch,
+  IconTile,
+  InfoGrid,
+  InfoPanel,
   Skeleton,
   Table,
   TabPanel,
   Tabs,
-  ThemeSwitch,
   ToastProvider,
   useToast,
   CATEGORY_TONE,
   PRIORITY_TONE,
   type Tone,
 } from "@/components/ui";
+import { AppShell } from "@/components/shell/AppShell";
+import { PageHeader } from "@/components/shell/PageHeader";
 import { MapStories } from "./MapStories";
 import { TriageStories } from "./TriageStories";
 import { CATEGORY_VALUES, LangScope, PRIORITY_VALUES, labelOf, useLang, useT, type Lang } from "@/i18n";
@@ -58,6 +61,7 @@ function Showcase() {
       <Section title={t("devui.buttons")}>
         <div className="flex flex-wrap gap-2">
           <Button>{t("devui.primary")}</Button>
+          <Button variant="accent">accent</Button>
           <Button variant="secondary">{t("devui.secondary")}</Button>
           <Button variant="ghost">{t("devui.ghost")}</Button>
           <Button variant="danger">{t("devui.danger")}</Button>
@@ -127,6 +131,38 @@ function Showcase() {
         </TabPanel>
       </Section>
 
+      <Section title={t("devui.tiles")}>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <IconTile icon="chat" label={t("devui.tileRequests")} hint="12" href="#" />
+          <IconTile icon="map" tone="orange" label={t("devui.tileMap")} onClick={() => toast.show(t("devui.tileMap"), "info")} />
+          <IconTile icon="ticket" tone="blue" label={t("devui.tileSelected")} selected onClick={() => {}} />
+          <IconTile icon="flask" label={t("devui.tileDisabled")} disabled onClick={() => {}} />
+        </div>
+      </Section>
+
+      <Section title={t("devui.infoPanel")}>
+        <InfoPanel
+          title={t("devui.infoPanelTitle")}
+          actions={
+            <>
+              <Button size="sm">{t("common.confirm")}</Button>
+              <Button size="sm" variant="secondary">
+                {t("common.cancel")}
+              </Button>
+            </>
+          }
+        >
+          <InfoGrid
+            rows={[
+              { label: t("devui.infoOffice"), value: "IT" },
+              { label: t("devui.infoStatus"), value: <Badge tone="info">{t("devui.infoStatusValue")}</Badge> },
+              { label: t("devui.infoOpened"), value: t("devui.infoOpenedValue") },
+            ]}
+          />
+          <p className="text-sm text-fg-2">{t("devui.infoPanelHint")}</p>
+        </InfoPanel>
+      </Section>
+
       <Section title={t("devui.table")}>
         <Table<OfficeRow>
           caption={t("devui.table")}
@@ -185,6 +221,42 @@ function Showcase() {
   );
 }
 
+const SWATCHES: { token: string }[] = [
+  { token: "--cp-band" },
+  { token: "--cp-band-2" },
+  { token: "--cp-accent" },
+  { token: "--cp-brand" },
+  { token: "--cp-orange" },
+  { token: "--cp-orange-ink" },
+  { token: "--cp-heading" },
+  { token: "--cp-panel" },
+  { token: "--cp-footer" },
+  { token: "--cp-surface-1" },
+  { token: "--cp-surface-2" },
+  { token: "--cp-ok" },
+  { token: "--cp-warn" },
+  { token: "--cp-danger" },
+];
+
+/** The token palette as swatches, each captioned with its variable name. */
+function Palette() {
+  const t = useT();
+  return (
+    <Section title={t("devui.palette")}>
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+        {SWATCHES.map((s) => (
+          <li key={s.token} className="overflow-hidden rounded-md border border-line-strong">
+            <div className="h-12" style={{ background: `var(${s.token})` }} />
+            <p dir="ltr" className="bg-surface-0 px-2 py-1 text-xs text-fg-1">
+              {s.token}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 function Column({ lang }: { lang: Lang }) {
   return (
     <LangScope lang={lang} className="min-w-0 rounded-lg border border-line bg-surface-0 p-4">
@@ -199,21 +271,15 @@ function Column({ lang }: { lang: Lang }) {
 export function KitchenSink() {
   const t = useT();
   return (
-    <main className="mx-auto flex max-w-7xl flex-col gap-6 p-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-fg-1">{t("devui.title")}</h1>
-          <p className="text-fg-2">{t("devui.intro")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <LanguageSwitch />
-          <ThemeSwitch />
-        </div>
-      </header>
+    <AppShell role={null} width="wide">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageHeader title={t("devui.title")} subtitle={t("devui.intro")} />
+      </div>
+      <Palette />
       <div className="grid gap-4 lg:grid-cols-2">
         <Column lang="en" />
         <Column lang="ar" />
       </div>
-    </main>
+    </AppShell>
   );
 }

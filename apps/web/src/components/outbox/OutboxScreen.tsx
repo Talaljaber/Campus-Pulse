@@ -2,21 +2,22 @@
 
 import { useMemo, useState } from "react";
 import { useOutbox } from "@/hooks/useOutbox";
-import { useSignOut } from "@/hooks/useSignIn";
 import { useT, type DictKey } from "@/i18n";
 import { filterOutbox, filterStatuses, statusCounts } from "@/lib/outbox/view";
-import { RoleNav } from "../shell/RoleNav";
+import { AppShell } from "../shell/AppShell";
+import { PageHeader } from "../shell/PageHeader";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { ChipGroup } from "../ui/Chip";
 import { EmptyState } from "../ui/EmptyState";
-import { LanguageSwitch } from "../ui/LanguageSwitch";
 import { Loadable } from "../ui/Loadable";
 import { OutboxTable } from "./OutboxTable";
 
 /** Props for {@link OutboxScreen}. */
 export interface OutboxScreenProps {
   role: "staff" | "admin";
+  /** The signed-in user's alias, for the header greeting. */
+  alias?: string | null;
 }
 
 const KNOWN = ["sent", "simulated", "deferred", "rejected", "failed", "queued"];
@@ -27,9 +28,8 @@ const KNOWN = ["sent", "simulated", "deferred", "rejected", "failed", "queued"];
  * the list with counts, and a rejected message shows the reason it was blocked. It only wires
  * `useOutbox` to the table; which rows appear is decided by row-level security.
  */
-export function OutboxScreen({ role }: OutboxScreenProps) {
+export function OutboxScreen({ role, alias = null }: OutboxScreenProps) {
   const t = useT();
-  const signOut = useSignOut();
   const outbox = useOutbox();
   const [status, setStatus] = useState("all");
 
@@ -42,26 +42,14 @@ export function OutboxScreen({ role }: OutboxScreenProps) {
   ];
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 p-4 sm:p-6">
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold">{t("outbox.title")}</h1>
-            <Badge tone="ok">{t("pulse.live")}</Badge>
-          </div>
-          <p className="text-fg-2">{t("outbox.subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <RoleNav role={role} current="outbox" />
-          <LanguageSwitch />
-          <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-            {t("auth.signOut")}
-          </Button>
-        </div>
-      </header>
+    <AppShell role={role} current="outbox" alias={alias}>
+      <PageHeader title={t("outbox.title")} subtitle={t("outbox.subtitle")} badges={<Badge tone="ok">{t("pulse.live")}</Badge>} />
 
-      <aside aria-label={t("outbox.banner.title")} className="flex flex-col gap-1 rounded-lg border border-line-strong bg-surface-1 p-4">
-        <p className="font-semibold">{t("outbox.banner.title")}</p>
+      <aside
+        aria-label={t("outbox.banner.title")}
+        className="flex flex-col gap-1 rounded-md border border-line-strong border-s-[6px] border-s-orange bg-surface-1 p-4"
+      >
+        <p className="font-bold">{t("outbox.banner.title")}</p>
         <p className="text-fg-2">{t("outbox.banner.body")}</p>
       </aside>
 
@@ -96,6 +84,6 @@ export function OutboxScreen({ role }: OutboxScreenProps) {
           )}
         </div>
       </Loadable>
-    </main>
+    </AppShell>
   );
 }

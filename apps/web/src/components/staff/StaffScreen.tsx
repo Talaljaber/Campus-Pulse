@@ -5,7 +5,6 @@ import { useFlagEvents } from "@/hooks/useFlagEvents";
 import { useIncidents } from "@/hooks/useIncidents";
 import { useMapBuildings } from "@/hooks/useMapBuildings";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
-import { useSignOut } from "@/hooks/useSignIn";
 import { useTicketDetail } from "@/hooks/useTicketDetail";
 import { useTicketQueue } from "@/hooks/useTicketQueue";
 import { useT, type DictKey } from "@/i18n";
@@ -14,10 +13,9 @@ import { incidentView } from "@/lib/incidents";
 import type { StaffErrorKind } from "@/lib/staff/service";
 import { filterTickets, type QueueFilter } from "@/lib/staff/tickets";
 import { useNow } from "../explain/useNow";
-import { RoleNav } from "../shell/RoleNav";
+import { AppShell } from "../shell/AppShell";
+import { PageHeader } from "../shell/PageHeader";
 import { Badge } from "../ui/Badge";
-import { Button } from "../ui/Button";
-import { LanguageSwitch } from "../ui/LanguageSwitch";
 import { Loadable } from "../ui/Loadable";
 import { Select } from "../ui/Select";
 import { TabPanel, Tabs } from "../ui/Tabs";
@@ -32,6 +30,8 @@ import { TicketQueue } from "./TicketQueue";
 /** Props for {@link StaffScreen}. */
 export interface StaffScreenProps {
   role: "staff" | "admin";
+  /** The signed-in user's alias, for the header greeting. */
+  alias?: string | null;
   /** The staff member's office code (D-005). Null for an admin, who sees every office. */
   office: string | null;
 }
@@ -46,10 +46,9 @@ const ID_BASE = "staff";
  * data hooks to presentational components. Which rows appear is decided by row-level security
  * in the database, never by filtering here.
  */
-export function StaffScreen({ role, office }: StaffScreenProps) {
+export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
   const t = useT();
   const toast = useToast();
-  const signOut = useSignOut();
   const officeLabel = useOfficeLabel();
   const clock = useNow();
   const now = new Date(clock ?? 0);
@@ -99,22 +98,15 @@ export function StaffScreen({ role, office }: StaffScreenProps) {
   }));
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 p-4 sm:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold">{t("staff.title")}</h1>
+    <AppShell role={role} current="staff" alias={alias}>
+      <PageHeader
+        title={t("staff.title")}
+        badges={
           <Badge tone="info" icon={null}>
             {office ? t("staff.office", { office: officeLabel(office) }) : t("staff.allOffices")}
           </Badge>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <RoleNav role={role} current="staff" />
-          <LanguageSwitch />
-          <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-            {t("auth.signOut")}
-          </Button>
-        </div>
-      </header>
+        }
+      />
 
       <Tabs items={items} value={tab} onChange={(id) => setTab(id as TabId)} label={t("staff.tabs.label")} idBase={ID_BASE} />
 
@@ -192,6 +184,6 @@ export function StaffScreen({ role, office }: StaffScreenProps) {
           <FlagsPanel events={flags.events} audience={role} />
         </Loadable>
       </TabPanel>
-    </main>
+    </AppShell>
   );
 }

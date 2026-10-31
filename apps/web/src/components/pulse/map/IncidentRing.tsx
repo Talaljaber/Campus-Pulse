@@ -43,12 +43,15 @@ export function IncidentRing({ x, y, priority, reportCount }: IncidentRingProps)
   const reduced = usePrefersReducedMotion();
   const color = toneColor(PRIORITY_TONE[priority] ?? "neutral");
   const r = 18 + Math.min(Math.max(reportCount, 1), 10) * 2;
+  // A second cue next to colour: a high incident has a heavy solid ring, a low one a thin dashed ring.
+  const strokeWidth = priority === "high" ? 4.5 : priority === "low" ? 2.5 : 3.5;
+  const dash = priority === "low" ? "7 5" : undefined;
   const label = t("map.ring", { count: reportCount, priority: labelOf("priority", priority, lang) });
   return (
     <g role="img" aria-label={label} data-animated={reduced ? "false" : "true"} data-priority={priority}>
       <title>{label}</title>
       {!reduced && (
-        <circle className="cp-ring-pulse" cx={x} cy={y} r={r} fill="none" stroke={color} strokeWidth={3} />
+        <circle className="cp-ring-pulse" cx={x} cy={y} r={r} fill="none" stroke={color} strokeWidth={strokeWidth} />
       )}
       <circle
         cx={x}
@@ -56,7 +59,8 @@ export function IncidentRing({ x, y, priority, reportCount }: IncidentRingProps)
         r={r}
         fill={`color-mix(in srgb, ${color} 14%, transparent)`}
         stroke={color}
-        strokeWidth={3}
+        strokeWidth={strokeWidth}
+        strokeDasharray={dash}
       />
       <text
         x={x}

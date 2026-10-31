@@ -3,14 +3,13 @@
 import { useMemo, useState } from "react";
 import { useMapBuildings } from "@/hooks/useMapBuildings";
 import { usePulse } from "@/hooks/usePulse";
-import { useSignOut } from "@/hooks/useSignIn";
 import { useLang, useT, type DictKey } from "@/i18n";
 import { dotsOf, openIncidents, ringsOf } from "@/lib/pulse/view";
-import { RoleNav } from "../shell/RoleNav";
+import { AppShell } from "../shell/AppShell";
+import { PageHeader } from "../shell/PageHeader";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
-import { LanguageSwitch } from "../ui/LanguageSwitch";
 import { Loadable } from "../ui/Loadable";
 import { useToast } from "../ui/Toast";
 import { EventFeed } from "./EventFeed";
@@ -21,6 +20,8 @@ import { CampusMap, IncidentRing, MapLegend, RequestDot } from "./map";
 export interface PulseScreenProps {
   /** Decides which links the header offers (an admin also gets the model lab). */
   role: "staff" | "admin";
+  /** The signed-in user's alias, for the header greeting. */
+  alias?: string | null;
 }
 
 /**
@@ -29,11 +30,10 @@ export interface PulseScreenProps {
  * incident list to it. It only wires `usePulse` to presentational components; staff see the
  * rows of their office and an admin sees all, by row-level security.
  */
-export function PulseScreen({ role }: PulseScreenProps) {
+export function PulseScreen({ role, alias = null }: PulseScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const toast = useToast();
-  const signOut = useSignOut();
   const buildings = useMapBuildings();
   const pulse = usePulse();
   const [selected, setSelected] = useState<string | null>(null);
@@ -50,23 +50,8 @@ export function PulseScreen({ role }: PulseScreenProps) {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-4 p-4 sm:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold">{t("pulse.title")}</h1>
-            <Badge tone="ok">{t("pulse.live")}</Badge>
-          </div>
-          <p className="text-fg-2">{t("pulse.subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <RoleNav role={role} current="pulse" />
-          <LanguageSwitch />
-          <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-            {t("auth.signOut")}
-          </Button>
-        </div>
-      </header>
+    <AppShell role={role} current="pulse" alias={alias} width="wide">
+      <PageHeader title={t("pulse.title")} subtitle={t("pulse.subtitle")} badges={<Badge tone="ok">{t("pulse.live")}</Badge>} />
 
       <Loadable state={pulse.load} onRetry={pulse.reload} lines={6}>
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -104,6 +89,6 @@ export function PulseScreen({ role }: PulseScreenProps) {
           </div>
         </div>
       </Loadable>
-    </main>
+    </AppShell>
   );
 }
