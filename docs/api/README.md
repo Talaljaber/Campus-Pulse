@@ -122,8 +122,8 @@ Every non-2xx response has the same body:
 | 401 | `unauthenticated` | a missing or wrong service token; a bad webhook signature |
 | 403 | `forbidden` | domain `Unauthorized`: the role or office is not allowed |
 | 404 | `not_found` | domain `NotFound`: unknown request, prediction, ticket or incident |
-| 409 | `clarification_budget_exceeded` | domain `ClarificationBudgetExceeded`: no question pending for this request |
-| 422 | `invalid_input` | body, query or path validation; domain `InvalidInput` (e.g. empty text, bad CSV columns) |
+| 409 | `clarification_budget_exceeded` | domain `ClarificationBudgetExceeded`: no question pending for this request (also a third answer) |
+| 422 | `invalid_input` | body, query or path validation; domain `InvalidInput` (e.g. blank text, bad CSV columns, a clarify `question_id` that is not the pending question, blank `free_text`) |
 | 500 | `internal_error` | anything unexpected |
 | 501 | `not_implemented` | an optional extra (`/v1/admin/*`) that is not built in this deployment |
 | 503 | `artifact_unavailable` | domain `ArtifactError`: the model artifact is missing or failed its checksum |
@@ -133,9 +133,11 @@ The mapping lives in `dto.DOMAIN_ERROR_CODES` and `dto.error_code_for(exc)`, and
 
 These errors are degraded inside the use cases and never reach the client:
 - `LLMUnavailable`: falls back to tier 0.
-- `SinkError`: recorded in `ticket_links.last_error`.
-- `NotificationError` and `RecipientNotAllowed`: recorded as outbox `failed` / `rejected`.
-- `CalendarUnavailable`: falls back to the slots table.
+- `SinkError`: recorded in `ticket_links.last_error` (D-011); the next sink still runs.
+- `NotificationError` and `RecipientNotAllowed`: recorded as outbox `failed` / `rejected`, with the reason in `outbox.error` (D-011).
+- `CalendarUnavailable` (or no free slot, or a refused attendee): the ticket alone, `action.type: ticket`, "couldn't book" message.
+- `StoreError` from the FAQ search: a ticket instead of an answer. From the Pulse step (embedding upsert, incident detection): skipped.
+- Any explainer failure: `explanation: null` + flag `explanation_failed`.
 
 <a id="clarification-llm-understanding"></a>
 ## Clarification, LLM tier and understanding
@@ -213,10 +215,10 @@ Every LLM call (oracle and understander) is logged through the `CostLogger` port
 <a id="actions-side-effects"></a>
 ## Actions and side effects (tickets, emails, bookings)
 
-What `/v1/triage` (and `/v1/feedback` after a confirmation) *does* once the labels are decided. The
-building blocks exist (P3.6, P3.8, P4.4, P4.6, P4.7); `ActUseCase` wires them into the routes in
-P4.8 and the webhook route arrives in P4.9, so the side effects below are the contract those tasks
-implement. Integration details: [docs/integrations.md](../integrations.md).
+What `/v1/triage` (and `/v1/feedback` after a confirmation) *does* once the labels are decided.
+`ActUseCase` (P4.8) implements this; the routes arrive in P3.12 and the webhook route in P4.9.
+Integration details: [docs/integrations.md](../integrations.md). Use-case reference:
+[Use cases](#use-cases).
 
 ### Routing (`action.type`, `action.tags`) — `config/actions.yaml`, UD-1
 
@@ -236,7 +238,14 @@ implement. Integration details: [docs/integrations.md](../integrations.md).
 - **`human_review` (provisional):** a ticket only, `action.provisional: true`, tag `unconfirmed`;
   the cell's own action is kept as tag `deferred:<kind>` (e.g. `deferred:booking`) and runs only
   after staff confirm via `/v1/feedback`.
-- **`faq_answer`:** answered from the FAQ when the best match ≥ `tau_faq`, otherwise a ticket.
+- **`faq_answer`:** answered from the FAQ when the best match ≥ `tau_faq` (`action.faq`, `action.message` =
+  the retrieved answer, "Source: <url>" and `[demo]` for placeholder entries; no ticket), otherwise a
+  ticket with "I'm not sure. I've opened a ticket so a person can answer." (`action.type: ticket`).
+- **`booking`:** `action.booking` `{advisor_name, starts_at, ends_at, room: null}`; if no slot can be
+  booked, `action.type` is `ticket` and the message says an advisor will contact the student.
+- **`action.message`:** `understanding.student_reply` for tickets; the FAQ answer; the booking
+  confirmation; for a safety alert always the safety instruction ("…call campus security now (demo) or
+  911…"). Texts live in `config/templates/messages.yaml` (EN + Jordanian Arabic).
 
 ### Side effects
 
@@ -246,20 +255,37 @@ implement. Integration details: [docs/integrations.md](../integrations.md).
 | Linear issue | each ticket, when `LINEAR_API_KEY` is set (team CDP, label = category, due date = SLA date) | `action.external[]` `{sink: "linear", external_id, url}`. A Linear failure never fails triage. |
 | Ticket status from Linear | a signed `POST /v1/integrations/linear/webhook` that changes the issue state | ticket status; the student gets an in-app `notifications` row |
 | Advisor booking | Academic Support × high, not provisional | `action.booking`; the slot's `booked_by`; a `cases` row |
-| Email | booking confirmation (student + advisor), safety/transport alerts, resolution notices | `outbox` row (`sent`, `provider_id` = Message-ID) |
-| In-app message | status changes and replies to students (D-006) | `notifications` row for the alias (Realtime) |
+| Email | booking confirmation (to `DEMO_STUDENT_INBOX` + the advisor's demo inbox); safety and transport alerts (to `DEMO_OFFICE_INBOX`); resolution notices (P4.9) | `outbox` row (`sent` + `provider_id` = Message-ID, `rejected`/`failed` + `error`, or `deferred` + `error` over the daily cap) |
+| In-app message | one per action with a ticket or booking: `understanding.student_reply` (D-006); status changes (P4.9) | `notifications` row for the alias (Realtime), payload below; plus an `outbox` row `in_app` |
+| Audit events | every triage outcome and action | `events` (`triage.decided`, `triage.ask`, `triage.out_of_scope`, `triage.distress`, `act.ticket`, `act.booking`, `act.booking_refused`, `act.safety_alert`, `act.transport_alert`, `act.finalized`, `incident.new`/`incident.attach`) |
 
 ### Allow-list behaviour (never contacting real people)
 
 - Every email recipient and every booking attendee must be on `DEMO_EMAIL_ALLOWLIST`: an exact,
   case-insensitive match with no plus-address or subdomain wildcards. **An empty list rejects all.**
-- A rejected email is **not sent**: an `outbox` row with `status: "rejected"` is written, and the
-  reason is in the `events` audit log (`action: outbox.rejected`). A provider failure is an `outbox`
-  row with `status: "failed"` (`events` `outbox.failed`). Neither changes the HTTP response: the
-  triage still succeeds.
+- A rejected email is **not sent**: an `outbox` row with `status: "rejected"` is written with the
+  reason in `error` (and in the `events` audit log, `action: outbox.rejected`). A provider failure is an
+  `outbox` row with `status: "failed"` and `error` (`events` `outbox.failed`). Neither changes the HTTP
+  response: the triage still succeeds.
 - A booking with a non-allow-listed attendee is refused before the slot is claimed.
 - In-app messages go to an alias inside our database and are not checked, but are recorded in
   `outbox` the same way.
+
+<a id="notifications-payload"></a>
+### Notifications payload (`notifications` rows the student chat reads)
+
+Students receive updates through Realtime on `notifications` (RLS: their alias), never through
+`outbox`. Each row is `(alias, kind, payload jsonb)`. The chat (`noticeFromNotification`) prints
+`{status, title}` as "Your ticket <title> is now <status>", prints `message` verbatim, and shows
+"new update" for anything else. The backend keeps to those keys:
+
+| `kind` | Written by | `payload` keys | Chat shows |
+| --- | --- | --- | --- |
+| `message` | `InAppNotifier` (every in-app `Notifier.send`; today: `ActUseCase` replies) | `ref` (uuid, also in `outbox.provider_id` as `inapp:<ref>`), `message` (the text), `subject`, `priority` (`low`/`medium`/`high` or null), `flags` (list) | `message` verbatim. There is **never** a `status` key. |
+| `ticket_status` | `SyncTicketUseCase` / dashboard status change (**P4.9, next batch**; contract fixed here) | `ticket_id`, `status` (a `tickets.status` value), `title` (the ticket title), `message` (optional sentence) | "Your ticket <title> is now <status>" |
+| `incident` | incident broadcast (**P4.10**) | `incident_id`, `message` | `message` verbatim |
+
+Free text always goes in `message`; only ticket-status updates carry `status`.
 
 ### Anti-gaming flags (P3.6)
 
@@ -270,6 +296,68 @@ implement. Integration details: [docs/integrations.md](../integrations.md).
 - `priority_gaming_suspected`: for this alias, after at least `GAMING_MIN_REQUESTS` (5) requests,
   ≥ `GAMING_CLAIM_RATIO` (0.8) of them claim urgency and ≤ `GAMING_HIGH_RATIO_MAX` (0.2) of those
   claims were really high; or 2 injection attempts. Admin only; no penalty.
+
+<a id="use-cases"></a>
+## Use cases (application layer)
+
+What the routes (P3.12) call. All return the DTOs in `application/dto.py`; none imports FastAPI.
+Wiring for tests: `services/ai/tests/fixtures/containers.py::build_test(**overrides)`.
+
+### `TriageUseCase.run(cmd: TriageRequest, *, debug_members=False) -> TriageResponse` — `use_cases/triage.py`
+
+1. `TriageClassifier.classify(text, picked location)`. Blank text → `InvalidInput` **before any write**.
+2. `Repository.save_request` (status `received`, the normalized request).
+3. `DecisionFlow.run` (below) with a one-question budget.
+
+`TriageClassifier` (`use_cases/ports.py`) is the `TriageCore.classify` surface (ML P1.15); until it is
+merged the tests use `FakeCore`.
+
+### `DecisionFlow.run(...)` — ARCHITECTURE §2.1 [4'], [7]–[14]
+
+| Outcome | Writes | Response |
+| --- | --- | --- |
+| distress (flag) | prediction (tier `human`), review item `distress`, request status `distress`, event | `status: distress`, message with 911 |
+| out of scope | pending clarification `topic`, status, event | topic chips + rephrase message |
+| ask | pending clarification, status `needs_clarification`, event | question + provisional labels and sets |
+| accept / after LLM | prediction, actions (`ActUseCase.run`), embedding + incident (when wired), status `decided`, event | full contract |
+| human review | prediction, review item `needs_review`, provisional actions, status `human_review`, event | `needs_review`, message "A staff member will confirm this…" |
+
+- The LLM tier runs only when `ENABLE_LLM` (and a tier) is on and the request has no `injection_attempt`.
+- `policy_path` holds the last rule of each policy evaluation, e.g. `["d_ask", "c_accept"]`,
+  `["e_escalate", "f_human"]`, `["a_gibberish", "c_accept"]` (topic chip answered).
+- The final priority of a `safety` request is always `high` (re-asserted after the core).
+- The explanation: the `Explainer` (ML P3.4) when wired; until then the core's evidence and neighbours
+  with no `top_tokens` and no counterfactual.
+- Pulse ([12b]/[13]) runs only with `Pulse(vectors, encoder, incidents)` wired: the request embedding is
+  upserted into `requests` (meta `building, room, category, priority, created_at`) and an incident id
+  goes into `action.incident_id`. Merging member tickets and the broadcast are P4.10.
+
+### `ClarifyUseCase.run(request_id, cmd: ClarifyRequest, *, debug_members=False) -> TriageResponse` — `use_cases/clarify.py`
+
+- The pending question is the last unanswered one. Option answers must be one of its saved options;
+  free text is stored as `text:<text>` and appended to the request text (normalization and guards run
+  again).
+- The core is re-run with the constraints of **every** answer so far (LD-29), then `DecisionFlow`
+  continues from [7] with `clarified: true`.
+- Budget: one question, two when the first answer is `not_sure`; every answer counts, so afterwards the
+  policy never asks again. A topic chip answer drops `gibberish` (the student named the topic).
+- Errors: unknown request or option → `NotFound` (404); no pending question (e.g. a third answer) →
+  `ClarificationBudgetExceeded` (409); a `question_id` that is not the pending one, or blank free text →
+  `InvalidInput` (422).
+
+### `ActUseCase` — `use_cases/act.py`
+
+- `plan_for(pred, provisional) -> ActionPlan`: the routing plan (prediction flags + `safety` + fired
+  evidence names).
+- `run(pred, request, provisional, understanding=None) -> ActionOut`: see
+  [Actions and side effects](#actions-side-effects). A ticket is saved through the repository first,
+  then pushed to each sink; the record sink (`supabase`) is not a link.
+- `finalize(ticket) -> list[ActionOut]`: after staff confirm a provisional ticket (P3.11 calls it):
+  re-plans from the ticket's labels, clears `unconfirmed` and `deferred:*`, mirrors to the sinks
+  (`update_status`), and fires what waited (booking; transport alert; a safety alert only if it did not
+  fire already). `[]` for a ticket that is not provisional.
+- Config: `config/act.yaml` (`faq_top_k`, booking department and office hours), `tau_faq`
+  (FrozenConfig), `DEMO_STUDENT_INBOX`, `DEMO_OFFICE_INBOX` (unset → that email is skipped).
 
 ## Optional extras
 
