@@ -1,0 +1,45 @@
+# Render blueprint (LD-4). Build context is the repo root.
+services:
+  - type: web
+    name: campuspulse-ai
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./services/ai/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: ORT_INTRA_OP_THREADS
+        value: "1"
+      - key: ENABLE_LLM
+        value: "false"
+      - key: AI_SERVICE_TOKEN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_TIER1_MODEL
+        sync: false
+      - key: LLM_DAILY_BUDGET_USD
+        sync: false
+      - key: GMAIL_SMTP_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: DEMO_EMAIL_ALLOWLIST
+        sync: false
+      - key: LINEAR_API_KEY
+        sync: false
+      - key: LINEAR_WEBHOOK_SECRET
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
