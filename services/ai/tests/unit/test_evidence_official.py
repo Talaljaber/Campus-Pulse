@@ -31,7 +31,10 @@ def test_wrappers_never_change_flags(official: list[tuple[dict[str, str], dict[s
     assert len(per_scenario) == 42 and all(len(v) == 1 for v in per_scenario.values())
 
 
-def test_high_cues_separate_official_priorities(official: list[tuple[dict[str, str], dict[str, bool]]]) -> None:
+Official = list[tuple[dict[str, str], dict[str, bool]]]
+
+
+def test_high_cues_separate_official_priorities(official: Official) -> None:
     for row, flags in official:
         has_cue = any(flags[c] for c in HIGH_CUES)
         assert has_cue == (row["priority"] == "high"), (row["scenario_id"], row["text_norm"])

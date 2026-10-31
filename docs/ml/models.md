@@ -668,3 +668,42 @@ medium 0.75) fires nothing: its label rests on the model. The separation is the 
 and it is also the shortcut risk (LD-34): P2.5 probes break "today → high", and P2.9 masks the deadline
 lexicon. Fixtures: `tests/fixtures/evidence_fixtures.yaml` (one EN and one AR positive per feature, new
 sentences) and 8 Arabizi positives in `test_evidence_official.py`.
+
+## 12. Conformal prediction: `LACConformal` (`adapters/uncertainty/conformal.py`, P1.14)
+
+```python
+from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
+lac = LACConformal("category", alpha=cfg.conformal.alpha_category)
+lac.calibrate(oof_probs, oof_true_labels, groups=oof_cv_groups)        # train.py stage B (P1.16 / P2)
+lac.q, lac.n_calib, lac.n_groups                                       # -> config.json conformal.q_category, n_calib
+lac = LACConformal.from_quantile("category", cfg.conformal.alpha_category, cfg.conformal.q_category, cfg.conformal.n_calib)
+s = lac.predict_set(p_cat); lac.last_was_empty                         # TriageCore: flag "empty_set"
+s, was_empty = lac.predict_set_with_flag(p_cat)                        # same, without shared state (API threads)
+lac.save(model_dir / "conformal" / "category"); LACConformal.load(model_dir / "conformal" / "category")
+```
+
+- **Score** `1 − p(true label)`; **threshold** `q` = the ⌈(n+1)(1−α)⌉-th smallest calibration score (capped at
+  n); **set** = {labels with `p ≥ 1 − q`} (a 1e-12 tolerance keeps a label that sits exactly on the edge);
+  **empty set** → {argmax} and `last_was_empty = True`.
+- `calibrate` raises `ValueError` with fewer than ⌈1/α⌉ examples (10 at α = 0.10), on length mismatches or a
+  label missing from its vector; `predict_set` before calibration raises `ValueError`. `groups` only set
+  `n_groups`: one global quantile per target (no Mondrian; `MondrianByLang` only if P2.8 demands it, §3.5).
+- **Files:** `conformal/<target>/conformal.json` = `{method: "lac", target, alpha, q, n_calib, n_groups}`
+  (one directory per target, because the port's `load(dir)` takes no target; Appendix C's single
+  `conformal/quantiles.json` is replaced by these two files). The quantiles also live in `config.json`, so
+  `from_quantile` can rebuild the predictors from `FrozenConfig` alone.
+- **Synthetic check** (`tests/unit/test_conformal.py`; a calibrated 6-class model, p ~ Dirichlet(0.5),
+  labels drawn from p, seed 42, n = 2,000 calibration + 2,000 test):
+
+  | α | q | test coverage | mean set size | empty sets |
+  | --- | --- | --- | --- | --- |
+  | 0.05 | 0.937 | 0.952 | 3.57 | 0 % |
+  | 0.10 | 0.901 | 0.904 | 2.98 | 0 % |
+  | 0.20 | 0.833 | 0.808 | 2.18 | 0 % |
+  | 0.30 | 0.774 | 0.713 | 1.69 | 0.15 % |
+
+  Large sets here come from the deliberately flat toy model, not from the method.
+- **Caveat for the report (LD-32):** calibration scores are the frozen-fold OOF scores of the 432 official
+  rows (+ reviewed augmentation), which are 42 unique texts in 30 groups. The scores cluster by scenario,
+  so the effective n is about 30 and the 1 − α guarantee is approximate. `n_groups` is stored so the report
+  can state it.

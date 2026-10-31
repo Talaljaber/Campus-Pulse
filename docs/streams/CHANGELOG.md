@@ -716,3 +716,12 @@
 - **Acceptance:** `pytest services/ai/tests/unit/test_evidence.py -q` → `22 passed`. Extra: `test_evidence_official.py` → `11 passed` (wrapper invariance on all 42 scenarios; high ⇔ a high cue on the official data; 8 Arabizi positives; `info_request` vs `fault_report`; `evidence_row`).
 - **Limitations / TODO / known issues:** on the official data features 1–5 separate high perfectly, which is the labeller rule and also the LD-34 shortcut risk (P2.5/P2.9 measure it). TR-S06 fires no feature. `عاجل` is an urgency marker that the P1.1 stripper does not remove; the extractor skips it (and courtesy words) before the `info_request` start patterns so stated urgency cannot change a flag. `ambient_fixture` matches the word `light` anywhere.
 - **Affects streams:** ML (P1.13 `LogisticPriorityHead`), Backend/UI (evidence spans for explanations).
+
+### P1.14 — `LACConformal`  (ML, 2026-10-31)
+- **What now exists:** `adapters/uncertainty/conformal.py::LACConformal`, the hand-rolled LAC conformal predictor (numpy only, no mapie at runtime). Also fixes two P1.12 test lines that were over ruff's line length.
+- **Public interfaces added:** `LACConformal(target, alpha)`, `.calibrate(probs, y, groups)`, `.predict_set(p) -> PredictionSet`, `.last_was_empty`, `.predict_set_with_flag(p) -> (PredictionSet, bool)`, `.q/.n_calib/.n_groups`, `.save(dir)`, `LACConformal.load(dir)`, `LACConformal.from_quantile(target, alpha, q, n_calib, n_groups=0)` ([docs/ml/models.md §12](../ml/models.md#12-conformal-prediction-lacconformal-adaptersuncertaintyconformalpy-p114)).
+- **How to use it:** `lac = LACConformal("priority", 0.10); lac.calibrate(oof_p, oof_y, groups); lac.predict_set(p_pri)`.
+- **Config / env added:** none (reads `FrozenConfig.conformal.*` through the caller).
+- **Acceptance:** `pytest services/ai/tests/unit/test_conformal.py -q` → `4 passed` (coverage 0.904 at α = 0.10, n = 2,000, within ±0.03; set size monotone in α; empty → argmax + flag; save/load round trip; the n < 1/α `ValueError` is asserted inside the monotonicity test).
+- **Limitations / TODO / known issues:** save layout is `conformal/<target>/conformal.json` (one dir per target) instead of Appendix C's `conformal/quantiles.json`, because the port's `load(dir)` has no target argument. `predict_set_with_flag` is an addition for thread-safe API use (the spec's stateful `last_was_empty` is kept). Effective calibration n ≈ 30 groups on the official data (LD-32).
+- **Affects streams:** ML (P1.13/P1.15/P1.16, P2.8 coverage), Backend (sets drive ASK/ESCALATE in `DecisionPolicy`).
