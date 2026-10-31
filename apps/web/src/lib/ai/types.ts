@@ -45,3 +45,4 @@ export type Entities = S["EntitiesOut"];
 
 export type Incident = S["IncidentOut"];
 export type ErrorResponse = S["ErrorResponse"];
+export type HealthResponse = S["HealthResponse"];
