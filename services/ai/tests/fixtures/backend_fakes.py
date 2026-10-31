@@ -12,6 +12,7 @@ edit the same file; P3.8 re-exports these from `fakes.py` for `build_test()`.
 - `FakeNotifier`: a `Notifier` that records every message and can be scripted to fail.
 - `make_outbox(...)`: an `OutboxMessage` ready to send.
 - `FakeSink`, `make_ticket(...)`: a scripted `TicketSink` and a ticket builder.
+- `FakeCalendar`: a `CalendarProvider` with one fixed slot that records `book` calls.
 """
 
 from __future__ import annotations
@@ -33,9 +34,11 @@ from campuspulse_ai.domain.entities import (
     OutboxMessage,
     Ticket,
 )
+from campuspulse_ai.domain.errors import CalendarUnavailable
 from campuspulse_ai.domain.labels import CATEGORY_LABELS, PRIORITY_LABELS, Category, Priority
 from campuspulse_ai.domain.values import (
     ArtifactVersion,
+    Booking,
     EvidenceVector,
     GuardVerdict,
     InboundEvent,
@@ -43,9 +46,11 @@ from campuspulse_ai.domain.values import (
     Location,
     Money,
     NormalizedRequest,
+    OfficeHours,
     PredictionSet,
     ProbabilityTarget,
     ProbVector,
+    Slot,
     TicketLink,
     TicketStatus,
     Tier,
@@ -308,3 +313,34 @@ def make_ticket(
         title=title,
         body=body,
     )
+
+
+@dataclass
+class FakeCalendar:
+    """A CalendarProvider: `find_slot` returns `slot`, `book` records the call and books it.
+
+    `unavailable` makes `find_slot` raise CalendarUnavailable; `book_unavailable` does the same
+    for `book`. Attendees are NOT checked here: the allow-list must be enforced before this point.
+    """
+
+    slot: Slot | None = None
+    unavailable: bool = False
+    book_unavailable: bool = False
+    finds: int = 0
+    booked: list[tuple[Slot, tuple[str, ...], str]] = field(default_factory=list)
+
+    def find_slot(
+        self, advisor_ids: Sequence[str], window: tuple[datetime, datetime], office_hours: OfficeHours
+    ) -> Slot | None:
+        self.finds += 1
+        if self.unavailable:
+            raise CalendarUnavailable("fake calendar down")
+        return self.slot
+
+    def book(self, slot: Slot, attendees: Sequence[str], title: str) -> Booking:
+        if self.book_unavailable:
+            raise CalendarUnavailable("fake calendar down")
+        self.booked.append((slot, tuple(attendees), title))
+        return Booking(
+            slot=slot, attendees=tuple(attendees), title=title, provider="fake", external_id=slot.id
+        )
