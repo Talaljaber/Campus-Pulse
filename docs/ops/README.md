@@ -119,7 +119,25 @@ TODO (P0.8/P0.10).
 
 ## CI
 
-TODO (GitHub Actions jobs and what each checks).
+Workflow: `.github/workflows/ci.yml`. No secrets are used or needed (Supabase-marked tests stay deselected).
+
+**Triggers:** push and pull request to `main` and `stream/**`, plus manual `workflow_dispatch`. A newer run on the same ref cancels the older one (`concurrency`). The repo is private, so minutes are scarce: pip and pnpm-store caches, path filters, docker on `main` only. Playwright is not run in CI yet (browser download, needs a running server).
+
+A `changes` job (`dorny/paths-filter`) gates the others: `python` and `data-gates` run on changes to `services/`, `scripts/`, `data/`, `config/`, `pyproject.toml` or the workflows; `api-contract` on those plus `apps/web/`, `docs/api/` or the lockfile; `web` on `apps/web/`, `services/ai/openapi.json`, the lockfile or the workflows. Skipped jobs show as "skipped", which branch protection accepts.
+
+| Job | Checks | Reproduce locally (repo root, venv active) |
+|---|---|---|
+| `python (3.11)`, `python (3.13)` | ruff, `mypy --strict`, pytest without `train`, `artifacts`, `supabase` | `ruff check .`, `mypy --strict services/ai/campuspulse_ai`, `pytest services/ai/tests -q -m "not train and not artifacts and not supabase"` |
+| `data-gates` (3.11) | `data/clean` regenerates byte-identically (LD-39), data audit, leakage gate | `python scripts/test_clean.py`, then `git diff --exit-code -- data/clean` (on Windows add `--ignore-cr-at-eol`, since pandas writes CRLF, then `git checkout -- data/clean`), `python scripts/test_data_audit.py`, `python scripts/check_leakage.py --official` |
+| `api-contract` (3.11) | `docs/api/endpoints.md` is current, `services/ai/openapi.json` equals a fresh mock export, generated web types are current (only once `apps/web` has a `gen:types` script) | `python scripts/gen_api_docs.py --check`, `python -m campuspulse_ai.frameworks.export_openapi --mock --out .tmp/openapi.json` then `diff .tmp/openapi.json services/ai/openapi.json`, `cd apps/web && pnpm gen:types && git diff --exit-code -- apps/web` |
+| `web` (Node 22) | typecheck, eslint, vitest, `next build` | `cd apps/web && pnpm install --frozen-lockfile && pnpm typecheck && pnpm lint && pnpm test --run && pnpm build` |
+| `docker` (push to `main` only) | the AI image builds, not pushed | `docker build -f services/ai/Dockerfile .` |
+
+Notes:
+- Run pnpm from `apps/web`. The `packageManager` pin (`pnpm@10.17.0`, via corepack) lives in `apps/web/package.json` and the repo root has no `package.json`, so root-level `pnpm --filter web ...` uses whatever pnpm is installed.
+- `pnpm test` is plain `vitest` (watch mode), so CI and scripts pass `--run`.
+- Enable Actions for the private repo (Settings, Actions, General). To require the checks, add branch protection on `main` with `python (3.11)`, `python (3.13)`, `data-gates`, `api-contract` and `web`.
+- Not covered yet: a Windows leg (CRLF, `utf-8-sig`, paths) and the P1.19 `artifacts` job. `ruff format --check` is not run because the repo has not adopted the formatter.
 
 ## Troubleshooting
 

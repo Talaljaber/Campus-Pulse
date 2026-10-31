@@ -1,0 +1,191 @@
+# CampusPulse CI. No secrets are used or needed: Supabase-marked tests stay deselected.
+# Private repo, so minutes are scarce: caches, cancel-in-progress, path filters, docker on main only.
+name: ci
+
+on:
+  push:
+    branches: [main, "stream/**"]
+  pull_request:
+    branches: [main, "stream/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_REF: "3.11" # LD-1 reference Python for the gates
+
+jobs:
+  # Decide which jobs are worth running. Skipped jobs report as "skipped" (counted as passing by branch protection).
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python: ${{ steps.f.outputs.python }}
+      contract: ${{ steps.f.outputs.contract }}
+      web: ${{ steps.f.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            python:
+              - 'services/**'
+              - 'scripts/**'
+              - 'data/**'
+              - 'config/**'
+              - 'pyproject.toml'
+              - '.github/workflows/**'
+            contract:
+              - 'services/**'
+              - 'scripts/gen_api_docs.py'
+              - 'docs/api/**'
+              - 'apps/web/**'
+              - 'pnpm-lock.yaml'
+              - '.github/workflows/**'
+            web:
+              - 'apps/web/**'
+              - 'services/ai/openapi.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '.github/workflows/**'
+
+  python:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        py: ["3.11", "3.13"]
+    name: python (${{ matrix.py }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py }}
+          cache: pip
+          cache-dependency-path: services/ai/requirements*.txt
+      - run: pip install -r services/ai/requirements-dev.txt -e services/ai
+      - run: ruff check .
+      - run: mypy --strict services/ai/campuspulse_ai
+      - run: pytest services/ai/tests -q -m "not train and not artifacts and not supabase"
+
+  data-gates:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_REF }}
+          cache: pip
+          cache-dependency-path: services/ai/requirements*.txt
+      - run: pip install -r services/ai/requirements-dev.txt -e services/ai
+      # LD-39: regenerating data/clean must be a no-op. clean_data.py is never edited.
+      - name: Regenerate data/clean and require no diff
+        run: |
+          python scripts/test_clean.py
+          git diff --exit-code -- data/clean
+      - run: python scripts/test_data_audit.py
+      - run: python scripts/check_leakage.py --official
+
+  api-contract:
+    needs: changes
+    if: needs.changes.outputs.contract == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_REF }}
+          cache: pip
+          cache-dependency-path: services/ai/requirements*.txt
+      - run: pip install -r services/ai/requirements-dev.txt -e services/ai
+      - run: python scripts/gen_api_docs.py --check
+      - name: openapi.json matches a fresh mock export
+        run: |
+          python -m campuspulse_ai.frameworks.export_openapi --mock --out .tmp/openapi.json
+          diff -u services/ai/openapi.json .tmp/openapi.json
+      # Generated TS types: only when apps/web defines a gen:types script (added with the web API client).
+      - name: Detect gen:types
+        id: gt
+        run: |
+          if node -e "process.exit(require('./apps/web/package.json').scripts?.['gen:types'] ? 0 : 1)"; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "apps/web has no gen:types script yet; skipping the generated-types check"
+          fi
+      - if: steps.gt.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.gt.outputs.present == 'true'
+        run: corepack enable
+        working-directory: apps/web
+      - if: steps.gt.outputs.present == 'true'
+        run: pnpm install --frozen-lockfile
+        working-directory: apps/web
+      - if: steps.gt.outputs.present == 'true'
+        name: Regenerate TS types and require no diff
+        run: |
+          pnpm gen:types
+          git diff --exit-code -- apps/web
+        working-directory: apps/web
+
+  web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        # The packageManager pin (pnpm via corepack, D-004) lives in apps/web/package.json,
+        # and the workspace lockfile is found from there.
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      # setup-node's own `cache: pnpm` runs at the repo root, where no pnpm version is pinned; cache the store from apps/web instead.
+      - id: store
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test --run # vitest single run (the script is plain `vitest`)
+      - run: pnpm build
+      # Playwright (apps/web/e2e) is intentionally not run in CI yet: browser download minutes, and it needs a running server.
+
+  docker:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the AI image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/ai/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

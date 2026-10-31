@@ -485,7 +485,7 @@
 <a id="p0-9"></a>
 ## P0.9 — Set up CI (ruff, mypy, pytest on 3.11 and 3.13, tsc, eslint, build)
 
-- [ ] Done
+- [x] Done
 - **Goal:** every push is checked on both supported Pythons and on Windows (the developer's OS and a likely judge OS).
 - **Depends on:** P0.3, P0.3d, P0.3e, P0.6, P0.7, P0.8
 - **Est / Cut:** 0.5 h · Cut: no

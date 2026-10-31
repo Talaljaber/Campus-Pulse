@@ -527,3 +527,12 @@
   - The types must be regenerated after every migration; this is not automated (no Supabase access token for the CLI).
   - Columns with check constraints are typed as `string`, not unions; the UI can narrow them with the label constants.
 - **Affects streams:** UI (typed Supabase client and repos), Foundation (optional CI check that the file is fresh).
+
+### P0.9 — GitHub Actions CI  (foundation, 2026-10-31, commit see git log)
+- **What now exists:** `.github/workflows/ci.yml` with jobs `changes` (path filter), `python` (3.11 and 3.13), `data-gates`, `api-contract`, `web` and `docker` (push to `main` only).
+- **Public interfaces added or changed:** none. Check names for branch protection: `python (3.11)`, `python (3.13)`, `data-gates`, `api-contract`, `web`.
+- **How to use it:** see [docs/ops/README.md](../ops/README.md#ci) for what each job checks and how to reproduce it locally.
+- **Config / env added:** none, no secrets.
+- **Acceptance:** every command run locally: ruff `All checks passed!`; `mypy --strict` `Success: no issues found in 58 source files`; pytest `237 passed, 8 skipped, 38 deselected`; `test_clean.py` `ALL TESTS PASSED` with no diff in `data/clean` apart from CRLF (Windows only); `DATA AUDIT TESTS PASSED`; leakage `0 identical text_norm across groups; 0 cross-group pairs >= 0.8 (max 0.375)`; `gen_api_docs.py --check` up to date; fresh mock export identical to `services/ai/openapi.json`; web typecheck, lint, vitest (`38 passed`) and `next build` pass; `docker build` succeeds. YAML parses. The workflow has not run on GitHub yet.
+- **Limitations / TODO / known issues:** the generated-types check is skipped until `apps/web` defines `gen:types`. No Windows leg, no Playwright, no `artifacts` job (P1.19). `pnpm test` is run with `--run` because the script is plain `vitest`.
+- **Affects streams:** all (keep CI green); UI (add `gen:types` and commit its output); ML (any change to `data/clean` must be a regeneration of `clean_data.py`).
