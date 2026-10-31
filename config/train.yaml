@@ -61,6 +61,9 @@ tau_ood_percentile: 5           # tau_ood = this percentile of OOF max-similarit
 tau_margin: 0.02                # tau_injection / tau_safety = max exemplar similarity over the pool + this (LD-18)
 human_review_min_acc: 0.6       # human_review_maxprob = max-prob below which OOF accuracy < this
 
+memory_threshold:               # scripts/measure_memory_threshold.py -> knn.memory_min_sim (by hand)
+  cross_quantile: 0.995         # the threshold sits above 99.5 % of cross-scenario pair similarities
+
 eval:                           # evaluate.py (P2.8/P2.9); never copied into config.json
   ece_bins: 10
   langs: [en, ar, arabizi]
@@ -125,7 +128,7 @@ knn:
   k: 5
   memory_weight_cap: 0.6
   max_memory_neighbors: 2
-  memory_min_sim: 0.80
+  memory_min_sim: 0.91          # measured (reports/memory_threshold.json): above 99.5 % of cross-scenario e5 pairs
   laplace_mass: 1.0             # one pseudo-vote in total, spread evenly over the labels (P1.11)
 
 priority_head:
