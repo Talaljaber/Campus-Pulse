@@ -63,6 +63,7 @@ These override any lead decision or default below that conflicts with them.
   - a `docs/streams/CHANGELOG.md` entry
 
   Agents read the docs, not each other's code ([EXECUTION.md › Documentation](plan/EXECUTION.md#documentation)).
+- <a id="ud-14"></a>**UD-14 Student journey after "send" is future work (2026-10-31).** Add, after the core is stable (the P2 exit gate passed, UD-13 live on the web, deploys green), and not before: rate-or-reopen on resolution (plus FAQ helpful/not helpful), known-issue matching with a campus-status banner, "My requests" with a live timeline, follow-up messages, my appointments, cancel a request, and a notification centre. Planned in [S2_student_journey.md](plan/S2_student_journey.md); not started.
 - <a id="ud-13"></a>**UD-13 Hybrid routing with the student's advisor (2026-10-31).**
   - Confident requests (singleton category and priority sets) go straight to the office, as now.
   - Unsure requests (human review) go to the **student's academic advisor**, not a general staff queue. The advisor confirms the office or forwards the request to another one. That choice is a correction that feeds live learning (P3.11).
@@ -224,6 +225,7 @@ The budget comes from ARCHITECTURE §4.0: 10 days including Sat 31 Oct, slack 0.
 | P5 Frontend | [P5_frontend.md](plan/P5_frontend.md) | 1½ d | Sun 8 – Mon 9 (am) | 23 | 5.75 | 13.5 | 18 |
 | P6 Ship | [P6_ship.md](plan/P6_ship.md) | 1 d | Mon 9 (pm) – Tue 10 (am); Tue 10 pm = submission buffer | 11.75 | 0 | 9 | 12 |
 | S1 WhatsApp | [S1_whatsapp.md](plan/S1_whatsapp.md) | — | **future, out of scope ([UD-3](#ud-3))** | 0 | 0 | — | — |
+| S2 Student journey | [S2_student_journey.md](plan/S2_student_journey.md) | — | **future, after stability ([UD-14](#ud-14))** | 0 | 0 | — | — |
 | **Total** | | **10 d** | | **130.5** | **≈ 20** | **90** | **120** |
 
 **After the user decisions:**
