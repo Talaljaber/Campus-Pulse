@@ -1,0 +1,161 @@
+{
+  "name": "clarify_decided_ar",
+  "description": "Video moment 1, step 2: the student picks 'registration'; the core re-runs with the constraint and the request is decided (Registration x high): Linear issue plus allow-listed email.",
+  "method": "POST",
+  "path": "/v1/triage/{request_id}/clarify",
+  "path_params": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0001"
+  },
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "question_id": "cat:Registration|IT Support",
+    "option_id": "registration"
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0001",
+    "status": "decided",
+    "lang": "ar",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "Registration",
+      "prob": 1.0,
+      "set": [
+        "Registration"
+      ]
+    },
+    "priority": {
+      "label": "high",
+      "prob": 0.83,
+      "set": [
+        "high"
+      ],
+      "evidence": [
+        {
+          "type": "deadline_today",
+          "span": "اليوم آخر يوم"
+        },
+        {
+          "type": "enrollment_blocked",
+          "span": "بعطيني خطأ"
+        }
+      ]
+    },
+    "tier": "tier0",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "اليوم",
+          0.31
+        ],
+        [
+          "أسجل",
+          0.22
+        ],
+        [
+          "خطأ",
+          0.14
+        ],
+        [
+          "آخر",
+          0.09
+        ],
+        [
+          "CS",
+          0.05
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "النظام ما خلاني أسجل المادة واليوم آخر يوم للتسجيل",
+          "label": "Registration",
+          "priority": "high",
+          "sim": 0.86,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "I can't add CS 201, the registration system rejects me and the deadline is today",
+          "label": "Registration",
+          "priority": "high",
+          "sim": 0.81,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "موقع التسجيل مش راضي يفتح معي",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.74,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": {
+        "drop": "اليوم",
+        "category": "Registration",
+        "priority": "medium"
+      },
+      "trace": {
+        "sets": {
+          "cat": 1,
+          "pri": 1
+        },
+        "models_agree": false,
+        "cost_usd": 0.0,
+        "latency_ms": 412,
+        "policy_path": [
+          "d_ask",
+          "c_accept"
+        ],
+        "clarified": true,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [],
+    "action": {
+      "type": "ticket",
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0001",
+      "external": [
+        {
+          "sink": "linear",
+          "external_id": "CP-42",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-42"
+        }
+      ],
+      "sla_due_at": "2026-11-06T09:05:00+03:00",
+      "message": "فتحنا تذكرة مستعجلة لدائرة القبول والتسجيل لنفس اليوم، وبعتنالك إيميل فيه رقم التذكرة.",
+      "provisional": false,
+      "tags": [
+        "same-day"
+      ],
+      "booking": null,
+      "faq": null,
+      "incident_id": null
+    },
+    "message": null,
+    "understanding": {
+      "summary_en": "Student cannot register for CS 201: the system returns an error and today is the last registration day.",
+      "summary_ar": "الطالب مش قادر يسجل مادة CS 201 لأنه النظام بعطيه خطأ، واليوم آخر يوم للتسجيل.",
+      "entities": {
+        "building": null,
+        "room": null,
+        "course_code": "CS 201",
+        "deadline": "2026-11-05",
+        "system": "registration portal"
+      },
+      "student_reply": "فهمنا عليك: مشكلة بتسجيل CS 201 واليوم آخر يوم. فتحنا تذكرة مستعجلة لدائرة التسجيل ورح يتواصلوا معك اليوم.",
+      "ticket_title": "CS 201 registration blocked on the last registration day",
+      "ticket_body": "Reported by demo-17: registering for CS 201 fails with a system error; today (2026-11-05) is the last registration day. Clarified as a registration problem, not a login/website outage.",
+      "source": "llm",
+      "prompt_version": "v1"
+    }
+  }
+}

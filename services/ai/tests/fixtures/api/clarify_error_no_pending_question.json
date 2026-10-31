@@ -1,0 +1,28 @@
+{
+  "name": "clarify_error_no_pending_question",
+  "description": "Clarifying a request that is already decided: 409 clarification_budget_exceeded.",
+  "method": "POST",
+  "path": "/v1/triage/{request_id}/clarify",
+  "path_params": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0002"
+  },
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "question_id": "cat:Registration|IT Support",
+    "option_id": "registration"
+  },
+  "status_code": 409,
+  "response": {
+    "error": {
+      "code": "clarification_budget_exceeded",
+      "message": "No clarification question is pending for this request.",
+      "details": {
+        "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0002"
+      }
+    }
+  }
+}

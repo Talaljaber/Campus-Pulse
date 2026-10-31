@@ -1,0 +1,22 @@
+{
+  "name": "admin_reindex_error_not_built",
+  "description": "Optional extra not built in this deployment: 501 not_implemented.",
+  "method": "POST",
+  "path": "/v1/admin/reindex",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "admin"
+  },
+  "request": {
+    "collection": "faq"
+  },
+  "status_code": 501,
+  "response": {
+    "error": {
+      "code": "not_implemented",
+      "message": "This optional endpoint is not built in this deployment.",
+      "details": null
+    }
+  }
+}

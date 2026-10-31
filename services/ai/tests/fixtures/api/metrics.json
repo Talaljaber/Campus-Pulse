@@ -1,0 +1,279 @@
+{
+  "name": "metrics",
+  "description": "Model-lab metrics (illustrative numbers, not real results).",
+  "method": "GET",
+  "path": "/v1/metrics",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "admin"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "artifact": {
+      "version": "v1",
+      "sha": "3f9a2c71b0d4"
+    },
+    "generated_at": "2026-11-04T22:10:00+03:00",
+    "benchmark": [
+      {
+        "model": "M1",
+        "target": "category",
+        "dataset": "oof_official",
+        "macro_f1": 0.81,
+        "accuracy": 0.83,
+        "n_rows": 432,
+        "n_groups": 30,
+        "status": "ok"
+      },
+      {
+        "model": "M2-LR",
+        "target": "category",
+        "dataset": "oof_official",
+        "macro_f1": 0.86,
+        "accuracy": 0.87,
+        "n_rows": 432,
+        "n_groups": 30,
+        "status": "ok"
+      },
+      {
+        "model": "M2-kNN",
+        "target": "category",
+        "dataset": "oof_official",
+        "macro_f1": 0.84,
+        "accuracy": 0.85,
+        "n_rows": 432,
+        "n_groups": 30,
+        "status": "ok"
+      },
+      {
+        "model": "M3",
+        "target": "category",
+        "dataset": "oof_official",
+        "macro_f1": null,
+        "accuracy": null,
+        "n_rows": 0,
+        "n_groups": null,
+        "status": "cut"
+      },
+      {
+        "model": "Ensemble (tier 0)",
+        "target": "category",
+        "dataset": "our_test",
+        "macro_f1": 0.88,
+        "accuracy": 0.89,
+        "n_rows": 64,
+        "n_groups": 64,
+        "status": "ok"
+      },
+      {
+        "model": "Ensemble (tier 0)",
+        "target": "priority",
+        "dataset": "our_test",
+        "macro_f1": 0.77,
+        "accuracy": 0.8,
+        "n_rows": 64,
+        "n_groups": 64,
+        "status": "ok"
+      },
+      {
+        "model": "LLM zero-shot (M4)",
+        "target": "category",
+        "dataset": "our_test",
+        "macro_f1": null,
+        "accuracy": null,
+        "n_rows": 64,
+        "n_groups": 64,
+        "status": "n/a"
+      }
+    ],
+    "coverage": [
+      {
+        "target": "category",
+        "dataset": "our_test",
+        "lang": "all",
+        "coverage": 0.92,
+        "mean_set_size": 1.21,
+        "singleton_rate": 0.81,
+        "n_rows": 64,
+        "n_groups": 64
+      },
+      {
+        "target": "category",
+        "dataset": "our_test",
+        "lang": "ar",
+        "coverage": 0.9,
+        "mean_set_size": 1.28,
+        "singleton_rate": 0.76,
+        "n_rows": 25,
+        "n_groups": 25
+      }
+    ],
+    "ask_rate": 0.22,
+    "ask_rate_is_proxy": true,
+    "calibration": [
+      {
+        "target": "category",
+        "ece": 0.041,
+        "bins": [
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "confidence": 0.85,
+            "accuracy": 0.83,
+            "count": 41
+          },
+          {
+            "lower": 0.9,
+            "upper": 1.0,
+            "confidence": 0.95,
+            "accuracy": 0.96,
+            "count": 210
+          }
+        ]
+      }
+    ],
+    "fairness": [
+      {
+        "slice": "en",
+        "target": "category",
+        "dataset": "our_test",
+        "macro_f1": 0.9,
+        "n_rows": 27,
+        "n_groups": 27
+      },
+      {
+        "slice": "ar",
+        "target": "category",
+        "dataset": "our_test",
+        "macro_f1": 0.87,
+        "n_rows": 25,
+        "n_groups": 25
+      },
+      {
+        "slice": "arabizi",
+        "target": "category",
+        "dataset": "our_test",
+        "macro_f1": 0.82,
+        "n_rows": 12,
+        "n_groups": 12
+      }
+    ],
+    "ablations": [
+      {
+        "arm": "no wrapper stripping",
+        "target": "priority",
+        "dataset": "oof_official",
+        "macro_f1": 0.71,
+        "delta": -0.05
+      }
+    ],
+    "confusions": [
+      {
+        "model": "Ensemble (tier 0)",
+        "target": "priority",
+        "dataset": "our_test",
+        "labels": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "matrix": [
+          [
+            18,
+            3,
+            0
+          ],
+          [
+            2,
+            17,
+            3
+          ],
+          [
+            0,
+            4,
+            17
+          ]
+        ]
+      }
+    ],
+    "router": {
+      "total": 128,
+      "by_tier": {
+        "tier0": 109,
+        "tier1": 7,
+        "human": 12
+      },
+      "resolved_tier0_pct": 85.2,
+      "cost_usd": 0.0019,
+      "cost_per_1k_usd": 0.0148,
+      "cached_calls": 3
+    },
+    "memory": {
+      "active": 4,
+      "total": 5,
+      "by_category": {
+        "IT Support": 2,
+        "Registration": 2
+      },
+      "last_added_at": "2026-11-05T10:58:12+03:00"
+    },
+    "redteam": [
+      {
+        "run_id": "rt-2026-11-05-01",
+        "created_at": "2026-11-05T16:00:00+03:00",
+        "n": 20,
+        "seed": 42,
+        "overall": 0.85,
+        "by_style": {
+          "fake_urgency": 1.0,
+          "injection": 1.0,
+          "arabizi": 0.67,
+          "off_topic": 1.0,
+          "typos": 0.67
+        },
+        "by_lang": {
+          "en": 0.9,
+          "ar": 0.8,
+          "arabizi": 0.75
+        },
+        "failures": [
+          {
+            "text": "el printer bil lab 5arban mn embare7",
+            "style": "arabizi",
+            "lang": "arabizi",
+            "intended_category": "Facilities",
+            "intended_priority": "medium",
+            "got_category": "IT Support",
+            "got_priority": "medium",
+            "outcome": "accept",
+            "reason": "category IT Support != intended Facilities"
+          },
+          {
+            "text": "my regstration wont go thru and its the last day",
+            "style": "typos",
+            "lang": "en",
+            "intended_category": "Registration",
+            "intended_priority": "high",
+            "got_category": "Registration",
+            "got_priority": "medium",
+            "outcome": "accept",
+            "reason": "priority medium != intended high"
+          },
+          {
+            "text": "el bus ta5ar kteer el yom",
+            "style": "arabizi",
+            "lang": "arabizi",
+            "intended_category": "Transportation",
+            "intended_priority": "medium",
+            "got_category": null,
+            "got_priority": null,
+            "outcome": "out_of_scope",
+            "reason": "expected a decision, got out_of_scope"
+          }
+        ]
+      }
+    ]
+  }
+}

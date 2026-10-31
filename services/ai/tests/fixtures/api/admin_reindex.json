@@ -1,0 +1,21 @@
+{
+  "name": "admin_reindex",
+  "description": "Optional extra: re-embed the FAQ collection.",
+  "method": "POST",
+  "path": "/v1/admin/reindex",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "admin"
+  },
+  "request": {
+    "collection": "faq"
+  },
+  "status_code": 200,
+  "response": {
+    "collection": "faq",
+    "reindexed": 36,
+    "dim": 384,
+    "duration_ms": 2140
+  }
+}

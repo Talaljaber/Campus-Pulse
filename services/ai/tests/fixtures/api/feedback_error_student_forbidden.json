@@ -1,0 +1,28 @@
+{
+  "name": "feedback_error_student_forbidden",
+  "description": "A student calling a staff endpoint: 403 forbidden.",
+  "method": "POST",
+  "path": "/v1/feedback",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "prediction_id": "8d21f4a0-6c3e-4b7a-8e15-3c4d5e6f0004",
+    "corrected_category": "Finance",
+    "corrected_priority": null,
+    "note": ""
+  },
+  "status_code": 403,
+  "response": {
+    "error": {
+      "code": "forbidden",
+      "message": "This role may not use this endpoint.",
+      "details": {
+        "role": "student"
+      }
+    }
+  }
+}

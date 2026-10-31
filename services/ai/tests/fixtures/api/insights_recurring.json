@@ -1,0 +1,61 @@
+{
+  "name": "insights_recurring",
+  "description": "Top recurring problems over the last 30 days.",
+  "method": "GET",
+  "path": "/v1/insights/recurring",
+  "path_params": {},
+  "query": {
+    "window_days": "30",
+    "top_k": "5"
+  },
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Office": "Maintenance"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": [
+    {
+      "cluster_id": "cl-01",
+      "category": "Facilities",
+      "building_id": "H",
+      "size": 7,
+      "first_seen": "2026-10-14T09:10:00+03:00",
+      "last_seen": "2026-11-04T15:22:00+03:00",
+      "representative_text": "The projector in H 204 is not working again",
+      "sample_request_ids": [
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0101",
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0102",
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0103"
+      ]
+    },
+    {
+      "cluster_id": "cl-02",
+      "category": "IT Support",
+      "building_id": "M",
+      "size": 5,
+      "first_seen": "2026-10-20T10:00:00+03:00",
+      "last_seen": "2026-11-05T11:42:30+03:00",
+      "representative_text": "الواي فاي فاصل بمبنى M",
+      "sample_request_ids": [
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0104",
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0105",
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0106"
+      ]
+    },
+    {
+      "cluster_id": "cl-03",
+      "category": "Transportation",
+      "building_id": null,
+      "size": 3,
+      "first_seen": "2026-10-27T07:35:00+03:00",
+      "last_seen": "2026-11-03T07:50:00+03:00",
+      "representative_text": "The 7:15 bus from Madaba was late again",
+      "sample_request_ids": [
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0107",
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0108",
+        "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0109"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+# CampusPulse AI API (`/v1`)
+
+The HTTP contract of the FastAPI AI service. It was frozen at P0.13 and is owned by the Backend stream; the DTOs in `application/dto.py` are lead-owned.
+
+- **Per-endpoint reference:** [endpoints.md](endpoints.md). It is generated and lists every endpoint with its request schema, a `curl.exe` example, a full example response, error codes and side effects.
+- **Machine-readable contract:** [`services/ai/openapi.json`](../../services/ai/openapi.json) (OpenAPI 3.1). The UI generates its TypeScript types from this file.
+- **Source of truth:**
+  - `services/ai/campuspulse_ai/application/dto.py`: the Pydantic v2 models.
+  - `services/ai/campuspulse_ai/frameworks/api_contract.py`: roles, auth, error codes and side effects per route.
+  - `services/ai/tests/fixtures/api/*.json`: one example per file.
+
+## Base URLs
+
+| Environment | Base URL | How to run |
+| --- | --- | --- |
+| Local mock (fixtures, no models) | `http://localhost:8000` | `uvicorn campuspulse_ai.frameworks.mock_app:app --port 8000` |
+| Local real service (from P3.12) | `http://localhost:8000` | `uvicorn api:app --app-dir services/ai --port 8000` |
+| Render | `https://<render-service>.onrender.com` | Deployed in P0.11 / P4.13. The real hostname is recorded in [docs/ops/README.md](../ops/README.md). |
+
+Every route lives under `/v1`. The only exception is `GET /health`, the root alias of `GET /v1/health` that Render's health check uses. The browser never calls this service directly; it calls the Next.js route handler `/api/ai/...`, which forwards the request server-side (P5.6).
+
+<a id="auth"></a>
+## Auth
+
+**Service token.**
+- Every route except `/health`, `/v1/health` and the Linear webhook requires `Authorization: Bearer <AI_SERVICE_TOKEN>`.
+- Only the Next.js server holds the token: Netlify runtime env, never in the browser bundle (LD-25).
+- A missing or wrong token gets `401 unauthenticated`.
+
+**User identity and roles.**
+- The Next.js server forwards the signed-in user's Supabase access token in `X-CP-User-JWT`.
+- In production (`AUTH_MODE=supabase_jwt`, P4.12), FastAPI verifies the JWT and reads `role`, `office` and `alias` from the `profiles` row.
+- The role never comes from a client-controlled header.
+- A role outside an endpoint's allowed roles gets `403 forbidden`. So does staff acting on another office's ticket or incident.
+
+| Role | Who | Notes |
+| --- | --- | --- |
+| `student` | a signed-in student (alias only, e.g. `demo-17`) | gets the student view: staff-only flags removed |
+| `staff` | office staff (`office` from `profiles`) | review queue, tickets and incidents of their office, insights |
+| `admin` | administrators | everything, including `/metrics`, `/redteam/run`, `/admin/*` and `?debug=members` |
+| `service` | the service token with no user JWT | scripts such as `simulate_pulse.py` |
+| `public` | nobody needs a credential | `/health`, `/v1/health`. The Linear webhook is authenticated by its HMAC signature instead. |
+
+**Trusted headers (tests, local dev and the mock only).**
+- With `AUTH_MODE=trusted_headers`, the caller identity comes from `X-CP-Role`, `X-CP-Alias` and `X-CP-Office`.
+- These headers are ignored in production.
+
+**Linear webhook.** `POST /v1/integrations/linear/webhook` carries no service token.
+- The raw body is verified with HMAC-SHA256 (`LINEAR_WEBHOOK_SECRET`) against the `Linear-Signature` header.
+- A bad signature gets `401 unauthenticated` and nothing is written.
+
+## Conventions
+
+- JSON keys are `snake_case`.
+- Category and priority strings are exactly the domain labels:
+  - categories: `Registration`, `IT Support`, `Finance`, `Transportation`, `Facilities`, `Academic Support`;
+  - priorities: `low`, `medium`, `high`.
+- Probabilities are floats in [0, 1].
+- Timestamps are ISO 8601 with an offset. The service uses Asia/Amman (`+03:00`).
+- **Every response key is always present.** Keys that do not apply are `null` (or `[]`), never omitted. Unknown request keys are rejected (`422`).
+- Ids are UUID strings.
+- Text is UTF-8. Arabic is returned as-is (no escaping).
+
+## `/v1/triage` status values
+
+`status` is one of five values. The table shows which keys are filled for each.
+
+| `status` | Meaning | `category` / `priority` | `clarification` | `explanation` | `action` | `understanding` | `message` | `tier` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `decided` | Accepted, possibly after a clarification or an LLM tier. | final labels, singleton sets | `null` | filled (`null` + flag `explanation_failed` if the explainer failed) | filled | filled | usually `null` | `tier0` / `tier1` / `tier2` |
+| `needs_clarification` | Ambiguous (a set of size 2) and the question budget is unused. The answer goes to `POST /v1/triage/{request_id}/clarify`. | provisional best guess plus the ambiguous sets | the question and its option chips | `null` | `null` | `null` | `null` | `tier0` |
+| `human_review` | Still ambiguous after clarification and LLM tiers. Staff confirm it via `/v1/feedback`. | best guess | `null` | filled | provisional ticket (`provisional: true`, labelled unconfirmed); booking and alerts are deferred, except safety | filled | "A staff member will confirm this; we've opened it as {best guess}." | the last model tier |
+| `out_of_scope` | Off-topic (OOD) or gibberish. | `null` | topic chips (`question_id: "topic"`, option ids = category values) | `null` | `null` | `null` | a rephrase prompt | `tier0` |
+| `distress` | A distress or self-harm signal. No classification, no ticket, no email and no LLM; a human-review item is queued immediately. | `null` | `null` | `null` | `null` | `null` | supportive text, the counselling service (placeholder) and 911 | `human` |
+
+The status machine is `received → (needs_clarification ⇄ clarified) → decided | human_review | out_of_scope | distress → actioned → (resolved | merged)` (SPEC §5.1 [14]). Only the five values above are ever returned by `/v1/triage`.
+
+Other `/v1/triage` fields:
+- **`understood_as`:** the Arabic transliteration shown for Arabizi input, e.g. "Understood as: …" (LD-25).
+- **`understanding`:** the structured NLP output (UD-10). `source` is `llm` or `rules`. It never changes the labels.
+- **`explanation.trace.policy_path`:** the DecisionPolicy rule that fired at each policy evaluation, in order.
+  - Rule ids: `a_gibberish`, `b_ood`, `c_accept`, `d_ask`, `e_escalate`, `f_human`.
+  - Examples: `["d_ask", "c_accept"]` means a question was asked, then the request was accepted. `["e_escalate", "f_human"]` means it went to tier 1 and then to human review.
+- **`explanation.trace.per_model`:** filled only with `?debug=members` (admin). Keys are `<member>.<target>`, e.g. `m1.category`.
+
+## Flags
+
+`flags` is a list of strings from `domain.values.FLAGS`. Any other value is rejected by the DTOs.
+
+| Flag | Meaning | Visible to |
+| --- | --- | --- |
+| `injection_attempt` | Prompt injection or manipulation was detected. The span was stripped before classification, the LLM tiers were skipped, and the request's own instructions can never raise the priority. | all |
+| `urgency_unsupported` | Urgency was claimed (e.g. "URGENT", "عاجل") but the content does not support `high`. A neutral note that never changes the label. | staff, admin |
+| `safety` | Physical danger (fire, a leak near electricity, people trapped). Priority is forced to `high`, and a safety alert fires immediately, even on provisional items. | all |
+| `needs_review` | Sent to human review: the ticket is provisional, and booking and alerts wait for staff confirmation. | all |
+| `distress` | Distress signal: no classification and no actions (see status `distress`). | all |
+| `gibberish` | Empty, no letters, or fewer than 2 tokens: `out_of_scope`. | all |
+| `out_of_scope` | Off-topic or out of distribution: `out_of_scope`. | all |
+| `empty_set` | The conformal set was empty, so the argmax singleton was used. | all |
+| `truncated` | The input was longer than `guards.max_tokens`; only the first tokens were classified. | all |
+| `llm_out_of_set` | An LLM tier answered outside the allowed set. The answer was discarded and the next tier or tier 0 was used. | all |
+| `staff_confirmed` | Staff confirmed or corrected the labels via `/v1/feedback` (tier `human`). | all |
+| `priority_gaming_suspected` | This alias persistently claims urgency that the content does not support. There is no automatic penalty. | admin |
+| `explanation_failed` | The explainer failed: `explanation` is `null`. Triage is unaffected. | all |
+| `understanding_fallback` | The rule-based understanding was used (no key, an error, a schema violation, or an injection-flagged request). | all |
+| `empty_input` | Debug-only in `predict.py --debug` (LD-17). **Never returned by the API.** | — |
+
+`to_student_view()` in `dto.py` removes `urgency_unsupported` and `priority_gaming_suspected` for the student role.
+
+## Errors
+
+Every non-2xx response has the same body:
+
+```json
+{"error": {"code": "not_found", "message": "Incident not found.", "details": {"incident_id": "..."}}}
+```
+
+`details` is free-form JSON or `null`. For validation errors it is `{"errors": [{"loc": [...], "msg": "...", "type": "..."}]}`. It may carry the `request_id`. Stack traces are never returned.
+
+| HTTP | `code` | Raised by |
+| --- | --- | --- |
+| 401 | `unauthenticated` | a missing or wrong service token; a bad webhook signature |
+| 403 | `forbidden` | domain `Unauthorized`: the role or office is not allowed |
+| 404 | `not_found` | domain `NotFound`: unknown request, prediction, ticket or incident |
+| 409 | `clarification_budget_exceeded` | domain `ClarificationBudgetExceeded`: no question pending for this request |
+| 422 | `invalid_input` | body, query or path validation; domain `InvalidInput` (e.g. empty text, bad CSV columns) |
+| 500 | `internal_error` | anything unexpected |
+| 501 | `not_implemented` | an optional extra (`/v1/admin/*`) that is not built in this deployment |
+| 503 | `artifact_unavailable` | domain `ArtifactError`: the model artifact is missing or failed its checksum |
+| 503 | `store_unavailable` | domain `StoreError`: Supabase or pgvector is unreachable |
+
+The mapping lives in `dto.DOMAIN_ERROR_CODES` and `dto.error_code_for(exc)`, and the HTTP status per code in `dto.ERROR_HTTP_STATUS`.
+
+These errors are degraded inside the use cases and never reach the client:
+- `LLMUnavailable`: falls back to tier 0.
+- `SinkError`: recorded in `ticket_links.last_error`.
+- `NotificationError` and `RecipientNotAllowed`: recorded as outbox `failed` / `rejected`.
+- `CalendarUnavailable`: falls back to the slots table.
+
+## Optional extras
+
+`POST /v1/admin/simulate` (P5.19) and `POST /v1/admin/reindex` (P4.20) are B-list extras.
+- They are in the contract so the UI can be typed against them.
+- A deployment that has not built them answers `501 not_implemented`.
+- In `openapi.json` they carry `"x-optional": true`.
+
+## The mock app
+
+`frameworks/mock_app.py` serves every route from the fixtures, with the same OpenAPI document as the contract.
+
+For each call it picks a fixture in this order:
+1. The header `X-Mock-Fixture: <fixture name>`, a mock-only header (fixture names are listed at `GET /mock/fixtures`).
+2. A fixture whose path params, query and body match the call. For `/v1/triage` only `text` is compared, case- and whitespace-insensitively, so typing a fixture's sentence returns that fixture.
+3. The endpoint's default fixture.
+
+Auth is mimicked:
+- A route that needs the service token answers 401 without a Bearer token. Set `MOCK_SERVICE_TOKEN` to also check its value.
+- `X-CP-Role` outside the endpoint's roles answers 403.
+
+Set `MOCK_FIXTURES_DIR` to serve another fixture directory.
+
+Fixture format: one file per example, `{name, description, method, path, path_params, query, headers, request, status_code, response}`. Optional keys:
+- `match`: the body keys the mock compares;
+- `default`;
+- `omit_auth`;
+- `alias_paths`.
+
+## Versioning and change process
+
+- **Path version.** `/v1` stays until a breaking change. A breaking change (renaming or removing a key, changing a type, narrowing an enum) means `/v2`.
+- **Additive changes** are allowed in `v1` with lead approval (EXECUTION rule 3): a new endpoint, a new response key, a new enum value. Clients must ignore keys they do not know.
+- **`info.version`** in `openapi.json` is the `campuspulse_ai` package version.
+- **After any DTO or route change:**
+  1. `python -m campuspulse_ai.frameworks.export_openapi --mock --out services/ai/openapi.json` (from P3.12, the real app is exported without `--mock`, and both must produce the same document).
+  2. `python scripts/gen_api_docs.py`.
+  3. `pytest services/ai/tests/contracts/test_dto_contract.py -q`.
+
+  CI fails if `openapi.json` or `endpoints.md` is stale (`python scripts/gen_api_docs.py --check`).
+- **Windows note.** In PowerShell 5.1, `>` re-encodes output, so use `--out` for the export.

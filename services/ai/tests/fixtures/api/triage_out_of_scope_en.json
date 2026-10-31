@@ -1,0 +1,67 @@
+{
+  "name": "triage_out_of_scope_en",
+  "description": "Off-topic request (OOD score below tau_ood with a wide set): no labels, a rephrase message and topic chips in `clarification` (question_id `topic`).",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "text": "what's the best shawarma place near campus?",
+    "student_alias": "demo-17"
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0005",
+    "status": "out_of_scope",
+    "lang": "en",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": null,
+    "priority": null,
+    "tier": "tier0",
+    "clarification": {
+      "question_id": "topic",
+      "text": "Which of these topics is closest?",
+      "options": [
+        {
+          "id": "Registration",
+          "text": "Registration"
+        },
+        {
+          "id": "IT Support",
+          "text": "IT Support"
+        },
+        {
+          "id": "Finance",
+          "text": "Finance"
+        },
+        {
+          "id": "Transportation",
+          "text": "Transportation"
+        },
+        {
+          "id": "Facilities",
+          "text": "Facilities"
+        },
+        {
+          "id": "Academic Support",
+          "text": "Academic Support"
+        }
+      ]
+    },
+    "explanation": null,
+    "flags": [
+      "out_of_scope"
+    ],
+    "action": null,
+    "message": "I can help with registration, IT, finance, transport, facilities and academic support. Could you rephrase, or pick a topic below?",
+    "understanding": null
+  },
+  "match": [
+    "text"
+  ]
+}

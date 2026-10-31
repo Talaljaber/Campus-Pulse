@@ -1,0 +1,5390 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CampusPulse AI API",
+    "description": "Bilingual (EN / Jordanian Arabic / Arabizi) campus-request triage. Called only by the Next.js server with the service token; see docs/api/README.md.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/triage": {
+      "post": {
+        "tags": [
+          "triage"
+        ],
+        "summary": "Triage one request",
+        "description": "Runs the main flow (SPEC \u00a75.1) for one student message: normalize, guards, ensemble, conformal sets, decision policy, then either a clarifying question or a decision with explanation, understanding and action.",
+        "operationId": "triage",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "debug",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "const": "members",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`members` fills `explanation.trace.per_model` (admin only, P5.16).",
+              "title": "Debug"
+            },
+            "description": "`members` fills `explanation.trace.per_model` (admin only, P5.16)."
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "student",
+          "staff",
+          "admin",
+          "service"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "inserts `requests`, `predictions` and `events` rows; upserts the request embedding into the `requests` vector collection",
+          "needs_clarification: inserts a `clarifications` row",
+          "decided/human_review: opens a ticket (Supabase + Linear issue), may book an advisor slot, sends allow-listed email and in-app notifications (`outbox` rows), may create or attach to an incident",
+          "human_review, out_of_scope, distress: inserts a `review_queue` row",
+          "distress: no ticket, no email, no LLM call",
+          "LLM tiers (if escalated) write `llm_calls` rows"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/triage/{request_id}/clarify": {
+      "post": {
+        "tags": [
+          "triage"
+        ],
+        "summary": "Answer a clarifying question",
+        "description": "Applies the student's answer (an option chip or free text) to a request in `needs_clarification` and re-runs the core (LD-29). Returns the same shape as /v1/triage.",
+        "operationId": "clarify",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClarifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`clarification_budget_exceeded`: No clarification question is pending for this request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "student",
+          "service"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "updates the `clarifications` row (answer, answered_at)",
+          "then the same side effects as /v1/triage for the new status"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/explain/{request_id}/counterfactual": {
+      "get": {
+        "tags": [
+          "explain"
+        ],
+        "summary": "Live counterfactual",
+        "description": "Re-classifies the request with one token removed, for the clickable words in the UI.",
+        "operationId": "explain_counterfactual",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          },
+          {
+            "name": "drop",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The token to delete from the request text.",
+              "title": "Drop"
+            },
+            "description": "The token to delete from the request text."
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CounterfactualResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "student",
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (read-only; no rows written)"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/feedback": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Staff confirm or correct a prediction",
+        "description": "Staff confirm or correct category/priority. The prediction becomes final (tier `human`), deferred actions fire, and the example enters live memory immediately (SPEC \u00a75.3).",
+        "operationId": "feedback",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "updates the prediction and its `review_queue` row; ticket `provisional` -> false",
+          "inserts a `memory_examples` row (vector collection `memory`, active)",
+          "fires deferred booking/alert actions (allow-listed email, `outbox` rows)",
+          "appends an `events` row"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/tickets/{ticket_id}/status": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Change a ticket's status from the dashboard",
+        "description": "Dashboard status change (LD-25); same path as the inbound Linear sync.",
+        "operationId": "ticket_status",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "updates the `tickets` row; updates the Linear issue",
+          "in-app notification to the student; email on `resolved` if allow-listed"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/incidents": {
+      "get": {
+        "tags": [
+          "pulse"
+        ],
+        "summary": "List incidents",
+        "description": "Pulse incidents, newest first; `?open=1` returns only open ones (LD-25).",
+        "operationId": "list_incidents",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "open",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "`1` = only open incidents (LD-25).",
+              "title": "Open"
+            },
+            "description": "`1` = only open incidents (LD-25)."
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IncidentOut"
+                  },
+                  "title": "Response List Incidents"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin",
+          "service"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (read-only)"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/incidents/{incident_id}/resolve": {
+      "post": {
+        "tags": [
+          "pulse"
+        ],
+        "summary": "Resolve an incident and notify reporters",
+        "description": "Closes the incident, its merged tickets and the Linear issue; notifies every reporter once.",
+        "operationId": "resolve_incident",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveIncidentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveIncidentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "updates `incidents` and the member `tickets` rows (status resolved/closed)",
+          "closes the Linear issue",
+          "one broadcast per reporter (in-app; email if allow-listed) -> `outbox` rows"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/insights/recurring": {
+      "get": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Recurring problems",
+        "description": "Clusters stored request embeddings by meaning, building and category and ranks them by size, so staff can fix root causes (UD-6, P4.21).",
+        "operationId": "insights_recurring",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "window_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Null = all time.",
+              "title": "Window Days"
+            },
+            "description": "Null = all time."
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Category"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "building",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Building"
+            }
+          },
+          {
+            "name": "top_k",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Null = `insights.top_k` (10).",
+              "title": "Top K"
+            },
+            "description": "Null = `insights.top_k` (10)."
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProblemClusterOut"
+                  },
+                  "title": "Response Insights Recurring"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (read-only)"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/integrations/linear/webhook": {
+      "post": {
+        "tags": [
+          "integrations"
+        ],
+        "summary": "Inbound Linear status sync",
+        "description": "Receives Linear issue updates. The raw body is verified with HMAC-SHA256 (`LINEAR_WEBHOOK_SECRET`) against the `Linear-Signature` header; no service token.",
+        "operationId": "linear_webhook",
+        "parameters": [
+          {
+            "name": "Linear-Signature",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Linear-Signature"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAck"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "public"
+        ],
+        "x-auth": "hmac",
+        "x-side-effects": [
+          "updates the linked `tickets` row status",
+          "in-app notification to the student"
+        ],
+        "x-optional": false,
+        "requestBody": {
+          "required": true,
+          "description": "Linear's webhook payload, verified byte-for-byte (not our schema).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/batch": {
+      "post": {
+        "tags": [
+          "lab"
+        ],
+        "summary": "Batch predictions from a CSV",
+        "description": "Upload a CSV with `request_id,text`; returns `request_id,category,priority` with the same bytes as `predict.py` (tier 0 by default).",
+        "operationId": "batch",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_batch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Predictions CSV (UTF-8, no BOM, LF).",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`artifact_unavailable`: The frozen model artifact is missing or failed its checksum.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (no rows written; LLM calls logged only with use_llm=true)"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/redteam/run": {
+      "post": {
+        "tags": [
+          "lab"
+        ],
+        "summary": "Run the red team",
+        "description": "Generates tricky requests per style, runs them through the real pipeline, scores them.",
+        "operationId": "redteam_run",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedTeamRunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScorecardOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`artifact_unavailable`: The frozen model artifact is missing or failed its checksum.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "inserts a `redteam_runs` row; no tickets, no notifications"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/metrics": {
+      "get": {
+        "tags": [
+          "lab"
+        ],
+        "summary": "Model lab metrics",
+        "description": "Benchmark, coverage, calibration, fairness, ablations, confusions, router/memory stats.",
+        "operationId": "metrics",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (read-only)"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "Health",
+        "description": "Liveness, version, artifact hash, enabled sinks and LLM tiers. Also served at `/health`.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "public"
+        ],
+        "x-auth": "none",
+        "x-side-effects": [
+          "none"
+        ],
+        "x-optional": false
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "Health (root alias)",
+        "description": "Same as `/v1/health`; Render's health check path.",
+        "operationId": "health_root",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "public"
+        ],
+        "x-auth": "none",
+        "x-side-effects": [
+          "none"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/admin/simulate": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Start simulated Pulse traffic (optional extra)",
+        "description": "Starts the scripted burst of `scripts/simulate_pulse.py` from the server (P5.19, B-list). **Optional extra (B-list): may return 501 when not built.**",
+        "operationId": "admin_simulate",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_implemented`: Optional extra that is not built in this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "posts each scenario line through /v1/triage with `simulated=true`"
+        ],
+        "x-optional": true
+      }
+    },
+    "/v1/admin/reindex": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Re-embed a vector collection (optional extra)",
+        "description": "Re-embeds the FAQ collection with the deployed encoder (P4.20, B-list). **Optional extra (B-list): may return 501 when not built.**",
+        "operationId": "admin_reindex",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReindexRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReindexResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_implemented`: Optional extra that is not built in this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "rewrites every `faq.embedding`"
+        ],
+        "x-optional": true
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AblationRowOut": {
+        "properties": {
+          "arm": {
+            "type": "string",
+            "title": "Arm"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "category",
+              "priority"
+            ],
+            "title": "Target"
+          },
+          "dataset": {
+            "type": "string",
+            "enum": [
+              "oof_official",
+              "oof_all",
+              "our_test",
+              "probes"
+            ],
+            "title": "Dataset"
+          },
+          "macro_f1": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macro F1"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta",
+            "description": "macro_f1 minus the full system's."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "arm",
+          "target",
+          "dataset",
+          "macro_f1",
+          "delta"
+        ],
+        "title": "AblationRowOut",
+        "description": "One ablation arm (P2.9), scored on the same rows as the full system."
+      },
+      "ActionOut": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/ActionType"
+          },
+          "ticket_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Id"
+          },
+          "external": {
+            "items": {
+              "$ref": "#/components/schemas/ExternalRefOut"
+            },
+            "type": "array",
+            "title": "External"
+          },
+          "sla_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Due At"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Student-facing sentence about the action."
+          },
+          "provisional": {
+            "type": "boolean",
+            "title": "Provisional",
+            "description": "True for `needs_review` items: ticket labelled unconfirmed."
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "description": "Ticket tags, e.g. `exam-in-progress`."
+          },
+          "booking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookingOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "faq": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FaqAnswerOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "incident_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Id",
+            "description": "Set when the request was merged into an incident."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "ticket_id",
+          "external",
+          "sla_due_at",
+          "message",
+          "provisional",
+          "tags",
+          "booking",
+          "faq",
+          "incident_id"
+        ],
+        "title": "ActionOut",
+        "description": "What happened next (SPEC \u00a75.1 [11])."
+      },
+      "ActionType": {
+        "type": "string",
+        "enum": [
+          "faq_answer",
+          "ticket",
+          "booking",
+          "safety_alert",
+          "incident_merge"
+        ],
+        "title": "ActionType"
+      },
+      "ArtifactOut": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "sha": {
+            "type": "string",
+            "title": "Sha"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version",
+          "sha"
+        ],
+        "title": "ArtifactOut",
+        "description": "The frozen model artifact in use."
+      },
+      "BenchmarkRowOut": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "category",
+              "priority"
+            ],
+            "title": "Target"
+          },
+          "dataset": {
+            "type": "string",
+            "enum": [
+              "oof_official",
+              "oof_all",
+              "our_test",
+              "probes"
+            ],
+            "title": "Dataset"
+          },
+          "macro_f1": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macro F1"
+          },
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "n_rows": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Rows"
+          },
+          "n_groups": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Groups"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "n/a",
+              "cut"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model",
+          "target",
+          "dataset",
+          "macro_f1",
+          "accuracy",
+          "n_rows",
+          "n_groups",
+          "status"
+        ],
+        "title": "BenchmarkRowOut",
+        "description": "One benchmark cell (SPEC \u00a76.2). Null metrics = `n/a` (no key) or `cut` (M3)."
+      },
+      "Body_batch": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "CSV with columns request_id,text (UTF-8)."
+          },
+          "use_llm": {
+            "type": "boolean",
+            "title": "Use Llm",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_batch"
+      },
+      "BookingOut": {
+        "properties": {
+          "advisor_name": {
+            "type": "string",
+            "title": "Advisor Name"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ends At"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "advisor_name",
+          "starts_at",
+          "ends_at",
+          "room"
+        ],
+        "title": "BookingOut",
+        "description": "An advisor slot booked for Academic Support x high (UD-1). Advisors are fictional."
+      },
+      "CalibrationBinOut": {
+        "properties": {
+          "lower": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Lower"
+          },
+          "upper": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Upper"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "accuracy": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Accuracy"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lower",
+          "upper",
+          "confidence",
+          "accuracy",
+          "count"
+        ],
+        "title": "CalibrationBinOut",
+        "description": "One reliability-diagram bin."
+      },
+      "CalibrationOut": {
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "category",
+              "priority"
+            ],
+            "title": "Target"
+          },
+          "ece": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Ece"
+          },
+          "bins": {
+            "items": {
+              "$ref": "#/components/schemas/CalibrationBinOut"
+            },
+            "type": "array",
+            "title": "Bins"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target",
+          "ece",
+          "bins"
+        ],
+        "title": "CalibrationOut",
+        "description": "Calibration of one target (ECE + reliability bins)."
+      },
+      "Category": {
+        "type": "string",
+        "enum": [
+          "Registration",
+          "IT Support",
+          "Finance",
+          "Transportation",
+          "Facilities",
+          "Academic Support"
+        ],
+        "title": "Category"
+      },
+      "CategoryOut": {
+        "properties": {
+          "label": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "prob": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Prob"
+          },
+          "set": {
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "type": "array",
+            "title": "Set",
+            "description": "Conformal prediction set (1-alpha = 0.90)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "prob",
+          "set"
+        ],
+        "title": "CategoryOut",
+        "description": "Category decision: the label, its probability and the conformal set."
+      },
+      "ClarificationOptionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "ClarificationOptionOut",
+        "description": "One answer chip."
+      },
+      "ClarificationOut": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id",
+            "description": "Question-bank id, e.g. `cat:Registration|IT Support`."
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ClarificationOptionOut"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question_id",
+          "text",
+          "options"
+        ],
+        "title": "ClarificationOut",
+        "description": "The clarifying question asked when the request is ambiguous, in the request language."
+      },
+      "ClarifyRequest": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Question Id"
+          },
+          "option_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Id"
+          },
+          "free_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Free Text"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question_id"
+        ],
+        "title": "ClarifyRequest",
+        "description": "Body of `POST /v1/triage/{request_id}/clarify`: exactly one of `option_id` or `free_text`."
+      },
+      "ConfusionOut": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "category",
+              "priority"
+            ],
+            "title": "Target"
+          },
+          "dataset": {
+            "type": "string",
+            "enum": [
+              "oof_official",
+              "oof_all",
+              "our_test",
+              "probes"
+            ],
+            "title": "Dataset"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Labels"
+          },
+          "matrix": {
+            "items": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Matrix"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model",
+          "target",
+          "dataset",
+          "labels",
+          "matrix"
+        ],
+        "title": "ConfusionOut",
+        "description": "A confusion matrix: rows = true label, columns = predicted, in `labels` order."
+      },
+      "CounterfactualOut": {
+        "properties": {
+          "drop": {
+            "type": "string",
+            "title": "Drop"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "drop",
+          "category",
+          "priority"
+        ],
+        "title": "CounterfactualOut",
+        "description": "The smallest single-token deletion that flips category or priority."
+      },
+      "CounterfactualResponse": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "drop": {
+            "type": "string",
+            "title": "Drop"
+          },
+          "original_category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "original_priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "category_prob": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Category Prob"
+          },
+          "priority_prob": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Priority Prob"
+          },
+          "flipped": {
+            "type": "boolean",
+            "title": "Flipped",
+            "description": "True when category or priority changed."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "drop",
+          "original_category",
+          "original_priority",
+          "category",
+          "priority",
+          "category_prob",
+          "priority_prob",
+          "flipped"
+        ],
+        "title": "CounterfactualResponse",
+        "description": "Live counterfactual: the labels the core gives with `drop` removed."
+      },
+      "CoverageRowOut": {
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "category",
+              "priority"
+            ],
+            "title": "Target"
+          },
+          "dataset": {
+            "type": "string",
+            "enum": [
+              "oof_official",
+              "oof_all",
+              "our_test",
+              "probes"
+            ],
+            "title": "Dataset"
+          },
+          "lang": {
+            "type": "string",
+            "title": "Lang",
+            "description": "`all`, `en`, `ar` or `arabizi`."
+          },
+          "coverage": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage"
+          },
+          "mean_set_size": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Mean Set Size"
+          },
+          "singleton_rate": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Singleton Rate"
+          },
+          "n_rows": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Rows"
+          },
+          "n_groups": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Groups"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target",
+          "dataset",
+          "lang",
+          "coverage",
+          "mean_set_size",
+          "singleton_rate",
+          "n_rows",
+          "n_groups"
+        ],
+        "title": "CoverageRowOut",
+        "description": "Conformal coverage for one target/dataset/language slice (approximate; effective n ~ 30)."
+      },
+      "EntitiesOut": {
+        "properties": {
+          "building": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Building"
+          },
+          "room": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room"
+          },
+          "course_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course Code"
+          },
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "building",
+          "room",
+          "course_code",
+          "deadline",
+          "system"
+        ],
+        "title": "EntitiesOut",
+        "description": "Entities extracted from the request (UD-10)."
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "title": "ErrorBody",
+        "description": "The inside of every error response. `details` is free-form JSON (validation errors, request_id)."
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "invalid_input",
+          "unauthenticated",
+          "forbidden",
+          "not_found",
+          "clarification_budget_exceeded",
+          "not_implemented",
+          "artifact_unavailable",
+          "store_unavailable",
+          "internal_error"
+        ],
+        "title": "ErrorCode",
+        "description": "Machine-readable error codes. HTTP status per code is in `ERROR_HTTP_STATUS`."
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "description": "Standard error body for every non-2xx response: `{\"error\": {\"code\", \"message\", \"details\"}}`."
+      },
+      "EvidenceOut": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Evidence feature name (`EVIDENCE_FEATURES`, P1.12)."
+          },
+          "span": {
+            "type": "string",
+            "title": "Span",
+            "description": "The matched text span."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "span"
+        ],
+        "title": "EvidenceOut",
+        "description": "An urgency evidence cue found in the text, e.g. `deadline_today` on `\u0627\u0644\u064a\u0648\u0645`."
+      },
+      "ExplanationOut": {
+        "properties": {
+          "top_tokens": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Top Tokens",
+            "description": "[token, importance] pairs, top 5."
+          },
+          "neighbors": {
+            "items": {
+              "$ref": "#/components/schemas/NeighborOut"
+            },
+            "type": "array",
+            "title": "Neighbors"
+          },
+          "counterfactual": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CounterfactualOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trace": {
+            "$ref": "#/components/schemas/TraceOut"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "top_tokens",
+          "neighbors",
+          "counterfactual",
+          "trace"
+        ],
+        "title": "ExplanationOut",
+        "description": "Why the system decided what it did. Null when the explainer failed (flag `explanation_failed`)."
+      },
+      "ExternalRefOut": {
+        "properties": {
+          "sink": {
+            "type": "string",
+            "title": "Sink",
+            "description": "Sink name, e.g. `linear`."
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "sink",
+          "external_id",
+          "url"
+        ],
+        "title": "ExternalRefOut",
+        "description": "A ticket mirrored in an external sink (e.g. a Linear issue)."
+      },
+      "FairnessSliceOut": {
+        "properties": {
+          "slice": {
+            "type": "string",
+            "title": "Slice",
+            "description": "`en`, `ar` or `arabizi`."
+          },
+          "target": {
+            "type": "string",
+            "enum": [
+              "category",
+              "priority"
+            ],
+            "title": "Target"
+          },
+          "dataset": {
+            "type": "string",
+            "enum": [
+              "oof_official",
+              "oof_all",
+              "our_test",
+              "probes"
+            ],
+            "title": "Dataset"
+          },
+          "macro_f1": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macro F1"
+          },
+          "n_rows": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N Rows"
+          },
+          "n_groups": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Groups"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "slice",
+          "target",
+          "dataset",
+          "macro_f1",
+          "n_rows",
+          "n_groups"
+        ],
+        "title": "FairnessSliceOut",
+        "description": "Macro-F1 on one language slice, with counts (LD-32, LD-33)."
+      },
+      "FaqAnswerOut": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "is_demo": {
+            "type": "boolean",
+            "title": "Is Demo"
+          },
+          "score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Score"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question",
+          "answer",
+          "source_url",
+          "is_demo",
+          "score"
+        ],
+        "title": "FaqAnswerOut",
+        "description": "A retrieved FAQ answer (never generated). `is_demo` marks placeholder entries."
+      },
+      "FeedbackRequest": {
+        "properties": {
+          "prediction_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Prediction Id"
+          },
+          "corrected_category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "corrected_priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Priority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "prediction_id"
+        ],
+        "title": "FeedbackRequest",
+        "description": "Body of `POST /v1/feedback`: staff confirm (both null) or correct a prediction."
+      },
+      "FeedbackResponse": {
+        "properties": {
+          "prediction_id": {
+            "type": "string",
+            "title": "Prediction Id"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/Tier"
+          },
+          "flags": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "distress",
+                "empty_input",
+                "empty_set",
+                "explanation_failed",
+                "gibberish",
+                "injection_attempt",
+                "llm_out_of_set",
+                "needs_review",
+                "out_of_scope",
+                "priority_gaming_suspected",
+                "safety",
+                "staff_confirmed",
+                "truncated",
+                "understanding_fallback",
+                "urgency_unsupported"
+              ],
+              "title": "Flag"
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "ticket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "memory": {
+            "$ref": "#/components/schemas/MemoryWriteOut"
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionOut"
+            },
+            "type": "array",
+            "title": "Actions",
+            "description": "Deferred actions that fired on confirmation."
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "prediction_id",
+          "request_id",
+          "category",
+          "priority",
+          "tier",
+          "flags",
+          "ticket",
+          "memory",
+          "actions",
+          "message"
+        ],
+        "title": "FeedbackResponse",
+        "description": "Result of `POST /v1/feedback`."
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "`campuspulse_ai.__version__`."
+          },
+          "artifact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artifact",
+            "description": "Artifact version, e.g. `v1`; null before models exist."
+          },
+          "sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha",
+            "description": "`Manifest.sha` of the loaded artifact."
+          },
+          "rss_mb": {
+            "type": "number",
+            "title": "Rss Mb"
+          },
+          "encoder_loaded": {
+            "type": "boolean",
+            "title": "Encoder Loaded"
+          },
+          "sinks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sinks"
+          },
+          "llm_tiers": {
+            "items": {
+              "$ref": "#/components/schemas/Tier"
+            },
+            "type": "array",
+            "title": "Llm Tiers"
+          },
+          "vector_store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vector Store"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "artifact",
+          "sha",
+          "rss_mb",
+          "encoder_loaded",
+          "sinks",
+          "llm_tiers",
+          "vector_store"
+        ],
+        "title": "HealthResponse",
+        "description": "`GET /health` (and `/v1/health`): liveness, artifact identity and wiring."
+      },
+      "IncidentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "building": {
+            "type": "string",
+            "title": "Building"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "report_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Report Count"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved"
+            ],
+            "title": "Status"
+          },
+          "member_ticket_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Member Ticket Ids"
+          },
+          "ticket_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Id",
+            "description": "The one incident ticket (linked to Linear)."
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Opened At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "building",
+          "category",
+          "title",
+          "priority",
+          "report_count",
+          "status",
+          "member_ticket_ids",
+          "ticket_id",
+          "opened_at",
+          "resolved_at"
+        ],
+        "title": "IncidentOut",
+        "description": "A Pulse incident: several reports of the same problem in one building."
+      },
+      "Lang": {
+        "type": "string",
+        "enum": [
+          "en",
+          "ar",
+          "arabizi"
+        ],
+        "title": "Lang"
+      },
+      "LocationIn": {
+        "properties": {
+          "building": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Building",
+            "description": "Fictional building code, e.g. `M`."
+          },
+          "room": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Room",
+            "description": "Room code, e.g. `M 214`."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "building"
+        ],
+        "title": "LocationIn",
+        "description": "A building (and optional room) the student picked on the map."
+      },
+      "MemoryStatsOut": {
+        "properties": {
+          "active": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Active"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "by_category": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Category"
+          },
+          "last_added_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Added At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "active",
+          "total",
+          "by_category",
+          "last_added_at"
+        ],
+        "title": "MemoryStatsOut",
+        "description": "Live memory stats (`MemoryStats`)."
+      },
+      "MemoryWriteOut": {
+        "properties": {
+          "example_id": {
+            "type": "string",
+            "title": "Example Id"
+          },
+          "active_examples": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Active Examples",
+            "description": "Active memory size after the write."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "example_id",
+          "active_examples"
+        ],
+        "title": "MemoryWriteOut",
+        "description": "The live-memory example written by a staff correction."
+      },
+      "MetricsResponse": {
+        "properties": {
+          "artifact": {
+            "$ref": "#/components/schemas/ArtifactOut"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At",
+            "description": "When `evaluate.py` wrote the reports."
+          },
+          "benchmark": {
+            "items": {
+              "$ref": "#/components/schemas/BenchmarkRowOut"
+            },
+            "type": "array",
+            "title": "Benchmark"
+          },
+          "coverage": {
+            "items": {
+              "$ref": "#/components/schemas/CoverageRowOut"
+            },
+            "type": "array",
+            "title": "Coverage"
+          },
+          "ask_rate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ask Rate"
+          },
+          "ask_rate_is_proxy": {
+            "type": "boolean",
+            "title": "Ask Rate Is Proxy",
+            "description": "True while the rate is the P2 proxy (LD-24)."
+          },
+          "calibration": {
+            "items": {
+              "$ref": "#/components/schemas/CalibrationOut"
+            },
+            "type": "array",
+            "title": "Calibration"
+          },
+          "fairness": {
+            "items": {
+              "$ref": "#/components/schemas/FairnessSliceOut"
+            },
+            "type": "array",
+            "title": "Fairness"
+          },
+          "ablations": {
+            "items": {
+              "$ref": "#/components/schemas/AblationRowOut"
+            },
+            "type": "array",
+            "title": "Ablations"
+          },
+          "confusions": {
+            "items": {
+              "$ref": "#/components/schemas/ConfusionOut"
+            },
+            "type": "array",
+            "title": "Confusions"
+          },
+          "router": {
+            "$ref": "#/components/schemas/RouterStatsOut"
+          },
+          "memory": {
+            "$ref": "#/components/schemas/MemoryStatsOut"
+          },
+          "redteam": {
+            "items": {
+              "$ref": "#/components/schemas/ScorecardOut"
+            },
+            "type": "array",
+            "title": "Redteam"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "artifact",
+          "generated_at",
+          "benchmark",
+          "coverage",
+          "ask_rate",
+          "ask_rate_is_proxy",
+          "calibration",
+          "fairness",
+          "ablations",
+          "confusions",
+          "router",
+          "memory",
+          "redteam"
+        ],
+        "title": "MetricsResponse",
+        "description": "`GET /v1/metrics`: offline reports (`reports/*.json`) plus live router/memory/red-team stats."
+      },
+      "NeighborOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "label": {
+            "$ref": "#/components/schemas/Category",
+            "description": "The neighbour's category."
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "sim": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Sim",
+            "description": "Cosine similarity to the request."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "train",
+              "augmented",
+              "memory"
+            ],
+            "title": "Source"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At",
+            "description": "Set for memory items ('learned N s ago')."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "label",
+          "priority",
+          "sim",
+          "source",
+          "created_at"
+        ],
+        "title": "NeighborOut",
+        "description": "A similar past example (training data or a staff correction in live memory)."
+      },
+      "Outcome": {
+        "type": "string",
+        "enum": [
+          "accept",
+          "ask",
+          "escalate",
+          "human_review",
+          "out_of_scope",
+          "distress"
+        ],
+        "title": "Outcome"
+      },
+      "Priority": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "Priority"
+      },
+      "PriorityOut": {
+        "properties": {
+          "label": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "prob": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Prob"
+          },
+          "set": {
+            "items": {
+              "$ref": "#/components/schemas/Priority"
+            },
+            "type": "array",
+            "title": "Set"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceOut"
+            },
+            "type": "array",
+            "title": "Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "prob",
+          "set",
+          "evidence"
+        ],
+        "title": "PriorityOut",
+        "description": "Priority decision: label, probability, conformal set and the evidence that drove it."
+      },
+      "ProblemClusterOut": {
+        "properties": {
+          "cluster_id": {
+            "type": "string",
+            "title": "Cluster Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "building_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Building Id"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Size"
+          },
+          "first_seen": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Seen"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Seen"
+          },
+          "representative_text": {
+            "type": "string",
+            "title": "Representative Text"
+          },
+          "sample_request_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sample Request Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cluster_id",
+          "category",
+          "building_id",
+          "size",
+          "first_seen",
+          "last_seen",
+          "representative_text",
+          "sample_request_ids"
+        ],
+        "title": "ProblemClusterOut",
+        "description": "A recurring problem (UD-6): semantically similar requests in one category/building."
+      },
+      "RedTeamFailureOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "style": {
+            "type": "string",
+            "title": "Style"
+          },
+          "lang": {
+            "$ref": "#/components/schemas/Lang"
+          },
+          "intended_category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "intended_priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "got_category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "got_priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Priority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "style",
+          "lang",
+          "intended_category",
+          "intended_priority",
+          "got_category",
+          "got_priority",
+          "outcome",
+          "reason"
+        ],
+        "title": "RedTeamFailureOut",
+        "description": "A red-team item that failed its pass rule."
+      },
+      "RedTeamRunRequest": {
+        "properties": {
+          "n": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "N"
+          },
+          "styles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Styles",
+            "description": "Subset of: fake_urgency, calm_emergency, typos, arabizi, mixed_language, two_issues, very_long, injection, off_topic, distress_adjacent. Null = all."
+          },
+          "seed": {
+            "type": "integer",
+            "title": "Seed",
+            "default": 42
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "n"
+        ],
+        "title": "RedTeamRunRequest",
+        "description": "Body of `POST /v1/redteam/run`. `n` is capped by Settings `REDTEAM_MAX_N` (200)."
+      },
+      "ReindexRequest": {
+        "properties": {
+          "collection": {
+            "type": "string",
+            "const": "faq",
+            "title": "Collection",
+            "default": "faq"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ReindexRequest",
+        "description": "Body of `POST /v1/admin/reindex` (optional extra, P4.20)."
+      },
+      "ReindexResponse": {
+        "properties": {
+          "collection": {
+            "type": "string",
+            "title": "Collection"
+          },
+          "reindexed": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Reindexed"
+          },
+          "dim": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Dim"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Duration Ms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "collection",
+          "reindexed",
+          "dim",
+          "duration_ms"
+        ],
+        "title": "ReindexResponse",
+        "description": "Result of re-embedding a vector collection."
+      },
+      "ResolveIncidentRequest": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ResolveIncidentRequest",
+        "description": "Body of `POST /v1/incidents/{incident_id}/resolve` (optional note to reporters)."
+      },
+      "ResolveIncidentResponse": {
+        "properties": {
+          "incident": {
+            "$ref": "#/components/schemas/IncidentOut"
+          },
+          "closed_ticket_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Closed Ticket Ids"
+          },
+          "notified_reporters": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Notified Reporters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "incident",
+          "closed_ticket_ids",
+          "notified_reporters"
+        ],
+        "title": "ResolveIncidentResponse",
+        "description": "Result of resolving an incident."
+      },
+      "RouterStatsOut": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "by_tier": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Tier"
+          },
+          "resolved_tier0_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Resolved Tier0 Pct"
+          },
+          "cost_usd": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cost Usd"
+          },
+          "cost_per_1k_usd": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cost Per 1K Usd"
+          },
+          "cached_calls": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Cached Calls"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "total",
+          "by_tier",
+          "resolved_tier0_pct",
+          "cost_usd",
+          "cost_per_1k_usd",
+          "cached_calls"
+        ],
+        "title": "RouterStatsOut",
+        "description": "Live router stats (`RouterStats`)."
+      },
+      "ScorecardOut": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "n": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "N"
+          },
+          "seed": {
+            "type": "integer",
+            "title": "Seed"
+          },
+          "overall": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Overall"
+          },
+          "by_style": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "By Style"
+          },
+          "by_lang": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "By Lang"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/RedTeamFailureOut"
+            },
+            "type": "array",
+            "title": "Failures"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "created_at",
+          "n",
+          "seed",
+          "overall",
+          "by_style",
+          "by_lang",
+          "failures"
+        ],
+        "title": "ScorecardOut",
+        "description": "A red-team run's scorecard (pass rates in [0, 1])."
+      },
+      "SetSizesOut": {
+        "properties": {
+          "cat": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Cat"
+          },
+          "pri": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pri"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cat",
+          "pri"
+        ],
+        "title": "SetSizesOut",
+        "description": "Conformal set sizes."
+      },
+      "SimulateRequest": {
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "title": "Scenario",
+            "description": "A `config/simulation/<name>.yaml` scenario.",
+            "default": "wifi_m"
+          },
+          "interval_s": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Interval S",
+            "default": 4.0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SimulateRequest",
+        "description": "Body of `POST /v1/admin/simulate` (optional extra, P5.19)."
+      },
+      "SimulateResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "scenario": {
+            "type": "string",
+            "title": "Scenario"
+          },
+          "queued": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Queued"
+          },
+          "interval_s": {
+            "type": "number",
+            "title": "Interval S"
+          },
+          "label": {
+            "type": "string",
+            "const": "SIMULATED TRAFFIC",
+            "title": "Label"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "scenario",
+          "queued",
+          "interval_s",
+          "label"
+        ],
+        "title": "SimulateResponse",
+        "description": "A started simulated burst. All its requests carry `simulated=true`."
+      },
+      "TicketOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "incident_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Id"
+          },
+          "office": {
+            "type": "string",
+            "title": "Office"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "provisional": {
+            "type": "boolean",
+            "title": "Provisional"
+          },
+          "sla_due_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sla Due At"
+          },
+          "escalated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/ExternalRefOut"
+            },
+            "type": "array",
+            "title": "Links"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "request_id",
+          "incident_id",
+          "office",
+          "category",
+          "priority",
+          "status",
+          "provisional",
+          "sla_due_at",
+          "escalated_at",
+          "resolved_at",
+          "title",
+          "links"
+        ],
+        "title": "TicketOut",
+        "description": "A CampusPulse ticket (system of record in Supabase)."
+      },
+      "TicketStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "in_progress",
+          "resolved",
+          "closed",
+          "escalated",
+          "merged"
+        ],
+        "title": "TicketStatus"
+      },
+      "TicketStatusRequest": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "TicketStatusRequest",
+        "description": "Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25)."
+      },
+      "Tier": {
+        "type": "string",
+        "enum": [
+          "tier0",
+          "tier1",
+          "tier2",
+          "human"
+        ],
+        "title": "Tier"
+      },
+      "TraceOut": {
+        "properties": {
+          "sets": {
+            "$ref": "#/components/schemas/SetSizesOut"
+          },
+          "models_agree": {
+            "type": "boolean",
+            "title": "Models Agree"
+          },
+          "cost_usd": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cost Usd"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Latency Ms"
+          },
+          "policy_path": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Policy Path",
+            "description": "DecisionPolicy rule ids in evaluation order, e.g. `a_gibberish`..`f_human` (P3.1)."
+          },
+          "clarified": {
+            "type": "boolean",
+            "title": "Clarified",
+            "description": "Whether a clarification answer was applied."
+          },
+          "artifact_version": {
+            "type": "string",
+            "title": "Artifact Version"
+          },
+          "per_model": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "number"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Model",
+            "description": "`<member>.<target>` -> {label: p}; only with `?debug=members` (admin, P5.16)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "sets",
+          "models_agree",
+          "cost_usd",
+          "latency_ms",
+          "policy_path",
+          "clarified",
+          "artifact_version",
+          "per_model"
+        ],
+        "title": "TraceOut",
+        "description": "Decision trace (SPEC \u00a75.1 [10])."
+      },
+      "TriageRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text",
+            "description": "The student's message (or the confirmed voice transcript)."
+          },
+          "input_mode": {
+            "type": "string",
+            "enum": [
+              "text",
+              "voice"
+            ],
+            "title": "Input Mode",
+            "default": "text"
+          },
+          "student_alias": {
+            "type": "string",
+            "title": "Student Alias",
+            "description": "Pseudonymous alias such as `demo-17`; never a name.",
+            "default": ""
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LocationIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "simulated": {
+            "type": "boolean",
+            "title": "Simulated",
+            "description": "True only for `scripts/simulate_pulse.py` traffic (P4.10).",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "TriageRequest",
+        "description": "Body of `POST /v1/triage` (SPEC \u00a77)."
+      },
+      "TriageResponse": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "decided",
+              "needs_clarification",
+              "human_review",
+              "out_of_scope",
+              "distress"
+            ],
+            "title": "Status"
+          },
+          "lang": {
+            "$ref": "#/components/schemas/Lang"
+          },
+          "is_arabizi": {
+            "type": "boolean",
+            "title": "Is Arabizi"
+          },
+          "understood_as": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Understood As",
+            "description": "Arabic transliteration shown for Arabizi input (LD-25)."
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CategoryOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PriorityOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tier": {
+            "$ref": "#/components/schemas/Tier"
+          },
+          "clarification": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClarificationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExplanationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flags": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "distress",
+                "empty_input",
+                "empty_set",
+                "explanation_failed",
+                "gibberish",
+                "injection_attempt",
+                "llm_out_of_set",
+                "needs_review",
+                "out_of_scope",
+                "priority_gaming_suspected",
+                "safety",
+                "staff_confirmed",
+                "truncated",
+                "understanding_fallback",
+                "urgency_unsupported"
+              ],
+              "title": "Flag"
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "Top-level student message (distress, out-of-scope, review)."
+          },
+          "understanding": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UnderstandingOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "status",
+          "lang",
+          "is_arabizi",
+          "understood_as",
+          "category",
+          "priority",
+          "tier",
+          "clarification",
+          "explanation",
+          "flags",
+          "action",
+          "message",
+          "understanding"
+        ],
+        "title": "TriageResponse",
+        "description": "Response of `POST /v1/triage` and `POST /v1/triage/{request_id}/clarify` (SPEC \u00a77 + LD-25 + UD-10).\n\nWhich keys are null depends on `status` (docs/api/README.md \u203a Status values)."
+      },
+      "UnderstandingOut": {
+        "properties": {
+          "summary_en": {
+            "type": "string",
+            "title": "Summary En"
+          },
+          "summary_ar": {
+            "type": "string",
+            "title": "Summary Ar"
+          },
+          "entities": {
+            "$ref": "#/components/schemas/EntitiesOut"
+          },
+          "student_reply": {
+            "type": "string",
+            "title": "Student Reply"
+          },
+          "ticket_title": {
+            "type": "string",
+            "title": "Ticket Title"
+          },
+          "ticket_body": {
+            "type": "string",
+            "title": "Ticket Body"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "llm",
+              "rules"
+            ],
+            "title": "Source"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "summary_en",
+          "summary_ar",
+          "entities",
+          "student_reply",
+          "ticket_title",
+          "ticket_body",
+          "source",
+          "prompt_version"
+        ],
+        "title": "UnderstandingOut",
+        "description": "Structured understanding (UD-10). Never changes the decided labels."
+      },
+      "WebhookAck": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          },
+          "ticket_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "accepted",
+          "ticket_id",
+          "status"
+        ],
+        "title": "WebhookAck",
+        "description": "Result of an inbound sink webhook. `accepted=false` = ignored event (not ours)."
+      }
+    },
+    "securitySchemes": {
+      "ServiceToken": {
+        "type": "http",
+        "description": "`Authorization: Bearer <AI_SERVICE_TOKEN>`, sent only by the Next.js server.",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

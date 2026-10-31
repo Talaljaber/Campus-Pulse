@@ -1,0 +1,56 @@
+{
+  "name": "feedback_corrected",
+  "description": "Staff correct the human-review request to Registration: the ticket becomes final and the example enters live memory immediately.",
+  "method": "POST",
+  "path": "/v1/feedback",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Office": "Registrar"
+  },
+  "request": {
+    "prediction_id": "8d21f4a0-6c3e-4b7a-8e15-3c4d5e6f0004",
+    "corrected_category": "Registration",
+    "corrected_priority": null,
+    "note": "Account holds are handled by the Registrar after Finance clears the payment."
+  },
+  "status_code": 200,
+  "response": {
+    "prediction_id": "8d21f4a0-6c3e-4b7a-8e15-3c4d5e6f0004",
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0004",
+    "category": "Registration",
+    "priority": "medium",
+    "tier": "human",
+    "flags": [
+      "staff_confirmed"
+    ],
+    "ticket": {
+      "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0004",
+      "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0004",
+      "incident_id": null,
+      "office": "Registrar",
+      "category": "Registration",
+      "priority": "medium",
+      "status": "open",
+      "provisional": false,
+      "sla_due_at": "2026-11-08T10:02:00+03:00",
+      "escalated_at": null,
+      "resolved_at": null,
+      "title": "Account still on hold after fee payment; grades not visible",
+      "links": [
+        {
+          "sink": "linear",
+          "external_id": "CP-44",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-44"
+        }
+      ]
+    },
+    "memory": {
+      "example_id": "0b7d9e1f-4a2c-4d3e-8f5a-6b7c8d9e0004",
+      "active_examples": 4
+    },
+    "actions": [],
+    "message": "Added to memory: will influence similar requests now."
+  }
+}

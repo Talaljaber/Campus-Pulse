@@ -1,0 +1,38 @@
+{
+  "name": "triage_distress_ar",
+  "description": "Distress signal: no classification, no ticket, no email, no LLM. Supportive message with the counselling placeholder and 911; an immediate human-review item is queued.",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-52"
+  },
+  "request": {
+    "text": "والله تعبت ومش قادر أكمل، حاسس إنه ما في إشي بستاهل",
+    "student_alias": "demo-52"
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0006",
+    "status": "distress",
+    "lang": "ar",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": null,
+    "priority": null,
+    "tier": "human",
+    "clarification": null,
+    "explanation": null,
+    "flags": [
+      "distress"
+    ],
+    "action": null,
+    "message": "إحنا معك، وشكراً إنك حكيت. إذا كنت بخطر هلأ اتصل على 911. فيك تحكي مع مركز الإرشاد النفسي بالجامعة (رقم تجريبي)، وفي حدا من الموظفين رح يتواصل معك قريباً.",
+    "understanding": null
+  },
+  "match": [
+    "text"
+  ]
+}

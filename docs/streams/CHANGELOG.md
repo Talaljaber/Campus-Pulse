@@ -73,3 +73,78 @@
 - **Acceptance:** migration applied (MCP `list_migrations` → `0005 vectors`). SQL check of the RPC on the linked project (rolled back): `vector_dim` → `384`; building filter + `with_embedding` → 1 hit, sim 1.000, embedding returned; memory ties → ordered by id, inactive hidden; unknown collection → `22023`; client `select embedding` → `42501`. `pytest services/ai/tests/unit/test_pgvector_adapter.py services/ai/tests/invariants/test_vector_isolation.py services/ai/tests/contracts -q` → `10 passed, 43 skipped`; default selection `-m "not train and not artifacts and not supabase"` → `18 passed, 22 skipped`; `mypy --strict` on both adapters → `Success`; `ruff check .` → `All checks passed!`.
 - **Limitations / TODO / known issues:** **X4.5 not yet run**: the PgVectorStore contract cases need `SUPABASE_TEST_URL` + `SUPABASE_TEST_SERVICE_ROLE_KEY`. LocalNumpyVectorStore (ML P1) and InMemoryMemoryStore (Backend P3.7) params skip until those exist; add the Local harness in `test_vector_store_contract.py`. `PgVectorMemoryStore` drops the plan's `clock` constructor argument (unused). `memory` search and count default to `active=true`. `requests` items need an existing `requests` row (FK), and their text comes from `requests.text_norm`. `vector_dim()` reads `faq.embedding` only. Isolation invariant covers part (a); parts (b)–(d) need `build_offline`.
 - **Affects streams:** Backend (`PgVectorMemoryStore` for `build_online`, the `requests` upsert in `TriageUseCase`), ML (Local store must satisfy the same contract), DB P4.5/P4.10 (FAQ, incidents).
+
+### P0.13 — API contract stub  (backend, 2026-10-31, commits a650caa..ad2d418)
+- **What now exists:**
+  - The frozen `/v1` HTTP contract as Pydantic v2 DTOs.
+  - A fixture-backed mock FastAPI app serving every endpoint.
+  - The exported `services/ai/openapi.json`: 16 operations, OpenAPI 3.1.
+  - 31 EN / Jordanian-Arabic / Arabizi fixtures.
+  - Generated per-endpoint docs.
+- **Public interfaces added:**
+  - `application/dto.py`:
+    - request/response models for every SPEC §7 route;
+    - the LD-25 additions (`understood_as`, top-level `message`, flag `explanation_failed`, `GET /v1/incidents?open=1`, `POST /v1/tickets/{id}/status`, and the optional `/v1/admin/{simulate,reindex}`);
+    - `understanding` (UD-10) and `GET /v1/insights/recurring` (UD-6);
+    - `ErrorResponse` / `ErrorCode` / `ERROR_HTTP_STATUS` / `error_code_for(exc)`;
+    - `to_student_view()` and `PrincipalHeaders`.
+  - `frameworks/api_contract.py`: `ENDPOINTS` and `route_kwargs(op_id)`. Per-route metadata (roles, auth, error codes, side effects) that the real app must reuse so its OpenAPI document matches.
+  - `frameworks/mock_app.py` (`app`, `create_mock_app()`).
+  - `frameworks/export_openapi.py`.
+  - `scripts/gen_api_docs.py [--check]`.
+  - Docs: [docs/api/README.md](../api/README.md), [docs/api/endpoints.md](../api/endpoints.md).
+- **How to use it:**
+  - Run the mock: `uvicorn campuspulse_ai.frameworks.mock_app:app --port 8000`.
+  - Call it: `curl.exe -s -X POST localhost:8000/v1/triage -H "Authorization: Bearer x" -H "Content-Type: application/json" --data-binary "@request.json"`.
+  - Pick a specific example with `X-Mock-Fixture: triage_distress_ar`, or by sending a fixture's `text`.
+  - Regenerate the contract: `python -m campuspulse_ai.frameworks.export_openapi --mock --out services/ai/openapi.json`, then `python scripts/gen_api_docs.py`.
+- **Config / env added:** `MOCK_FIXTURES_DIR` (default: `services/ai/tests/fixtures/api`) and `MOCK_SERVICE_TOKEN` (unset = any Bearer token accepted). Both are mock only.
+- **Acceptance:**
+  - `pytest services/ai/tests/contracts/test_dto_contract.py -q` → `77 passed`.
+  - `python -m campuspulse_ai.frameworks.export_openapi --mock > services/ai/openapi.json` → exit 0, with 16 operations (15 `/v1` + `/health`).
+  - `python scripts/gen_api_docs.py --check` → `docs/api/endpoints.md is up to date`.
+  - `mypy --strict` on `dto.py` and `frameworks/` → no issues.
+- **Limitations / TODO / known issues:**
+  - `apps/web/src/lib/ai/types.gen.ts` is not generated here: the UI stream generates it from `services/ai/openapi.json`.
+  - `dto.py` imports pydantic, which contradicts P3.8's "stdlib dataclasses, no pydantic in application/" line and P0.6's `test_application_domain_numpy_only`. P0.6 must allow `pydantic` in `application/dto.py`, and the P3.8 acceptance line must be dropped (lead to confirm).
+  - The `/v1/metrics` sub-shapes (benchmark, coverage, calibration, fairness, ablations, confusions) are a proposal: `evaluate.py` reports (P2.8) must map onto them, or the ML stream files a change request.
+  - `HealthResponse` has more keys than P0.7's `{status, artifact, rss_mb}` test expects: P0.7's route should adopt `dto.HealthResponse`.
+- **Affects streams:**
+  - UI: types, mocks, auth headers and the status/flags tables.
+  - Backend: P3.8 and P3.12 implement this contract and reuse `route_kwargs`.
+  - Foundation: P0.6 allow-list, P0.7 health shape, CI `gen_api_docs.py --check`.
+  - ML: `/v1/metrics` shapes.
+  - DB: the incident, ticket and recurring shapes.
+
+### P3.1 — Deterministic DecisionPolicy  (backend, 2026-10-31, commit 9d9df2f)
+- **What now exists:** `DefaultDecisionPolicy` in `domain/policy.py`. It is the pure, stdlib-only implementation of the `DecisionPolicy` port: SPEC §5.1 [7] and ARCHITECTURE §2.1 [7] rules a→f, first match wins.
+- **Public interfaces added:**
+  - `DefaultDecisionPolicy(tau_ood: float)`:
+    - `.decide(core, budget, llm_allowed) -> Outcome`;
+    - `.decide_with_path(core, budget, llm_allowed, *, after_escalation=False) -> tuple[Outcome, tuple[str, ...]]`;
+    - `.tau_ood`.
+  - Rule-id constants `RULE_GIBBERISH`…`RULE_HUMAN` and `POLICY_RULES` (`a_gibberish`, `b_ood`, `c_accept`, `d_ask`, `e_escalate`, `f_human`).
+- **Rules:**
+  - a: flag `gibberish` → OUT_OF_SCOPE.
+  - b: `ood_score < tau_ood` and |S_cat| ≥ 3 → OUT_OF_SCOPE.
+  - c: both sets are singletons → ACCEPT.
+  - d: a set of size 2 and `budget.remaining > 0` → ASK.
+  - e: `llm_allowed` and any set of size ≥ 2 → ESCALATE.
+  - f: otherwise → HUMAN_REVIEW.
+  - With `after_escalation=True`, only c and f are evaluated.
+  - The path lists the rules evaluated, and its last id is the one that fired. Use cases append that last id to `explanation.trace.policy_path` at each evaluation, e.g. `["d_ask", "c_accept"]` (see [docs/api/README.md](../api/README.md)).
+  - Distress is not handled here (the use case does it first). Unknown flags are ignored.
+- **How to use it:**
+  ```python
+  policy = DefaultDecisionPolicy(tau_ood=config.thresholds.tau_ood)
+  outcome = policy.decide(core, ClarificationBudget(max_questions=1, asked=0), llm_allowed)
+  ```
+- **Config / env added:** none. It reads `thresholds.tau_ood`, passed in by the composition root.
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_policy.py -q` → `14 passed`.
+  - `python -c "import campuspulse_ai.domain.policy as p, sys; assert not [m for m in sys.modules if m.startswith(('numpy','sklearn'))]"` → exit 0.
+  - `mypy --strict services/ai/campuspulse_ai/domain` → no issues.
+- **Limitations / TODO / known issues:**
+  - The P3.1 plan text sketches `ClarificationBudget(asked, max, max_if_unsure)` with `left()` and `after_answer()`. The frozen domain type is `ClarificationBudget(max_questions, asked)` with `.remaining`, and the policy uses that.
+  - The "not sure → a second question" rule therefore belongs in ClarifyUseCase (P3.10), which builds `ClarificationBudget(max_questions=2, asked=1)`. No domain change is needed.
+- **Affects streams:** Backend (P3.9/P3.10 use it); ML (P3 recomputes the true ASK rate with it, LD-24).

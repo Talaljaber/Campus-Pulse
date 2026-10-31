@@ -1,0 +1,160 @@
+{
+  "name": "triage_human_review_en",
+  "description": "Two issues in one message: three categories stay in the set after tier 1, so a staff member reviews it; a provisional (unconfirmed) ticket is opened with the best guess.",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-31"
+  },
+  "request": {
+    "text": "I paid the fees last week but my account is still on hold and now I can't see my grades on the portal",
+    "student_alias": "demo-31"
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0004",
+    "status": "human_review",
+    "lang": "en",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "Finance",
+      "prob": 0.41,
+      "set": [
+        "Finance",
+        "Registration",
+        "IT Support"
+      ]
+    },
+    "priority": {
+      "label": "medium",
+      "prob": 0.62,
+      "set": [
+        "medium"
+      ],
+      "evidence": [
+        {
+          "type": "enrollment_blocked",
+          "span": "account is still on hold"
+        }
+      ]
+    },
+    "tier": "tier1",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "paid",
+          0.21
+        ],
+        [
+          "hold",
+          0.19
+        ],
+        [
+          "fees",
+          0.17
+        ],
+        [
+          "portal",
+          0.12
+        ],
+        [
+          "grades",
+          0.09
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "I paid my installment but the system still shows a balance",
+          "label": "Finance",
+          "priority": "medium",
+          "sim": 0.72,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "My registration is on hold and I don't know why",
+          "label": "Registration",
+          "priority": "medium",
+          "sim": 0.69,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "The student portal won't show my grades",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.66,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": {
+        "drop": "paid",
+        "category": "Registration",
+        "priority": "medium"
+      },
+      "trace": {
+        "sets": {
+          "cat": 3,
+          "pri": 1
+        },
+        "models_agree": false,
+        "cost_usd": 0.00018,
+        "latency_ms": 1240,
+        "policy_path": [
+          "e_escalate",
+          "f_human"
+        ],
+        "clarified": false,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [
+      "needs_review"
+    ],
+    "action": {
+      "type": "ticket",
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0004",
+      "external": [
+        {
+          "sink": "linear",
+          "external_id": "CP-44",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-44"
+        }
+      ],
+      "sla_due_at": "2026-11-08T10:02:00+03:00",
+      "message": "A staff member will confirm this; we've opened it as Finance.",
+      "provisional": true,
+      "tags": [],
+      "booking": null,
+      "faq": null,
+      "incident_id": null
+    },
+    "message": "A staff member will confirm this; we've opened it as Finance.",
+    "understanding": {
+      "summary_en": "Student paid the fees but the account is still on hold and grades are not visible on the portal.",
+      "summary_ar": "الطالب دفع الرسوم بس حسابه لسا موقوف وما بقدر يشوف علاماته عالبوابة.",
+      "entities": {
+        "building": null,
+        "room": null,
+        "course_code": null,
+        "deadline": null,
+        "system": "student portal"
+      },
+      "student_reply": "Thanks, we've passed this to staff to confirm. You'll get an update here.",
+      "ticket_title": "Account still on hold after fee payment; grades not visible",
+      "ticket_body": "Reported by demo-31: fees paid, account still on hold, grades not visible on the portal. Category unconfirmed (Finance / Registration / IT Support).",
+      "source": "llm",
+      "prompt_version": "v1"
+    }
+  },
+  "match": [
+    "text"
+  ]
+}

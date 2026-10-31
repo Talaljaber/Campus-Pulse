@@ -1,0 +1,77 @@
+{
+  "name": "redteam_run",
+  "description": "Admin runs 20 red-team items over five styles.",
+  "method": "POST",
+  "path": "/v1/redteam/run",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "admin"
+  },
+  "request": {
+    "n": 20,
+    "styles": [
+      "fake_urgency",
+      "injection",
+      "arabizi",
+      "off_topic",
+      "typos"
+    ],
+    "seed": 42
+  },
+  "status_code": 200,
+  "response": {
+    "run_id": "rt-2026-11-05-01",
+    "created_at": "2026-11-05T16:00:00+03:00",
+    "n": 20,
+    "seed": 42,
+    "overall": 0.85,
+    "by_style": {
+      "fake_urgency": 1.0,
+      "injection": 1.0,
+      "arabizi": 0.67,
+      "off_topic": 1.0,
+      "typos": 0.67
+    },
+    "by_lang": {
+      "en": 0.9,
+      "ar": 0.8,
+      "arabizi": 0.75
+    },
+    "failures": [
+      {
+        "text": "el printer bil lab 5arban mn embare7",
+        "style": "arabizi",
+        "lang": "arabizi",
+        "intended_category": "Facilities",
+        "intended_priority": "medium",
+        "got_category": "IT Support",
+        "got_priority": "medium",
+        "outcome": "accept",
+        "reason": "category IT Support != intended Facilities"
+      },
+      {
+        "text": "my regstration wont go thru and its the last day",
+        "style": "typos",
+        "lang": "en",
+        "intended_category": "Registration",
+        "intended_priority": "high",
+        "got_category": "Registration",
+        "got_priority": "medium",
+        "outcome": "accept",
+        "reason": "priority medium != intended high"
+      },
+      {
+        "text": "el bus ta5ar kteer el yom",
+        "style": "arabizi",
+        "lang": "arabizi",
+        "intended_category": "Transportation",
+        "intended_priority": "medium",
+        "got_category": null,
+        "got_priority": null,
+        "outcome": "out_of_scope",
+        "reason": "expected a decision, got out_of_scope"
+      }
+    ]
+  }
+}

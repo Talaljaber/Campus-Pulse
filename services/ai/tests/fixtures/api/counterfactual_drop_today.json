@@ -1,0 +1,29 @@
+{
+  "name": "counterfactual_drop_today",
+  "description": "Clicking the highlighted word 'اليوم' in the moment-1 request: without it, priority drops to medium.",
+  "method": "GET",
+  "path": "/v1/explain/{request_id}/counterfactual",
+  "path_params": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0001"
+  },
+  "query": {
+    "drop": "اليوم"
+  },
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0001",
+    "drop": "اليوم",
+    "original_category": "Registration",
+    "original_priority": "high",
+    "category": "Registration",
+    "priority": "medium",
+    "category_prob": 0.97,
+    "priority_prob": 0.66,
+    "flipped": true
+  }
+}

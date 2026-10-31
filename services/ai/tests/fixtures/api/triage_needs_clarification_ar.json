@@ -1,0 +1,79 @@
+{
+  "name": "triage_needs_clarification_ar",
+  "description": "Video moment 1, step 1: Jordanian Arabic, ambiguous between Registration and IT Support, so the policy asks one question (rule d_ask).",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "text": "مش قادر أسجل مادة CS 201، كل ما أكبس تسجيل بعطيني خطأ واليوم آخر يوم",
+    "input_mode": "text",
+    "student_alias": "demo-17",
+    "location": null,
+    "conversation_id": null
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0001",
+    "status": "needs_clarification",
+    "lang": "ar",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "Registration",
+      "prob": 0.52,
+      "set": [
+        "Registration",
+        "IT Support"
+      ]
+    },
+    "priority": {
+      "label": "high",
+      "prob": 0.79,
+      "set": [
+        "high"
+      ],
+      "evidence": [
+        {
+          "type": "deadline_today",
+          "span": "اليوم آخر يوم"
+        },
+        {
+          "type": "enrollment_blocked",
+          "span": "بعطيني خطأ"
+        }
+      ]
+    },
+    "tier": "tier0",
+    "clarification": {
+      "question_id": "cat:Registration|IT Support",
+      "text": "المشكلة بتسجيل المادة نفسها، ولا بالدخول أو الموقع مش شغال؟",
+      "options": [
+        {
+          "id": "registration",
+          "text": "بتسجيل المادة"
+        },
+        {
+          "id": "it",
+          "text": "بالدخول أو الموقع"
+        },
+        {
+          "id": "not_sure",
+          "text": "مش متأكد"
+        }
+      ]
+    },
+    "explanation": null,
+    "flags": [],
+    "action": null,
+    "message": null,
+    "understanding": null
+  },
+  "match": [
+    "text"
+  ]
+}
