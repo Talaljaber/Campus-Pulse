@@ -67,7 +67,7 @@
 <a id="p4-1"></a>
 ## P4.1 — Write the core schema, RLS, Realtime migrations and RLS test
 
-- [ ] Done
+- [x] Done
 - Depends on: P0 (`0001_init.sql`), P4.0
 - Est: 2 h · Cut: no
 - Files:
@@ -107,7 +107,7 @@
 <a id="p4-2"></a>
 ## P4.2 — Add pgvector: the vectors migration, PgVectorStore, PgVectorMemoryStore and contract tests
 
-- [ ] Done
+- [x] Done (X4.5 live pgvector contract pending SUPABASE_TEST_* keys)
 - Depends on: P4.1; P2 final encoder decision (dim 384 locked, §6.1 #18)
 - Est: 2 h · Cut: no
 - Files:

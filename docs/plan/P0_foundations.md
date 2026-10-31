@@ -515,7 +515,7 @@
 <a id="p0-10"></a>
 ## P0.10 — Create the Supabase project and the first migration (pgvector enabled)
 
-- [ ] Done
+- [x] Done
 - **Goal:** the system-of-record project exists, linked to the repo, with `vector` enabled and four tables under RLS (deny-all until P4).
 - **Depends on:** P0.1
 - **Est / Cut:** 0.75 h · Cut: no
