@@ -1227,3 +1227,8 @@
 - **Limitations / TODO / known issues:** e2e selector for "What the student wrote" changed from region to group. New Arabic strings for native review: `shell.*` (subtitle, hello, help*, footer*, loginTitle), `nav.request`, `nav.studentLabel`, `staff.detail.category/priority/flags`, `devui.*` (palette, tiles, info panel). Vitest tests that assert header text or Sign out placement are unverified.
 - **Affects streams:** Backend/UI (advisor-routing UI should use `InfoPanel` actions and portal tabs).
 
+### P2.14 — translate-test experiment with a local opus-mt-ar-en (ml, 2026-10-31)
+- **What now exists:** `scripts/translate_test.py` (fetch / bench / arms / samples), `reports/translate_test.json`, the translation cache `reports/translate_test/translations.csv`, models.md §26, D-019 (proposed). Translate-only (arm B) lifts OOF category 0.806 → 0.935 (+0.129, 90 % CI [+0.054, +0.221]; Arabic 0.333 → 0.833) and our_test 0.789 → 0.864; it costs ~105 MB RSS and p95 229–324 ms. Nothing is wired in; the frozen v1 (sha 9a379d97c0cd) and every default are unchanged.
+- **Public interfaces added or changed:** none (script only). `requirements-train.txt` gains `ctranslate2`, `sentencepiece`, `psutil`.
+- **Limitations / TODO / known issues:** priority is identical in every arm (not investigated); no NLLB check; the RSS gate fails the 300 MB target; shipping B would need the ct2 model in the release tarball, a `fetch_models.py` entry, a config flag and a translator adapter.
+- **Affects streams:** Lead (D-019 decision on RSS), Backend (API RSS would reach ~495 MB if adopted).
