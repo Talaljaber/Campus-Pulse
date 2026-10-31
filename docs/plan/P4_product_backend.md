@@ -39,6 +39,7 @@
 ## P4.0 — Day-one smoke checks for every external service (P4 morning, before code)
 
 - [ ] Done
+- Progress (2026-10-31): Linear verified live (`smoke_linear.py` 9/9); Gmail SMTP verified live on port 465 (`smoke_email.py`). Left: OpenRouter and the Render SMTP check after deploy.
 - Depends on: the [Appendix D](appendix_D_accounts.md) accounts created on 31 Oct–1 Nov; P0 Render service (Starter) running `/health`
 - Est: 0.75 h · Cut: no
 - Files:
@@ -380,7 +381,8 @@
 <a id="p4-8"></a>
 ## P4.8 — Action engine: the full ActUseCase (FAQ, ticket, booking, safety alert, provisional and finalize)
 
-- [ ] Done
+- [x] Done
+
 - Depends on: P4.4–P4.7, [P3.9](P3_intelligence.md#p3-9) (act v0)
 - Est: 2 h · Cut: no. `cases` writes are B-list cut.
 - **UD-10:** tickets (Supabase and Linear) use `understanding.ticket_title` and `ticket_body`. The student notification uses `understanding.student_reply`, and the FAQ answer stays retrieved-and-cited, never generated. Entities fill the `building`/`room` fields when the student did not pick a location.
