@@ -5,7 +5,12 @@ import { useSignIn, type SignInError } from "@/hooks/useSignIn";
 import { useT, type DictKey } from "@/i18n";
 import { DEMO_ACCOUNTS } from "@/lib/auth/demo";
 import { Button } from "../ui/Button";
+import type { IconName } from "../ui/Icon";
+import { IconTile } from "../ui/IconTile";
+import { InfoPanel } from "../ui/InfoPanel";
 import { TextField } from "../ui/TextField";
+
+const ROLE_ICON: Record<string, IconName> = { student: "graduation", staff: "briefcase", admin: "shield" };
 
 const ERROR_KEY: Record<SignInError, DictKey> = {
   invalid: "auth.errorInvalid",
@@ -72,29 +77,26 @@ export function LoginForm({ next }: LoginFormProps) {
         </Button>
       </form>
 
-      <section aria-labelledby="demo-accounts" className="flex flex-col gap-3 border-t border-line pt-4">
-        <h2 id="demo-accounts" className="text-lg font-semibold">
-          {t("auth.demoTitle")}
-        </h2>
+      <InfoPanel title={t("auth.demoTitle")}>
         <p className="text-sm text-fg-2">{t("auth.demoHelp")}</p>
         {hint && <p className="text-sm text-fg-3">{t("auth.hint", { hint })}</p>}
-        <ul className="flex flex-wrap gap-2">
+        <ul className="grid gap-2 sm:grid-cols-3">
           {DEMO_ACCOUNTS.map((a) => (
             <li key={a.role}>
-              <Button
-                variant="secondary"
+              <IconTile
+                icon={ROLE_ICON[a.role] ?? "user"}
+                tone={a.role === "student" ? "orange" : "grey"}
                 data-demo-role={a.role}
+                label={t("auth.signInAs", { name: t(a.labelKey) })}
                 onClick={() => {
                   setEmail(a.email);
                   passwordRef.current?.focus();
                 }}
-              >
-                {t("auth.signInAs", { name: t(a.labelKey) })}
-              </Button>
+              />
             </li>
           ))}
         </ul>
-      </section>
+      </InfoPanel>
     </div>
   );
 }

@@ -20,8 +20,10 @@ const tabId = (base: string, id: string) => `${base}-tab-${id}`;
 const panelId = (base: string, id: string) => `${base}-panel-${id}`;
 
 /**
- * Tab list (WAI-ARIA tabs pattern, automatic activation). Roving tabindex; arrow keys
- * are direction-aware in RTL; Home/End jump to the ends.
+ * Portal tab list (WAI-ARIA tabs pattern, automatic activation): rounded-top grey tabs, the
+ * selected one white with blue text and an orange top edge. Roving tabindex; arrow keys
+ * are direction-aware in RTL; Home/End jump to the ends. Scrolls sideways on narrow screens.
+ * The selected tab is also marked by weight-independent cues (white fill, top edge), not colour alone.
  */
 export function Tabs({ items, value, onChange, label, idBase, className }: TabsProps) {
   const autoId = useId();
@@ -45,7 +47,15 @@ export function Tabs({ items, value, onChange, label, idBase, className }: TabsP
   }
 
   return (
-    <div ref={ref} role="tablist" aria-label={label} onKeyDown={onKeyDown} className={cn("flex gap-1 border-b border-line", className)}>
+    <div
+      ref={ref}
+      role="tablist"
+      aria-label={label}
+      onKeyDown={onKeyDown}
+      // The grey rule under the tabs is an inset shadow on the last pixel row, so the selected
+      // tab can paint over it and merge with the panel (the portal look) even in a scroller.
+      className={cn("flex gap-1 overflow-x-auto pb-px pt-1 shadow-[inset_0_-1px_0_var(--cp-border-strong)]", className)}
+    >
       {items.map((it) => {
         const selected = it.id === value;
         return (
@@ -59,8 +69,12 @@ export function Tabs({ items, value, onChange, label, idBase, className }: TabsP
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(it.id)}
             className={cn(
-              "-mb-px min-h-11 border-b-2 px-4 text-base font-medium transition-colors duration-(--cp-motion-fast)",
-              selected ? "border-accent text-fg-1" : "border-transparent text-fg-2 hover:text-fg-1",
+              "min-h-11 shrink-0 whitespace-nowrap rounded-t-lg border border-b-0 border-t-[3px] px-4 text-base font-semibold",
+              "focus-visible:-outline-offset-4",
+              "transition-colors duration-(--cp-motion-fast)",
+              selected
+                ? "border-line-strong border-t-orange bg-surface-0 text-accent shadow-[0_1px_0_var(--cp-surface-0)]"
+                : "border-line border-t-transparent bg-surface-2 text-fg-1 hover:bg-surface-1 hover:text-accent",
             )}
           >
             {it.label}
@@ -73,6 +87,7 @@ export function Tabs({ items, value, onChange, label, idBase, className }: TabsP
 
 /** Props for {@link TabPanel}. */
 export interface TabPanelProps {
+  className?: string;
   idBase: string;
   id: string;
   /** Currently selected tab id; the panel is hidden unless it equals `id`. */
@@ -81,9 +96,16 @@ export interface TabPanelProps {
 }
 
 /** Panel linked to the tab with the same `id` (`aria-labelledby`). */
-export function TabPanel({ idBase, id, value, children }: TabPanelProps) {
+export function TabPanel({ idBase, id, value, children, className }: TabPanelProps) {
   return (
-    <div role="tabpanel" id={panelId(idBase, id)} aria-labelledby={tabId(idBase, id)} hidden={value !== id} tabIndex={0}>
+    <div
+      role="tabpanel"
+      id={panelId(idBase, id)}
+      aria-labelledby={tabId(idBase, id)}
+      hidden={value !== id}
+      tabIndex={0}
+      className={cn("pt-4", className)}
+    >
       {value === id ? children : null}
     </div>
   );

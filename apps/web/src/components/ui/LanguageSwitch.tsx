@@ -16,7 +16,7 @@ export function LanguageSwitch({ className = "" }: LanguageSwitchProps) {
   const { lang, setLang } = useLang();
   const t = useT();
   return (
-    <div role="group" aria-label={t("lang.label")} className={`inline-flex rounded-md border border-line-strong p-0.5 ${className}`}>
+    <div role="group" aria-label={t("lang.label")} className={`inline-flex rounded-md border border-accent p-0.5 ${className}`}>
       {LANGS.map((l: Lang) => {
         // Each language is named in itself, from the dictionary of that language.
         const name = translate(l, l === "en" ? "lang.en" : "lang.ar");
@@ -29,8 +29,8 @@ export function LanguageSwitch({ className = "" }: LanguageSwitchProps) {
             aria-pressed={active}
             aria-label={t("lang.switchTo", { name })}
             onClick={() => setLang(l)}
-            className={`min-h-9 rounded-sm px-3 text-sm font-medium transition-colors duration-(--cp-motion-fast) ${
-              active ? "bg-accent text-on-accent" : "text-fg-2 hover:bg-surface-2"
+            className={`min-h-9 rounded-sm px-3 text-sm font-semibold transition-colors duration-(--cp-motion-fast) ${
+              active ? "bg-accent text-on-accent" : "text-accent hover:bg-surface-2"
             }`}
           >
             {name}
