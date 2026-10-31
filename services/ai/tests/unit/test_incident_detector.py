@@ -233,3 +233,16 @@ def test_thresholds_come_from_config(h: Harness) -> None:
     assert second.kind == "new" and second.incident is not None and second.incident.priority == Priority.LOW
     third = report(h, det, around(6, 3), priority=Priority.LOW)
     assert third.incident is not None and third.incident.priority == Priority.MEDIUM
+
+
+def test_open_incident_takes_reports_whatever_its_age(h: Harness) -> None:
+    """D-007: the window bounds opening only; an ongoing outage stays one incident."""
+    det = detector(h)
+    opened = [report(h, det, around(7, i)) for i in range(3)][-1]
+    assert opened.kind == "new" and opened.incident is not None
+    h.clock.t += timedelta(minutes=3 * WINDOW_MIN)
+    late = report(h, det, around(7, 10))
+    assert late.kind == "attach" and late.incident is not None
+    assert (late.incident.id, late.incident.report_count, len(late.members)) == (opened.incident.id, 4, 1)
+    elsewhere = report(h, det, around(7, 11), building=B2)
+    assert elsewhere.kind == "none"

@@ -204,17 +204,15 @@ All three implement the same `MemoryStore` contract:
 `adapters/pulse/incident_detector.py`: **`WindowedCentroidDetector(repo, vectors, clock, tau_inc, window_min, min_reports=3, bump_at=6)`** implements `IncidentDetector`.
 
 For each located request, `detect(req, pred, embedding)` works like this:
-1. **Search:** `vectors.search("requests", embedding, k=50, filters={building_id, category, since: now − window_min, with_embedding: true})`. The request itself is excluded if it is already stored.
-2. **Cluster:** centroid = normalised mean of those embeddings plus the new one. Members = rows with cosine to the centroid ≥ `tau_inc`, and the request must be one of them.
-3. **Decide:**
-   - fewer than `min_reports` members → `none`;
-   - an open incident for that building and category, opened inside the window → `attach` (`report_count + 1`);
-   - otherwise → `new` (`report_count = members`).
-4. **Save:** the incident is saved through the repository.
-   - Priority = max of the member priorities.
+1. **Attach (D-007):** if an incident is open for that building and category, **whatever its age**, the request attaches to the oldest one (`report_count + 1`, `members = [req.id]`). One ongoing outage stays one incident.
+2. **Search:** otherwise, `vectors.search("requests", embedding, k=50, filters={building_id, category, since: now − window_min, with_embedding: true})`. The request itself is excluded if it is already stored. The window bounds **opening** only.
+3. **Cluster:** centroid = normalised mean of those embeddings plus the new one. Members = rows with cosine to the centroid ≥ `tau_inc`, and the request must be one of them.
+4. **Decide:** at least `min_reports` members → `new` (`report_count = members`); fewer → `none`.
+5. **Save:** the incident is saved through the repository.
+   - Priority = max of the member priorities (on attach, raised to the request's if higher).
    - It is bumped one level, once, when `report_count` first reaches `bump_at` (capped at high).
    - `incidents.office` is filled by the 0007 trigger when the first member ticket is attached.
-5. **Return:** `IncidentDecision.members` = the member request ids, with `req` last.
+6. **Return:** `IncidentDecision.members` = the member request ids, with `req` last.
 
 The action engine (P4.8) owns the rest: marking member tickets `merged` with `incident_id`, the single incident ticket through the sinks, the broadcast, and `ResolveIncidentUseCase`.
 
