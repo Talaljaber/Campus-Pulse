@@ -14,7 +14,7 @@ from campuspulse_ai.application.use_cases.triage import (
     with_flags,
 )
 from campuspulse_ai.domain.entities import Clarification
-from campuspulse_ai.domain.errors import ClarificationBudgetExceeded, InvalidInput, NotFound
+from campuspulse_ai.domain.errors import ClarificationBudgetExceeded, InvalidInput, NotFound, Unauthorized
 from campuspulse_ai.domain.policy import RULE_ASK, RULE_GIBBERISH, RULE_OOD
 from campuspulse_ai.domain.ports import Clock, Repository
 from campuspulse_ai.domain.values import ClarificationBudget, ClarificationConstraint, Location
@@ -41,9 +41,12 @@ class ClarifyUseCase:
     5. `DecisionFlow.run(..., clarified=True)` with `policy_path` starting with the rule of each
        earlier question (`d_ask`, or `a_gibberish` / `b_ood` for the topic chips).
 
-    Errors: `NotFound` (unknown request or option, 404); `ClarificationBudgetExceeded` when no question
-    is pending, e.g. a third answer (409); `InvalidInput` when `question_id` is not the pending
-    question or the free text is blank (422). Everything after step 3 is as in `DecisionFlow`.
+    `caller_alias` (the route passes it for a student caller) must equal the request's alias.
+
+    Errors: `NotFound` (unknown request or option, 404); `Unauthorized` (another student's request,
+    403); `ClarificationBudgetExceeded` when no question is pending, e.g. a third answer (409);
+    `InvalidInput` when `question_id` is not the pending question or the free text is blank (422).
+    Everything after step 3 is as in `DecisionFlow`.
     """
 
     def __init__(
@@ -64,9 +67,16 @@ class ClarifyUseCase:
         self._max_if_unsure = max_if_unsure
 
     def run(
-        self, request_id: str, cmd: dto.ClarifyRequest, *, debug_members: bool = False
+        self,
+        request_id: str,
+        cmd: dto.ClarifyRequest,
+        *,
+        debug_members: bool = False,
+        caller_alias: str | None = None,
     ) -> dto.TriageResponse:
         request = self._repo.get_request(request_id)
+        if caller_alias is not None and request.alias != caller_alias:
+            raise Unauthorized(f"request {request_id} belongs to another student")
         history = self._repo.clarifications_for(request_id)
         pending = [c for c in history if c.answer is None]
         if not pending:

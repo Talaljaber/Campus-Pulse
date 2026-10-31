@@ -11,7 +11,7 @@ count as unset, so copying ``.env.example`` to ``.env`` works unchanged.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -44,8 +44,18 @@ class Settings(BaseSettings):
     supabase_url: str | None = None
     supabase_service_role_key: SecretStr | None = None
 
-    # Auth between Netlify route handlers and this service
+    # Auth between Netlify route handlers and this service. Unset token = every /v1 route answers 401.
     ai_service_token: SecretStr | None = None
+    # Who the caller is: the Supabase user JWT + profiles (production, P4.12) or X-CP-* headers
+    # (tests and local dev only).
+    auth_mode: Literal["trusted_headers", "supabase_jwt"] = "supabase_jwt"
+    auth_cache_s: float = 60.0  # a verified user token is trusted this long without re-asking Supabase
+    auth_timeout_s: float = 5.0  # per Supabase Auth / profiles call
+
+    # Model lab (P4.12)
+    reports_dir: Path = Path("reports")  # model_lab.json from evaluate.py; copied into the image
+    batch_max_rows: int = 10_000  # /v1/batch rows per upload
+    batch_max_bytes: int = 5_000_000  # /v1/batch upload size
 
     # Email: Gmail SMTP with an app password (LD-3)
     gmail_smtp_user: str | None = None

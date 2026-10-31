@@ -68,3 +68,14 @@ email:
     A high-priority transport problem was reported (demo).
     Ticket: {ticket_id}
     Request: {text}
+  # P4.9: sent to the student's demo inbox (DEMO_STUDENT_INBOX) when a ticket becomes resolved.
+  resolved_subject: "[CampusPulse demo] Resolved: {title}"
+  resolved_body: |-
+    Your CampusPulse ticket was marked as resolved.
+    Ticket: {title} ({ticket_id})
+    Note from staff: {note}
+    If the problem is back, send a new message in the CampusPulse chat.
+
+# P4.9: in-app notes for office staff (notifications row addressed to "office:<office code>").
+staff:
+  escalated: "SLA missed (due {sla_due_at}): priority raised from {old} to {new}."

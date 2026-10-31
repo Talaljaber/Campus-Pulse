@@ -14,7 +14,7 @@ The HTTP contract of the FastAPI AI service. It was frozen at P0.13 and is owned
 | Environment | Base URL | How to run |
 | --- | --- | --- |
 | Local mock (fixtures, no models) | `http://localhost:8000` | `uvicorn campuspulse_ai.frameworks.mock_app:create_mock_app --factory --port 8000` |
-| Local real service (from P3.12) | `http://localhost:8000` | `uvicorn api:app --app-dir services/ai --port 8000` |
+| Local real service (from P3.12) | `http://localhost:8000` | `uvicorn api:app --app-dir services/ai --port 8000` (see [The real app](#real-app) for what is wired today) |
 | Render | `https://<render-service>.onrender.com` | Deployed in P0.11 / P4.13. The real hostname is recorded in [docs/ops/README.md](../ops/README.md). |
 
 Every route lives under `/v1`. The only exception is `GET /health`, the root alias of `GET /v1/health` that Render's health check uses. The browser never calls this service directly; it calls the Next.js route handler `/api/ai/...`, which forwards the request server-side (P5.6).
@@ -25,13 +25,33 @@ Every route lives under `/v1`. The only exception is `GET /health`, the root ali
 **Service token.**
 - Every route except `/health`, `/v1/health` and the Linear webhook requires `Authorization: Bearer <AI_SERVICE_TOKEN>`.
 - Only the Next.js server holds the token: Netlify runtime env, never in the browser bundle (LD-25).
-- A missing or wrong token gets `401 unauthenticated`.
+- A missing or wrong token gets `401 unauthenticated`. The comparison is constant-time
+  (`hmac.compare_digest`). If `AI_SERVICE_TOKEN` is not set on the server, **every** such route
+  answers 401 (fail closed).
+- The token is checked before anything else: a request without it never reaches validation, the role
+  check or a use case.
 
 **User identity and roles.**
 - The Next.js server forwards the signed-in user's Supabase access token in `X-CP-User-JWT`.
-- In production (`AUTH_MODE=supabase_jwt`, P4.12), FastAPI verifies the JWT and reads `role`, `office` and `alias` from the `profiles` row.
+- In production (`AUTH_MODE=supabase_jwt`, the default since P4.12), FastAPI verifies the JWT and reads `role`, `office` and `alias` from the `profiles` row.
 - The role never comes from a client-controlled header.
 - A role outside an endpoint's allowed roles gets `403 forbidden`. So does staff acting on another office's ticket or incident.
+
+**`AUTH_MODE=supabase_jwt` in detail** (`adapters/integrations/supabase_auth.py`,
+`frameworks/auth.py`):
+1. `GET {SUPABASE_URL}/auth/v1/user` with the user token (and the service-role key as `apikey`)
+   verifies it, so expired and signed-out sessions fail too.
+2. `GET {SUPABASE_URL}/rest/v1/profiles?id=eq.<user id>&select=role,office,alias` with the service
+   role reads the caller. `role` must be `student`, `staff` or `admin`.
+3. The answer (also a negative one) is cached by the token's sha256 for `AUTH_CACHE_S` (60 s): one
+   Supabase round trip per user per minute, and a revoked session keeps working for at most 60 s.
+
+| Situation | Result |
+| --- | --- |
+| no `X-CP-User-JWT` | the caller is the `service` role (a script holding only the service token); `X-CP-Role/Alias/Office` are ignored |
+| token rejected by Supabase Auth, no `profiles` row, or a role outside the three | `401 unauthenticated` "Invalid or expired user token." |
+| Supabase unreachable, 5xx, or the profiles read refused (wrong service-role key) | `503 store_unavailable` |
+| no verifier wired (no `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`) and a user token is sent | `503 store_unavailable` "User token verification is not configured." |
 
 | Role | Who | Notes |
 | --- | --- | --- |
@@ -43,7 +63,18 @@ Every route lives under `/v1`. The only exception is `GET /health`, the root ali
 
 **Trusted headers (tests, local dev and the mock only).**
 - With `AUTH_MODE=trusted_headers`, the caller identity comes from `X-CP-Role`, `X-CP-Alias` and `X-CP-Office`.
+  No `X-CP-Role` means the `service` role.
 - These headers are ignored in production.
+
+**What the identity changes** (`frameworks/auth.py`, `frameworks/routes/*`):
+
+| Rule | Where |
+| --- | --- |
+| A caller with an alias (a student, or any user whose profile has one) triages under **their** alias; `student_alias` in the body is used only for the bare service token (scripts). | `POST /v1/triage` |
+| A student may answer the questions of, and ask counterfactuals about, **their own** requests only (`403 forbidden` otherwise). Staff and admin may ask counterfactuals about any request. | `/clarify`, `/explain/.../counterfactual` |
+| `?debug=members` is admin-only (`403` for anyone else). | `POST /v1/triage` |
+| The reviewer of `/v1/feedback` is the caller; no body field names the reviewer. | `POST /v1/feedback` |
+| Flags per role: students get `to_student_view` (no `urgency_unsupported`, no `priority_gaming_suspected`); staff get everything except `priority_gaming_suspected`; admin and the service token get every flag. | `/triage`, `/clarify` |
 
 **Linear webhook.** `POST /v1/integrations/linear/webhook` carries no service token.
 - The raw body is verified with HMAC-SHA256 (`LINEAR_WEBHOOK_SECRET`) against the `Linear-Signature` header.
@@ -125,11 +156,15 @@ Every non-2xx response has the same body:
 | 409 | `clarification_budget_exceeded` | domain `ClarificationBudgetExceeded`: no question pending for this request (also a third answer) |
 | 422 | `invalid_input` | body, query or path validation; domain `InvalidInput` (e.g. blank text, bad CSV columns, a clarify `question_id` that is not the pending question, blank `free_text`) |
 | 500 | `internal_error` | anything unexpected |
-| 501 | `not_implemented` | an optional extra (`/v1/admin/*`) that is not built in this deployment |
+| 501 | `not_implemented` | an optional extra (`/v1/admin/*`) that is not built in this deployment, or a route whose use case is not wired into this process yet (`details.component` names it; see [The real app](#real-app)) |
 | 503 | `artifact_unavailable` | domain `ArtifactError`: the model artifact is missing or failed its checksum |
 | 503 | `store_unavailable` | domain `StoreError`: Supabase or pgvector is unreachable |
 
-The mapping lives in `dto.DOMAIN_ERROR_CODES` and `dto.error_code_for(exc)`, and the HTTP status per code in `dto.ERROR_HTTP_STATUS`.
+The mapping lives in `dto.DOMAIN_ERROR_CODES` and `dto.error_code_for(exc)`, and the HTTP status per code in `dto.ERROR_HTTP_STATUS`. The handlers are in `frameworks/errors.py`:
+- 4xx domain errors return the domain message (it names the request, option or question).
+- 503 and 500 return a **fixed** message, because the underlying error may carry SQL, URLs or file
+  paths. `details.request_id` is a reference that appears in the server log line with the real error.
+- Unknown paths are `404 not_found`, a wrong method is `405 invalid_input`, both in the same shape.
 
 These errors are degraded inside the use cases and never reach the client:
 - `LLMUnavailable`: falls back to tier 0.
@@ -152,7 +187,9 @@ When a set holds two labels and no question has been used, the response carries 
 - **Choice.** The question with the smallest expected set size after the answer wins. Category questions go before priority questions, ties follow the bank order, and a question is never asked twice. If no bank question splits the set (for example `{low, high}`), no question is asked and the policy moves on.
 - **Answer.** `POST /v1/triage/{request_id}/clarify` with `option_id` (or `free_text`, which is appended to the request and re-classified). The answer becomes a constraint and the core is re-run with it (LD-29).
 - **`not_sure`.** It applies nothing and allows one more question (at most two in total).
-- **Errors.** An unknown `question_id` or `option_id` is `404 not_found`.
+- **Errors.** An unknown request or `option_id` is `404 not_found`; a `question_id` that is not the
+  pending question is `422 invalid_input`; no pending question (e.g. a third answer) is
+  `409 clarification_budget_exceeded`; another student's request is `403 forbidden`.
 
 | `question_id` | Splits | Asked when | Options (`id` → effect) |
 | --- | --- | --- | --- |
@@ -253,11 +290,13 @@ Integration details: [docs/integrations.md](../integrations.md). Use-case refere
 | --- | --- | --- |
 | `tickets` row | every `ticket`, `booking`, `safety_alert` (and an unanswered FAQ) | `action.ticket_id`; staff dashboard (RLS by office) |
 | Linear issue | each ticket, when `LINEAR_API_KEY` is set (team CDP, label = category, due date = SLA date) | `action.external[]` `{sink: "linear", external_id, url}`. A Linear failure never fails triage. |
-| Ticket status from Linear | a signed `POST /v1/integrations/linear/webhook` that changes the issue state | ticket status; the student gets an in-app `notifications` row |
+| Ticket status from Linear | a signed `POST /v1/integrations/linear/webhook` that moves the issue's state forward | ticket status (+ `resolved_at`); the student gets an in-app `notifications` row; see [Ticket lifecycle](#ticket-lifecycle) |
+| Ticket status from the dashboard | `POST /v1/tickets/{id}/status` by staff of the ticket's office or an admin | ticket status; the Linear issue state; the student's `notifications` row (with the staff note) |
+| SLA escalation | the SLA scanner, every `SLA_SCAN_MINUTES` | priority bumped one level, status `escalated`, `escalated_at`; Linear priority; a `notifications` row for `office:<office>` |
 | Advisor booking | Academic Support × high, not provisional | `action.booking`; the slot's `booked_by`; a `cases` row |
-| Email | booking confirmation (to `DEMO_STUDENT_INBOX` + the advisor's demo inbox); safety and transport alerts (to `DEMO_OFFICE_INBOX`); resolution notices (P4.9) | `outbox` row (`sent` + `provider_id` = Message-ID, `rejected`/`failed` + `error`, or `deferred` + `error` over the daily cap) |
-| In-app message | one per action with a ticket or booking: `understanding.student_reply` (D-006); status changes (P4.9) | `notifications` row for the alias (Realtime), payload below; plus an `outbox` row `in_app` |
-| Audit events | every triage outcome and action | `events` (`triage.decided`, `triage.ask`, `triage.out_of_scope`, `triage.distress`, `act.ticket`, `act.booking`, `act.booking_refused`, `act.safety_alert`, `act.transport_alert`, `act.finalized`, `incident.new`/`incident.attach`) |
+| Email | booking confirmation (to `DEMO_STUDENT_INBOX` + the advisor's demo inbox); safety and transport alerts (to `DEMO_OFFICE_INBOX`); resolution notice when a ticket becomes `resolved` (to `DEMO_STUDENT_INBOX`, P4.9) | `outbox` row (`sent` + `provider_id` = Message-ID, `rejected`/`failed` + `error`, or `deferred` + `error` over the daily cap) |
+| In-app message | one per action with a ticket or booking: `understanding.student_reply` (D-006), kind `message` + an `outbox` row `in_app`; ticket status changes (P4.9), kind `ticket_status`, written directly (no outbox row) | `notifications` row for the alias (Realtime), payload below |
+| Audit events | every triage outcome, action and status change | `events` (`triage.decided`, `triage.ask`, `triage.out_of_scope`, `triage.distress`, `act.ticket`, `act.booking`, `act.booking_refused`, `act.safety_alert`, `act.transport_alert`, `act.finalized`, `incident.new`/`incident.attach`, `ticket.status`, `sla.escalated`) |
 
 ### Allow-list behaviour (never contacting real people)
 
@@ -282,10 +321,61 @@ Students receive updates through Realtime on `notifications` (RLS: their alias),
 | `kind` | Written by | `payload` keys | Chat shows |
 | --- | --- | --- | --- |
 | `message` | `InAppNotifier` (every in-app `Notifier.send`; today: `ActUseCase` replies) | `ref` (uuid, also in `outbox.provider_id` as `inapp:<ref>`), `message` (the text), `subject`, `priority` (`low`/`medium`/`high` or null), `flags` (list) | `message` verbatim. There is **never** a `status` key. |
-| `ticket_status` | `SyncTicketUseCase` / dashboard status change (**P4.9, next batch**; contract fixed here) | `ticket_id`, `status` (a `tickets.status` value), `title` (the ticket title), `message` (optional sentence) | "Your ticket <title> is now <status>" |
+| `ticket_status` | `SyncTicketUseCase` (Linear webhook or dashboard status change, P4.9) to the student's alias; `EscalateSlaUseCase` to the office alias `office:<office>` | `ticket_id`, `status` (a `tickets.status` value), `title` (the ticket title, or "<category> request"), `message` (only when there is text: the staff note of a dashboard change; the escalation note for staff) | "Your ticket <title> is now <status>" |
 | `incident` | incident broadcast (**P4.10**) | `incident_id`, `message` | `message` verbatim |
 
 Free text always goes in `message`; only ticket-status updates carry `status`.
+
+<a id="ticket-lifecycle"></a>
+### Ticket lifecycle (P4.9): webhook, dashboard and SLA scanner
+
+`open → in_progress → resolved → closed`, with `escalated` (SLA) and `merged` (incident) on the side
+(ARCHITECTURE §2.2). Code: `use_cases/sync_ticket.py`, `use_cases/escalate_sla.py`,
+`frameworks/routes/{integrations,tickets}.py`, `frameworks/background.py`.
+
+**Linear webhook, `POST /v1/integrations/linear/webhook`** (no service token):
+1. `LinearSink.handle_inbound` checks the HMAC of the raw body (`Linear-Signature`) and that
+   `webhookTimestamp` is within ±60 s. A missing or bad signature, or a stale timestamp, is
+   `401 unauthenticated` **before anything is read or written**. A signed body that is not a JSON
+   object is `422`. If Linear is not configured (no `LINEAR_WEBHOOK_SECRET` sink), every delivery is 401.
+2. Only an `Issue` `update` with `updatedFrom.stateId` is a state change; the Linear state type maps
+   to a ticket status (docs/integrations.md §2).
+3. The ticket is found by its `linear` link. The change is applied **only if it moves the ticket
+   forward** in the order `open (0) < escalated (1) < in_progress (2) < resolved (3) < closed = merged (4)`.
+   An equal or backward change is ignored. This is how our own pushes come back: closing a ticket on
+   the dashboard sets the issue to Done, whose webhook says `resolved`, which is behind `closed`.
+4. Applied: status saved, `resolved_at` set (on `resolved`/`closed`), an `events` row `ticket.status`
+   (`{from, to, source: "linear", note}`); the response is
+   `{"accepted": true, "ticket_id", "status"}`. Ignored (not a state change, an issue we never linked,
+   or not forward): `{"accepted": false, "ticket_id": null, "status": null}` with 200, so Linear does
+   not retry.
+5. **After the response** (a background task, so Linear's 5 s budget only covers steps 1–4): the
+   other sinks are updated (never Linear itself), the student gets a `ticket_status` notification, and
+   on `resolved` an email goes to `DEMO_STUDENT_INBOX` through the allow-listed notifier. Failures
+   there are logged and recorded (link `last_error`, outbox `failed`/`rejected`) and never retried.
+
+**Dashboard, `POST /v1/tickets/{id}/status`** (staff, admin):
+- Staff only for tickets of **their own office** (`office` from the profile; trusted headers in tests);
+  admins for any ticket. Anyone else `403 forbidden`; unknown ticket `404`.
+- Any direction is allowed (staff may reopen; reopening clears `resolved_at`); the same status is a
+  no-op. The response is the saved `TicketOut` (links with a push error are omitted).
+- After the response: Linear (and any other sink) gets the new status, the student gets a
+  `ticket_status` notification with the staff `note` as `message`, and `resolved` emails the
+  student's demo inbox.
+
+**SLA scanner** (`EscalateSlaUseCase`, lifespan task `background.sla_loop`):
+- Starts with the app (when `ApiServices.sla` and `clock` are wired and `SLA_SCAN_MINUTES > 0`), scans
+  at once and then every `SLA_SCAN_MINUTES` (5) in a worker thread; cancelled on shutdown. One
+  uvicorn worker means one scanner.
+- Picks `open`/`in_progress` tickets whose `sla_due_at` has passed and that were **never escalated**
+  (`escalated_at` null), so each ticket escalates exactly once, even if staff move it back to
+  `in_progress`.
+- Each: priority one level up (`high` stays `high`), status `escalated`, `escalated_at = now`; Linear
+  gets the new priority (no state change); a `ticket_status` notification for the alias
+  `office:<office>` with the message "SLA missed (due …): priority raised from X to Y."; an `events`
+  row `sla.escalated`. A failed scan or save is logged and retried at the next scan.
+- Staff can only read `office:<office>` notifications once the DB allows it (change request filed);
+  the escalated ticket itself is visible on the dashboard through `tickets` Realtime.
 
 ### Anti-gaming flags (P3.6)
 
@@ -341,9 +431,75 @@ merged the tests use `FakeCore`.
   continues from [7] with `clarified: true`.
 - Budget: one question, two when the first answer is `not_sure`; every answer counts, so afterwards the
   policy never asks again. A topic chip answer drops `gibberish` (the student named the topic).
-- Errors: unknown request or option → `NotFound` (404); no pending question (e.g. a third answer) →
-  `ClarificationBudgetExceeded` (409); a `question_id` that is not the pending one, or blank free text →
-  `InvalidInput` (422).
+- `caller_alias` (the route passes the alias of a student caller): it must equal the request's alias.
+- Errors: unknown request or option → `NotFound` (404); another student's request → `Unauthorized`
+  (403); no pending question (e.g. a third answer) → `ClarificationBudgetExceeded` (409); a
+  `question_id` that is not the pending one, or blank free text → `InvalidInput` (422).
+
+### `SyncTicketUseCase` — `use_cases/sync_ticket.py` (P4.9)
+
+`SyncTicketUseCase(sinks, repo, notifier, clock, messages, *, student_inbox)`. See
+[Ticket lifecycle](#ticket-lifecycle) for the behaviour.
+
+| Method | Returns | Errors |
+| --- | --- | --- |
+| `apply_inbound(sink_name, payload, signature)` | `StatusChange` or None (ignored) | `Unauthorized` (bad signature, stale, sink not configured), `InvalidInput`, `StoreError` |
+| `change_status(ticket_id, status, actor, note=None)` | `StatusChange` (`changed` false for the same status) | `NotFound`, `Unauthorized` (not staff of that office, not admin), `StoreError` |
+| `propagate(change)` | None; never raises | — |
+| `run(sink_name, payload, signature)` | `Ticket` or None: apply + propagate | as `apply_inbound` |
+| `from_dashboard(ticket_id, status, actor, note=None)` | `Ticket`: change + propagate | as `change_status` |
+
+`StatusChange(ticket, previous, source, note)`; `source` is the sink name or `dashboard`. `actor` is
+anything with `role`, `office`, `alias` (`use_cases/ports.Actor`; the route passes its `Principal`).
+`STATUS_RANK` holds the forward order.
+
+### `EscalateSlaUseCase.run(now) -> list[str]` — `use_cases/escalate_sla.py` (P4.9)
+
+`EscalateSlaUseCase(sinks, repo, messages)`; returns the ids it escalated. Never raises. Shared sink
+pushing for both use cases and `ActUseCase.finalize` is `use_cases/mirror.TicketMirror`.
+
+### `BatchCsvUseCase.run(data, *, use_llm=False) -> bytes` — `use_cases/batch.py` (P4.12)
+
+`BatchCsvUseCase(labeler: BatchLabeler, *, max_rows)` behind `POST /v1/batch` (staff, admin;
+multipart `file` + form `use_llm`).
+- **Input:** UTF-8 (a BOM is fine), a header with `request_id` and `text` (extra columns ignored),
+  values kept exactly as written. At most `BATCH_MAX_ROWS` rows (10,000) and `BATCH_MAX_BYTES`
+  (5 MB, checked by the route).
+- **Labels:** `BatchLabeler.label(rows, use_llm)` (`use_cases/ports.py`). Composition adapts the ML
+  stream's `BatchPredictUseCase` (P1.15) to it, so the labels are `predict.py`'s.
+- **Output:** `text/csv`, header `request_id,category,priority`, input order, UTF-8 without BOM, `\n`,
+  minimal quoting (`read_batch_csv` / `write_predictions_csv` are public so `predict.py` writes the
+  same bytes).
+- **Errors:** a bad file (not UTF-8, no header, a missing column, too many rows or bytes) → 422;
+  `ArtifactError` → 503; a labeler that loses or reorders rows → 500. Nothing is written to the
+  database.
+
+### `MetricsUseCase.run() -> MetricsResponse` — `use_cases/metrics.py` (P4.12)
+
+`MetricsUseCase(reports: ReportsSource, repo, memory, artifact)` behind `GET /v1/metrics` (admin).
+- **Offline sections** come from `REPORTS_DIR/model_lab.json` (`adapters/reports/json_reports.py`),
+  written by `evaluate.py` (ML) in exactly the offline part of `MetricsResponse`:
+  `{generated_at, ask_rate, ask_rate_is_proxy, benchmark[], coverage[], calibration[], fairness[],
+  ablations[], confusions[]}` (each row in its DTO shape, see endpoints.md). The file is re-read on
+  every call.
+- **No report yet:** empty lists, `generated_at`/`ask_rate` null, `ask_rate_is_proxy` true. A section
+  that does not validate is logged and returned empty; the others are kept; the page never fails
+  because of the report.
+- **Live:** `router` from `Repository.router_stats()` plus `cost_per_1k_usd = cost / total × 1000`;
+  `memory` from `MemoryStore.stats()`; `artifact` the loaded version and sha (`"none"`/`""` without
+  models).
+- **`redteam` is `[]`** until the domain `Scorecard` carries `created_at`, `n` and `seed`
+  (P4.11; change request filed).
+- Errors: `StoreError` from the repository or memory store → 503.
+
+### `CounterfactualUseCase.run(request_id, drop, *, caller_alias=None) -> CounterfactualResponse` — `use_cases/explain.py`
+
+- Loads the request (a student caller only for their own), checks that `drop` occurs in the request
+  text (case-insensitive; raw, normalized or model text), reads the decided labels from the latest
+  prediction and calls `Explainer.counterfactual(normalized request, drop)` (ML P3.4).
+- `flipped` is true when either label changes. Read-only: nothing is written.
+- Errors: unknown request or no decision yet → 404; another student's request → 403; a blank token or
+  one not in the text → 422; `ArtifactError` → 503.
 
 ### `ActUseCase` — `use_cases/act.py`
 
@@ -358,6 +514,59 @@ merged the tests use `FakeCore`.
   fire already). `[]` for a ticket that is not provisional.
 - Config: `config/act.yaml` (`faq_top_k`, booking department and office hours), `tau_faq`
   (FrozenConfig), `DEMO_STUDENT_INBOX`, `DEMO_OFFICE_INBOX` (unset → that email is skipped).
+
+<a id="real-app"></a>
+## The real app (`frameworks/fastapi_app.py`, P3.12)
+
+`create_app(services=None, settings=None, *, build=None) -> FastAPI`:
+- `services` is `composition.api.ApiServices`, a frozen dataclass of the use cases behind the routes
+  (`triage`, `clarify`, `counterfactual`, `feedback`, `tickets`, `sla` + `clock` for the SLA scanner,
+  `batch`, `metrics`, `identity` for `supabase_jwt`, and `health: HealthInfo` for `/health`). Every
+  use-case field is optional: a route whose use case is `None` answers **`501 not_implemented`**
+  after the auth checks, with `details.component` naming what is missing.
+- `build(settings) -> ApiServices` runs in the startup lifespan when `services` is None.
+  `services/ai/api.py` passes `composition.api.build_api`, which today wires only the Supabase
+  identity verifier (when `AUTH_MODE=supabase_jwt` and the Supabase URL and service-role key are
+  set): `build_online` (P4.3, assigned by the lead) fills the rest of `ApiServices` from the
+  `OnlineContainer`. Until then the deployed app answers `/health` with `status: "degraded"` and the
+  use-case routes with 501.
+- `settings` defaults to `Settings()` from the env (`AI_SERVICE_TOKEN`, `AUTH_MODE`).
+- Every contract route is declared with `api_contract.route_kwargs` and the same parameters as the
+  mock app, in `ENDPOINTS` order: `create_app().openapi()` is **byte-identical** to the mock's
+  export and to `services/ai/openapi.json` (`tests/contracts/test_openapi_real_app.py`). Routes whose
+  use case belongs to a later task (`frameworks/routes/pending.py`: incidents, insights, red team,
+  admin extras) authenticate and answer 501.
+
+| Route module | Routes | Use case |
+| --- | --- | --- |
+| `routes/triage.py` | `POST /v1/triage`, `POST /v1/triage/{request_id}/clarify` | `TriageUseCase`, `ClarifyUseCase` |
+| `routes/explain.py` | `GET /v1/explain/{request_id}/counterfactual` | `CounterfactualUseCase` |
+| `routes/feedback.py` | `POST /v1/feedback` | any `FeedbackHandler` (`use_cases/ports.py`; P3.11 `FeedbackUseCase`) |
+| `routes/tickets.py` | `POST /v1/tickets/{ticket_id}/status` | `SyncTicketUseCase.change_status` + `propagate` (background) |
+| `routes/integrations.py` | `POST /v1/integrations/linear/webhook` | `SyncTicketUseCase.apply_inbound` + `propagate` (background) |
+| `routes/lab.py` | `POST /v1/batch`, `GET /v1/metrics` | `BatchCsvUseCase`, `MetricsUseCase` |
+| `routes/health.py` | `GET /health`, `GET /v1/health` | `ApiServices.health` (`status: ok` once triage is wired, else `degraded`) |
+| `routes/pending.py` | the routes of later tasks | none yet (501) |
+| lifespan (`background.py`) | — | `EscalateSlaUseCase.run` every `SLA_SCAN_MINUTES` |
+
+**Testing over HTTP.**
+(`AUTH_MODE` defaults to `supabase_jwt`; the test helper and the local run below set
+`trusted_headers` explicitly.) `services/ai/tests/fixtures/api.py`: `api_client(build_test(...), **fields)`
+returns a `TestClient` over the real app with `AUTH_MODE=trusted_headers` and a test token, and
+`auth(role, alias, office)` builds the headers. Example:
+
+```python
+client = api_client(build_test(core=FakeCore().add(text, ambiguous_core)))
+r = client.post("/v1/triage", json={"text": text}, headers=auth("student", "demo-17"))
+```
+
+**Running it locally** (PowerShell, repo root, venv active):
+
+```powershell
+$env:AI_SERVICE_TOKEN = "dev-token"; $env:AUTH_MODE = "trusted_headers"
+uvicorn api:app --app-dir services/ai --port 8000
+curl.exe -s localhost:8000/health
+```
 
 ## Optional extras
 
@@ -393,7 +602,9 @@ Fixture format: one file per example, `{name, description, method, path, path_pa
 - **Additive changes** are allowed in `v1` with lead approval (EXECUTION rule 3): a new endpoint, a new response key, a new enum value. Clients must ignore keys they do not know.
 - **`info.version`** in `openapi.json` is the `campuspulse_ai` package version.
 - **After any DTO or route change:**
-  1. `python -m campuspulse_ai.frameworks.export_openapi --mock --out services/ai/openapi.json` (from P3.12, the real app is exported without `--mock`, and both must produce the same document).
+  1. `python -m campuspulse_ai.frameworks.export_openapi --out services/ai/openapi.json` (the real
+     app; `--mock` exports the mock app, and both must produce the same bytes:
+     `tests/contracts/test_openapi_real_app.py`).
   2. `python scripts/gen_api_docs.py`.
   3. `pytest services/ai/tests/contracts/test_dto_contract.py -q`.
 

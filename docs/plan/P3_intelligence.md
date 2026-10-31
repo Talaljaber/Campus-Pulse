@@ -567,7 +567,8 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-12"></a>
 ## P3.12 — Build the FastAPI app: P3 routes, error mapping, service-token auth and OpenAPI export
 
-- [ ] Done
+- [x] Done
+- Note (2026-10-31): `e2e/test_api_memory.py` waits on P3.11 and the real core; routes answer 501 until `build_online` wires them.
 - Depends on: P3.9–P3.11; P0 (`/health` skeleton)
 - Est: 2 h · Cut: no
 - Files:

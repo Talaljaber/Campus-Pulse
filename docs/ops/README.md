@@ -58,7 +58,13 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `LLM_CACHE_PATH` | local, Render | no | ai | default `.cache/llm.sqlite` (gitignored) |
 | `SUPABASE_URL` | local, Render | no | ai | |
 | `SUPABASE_SERVICE_ROLE_KEY` | local, Render | yes | ai | never on Netlify |
-| `AI_SERVICE_TOKEN` | local, Render, Netlify | yes | ai, web | same value on both; on Netlify scope it to Functions/runtime as well as Builds |
+| `AI_SERVICE_TOKEN` | local, Render, Netlify | yes | ai, web | same value on both; on Netlify scope it to Functions/runtime as well as Builds. Unset on the AI service = every `/v1` route answers 401 (fail closed) |
+| `AUTH_MODE` | local, Render | no | ai | default `supabase_jwt` (P4.12: the user token in `X-CP-User-JWT` is verified with Supabase Auth and the role/office/alias read from `profiles`; needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`). `trusted_headers` takes the caller from `X-CP-*` headers: tests and local dev only, never on Render. See [docs/api/README.md › Auth](../api/README.md#auth) |
+| `AUTH_CACHE_S` | local, Render | no | ai | default `60`; seconds a verified user token (and its profile) is cached, so a revoked session works at most this long |
+| `AUTH_TIMEOUT_S` | local, Render | no | ai | default `5`; per call to Supabase Auth and to `profiles` |
+| `REPORTS_DIR` | local, Render (image) | no | ai | default `reports`; `/v1/metrics` reads `model_lab.json` from it (written by `evaluate.py`) |
+| `BATCH_MAX_ROWS` | local, Render | no | ai | default `10000`; `/v1/batch` rejects a larger CSV with 422 |
+| `BATCH_MAX_BYTES` | local, Render | no | ai | default `5000000`; `/v1/batch` rejects a larger upload with 422 |
 | `GMAIL_SMTP_USER` | local, Render | no | ai | the campuspulse support Gmail address |
 | `GMAIL_APP_PASSWORD` | local, Render | yes | ai | needs 2-Step Verification |
 | `SMTP_HOST` | local, Render | no | ai | `smtp.gmail.com` |
@@ -80,7 +86,7 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `GAMING_MIN_REQUESTS` | local, Render | no | ai | default `5`; requests before an alias can be flagged `priority_gaming_suspected` |
 | `GAMING_CLAIM_RATIO` | local, Render | no | ai | default `0.8`; share of requests that claim urgency |
 | `GAMING_HIGH_RATIO_MAX` | local, Render | no | ai | default `0.2`; max share of those claims that were really high |
-| `SLA_SCAN_MINUTES` | local, Render | no | ai | default `5` |
+| `SLA_SCAN_MINUTES` | local, Render | no | ai | default `5`; P4.9: the SLA scanner in the API lifespan scans at startup and then every N minutes; `0` disables it |
 | `INCIDENT_WINDOW_MIN` | local, Render | no | ai | default `30` |
 | `ARTIFACT_DIR` | local, Render | no | ai | default `models/frozen` |
 | `ORT_INTRA_OP_THREADS` | Render (and Dockerfile) | no | ai | `1` on Render, `4` locally. Appendix D writes `ORT_INTRA_OP_THREADS`; the code field is `ORT_INTRA_OP_THREADS` |

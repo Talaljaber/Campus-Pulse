@@ -110,7 +110,7 @@ the issue up with `issue(id)` and returns it if it exists; otherwise the origina
 
 ## 2. Linear webhook (inbound status sync)
 
-Route: `POST /v1/integrations/linear/webhook` (P4.9; no service token — the signature is the auth).
+Route: `POST /v1/integrations/linear/webhook` (P4.9, built; no service token — the signature is the auth).
 Handler: `LinearSink.handle_inbound(raw_body, request.headers["Linear-Signature"])`.
 
 1. **Signature.** `hex(HMAC_SHA256(LINEAR_WEBHOOK_SECRET, raw_body))` must equal `Linear-Signature`,
@@ -125,13 +125,39 @@ Handler: `LinearSink.handle_inbound(raw_body, request.headers["Linear-Signature"
    started → in_progress, completed → resolved, canceled → closed, duplicate → closed. Unlisted types
    → None.
 6. **Result.** `InboundEvent(sink="linear", external_id=data.id, status, occurred_at,
-   payload={identifier, url, state_name, state_type})`; `SyncTicketUseCase` (P4.9) finds the ticket
-   with `Repository.ticket_by_link("linear", external_id)`, saves the status and notifies the student.
+   payload={identifier, url, state_name, state_type})`.
 
-Notes for P4.9: Linear expects a 200 within 5 s and retries 3 times (1 min, 1 h, 6 h). Our own
-`update_status`/`close` calls also trigger webhooks: closing sets `completed`, which comes back as
-`resolved`, so the use case should ignore an inbound status that would move a ticket backwards.
-Signing a test body: `campuspulse_ai.adapters.integrations.linear.sign(secret, raw_body)`.
+**What the service does with it (P4.9, built).** The route is `frameworks/routes/integrations.py`;
+the logic is `SyncTicketUseCase` (full behaviour in
+[docs/api/README.md › Ticket lifecycle](api/README.md#ticket-lifecycle)):
+- `Unauthorized` from the sink → `401 unauthenticated`; nothing is read or written.
+- The ticket is found with `Repository.ticket_by_link("linear", external_id)`; an issue we never
+  linked (e.g. the lead's smoke issue CDP-1) is acknowledged with `accepted: false`.
+- **Only forward moves are applied** (`open < escalated < in_progress < resolved < closed = merged`).
+  Our own `update_status`/`close` calls trigger webhooks too: a dashboard `closed` becomes Done in
+  Linear, which comes back as `resolved` and is ignored; a dashboard `resolved` comes back as
+  `resolved`, equal, ignored. An escalation only changes the issue priority, which has no
+  `updatedFrom.stateId`, so it is filtered out by the sink.
+- **Ack budget.** Linear expects a 2xx within 5 s and retries 3 times (1 min, 1 h, 6 h). The route
+  answers right after the status is saved (one lookup, one write, one audit row); mirroring to other
+  sinks, the student notification and the resolution email run as a background task after the
+  response. A `503` (database down) makes Linear retry later, which is what we want.
+- An applied change is never pushed back to Linear (`skip` the origin sink).
+
+Signing a test body: `campuspulse_ai.adapters.integrations.linear.sign(secret, raw_body)`; the test
+helpers are in `services/ai/tests/fixtures/lifecycle.py` (an offline `LinearSink` whose HTTP client
+refuses every call).
+
+**Dashboard changes go the other way.** `POST /v1/tickets/{id}/status` saves the ticket and then
+calls `update_status` on every sink except the record sink (`supabase`): the Linear issue moves to the
+mapped state (`closed` and `resolved` both → `completed`). A failure is kept in
+`ticket_links.last_error`.
+
+**Creating the webhook (not done; needs the Render URL).** Linear → Settings → API → Webhooks → URL
+`https://<render-service>.onrender.com/v1/integrations/linear/webhook`, resource type **Issues**,
+team CDP; copy the signing secret into `LINEAR_WEBHOOK_SECRET` on Render. Then log the first real
+delivery into `services/ai/tests/fixtures/linear/webhook_issue_completed.json` (it is still
+UNVERIFIED).
 
 Payload shape (from Linear's docs; UNVERIFIED until the first real delivery is logged into
 `services/ai/tests/fixtures/linear/webhook_issue_completed.json`):

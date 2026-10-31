@@ -9,7 +9,8 @@ Real classes: `InMemoryRepository`, `DefaultDecisionPolicy` (tau_ood from a vali
 `InfoGainStrategy` over `config/clarify_questions.yaml`, `LLMMerger`, `GamingDetector`,
 `RuleBasedUnderstander`, `TableActionPlanner` over `config/actions.yaml`, the allow-listed notifier
 chain (`AllowlistedNotifier` -> `ChannelNotifier` -> `FakeNotifier` for email + `InAppNotifier`), and
-`FallbackCalendar([SlotsTableCalendar])` over one seeded fictional advisor with free slots.
+`FallbackCalendar([SlotsTableCalendar])` over one seeded fictional advisor with free slots, and the
+ticket lifecycle (`SyncTicketUseCase`, `EscalateSlaUseCase`, P4.9) over the same sinks and notifier.
 Fakes: `FakeCore`, `ScriptedOracle` (empty script = LLM off), `FakeSink`, `FakeFAQ`, `FakeLAC`,
 `FrozenClock`. Every email address is a `*.invalid` demo address on the test allow-list.
 """
@@ -39,7 +40,9 @@ from campuspulse_ai.application.services.gaming import GamingDetector
 from campuspulse_ai.application.services.llm_merge import LLMMerger
 from campuspulse_ai.application.use_cases.act import ActConfig, ActUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
+from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
+from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.paths import CONFIG_DIR
@@ -120,6 +123,8 @@ class BackendTestContainer:
     flow: DecisionFlow
     triage: TriageUseCase
     clarify: ClarifyUseCase
+    sync: SyncTicketUseCase
+    sla: EscalateSlaUseCase
     extras: dict[str, Any] = field(default_factory=dict)
 
     def outbox(self, status: str | None = None) -> list[dict[str, Any]]:
@@ -233,6 +238,8 @@ def build_test(
         flow=flow,
         triage=TriageUseCase(core, flow, repo, clock),
         clarify=ClarifyUseCase(core, flow, repo, clock),
+        sync=SyncTicketUseCase(chosen, repo, notifier, clock, msgs, student_inbox=acfg.student_inbox),
+        sla=EscalateSlaUseCase(chosen, repo, msgs),
     )
 
 
