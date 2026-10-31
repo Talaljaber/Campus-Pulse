@@ -73,3 +73,60 @@
 - **Acceptance:** migration applied (MCP `list_migrations` → `0005 vectors`). SQL check of the RPC on the linked project (rolled back): `vector_dim` → `384`; building filter + `with_embedding` → 1 hit, sim 1.000, embedding returned; memory ties → ordered by id, inactive hidden; unknown collection → `22023`; client `select embedding` → `42501`. `pytest services/ai/tests/unit/test_pgvector_adapter.py services/ai/tests/invariants/test_vector_isolation.py services/ai/tests/contracts -q` → `10 passed, 43 skipped`; default selection `-m "not train and not artifacts and not supabase"` → `18 passed, 22 skipped`; `mypy --strict` on both adapters → `Success`; `ruff check .` → `All checks passed!`.
 - **Limitations / TODO / known issues:** **X4.5 not yet run**: the PgVectorStore contract cases need `SUPABASE_TEST_URL` + `SUPABASE_TEST_SERVICE_ROLE_KEY`. LocalNumpyVectorStore (ML P1) and InMemoryMemoryStore (Backend P3.7) params skip until those exist; add the Local harness in `test_vector_store_contract.py`. `PgVectorMemoryStore` drops the plan's `clock` constructor argument (unused). `memory` search and count default to `active=true`. `requests` items need an existing `requests` row (FK), and their text comes from `requests.text_norm`. `vector_dim()` reads `faq.embedding` only. Isolation invariant covers part (a); parts (b)–(d) need `build_offline`.
 - **Affects streams:** Backend (`PgVectorMemoryStore` for `build_online`, the `requests` upsert in `TriageUseCase`), ML (Local store must satisfy the same contract), DB P4.5/P4.10 (FAQ, incidents).
+
+### P1.7 — LocalNumpyVectorStore  (DB, 2026-10-31, commit 3cdd0d1)
+- **What now exists:** `adapters/vectors/local_numpy.py`, the offline `VectorStore` (numpy only). The vector contract test runs every case against it without keys; the §3.18 isolation invariant covers it.
+- **Public interfaces added or changed:** `LocalNumpyVectorStore(dim, *, read_only=False, collections=())`, `.load(index_dir, *, expected_dim, read_only=True)`, `.save(index_dir) -> list[Path]`, `.collections()`, plus the port methods. On disk: `<index>/<collection>/{embeddings.npy, items.jsonl}`. See [schema.md › Python adapters](../db/schema.md#python-adapters).
+- **How to use it:** `s = LocalNumpyVectorStore(384, collections=("train",)); s.upsert("train", items); s.save(model_dir / "index")`, then `LocalNumpyVectorStore.load(model_dir / "index", expected_dim=384).search("train", q, k=5)`.
+- **Config / env added:** none.
+- **Acceptance:** `pytest services/ai/tests/contracts/test_vector_store_contract.py -q` → `16 passed, 15 skipped` without keys (all 15 cases for local_numpy + 1 local-only read-only/missing-file test; the skips are pgvector). `pytest services/ai/tests/invariants -q` → `4 passed, 1 skipped` (build_offline not built). `mypy --strict` → `Success`.
+- **Limitations / TODO / known issues:**
+  - Added to the plan interface: `collections=` (pre-create empty collections) and `read_only=` on `load` (default True).
+  - Filters: `lang`, `since` and `active` have fixed meanings; any other key is meta equality.
+  - Searching an unknown collection raises `StoreError` (a typo'd frozen collection must not return `[]`).
+  - Isolation parts (b) to (d) wait for `build_offline`.
+- **Affects streams:** ML (build the frozen `train`/`injection_exemplars`/`safety_exemplars` collections with `save`; `build_offline` loads with `load`), Backend (tests can use it for FAQ/incidents).
+
+### P4.2 follow-up — X4.5 on real pgvector  (DB, 2026-10-31)
+- **Acceptance:** with the service-role key in `.env`, `pytest services/ai/tests/contracts/test_vector_store_contract.py services/ai/tests/contracts/test_memory_store_contract.py -q -m supabase` → `21 passed, 1 skipped` (the skip is the local-only save/load case). Tables were empty afterwards.
+- **Change:** the Supabase test helper reads the repo `.env`. It reuses `SUPABASE_SERVICE_ROLE_KEY` when the test URL is the main project, and falls back to `NEXT_PUBLIC_SUPABASE_URL`.
+
+### P3.8 (moved to DB) — InMemoryRepository  (DB, 2026-10-31, commit 0c3d8cf)
+- **What now exists:** `adapters/store/inmemory.py` (the reference `Repository` for tests and the offline red team) and `adapters/store/codec.py` (the entity ⇄ row mapping shared with Supabase), plus `tests/contracts/test_repository_contract.py`.
+- **Public interfaces added or changed:** `InMemoryRepository(clock: Clock | None = None)` with the full port, including LD-16. Seeding helpers outside the port: `add_advisor(name, department, email="")`, `add_slot(advisor_id, starts_at, ends_at)`, `add_llm_call(tier, cost_usd, cached)`. Behaviour: [schema.md › Repository mapping](../db/schema.md#repository-mapping-adaptersstore).
+- **How to use it:** `repo = InMemoryRepository(FrozenClock(...)); req = repo.save_request(Request(id="", ...))`. An empty id gets a UUID, and the saved entity is returned.
+- **Config / env added:** none.
+- **Acceptance:** `pytest services/ai/tests/contracts/test_repository_contract.py -q -k inmemory` → `16 passed`.
+- **Limitations / TODO / known issues:**
+  - Behaves like Supabase: foreign keys, unique ticket links, NotFound, conditional `claim_slot`, orderings, and JSON-normalised payloads.
+  - Building FKs are not checked in memory.
+  - `latest_prediction` means the most recently saved one.
+- **Affects streams:** Backend (`build_test()` should use it; P3.6 GamingDetector calls `bump_student_signals`).
+
+### P4.3 (partial) — SupabaseRepository, seeds, seed scripts  (DB, 2026-10-31, commits 775d800, a6e0a0a, b0f371a)
+- **What now exists:**
+  - migration `0007_repository` (applied): lossless request/prediction columns, the atomic `bump_student_signals` RPC, and the incident-office trigger
+  - `adapters/store/supabase_store.py`
+  - seeds 01–04, applied to the linked project
+  - `scripts/check_seed_contacts.py`, `scripts/seed_demo_users.py`, `scripts/seed_faq.py`
+- **Public interfaces added or changed:** `SupabaseRepository(client, clock)`, the full port; RPC `bump_student_signals(...)`; columns `requests.model_text/truncated/location_source` and `predictions.core`; office codes (`registrar`, `it`, `finance`, `transport`, `facilities`, `academic`). See [schema.md › Seeds and demo users](../db/schema.md#seeds-and-demo-users).
+- **How to use it:** `SupabaseRepository(create_client(url, service_key), SystemClock())`. Seeds: `supabase db reset` locally (it runs `supabase/seed/*.sql`), or execute the files on the linked project.
+- **Config / env added:** scripts read `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DEMO_EMAIL_ALLOWLIST` and `DEMO_USER_PASSWORD` (env or repo `.env`).
+- **Acceptance:**
+  - Seeds applied via MCP `execute_sql` from the committed files: buildings `11`, advisors `6`, slots `720` (Sun–Thu, 09:00–15:00 Amman, 1–12 Nov), faq `28` (EN 14 / AR 14, all `[demo]` rows marked, all public rows sourced). A re-run left the counts unchanged.
+  - `pytest services/ai/tests/contracts/test_repository_contract.py -q -k supabase` → `16 passed`.
+  - All contracts live: `pytest services/ai/tests/contracts -q` → `69 passed, 8 skipped`; tables clean afterwards, seeds intact.
+  - Default selection → `63 passed, 8 skipped`. `mypy --strict` on the store adapters → `Success`.
+  - Security advisors: unchanged (only `request_embeddings` INFO and the Supabase-managed `rls_auto_enable`).
+- **Limitations / TODO / known issues:**
+  - **Pending:** `check_seed_contacts.py` fails until `DEMO_EMAIL_ALLOWLIST` lists the 6 advisor plus-addresses (it prints them).
+  - **Pending:** `seed_demo_users.py` waits for `DEMO_USER_PASSWORD`.
+  - **Pending:** `seed_faq.py` waits for `OnnxEncoder` (P1.6) and `models/frozen/v1/config.json`; it exits cleanly with a message today.
+  - **Deferred:** `composition/online.py` / `build_online` (lead assigns later).
+  - **Plan says 10 buildings:** "A–M minus I/J" is 11 codes, and the seed follows the codes.
+  - **Outbox:** `alias`/`request_id` stay null (not in the entity), so students see no outbox rows until the entity carries them.
+  - **`resolved_tier0_pct`** is a percentage 0–100.
+- **Affects streams:**
+  - Backend: must use these office codes in `config/actions.yaml`; `build_online` wiring.
+  - UI: buildings and FAQ for the map and FAQ pages; demo logins once seeded.
+  - ML: `seed_faq.py` needs the encoder.

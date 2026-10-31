@@ -14,6 +14,7 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 | 0004 | `0004_realtime.sql` | adds 6 tables to the `supabase_realtime` publication |
 | 0005 | `0005_vectors.sql` | `faq`, `memory_examples`, `request_embeddings` (vector(384), HNSW), `match_vectors`, `vector_dim`, `faq_v`, `memory_examples_v` |
 | 0006 | `0006_private_helpers.sql` | moves the `cp_*` helpers into schema `private` so PostgREST does not expose them as `/rpc/cp_*` |
+| 0007 | `0007_repository.sql` | `requests.model_text/truncated/location_source`, `predictions.core jsonb`; RPC `bump_student_signals`; trigger that copies a ticket's `office` onto its incident |
 
 **Applying a migration.** Commit the file first. Then apply the same SQL with the Supabase MCP `apply_migration`, or with `supabase db push` on a linked CLI.
 - **MCP version repair.** MCP records a timestamp version. Afterwards, set the row in `supabase_migrations.schema_migrations` to the file's version and name (`0001`/`init`, …). This is what `supabase migration repair` does. It keeps the remote history identical to the file names, so a later `db push` does not re-apply anything.
@@ -38,10 +39,10 @@ All ids are `uuid default gen_random_uuid()` unless stated. Every table has `cre
 | --- | --- | --- |
 | `profiles` | `id` = `auth.users.id`, `role` (`student`/`staff`/`admin`, default `student`), `office`, `alias` | pk `id` → auth.users (cascade); `alias` unique |
 | `buildings` | `id text`, `code`, `name_en`, `name_ar`, `map_x real`, `map_y real` (fictional campus, SVG coords) | pk `id`; `code` unique |
-| `requests` | `alias`, `raw_text`, `core`, `text_norm`, `lang`, `is_arabizi`, `input_mode` (`text`/`voice`), `building_id`, `room`, `stated_urgency`, `status`, `simulated bool default false`, `conversation_id uuid` | fk `building_id` → buildings; idx `(alias, created_at desc)`, `(created_at desc)` |
-| `predictions` | `request_id`, `category`, `priority`, `p_cat jsonb`, `p_pri jsonb`, `set_cat text[]`, `set_pri text[]`, `per_model jsonb`, `tier`, `models_used text[]`, `cost_usd numeric(10,6)`, `latency_ms`, `flags text[] default '{}'`, `explanation jsonb`, `artifact_version` | fk `request_id` (cascade); idx `(request_id, created_at desc)` |
+| `requests` | `alias`, `raw_text`, `core`, `text_norm`, `model_text`, `lang`, `is_arabizi`, `input_mode` (`text`/`voice`), `building_id`, `room`, `location_source` (`picked`/`extracted`), `stated_urgency`, `truncated`, `status`, `simulated bool default false`, `conversation_id uuid` | fk `building_id` → buildings; idx `(alias, created_at desc)`, `(created_at desc)` |
+| `predictions` | `request_id`, `category`, `priority`, `p_cat jsonb`, `p_pri jsonb`, `set_cat text[]`, `set_pri text[]`, `per_model jsonb`, `tier`, `models_used text[]`, `cost_usd numeric(10,6)`, `latency_ms`, `flags text[] default '{}'`, `explanation jsonb`, `artifact_version`, `core jsonb` (full CoreResult, 0007) | fk `request_id` (cascade); idx `(request_id, created_at desc)` |
 | `clarifications` | `request_id`, `question_id`, `options jsonb`, `answer`, `asked_at`, `answered_at` | fk request (cascade); idx `(request_id, asked_at)` |
-| `incidents` | `building_id`, `category`, `office`, `title`, `priority`, `report_count`, `status` (`open`/`resolved`), `opened_at`, `resolved_at` | fk building; idx `(building_id, status)` |
+| `incidents` | `building_id`, `category`, `office` (filled from its first ticket by trigger `tickets_fill_incident_office`), `title`, `priority`, `report_count`, `status` (`open`/`resolved`), `opened_at`, `resolved_at` | fk building; idx `(building_id, status)` |
 | `tickets` | `request_id`, `incident_id`, `office`, `category`, `priority`, `status`, `provisional`, `title`, `body`, `sla_due_at`, `escalated_at`, `resolved_at` | fk request (cascade), incident (set null); idx `(office, status, sla_due_at)`, `(request_id)`, `(incident_id)` partial |
 | `ticket_links` | `ticket_id`, `sink`, `external_id`, `external_url`, `last_synced_at`, `last_error` | pk `(ticket_id, sink)`; unique `(sink, external_id)` (for `ticket_by_link`) |
 | `advisors` | `fictional_name`, `department`, `room`, `calendar_id`, `demo_email`, `office_hours jsonb` | — |
@@ -124,6 +125,9 @@ match_vectors(p_collection text, p_query extensions.vector(384), p_k int,
   returns table(id uuid, text text, lang text, sim float8, meta jsonb, embedding extensions.vector(384))
 
 vector_dim() returns int   -- declared dim of faq.embedding (384); PgVectorStore checks it at startup
+
+bump_student_signals(p_alias text, p_claimed_urgent bool, p_was_high bool, p_injection bool)
+  returns student_signals   -- atomic upsert of the counters (0007); gaming_flag is left as stored
 ```
 
 **`match_vectors` behaviour:**
@@ -150,6 +154,19 @@ All are `extensions.vector(384)`, from the frozen encoder (e5 with the `query: `
 
 The frozen training index and the injection/safety exemplars are **not** in Postgres. They stay in `LocalNumpyVectorStore` inside the model dir.
 
+## Office codes
+
+`tickets.office`, `incidents.office`, `profiles.office` and `advisors.department` use these codes. The demo staff user is `it`. The routing table (`config/actions.yaml`, Backend) must emit the same strings, or staff RLS will not match:
+
+| Code | Office (SPEC §5.1 routing) |
+| --- | --- |
+| `registrar` | Registration |
+| `it` | IT Support (helpdesk) |
+| `finance` | Finance |
+| `transport` | Transportation |
+| `facilities` | Facilities (maintenance) |
+| `academic` | Academic Support (advisors) |
+
 ## Python adapters
 
 - **`adapters/vectors/pgvector.py`: `PgVectorStore(client, dim)`** implements `VectorStore`.
@@ -161,12 +178,67 @@ The frozen training index and the injection/safety exemplars are **not** in Post
 - **`adapters/memory/pgvector_memory.py`: `PgVectorMemoryStore(vectors, client)`** implements `MemoryStore`.
   - `author_id=""` is stored as NULL. A non-empty value must be an `auth.users` id.
   - Reads page through PostgREST's 1000-row limit.
-- **Isolation:** both modules import `supabase` for typing only. `tests/invariants/test_vector_isolation.py` enforces this.
+- **`adapters/vectors/local_numpy.py`: `LocalNumpyVectorStore(dim, *, read_only=False, collections=())`** implements `VectorStore` offline (P1.7).
+  - **Search:** brute-force cosine over float32 matrices, ties broken by id. Inactive items are hidden unless `filters["active"]` is set.
+  - **Filters:** `lang`, `since` (meta `created_at`), `with_embedding`, and any other key as equality on `meta`.
+  - **Persistence:** `load(index_dir, *, expected_dim, read_only=True)` / `save(index_dir)` use `<coll>/embeddings.npy` + `<coll>/items.jsonl`. A missing file raises `ArtifactMissing`; a dim mismatch raises `ArtifactVersionMismatch`.
+  - **Errors:** writes to a read-only store, or searching an unknown collection, raise `StoreError`.
+  - **Scope:** it is the only store `build_offline` may construct. `collections=` pre-creates empty collections (tests).
+- **Isolation:** the pgvector modules import `supabase` for typing only, and `local_numpy` imports nothing online. `tests/invariants/test_vector_isolation.py` enforces this.
 
 ## Realtime
 
 Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, `outbox`, `notifications` and `requests` (`requests` is for the Pulse dots, LD-25). Supabase applies RLS to `postgres_changes`, so each subscriber receives only rows its SELECT policy allows. Students subscribe to `notifications` only.
 
-## Seed and demo users
+## Repository mapping (`adapters/store/`)
 
-None yet. Seeds go in `supabase/seed/*.sql` (P4.3+), and all names and addresses are fictional aliases. `rls.sql` creates its own fictional users (`rls-*@example.invalid`) and rolls them back.
+`SupabaseRepository(client, clock)` and `InMemoryRepository(clock=None)` implement the full `Repository` port, including LD-16. Both store the **same row dicts**, built by `adapters/store/codec.py`. `tests/contracts/test_repository_contract.py` (16 cases) runs every port method against both and passes on the live project.
+
+| Entity | Table(s) | Notes |
+| --- | --- | --- |
+| `Request` | `requests` | `normalized` ⇄ `core, text_norm, model_text, lang, is_arabizi, stated_urgency, truncated`; `location` ⇄ `building_id, room, location_source`. `normalized` is `None` when `text_norm` or `lang` is null. |
+| `Prediction` | `predictions` | The full `CoreResult` is in `core jsonb`, so round trips are lossless. The flat columns (`p_cat`/`p_pri` as label→p, sorted `set_*`, `per_model`, `models_used`, `flags`, `cost_usd`, `latency_ms`) are for the UI and SQL. `latest_prediction` = most recently saved (`created_at desc, id desc`). |
+| `Clarification` | `clarifications` | `options` jsonb `[{id, text, constraint}]`; listed by `asked_at, id`. |
+| `ReviewItem` | `review_queue` | `resolve_review` sets status, corrections, note and `resolved_at = clock.now()`. |
+| `Ticket` | `tickets` + `ticket_links` | `save_ticket` also upserts its links; links are read back ordered by `sink`. `(sink, external_id)` is unique. |
+| `Incident` | `incidents` | `building` ⇄ `building_id`. `member_ticket_ids` is derived from `tickets.incident_id` (by `created_at, id`); `save_incident` points the listed tickets at the incident. |
+| `OutboxMessage` | `outbox` | The domain `kind` (transport) is written to both `kind` and `channel`. `alias`/`request_id` are not in the entity, so they stay null. |
+| `StudentSignals` | `student_signals` | `bump_student_signals` is atomic (RPC). `gaming_suspected` = the stored `gaming_flag`; no port method sets it yet (P3.6 decides it). |
+| `Scorecard` | `redteam_runs.scorecard` | `run_id` is kept if it is a UUID, else a new UUID is returned. History is newest first. |
+| `Slot`, `Advisor`, `Case` | `advisor_slots`, `advisors`, `cases` | `claim_slot` = `update … where id = ? and booked_by is null`, true only for the winner. `free_slots` = unbooked and inside the window, by `starts_at, id`. |
+| events, notifications | `events`, `notifications` | Payloads go through a JSON round trip (datetimes become ISO strings); `at`/`created_at` = `clock.now()`. |
+
+**`router_stats(since)`** counts over `predictions` (tier mix, `cost_usd` sum) and `llm_calls` (`cached` count). `resolved_tier0_pct` is a **percentage 0–100**.
+
+**Errors:**
+- `NotFound`: `get_request`, `get_ticket`, `latest_prediction`, `ticket_by_link`, `set_request_status`, `resolve_review`.
+- `StoreError`: foreign-key and unique violations, plus every PostgREST or network failure.
+- Datetimes are written as ISO-8601 UTC.
+
+**InMemory-only seeding helpers:** `add_advisor`, `add_slot`, `add_llm_call`. Supabase gets these from the seed files or from other writers.
+
+## Seeds and demo users
+
+The seed files are `supabase/seed/*.sql`, loaded by `supabase db reset` (`config.toml` `sql_paths`), or applied to the linked project from the committed files. All four are idempotent upserts with fixed ids.
+
+| File | Rows | Content |
+| --- | --- | --- |
+| `01_buildings.sql` | 11 | Fictional campus, codes A–M without I/J; EN/AR names; `map_x/map_y` on a 1000×600 grid |
+| `02_advisors.sql` | 6 | Fictional advisors (names marked "(fictional)"): 4 `academic`, 2 `registrar`. Each `demo_email` is `campuspulse.support+adv-…@gmail.com`. Office hours Sun–Thu 09:00–15:00 Asia/Amman. |
+| `03_advisor_slots.sql` | 720 today | 30-minute slots for the next 14 days, Sun–Thu 09:00–15:00 Amman. Re-running adds new days and never touches booked slots. |
+| `04_faq_text.sql` | 28 | 14 topics × EN/AR. 18 rows quote `docs/reference/gju_public_policies.md` with their gju.edu.jo `source_url` and a "check with the office" note; 10 are `is_demo = true` placeholders starting `[demo]`. A changed question clears its embedding. |
+
+**Scripts:**
+- `python scripts/check_seed_contacts.py` fails unless every email in the seeds passes `RecipientPolicy(DEMO_EMAIL_ALLOWLIST)`. The allow-list must contain the 6 advisor plus-addresses.
+- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles`:
+
+  | Login | Role | Office | Alias |
+  | --- | --- | --- | --- |
+  | `student-demo-17@demo.local` | student | — | `student-17` |
+  | `staff-it@demo.local` | staff | `it` | `staff-it` |
+  | `admin@demo.local` | admin | — | `admin` |
+
+  No mail is sent to these addresses: the users are created already confirmed.
+- `python scripts/seed_faq.py [--model-dir models/frozen/v1] [--all]` embeds FAQ questions with the frozen `OnnxEncoder` and writes them through `PgVectorStore`. It refuses to run when `config.json` `encoder.dim` ≠ `vector_dim()`.
+
+`rls.sql` creates its own fictional users (`rls-*@example.invalid`) and rolls them back. The contract tests tag their rows per run and delete them afterwards.
