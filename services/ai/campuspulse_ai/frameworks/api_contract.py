@@ -304,7 +304,12 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         purpose="Generates tricky requests per style, runs them through the real pipeline, scores them.",
         roles=("admin",),
         response_model=ScorecardOut,
-        errors=(ErrorCode.INVALID_INPUT, ErrorCode.FORBIDDEN, ErrorCode.ARTIFACT_UNAVAILABLE),
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.ARTIFACT_UNAVAILABLE,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
         side_effects=("inserts a `redteam_runs` row; no tickets, no notifications",),
         tag="lab",
     ),

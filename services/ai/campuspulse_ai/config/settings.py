@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     batch_max_rows: int = 10_000  # /v1/batch rows per upload
     batch_max_bytes: int = 5_000_000  # /v1/batch upload size
 
+    # Red team (P4.11)
+    redteam_max_n: int = 200  # items per POST /v1/redteam/run (and per CLI run)
+    # Seed texts to perturb, relative to the repo root: official training rows only (holdouts are refused)
+    redteam_seed_csv: Path = Path("data/clean/train_clean.csv")
+
     # Email: Gmail SMTP with an app password (LD-3)
     gmail_smtp_user: str | None = None
     gmail_app_password: SecretStr | None = None

@@ -1,9 +1,9 @@
 """MetricsUseCase: `GET /v1/metrics`, the model lab (SPEC §6, P4.12).
 
 Offline numbers come from the report `evaluate.py` writes (`REPORTS_DIR/model_lab.json`, the
-`MetricsResponse` sections below); live numbers come from the repository (router stats) and the
-memory store. A missing report gives empty sections; a malformed section is logged and left empty,
-so the page always renders.
+`MetricsResponse` sections below); live numbers come from the repository (router stats and the stored
+red-team runs) and the memory store. A missing report gives empty sections; a malformed section
+is logged and left empty, so the page always renders.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from typing import Any, TypeVar
 
 from campuspulse_ai.application import dto
 from campuspulse_ai.application.use_cases.ports import ReportsSource
+from campuspulse_ai.application.use_cases.responses import scorecard_out
 from campuspulse_ai.domain.errors import InvalidInput
 from campuspulse_ai.domain.ports import MemoryStore, Repository
 from campuspulse_ai.domain.values import ArtifactVersion
@@ -22,6 +23,8 @@ from campuspulse_ai.domain.values import ArtifactVersion
 log = logging.getLogger(__name__)
 
 PER_THOUSAND = 1000
+REDTEAM_HISTORY = 20
+"""Red-team runs listed by `/v1/metrics` (the Repository default)."""
 NO_ARTIFACT = dto.ArtifactOut(version="none", sha="")
 """Reported while no model artifact is loaded."""
 
@@ -36,7 +39,8 @@ class MetricsUseCase:
       report says otherwise, LD-24), `calibration`, `fairness`, `ablations`, `confusions`: from the
       report.
     - `router`: `Repository.router_stats()` plus `cost_per_1k_usd`; `memory`: `MemoryStore.stats()`.
-    - `redteam`: [] until the domain `Scorecard` carries `created_at`, `n` and `seed` (P4.11).
+    - `redteam`: the newest `redteam_history` stored red-team scorecards (`Repository.redteam_history`,
+      newest first; P4.11). A stored scorecard that no longer fits the contract is logged and skipped.
 
     Errors: `StoreError` from the repository or memory store (503). A bad report never fails it.
     """
@@ -47,11 +51,14 @@ class MetricsUseCase:
         repo: Repository,
         memory: MemoryStore,
         artifact: ArtifactVersion | None,
+        *,
+        redteam_history: int = REDTEAM_HISTORY,
     ) -> None:
         self._reports = reports
         self._repo = repo
         self._memory = memory
         self._artifact = artifact
+        self._redteam_history = redteam_history
 
     def run(self) -> dto.MetricsResponse:
         report = self._load()
@@ -87,8 +94,17 @@ class MetricsUseCase:
                 by_category=dict(memory.by_category),
                 last_added_at=memory.last_added_at,
             ),
-            redteam=[],
+            redteam=self._redteam(),
         )
+
+    def _redteam(self) -> list[dto.ScorecardOut]:
+        out = []
+        for s in self._repo.redteam_history(limit=self._redteam_history):
+            try:
+                out.append(scorecard_out(s))
+            except ValueError as exc:  # pydantic.ValidationError is a ValueError
+                log.warning("red-team run %s skipped: it does not fit the contract: %s", s.run_id, exc)
+        return out
 
     def _load(self) -> Mapping[str, object]:
         try:

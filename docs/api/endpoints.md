@@ -1331,7 +1331,7 @@ Response `200`:
 | --- | --- |
 | 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
 | 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
-| 503 | `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. |
+| 503 | `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. |
 | 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
 | 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
 

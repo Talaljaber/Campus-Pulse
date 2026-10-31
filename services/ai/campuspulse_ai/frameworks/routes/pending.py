@@ -4,7 +4,6 @@ OpenAPI document as the mock app) and clients get a typed error instead of a 404
 
 - `GET /v1/incidents`, `POST /v1/incidents/{id}/resolve`: Pulse (P4.10).
 - `GET /v1/insights/recurring`: Recurring problems (P4.21).
-- `POST /v1/redteam/run`: red team (P4.11).
 - `POST /v1/admin/simulate`, `POST /v1/admin/reindex`: optional extras (P5.19, P4.20).
 """
 
@@ -17,7 +16,6 @@ from fastapi import APIRouter, Depends, Query, Request
 from campuspulse_ai.application.dto import (
     IncidentListQuery,
     RecurringQuery,
-    RedTeamRunRequest,
     ReindexRequest,
     ResolveIncidentRequest,
     SimulateRequest,
@@ -58,16 +56,6 @@ def insights_recurring(
 ) -> Any:
     """Recurring problems (P4.21)."""
     raise not_wired("recurring problems")
-
-
-@router.api_route(**route_kwargs("redteam_run"))
-def redteam_run(
-    body: RedTeamRunRequest,
-    request: Request,
-    caller: Annotated[Principal, Depends(authorize("redteam_run"))],
-) -> Any:
-    """Red-team run (P4.11)."""
-    raise not_wired("the red team")
 
 
 @router.api_route(**route_kwargs("admin_simulate"))

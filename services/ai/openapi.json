@@ -2015,7 +2015,7 @@
             }
           },
           "503": {
-            "description": "`artifact_unavailable`: The frozen model artifact is missing or failed its checksum.",
+            "description": "`artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable.",
             "content": {
               "application/json": {
                 "schema": {

@@ -65,6 +65,8 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `REPORTS_DIR` | local, Render (image) | no | ai | default `reports`; `/v1/metrics` reads `model_lab.json` from it (written by `evaluate.py`) |
 | `BATCH_MAX_ROWS` | local, Render | no | ai | default `10000`; `/v1/batch` rejects a larger CSV with 422 |
 | `BATCH_MAX_BYTES` | local, Render | no | ai | default `5000000`; `/v1/batch` rejects a larger upload with 422 |
+| `REDTEAM_MAX_N` | local, Render | no | ai | default `200`; P4.11: `/v1/redteam/run` and the red-team CLI reject a larger `n` with 422 / exit 4 |
+| `REDTEAM_SEED_CSV` | local, Render (image) | no | ai | default `data/clean/train_clean.csv` (relative to the repo root); the official training rows the red team perturbs. A path under `data/our_test` or `data/robustness` is refused (D-013). The file must be in the image for the online route |
 | `GMAIL_SMTP_USER` | local, Render | no | ai | the campuspulse support Gmail address |
 | `GMAIL_APP_PASSWORD` | local, Render | yes | ai | needs 2-Step Verification |
 | `SMTP_HOST` | local, Render | no | ai | `smtp.gmail.com` |
@@ -104,7 +106,7 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `HF_TOKEN` | dev machine | yes | model mirror upload | optional |
 | `WHATSAPP_*`, `DEMO_PHONE_ALLOWLIST`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `DEMO_CALENDAR_IDS` | nowhere yet | | | future work (S1); commented out in `.env.example` |
 
-Not yet read by `Settings` (added by later tasks through the same test): `AUTH_MODE`, `TZ`, `REPORTS_DIR`, `REDTEAM_MAX_N`.
+Not yet read by `Settings` (added by later tasks through the same test): `TZ`.
 
 ## Deploy
 
