@@ -38,6 +38,7 @@ const ticket = (o: Partial<TicketRow> = {}): TicketRow => ({
   escalated_at: null,
   resolved_at: null,
   created_at: "2026-11-08T08:00:00Z",
+  tags: [],
   ...o,
 });
 

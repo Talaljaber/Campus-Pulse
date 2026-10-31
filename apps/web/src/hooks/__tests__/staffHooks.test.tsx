@@ -44,6 +44,7 @@ const row = (o: Record<string, unknown> = {}) => ({
   priority: "medium",
   status: "open",
   provisional: false,
+  tags: [],
   title: "Wi-Fi",
   body: "",
   sla_due_at: "2026-11-08T12:00:00Z",

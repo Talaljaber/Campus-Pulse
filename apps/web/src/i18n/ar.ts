@@ -99,7 +99,7 @@ export const ar: Dict = {
     ticketStatusNoTitle: "تذكرتك صارت {status}.",
     updateGeneric: "في تحديث جديد على طلبك.",
     voice: {
-      start: "املي طلبك بصوتك ({language})",
+      start: "املي بصوتك ({language})",
       stop: "وقّف الاستماع",
       listening: "عم نسمعك",
       langEn: "الإنجليزي",

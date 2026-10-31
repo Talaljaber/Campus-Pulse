@@ -58,7 +58,7 @@ describe("MicButton", () => {
   it("is a toggle button that names its language, and announces listening", async () => {
     const user = userEvent.setup();
     render(<MicButton lang="en-US" onTranscript={() => {}} />);
-    const mic = screen.getByRole("button", { name: "Dictate your request in English" });
+    const mic = screen.getByRole("button", { name: "Dictate in English" });
     expect(mic).toHaveAttribute("aria-pressed", "false");
     await user.click(mic);
     expect(FakeRecognition.last!.lang).toBe("en-US");
@@ -75,7 +75,7 @@ describe("MicButton", () => {
         <MicButton lang="ar-JO" onTranscript={() => {}} />
       </LangScope>,
     );
-    await user.click(screen.getByRole("button", { name: "املي طلبك بصوتك (العربي)" }));
+    await user.click(screen.getByRole("button", { name: "املي بصوتك (العربي)" }));
     expect(FakeRecognition.last!.lang).toBe("ar-JO");
   });
 

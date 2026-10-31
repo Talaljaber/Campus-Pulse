@@ -30,6 +30,7 @@ const ago = (h) => new Date(Date.now() - h * 3_600_000).toISOString();
 const ahead = (h) => new Date(Date.now() + h * 3_600_000).toISOString();
 const ticketRow = (o) => ({
   incident_id: null,
+  tags: [],
   provisional: false,
   body: "",
   escalated_at: null,

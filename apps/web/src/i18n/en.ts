@@ -105,7 +105,7 @@ export const en = {
     ticketStatusNoTitle: "Your ticket is now {status}.",
     updateGeneric: "You have a new update on your request.",
     voice: {
-      start: "Dictate your request in {language}",
+      start: "Dictate in {language}",
       stop: "Stop listening",
       listening: "Listening",
       langEn: "English",

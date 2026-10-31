@@ -33,6 +33,7 @@ const ticket = (o: Partial<TicketView> = {}): TicketView => ({
   resolved_at: null,
   created_at: "2026-11-08T08:00:00Z",
   link: null,
+  tags: [],
   ...o,
 });
 
