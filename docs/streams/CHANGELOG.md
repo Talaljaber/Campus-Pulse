@@ -865,3 +865,29 @@
 - **Acceptance:** `pytest services/ai/tests/contracts/test_routes_auth.py -q` → `27 passed` (401 without the token on all 13 protected routes; student → /feedback 403; staff → /redteam/run 403; role and alias from the profile, not headers; bad token 401; Supabase down 503). Adapter and use-case tests: `test_supabase_auth.py`, `test_batch_csv.py`, `test_metrics_usecase.py`.
 - **Limitations / TODO / known issues:** the byte-identity check against `predict.py` (`fc /b` on `data/raw/validation.csv`) was not run: `predict.py`, `BatchPredictUseCase` and the models are not merged; `predict.py` should write with `write_predictions_csv`. `redteam` in `/metrics` is `[]` until the domain `Scorecard` has `created_at`, `n` and `seed`. `model_lab.json` must be written by `evaluate.py` and copied into the image.
 - **Affects streams:** ML (`evaluate.py` writes `reports/model_lab.json`; `predict.py` uses `write_predictions_csv`; composition adapts `BatchPredictUseCase` to `BatchLabeler`), Foundation (copy `reports/` into the image; Render needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for user tokens), UI (forward `X-CP-User-JWT` from the Next.js server; send no `X-CP-Role` in production).
+
+### P4.9 — office notifications, Realtime for reviews and links, admin-only distress items  (db, 2026-10-31, commits a03e57c, c226c3d and the docs follow-up)
+- **What now exists:** migrations `0010_office_notifications` and `0011_distress_reviews_admin_only`, applied to the linked project (history repaired to `0010` and `0011`).
+  - `notifications_read` is altered in place: staff also read alias `office:<their profiles.office>` (escalation notes); students keep their own alias and admins everything.
+  - `review_queue` and `ticket_links` are in `supabase_realtime`.
+  - `review_queue_read` is altered: staff never read `reason = 'distress'` items; admins do.
+  - Reference: [db/schema.md › RLS policies](../db/schema.md#rls-policies-in-plain-words).
+- **Public interfaces added or changed:** what the two policies return (above) and two more Realtime tables. No column, grant or type changes; the types header now says 0011.
+- **How to use it:**
+  - Staff dashboard: `.from("notifications").select()` returns the office's notes.
+  - Subscribe with `postgres_changes` on `review_queue` / `ticket_links` instead of polling.
+  - Distress items appear only in the admin view.
+- **Config / env added:** none.
+- **Acceptance:**
+  - Live `supabase/tests/rls.sql` (via MCP, rolled back) → `RLS: 11/11 checks passed`. New check 10: `office_it=1 others=0`. New check 11: `staff=0 admin=1`.
+  - Live sign-in with the anon key (one-off script, rows cleaned up, `0 test rows left`):
+    - `it@demo.local` reads `office:it`, not `office:finance` or a student's note, and gets the `low_confidence` review item but not the `distress` one.
+    - `talal@demo.local` reads only their own note and no review items.
+    - `admin@demo.local` reads all of them.
+  - `pytest services/ai/tests -q -m supabase` → `59 passed, 1 skipped`.
+  - Advisors: no new lint.
+- **Limitations / TODO / known issues:**
+  - Known widening: staff read every non-distress review item from every office. The rows hold ids and a reason only; kept for the demo's cross-office queue.
+  - The policies are altered in place (`alter policy`): a `drop policy` migration was refused by the MCP apply.
+  - `scripts/test_rls.py` still needs the local Docker stack.
+- **Affects streams:** Backend (escalation notes now reach staff), UI (Realtime subscriptions; distress items in the admin view only), Lead (the X4.4 acceptance text now reads `RLS: 11/11`).

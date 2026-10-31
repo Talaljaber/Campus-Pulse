@@ -1,7 +1,7 @@
 -- RLS proof (ARCHITECTURE §3.14, P4.1). Plain SQL, no pgTAP. Runs as postgres inside one
 -- transaction that is rolled back, so fixtures never persist. Each check impersonates a
 -- client by setting request.jwt.claims and `set local role`, exactly as PostgREST does.
--- Output: one row per check, then a summary row "RLS: n/9 checks passed".
+-- Output: one row per check, then a summary row "RLS: n/11 checks passed".
 -- Run: scripts/test_rls.py (local stack via psql), or paste into the SQL editor / MCP.
 -- Fixture identities are fictional aliases; emails use the reserved example.invalid domain.
 
@@ -38,7 +38,11 @@ insert into public.tickets (id, request_id, office, category, priority, sla_due_
   ('00000000-0000-4000-8000-0000000d0002', '00000000-0000-4000-8000-0000000b0002', 'finance', 'Finance',    'medium', now() + interval '1 day');
 
 insert into public.review_queue (prediction_id, reason) values
-  ('00000000-0000-4000-8000-0000000c0001', 'rls fixture');
+  ('00000000-0000-4000-8000-0000000c0001', 'rls fixture'),
+  ('00000000-0000-4000-8000-0000000c0001', 'distress');
+
+insert into public.notifications (alias, kind) values
+  ('office:it', 'rls fixture'), ('office:finance', 'rls fixture'), ('rls-student-a', 'rls fixture');
 
 insert into public.request_embeddings (request_id, embedding, lang, category, priority) values
   ('00000000-0000-4000-8000-0000000b0001', array_fill(0.1::real, array[384])::extensions.vector, 'en', 'IT Support', 'high');
@@ -147,6 +151,27 @@ begin
   insert into _rls values (9, 'student sees no gaming flags',
     v_flags is not null and v_flags = array['needs_review'] and n = 0,
     format('view_flags=%s base_rows=%s', v_flags, n));
+
+  -- 10. IT staff read office:it notifications, not office:finance or a student's (0010)
+  perform set_config('request.jwt.claims', json_build_object('sub', v_it, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n_own from public.notifications where kind = 'rls fixture' and alias = 'office:it';
+  select count(*) into n_other from public.notifications where kind = 'rls fixture' and alias <> 'office:it';
+  reset role;
+  insert into _rls values (10, 'IT staff read only office:it notifications', n_own = 1 and n_other = 0,
+                           format('office_it=%s others=%s', n_own, n_other));
+
+  -- 11. distress review items are admin-only (0011)
+  set local role authenticated;
+  select count(*) into n from public.review_queue where reason = 'distress';
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', v_adm, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into m from public.review_queue where reason = 'distress'
+    and prediction_id = '00000000-0000-4000-8000-0000000c0001';
+  reset role;
+  insert into _rls values (11, 'staff never read distress review items (admin does)', n = 0 and m = 1,
+                           format('staff=%s admin=%s', n, m));
 end $$;
 
 select n, name, ok, detail from _rls

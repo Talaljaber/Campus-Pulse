@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Supabase MCP generate_typescript_types for project efsanbaklpiakhsndhph
-// after migration 0009. Regenerate after every migration: see docs/db/schema.md › TypeScript types.
+// after migration 0011. Regenerate after every migration: see docs/db/schema.md › TypeScript types.
 export type Json =
   | string
   | number
