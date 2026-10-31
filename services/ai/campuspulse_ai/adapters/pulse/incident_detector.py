@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Sequence
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 
@@ -18,6 +18,7 @@ from campuspulse_ai.domain.labels import Priority
 from campuspulse_ai.domain.ports import Clock, Repository, VectorStore
 
 SEARCH_K = 50
+ANY_AGE = datetime(1970, 1, 1, tzinfo=UTC)  # open_incidents(since=...) for "whatever its age"
 
 
 class WindowedCentroidDetector:
@@ -25,12 +26,13 @@ class WindowedCentroidDetector:
 
     `detect(req, pred, embedding)`:
     1. No location on the request → `none`.
-    2. Search "requests" for the same building and category created in the last `window_min`
-       minutes (k=50, embeddings included), dropping `req` itself if it is already stored.
-    3. Centroid = normalised mean of those embeddings plus `embedding`. Members = the rows, and
-       the request itself, with cosine to the centroid >= `tau_inc`. The request must be a member.
-    4. Fewer than `min_reports` members → `none`. Otherwise attach to the oldest open incident for
-       that building and category opened inside the window, or open a new one.
+    2. An open incident exists for that building and category, whatever its age → `attach` to the
+       oldest one (D-007: one ongoing outage stays one incident). `members` = [req.id].
+    3. Otherwise search "requests" for the same building and category created in the last
+       `window_min` minutes (k=50, embeddings included), dropping `req` itself if already stored.
+       Centroid = normalised mean of those embeddings plus `embedding`; members = the rows, and the
+       request itself, with cosine to the centroid >= `tau_inc` (the request must be a member).
+    4. At least `min_reports` members → `new`, else `none`. The window only bounds opening.
 
     The incident is saved through the repository: a new one gets report_count = members and
     priority = max member priority; an attach adds one report and raises the priority to the
@@ -63,6 +65,18 @@ class WindowedCentroidDetector:
         location = req.normalized.location if req.normalized else None
         if location is None:
             return IncidentDecision(kind="none", incident=None)
+        open_ = self._repo.open_incidents(location.building, pred.category, ANY_AGE)
+        if open_:
+            current = open_[0]
+            count = current.report_count + 1
+            priority = self._priority(
+                max(current.priority, pred.priority, key=_rank), current.report_count, count
+            )
+            saved = self._repo.save_incident(
+                dataclasses.replace(current, report_count=count, priority=priority, member_ticket_ids=[])
+            )
+            return IncidentDecision(kind="attach", incident=saved, members=[req.id])
+
         since = self._clock.now() - self.window
         filters = {
             "building_id": location.building,
@@ -85,18 +99,6 @@ class WindowedCentroidDetector:
         members = [h.id for h in member_hits] + [req.id]
         if len(members) < self.min_reports:
             return IncidentDecision(kind="none", incident=None, members=members)
-
-        open_ = self._repo.open_incidents(location.building, pred.category, since)
-        if open_:
-            current = open_[0]
-            count = current.report_count + 1
-            priority = self._priority(
-                max(current.priority, pred.priority, key=_rank), current.report_count, count
-            )
-            saved = self._repo.save_incident(
-                dataclasses.replace(current, report_count=count, priority=priority, member_ticket_ids=[])
-            )
-            return IncidentDecision(kind="attach", incident=saved, members=members)
 
         member_priorities = [Priority(str(h.meta.get("priority") or pred.priority)) for h in member_hits]
         base = max([pred.priority, *member_priorities], key=_rank)

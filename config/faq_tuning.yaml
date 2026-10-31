@@ -1,0 +1,53 @@
+# Hand-written questions for tuning tau_faq (P4.5, scripts/tune_faq.py). Never used for training.
+# answerable: paraphrases of seed FAQ topics (supabase/seed/04_faq_text.sql); `expect` lists the
+#   FAQ ids that count as a correct answer (the EN and AR twins of one topic).
+# unanswerable: campus questions the FAQ does not cover; any answer to them is a false positive.
+topics:
+  cs_hours:  [f0000000-0000-4000-8000-000000000101, f0000000-0000-4000-8000-000000000102]
+  ce_hours:  [f0000000-0000-4000-8000-000000000103, f0000000-0000-4000-8000-000000000104]
+  fees:      [f0000000-0000-4000-8000-000000000105, f0000000-0000-4000-8000-000000000106]
+  aid:       [f0000000-0000-4000-8000-000000000107, f0000000-0000-4000-8000-000000000108]
+  training:  [f0000000-0000-4000-8000-000000000109, f0000000-0000-4000-8000-000000000110]
+  gy_gpa:    [f0000000-0000-4000-8000-000000000111, f0000000-0000-4000-8000-000000000112]
+  gy_money:  [f0000000-0000-4000-8000-000000000113, f0000000-0000-4000-8000-000000000114]
+  gy_unis:   [f0000000-0000-4000-8000-000000000115, f0000000-0000-4000-8000-000000000116]
+  contact:   [f0000000-0000-4000-8000-000000000117, f0000000-0000-4000-8000-000000000118]
+  add_drop:  [f0000000-0000-4000-8000-000000000201, f0000000-0000-4000-8000-000000000202]
+  wifi:      [f0000000-0000-4000-8000-000000000203, f0000000-0000-4000-8000-000000000204]
+  bus:       [f0000000-0000-4000-8000-000000000205, f0000000-0000-4000-8000-000000000206]
+  maint:     [f0000000-0000-4000-8000-000000000207, f0000000-0000-4000-8000-000000000208]
+  tuition:   [f0000000-0000-4000-8000-000000000209, f0000000-0000-4000-8000-000000000210]
+
+answerable:
+  - {text: "how many hours do I need to graduate in computer science", lang: en, topic: cs_hours}
+  - {text: "total credit hours for the CE degree?", lang: en, topic: ce_hours}
+  - {text: "what does one credit hour cost", lang: en, topic: fees}
+  - {text: "are there scholarships or student jobs I can apply for", lang: en, topic: aid}
+  - {text: "what do I need before starting my internship in Jordan", lang: en, topic: training}
+  - {text: "minimum GPA to go to Germany", lang: en, topic: gy_gpa}
+  - {text: "how much is the blocked account for the German year", lang: en, topic: gy_money}
+  - {text: "can I email the German university myself to apply", lang: en, topic: gy_unis}
+  - {text: "what is the university phone number", lang: en, topic: contact}
+  - {text: "last day to drop a course", lang: en, topic: add_drop}
+  - {text: "كم سعر الساعة المعتمدة؟", lang: ar, topic: fees}
+  - {text: "شو المعدل المطلوب عشان أطلع على ألمانيا", lang: ar, topic: gy_gpa}
+  - {text: "نسيت كلمة السر وما بقدر أدخل على الواي فاي", lang: ar, topic: wifi}
+  - {text: "kef ballegh 3an mushkle siyane bel mabna", lang: arabizi, topic: maint}
+  - {text: "momken adfa3 el rusoom 3ala aqsat", lang: arabizi, topic: tuition}
+
+unanswerable:
+  - {text: "where is the cafeteria and when does it open", lang: en}
+  - {text: "can I bring my dog to campus", lang: en}
+  - {text: "who is teaching Linear Algebra next semester", lang: en}
+  - {text: "is there a gym for students", lang: en}
+  - {text: "how do I join the robotics club", lang: en}
+  - {text: "my exam grade is wrong, who do I talk to", lang: en}
+  - {text: "where can I print my report on campus", lang: en}
+  - {text: "is parking free for students", lang: en}
+  - {text: "متى بتفتح المكتبة يوم الجمعة؟", lang: ar}
+  - {text: "وين بقدر أصلي بالجامعة؟", lang: ar}
+  - {text: "في سكن طلاب قريب من الجامعة؟", lang: ar}
+  - {text: "مين رئيس قسم الهندسة الكهربائية؟", lang: ar}
+  - {text: "fi nadi lal shatranj bel jam3a?", lang: arabizi}
+  - {text: "wen el 3iyade el sohhiye?", lang: arabizi}
+  - {text: "kam 3adad el talabe bel jam3a?", lang: arabizi}
