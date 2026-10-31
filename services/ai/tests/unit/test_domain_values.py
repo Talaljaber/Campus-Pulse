@@ -12,7 +12,7 @@ from campuspulse_ai.domain import ports
 from campuspulse_ai.domain.errors import RecipientNotAllowed
 from campuspulse_ai.domain.labels import CATEGORY_LABELS, PRIORITY_LABELS, Category, Priority
 from campuspulse_ai.domain.policy import RecipientPolicy
-from campuspulse_ai.domain.values import PredictionSet, ProbVector
+from campuspulse_ai.domain.values import PredictionSet, ProbVector, TicketStatus
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 SCENARIOS = REPO_ROOT / "data" / "clean" / "scenarios.csv"
@@ -80,3 +80,10 @@ def test_recipient_policy_allows_only_listed_and_rejects_all_when_empty() -> Non
         policy.check("someone@gju.edu.jo")
     with pytest.raises(RecipientNotAllowed):
         RecipientPolicy(frozenset()).check("demo.student@example.com")
+
+
+def test_ticket_status_rank_is_the_forward_lifecycle_order() -> None:
+    # D-013 moved the order from the sync use case into the domain.
+    order = [TicketStatus.OPEN, TicketStatus.ESCALATED, TicketStatus.IN_PROGRESS, TicketStatus.RESOLVED]
+    assert [s.rank for s in order] == [0, 1, 2, 3]
+    assert TicketStatus.CLOSED.rank == TicketStatus.MERGED.rank > TicketStatus.RESOLVED.rank

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -34,17 +34,6 @@ from campuspulse_ai.domain.values import TicketStatus
 
 log = logging.getLogger(__name__)
 
-STATUS_RANK: Mapping[TicketStatus, int] = {
-    TicketStatus.OPEN: 0,
-    TicketStatus.ESCALATED: 1,
-    TicketStatus.IN_PROGRESS: 2,
-    TicketStatus.RESOLVED: 3,
-    TicketStatus.CLOSED: 4,
-    TicketStatus.MERGED: 4,
-}
-"""Lifecycle order (ARCHITECTURE §2.2). An inbound change is applied only if it moves a ticket
-forward, so our own pushes that come back through the webhook (e.g. a dashboard `closed` returns from
-Linear as `completed` -> `resolved`) and stale or replayed deliveries are ignored."""
 DONE_STATUSES = frozenset({TicketStatus.RESOLVED, TicketStatus.CLOSED})
 """Statuses that set `resolved_at`; moving back to an open status clears it (a dashboard reopen)."""
 OPEN_STATUSES = frozenset({TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.ESCALATED})
@@ -77,7 +66,9 @@ class SyncTicketUseCase:
       verifies and parses the delivery (`Unauthorized` for a bad signature or a stale timestamp, before
       anything is read or written; `InvalidInput` for a signed body that is not JSON). None (ignored,
       nothing written) when the event is not a state change, the issue is not linked to a ticket, or
-      the change would not move the ticket forward (`STATUS_RANK`).
+      the change would not move the ticket forward (`TicketStatus.rank`). Moving forward only
+      ignores our own pushes that come back through the webhook (a dashboard `closed` returns from
+      Linear as `completed` -> `resolved`) and stale or replayed deliveries.
     - `change_status(ticket_id, status, actor, note=None) -> StatusChange`: a dashboard change. Staff
       of the ticket's office or an admin (`Unauthorized` otherwise); any direction is allowed (staff
       may reopen); the same status is a no-op. `NotFound` for an unknown ticket.
@@ -137,7 +128,7 @@ class SyncTicketUseCase:
         except NotFound:
             log.info("inbound %s event for unlinked issue %s ignored", event.sink, event.external_id)
             return None
-        if STATUS_RANK[event.status] <= STATUS_RANK[ticket.status]:
+        if event.status.rank <= ticket.status.rank:
             log.info(
                 "inbound %s %s -> %s for ticket %s ignored (not forward)",
                 event.sink,

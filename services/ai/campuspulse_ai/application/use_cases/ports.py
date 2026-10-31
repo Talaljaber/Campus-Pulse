@@ -14,6 +14,8 @@ They are structural (Protocols), so the real classes satisfy them without import
   stream's `BatchPredictUseCase` (P1.15) to it.
 - `ReportsSource` reads the offline model-lab report for `/v1/metrics`;
   `adapters/reports/json_reports.JsonReportsSource` implements it.
+- `RedTeamJudge` scores one red-team item (P4.11); `adapters/redteam/scorer.RedTeamScorer`
+  implements it.
 """
 
 from __future__ import annotations
@@ -23,13 +25,14 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from campuspulse_ai.application import dto
-from campuspulse_ai.domain.entities import CoreResult
+from campuspulse_ai.domain.entities import CoreResult, RedTeamItem
 from campuspulse_ai.domain.values import (
     ClarificationConstraint,
     ClarificationQuestion,
     Lang,
     Location,
     NormalizedRequest,
+    Outcome,
 )
 
 ROLE_STUDENT = "student"
@@ -128,6 +131,19 @@ class BatchLabeler(Protocol):
     """
 
     def label(self, rows: Sequence[tuple[str, str]], *, use_llm: bool) -> list[tuple[str, str, str]]: ...
+
+
+@runtime_checkable
+class RedTeamJudge(Protocol):
+    """The pass rule of a red-team item (P4.11); `adapters/redteam/scorer.RedTeamScorer` implements it.
+
+    `base` is the core result of `item.base_text` (None without one). Returns `(passed, reason)`.
+    Pure; never raises.
+    """
+
+    def score(
+        self, item: RedTeamItem, core: CoreResult, outcome: Outcome, base: CoreResult | None
+    ) -> tuple[bool, str]: ...
 
 
 @runtime_checkable

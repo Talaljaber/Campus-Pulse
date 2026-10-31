@@ -429,10 +429,17 @@ def test_student_signals_accumulate(h: Harness) -> None:
 
 
 def test_redteam_runs_newest_first(h: Harness) -> None:
-    first = h.repo.save_redteam_run(Scorecard("not-a-uuid", {"typo": 0.9}, {"en": 0.95}, 0.92))
+    # D-013: the scorecard carries created_at, n and seed; history is ordered by created_at.
+    at = datetime.now(UTC).replace(microsecond=0)
     second_id = str(uuid.uuid4())
     second = h.repo.save_redteam_run(
-        Scorecard(second_id, {"arabizi": 0.8}, {"ar": 0.85}, 0.83, [{"text": "x", "got": "Finance"}])
+        Scorecard(
+            second_id, {"arabizi": 0.8}, {"ar": 0.85}, 0.83, [{"text": "x", "got": "Finance"}],
+            created_at=at + timedelta(seconds=1), n=20, seed=7,
+        )  # fmt: skip
+    )
+    first = h.repo.save_redteam_run(
+        Scorecard("not-a-uuid", {"typo": 0.9}, {"en": 0.95}, 0.92, created_at=at, n=10, seed=42)
     )
     h.track_run(first)
     h.track_run(second)
@@ -440,6 +447,16 @@ def test_redteam_runs_newest_first(h: Harness) -> None:
     history = h.repo.redteam_history(limit=2)
     assert [s.run_id for s in history] == [second, first]
     assert history[0].failures == [{"text": "x", "got": "Finance"}] and history[1].by_style == {"typo": 0.9}
+    assert (history[0].created_at, history[0].n, history[0].seed) == (at + timedelta(seconds=1), 20, 7)
+    assert (history[1].created_at, history[1].n, history[1].seed) == (at, 10, 42)
+
+
+def test_scorecard_stored_before_d013_reads_with_the_row_timestamp() -> None:
+    legacy = {"run_id": "r", "by_style": {"typos": 1}, "by_lang": {"en": 1}, "overall": 1, "failures": []}
+    s = codec.to_scorecard(legacy, "2026-11-02T08:00:00+00:00")
+    assert (s.created_at, s.n, s.seed) == (T0, 0, 0)
+    with pytest.raises(StoreError):
+        codec.to_scorecard(legacy, None)
 
 
 # --------------------------------------------------------------------------- advisors / slots / cases / stats

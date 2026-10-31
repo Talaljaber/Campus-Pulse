@@ -239,18 +239,37 @@ class Case:
 
 @dataclass
 class RedTeamItem:
+    """One red-team input (ARCHITECTURE §2.4).
+
+    `base_text` is the unperturbed text it was made from (None for fixed-list and two-issue items):
+    the injection and fake-urgency rules compare against the base's prediction (D-013). `base_id` is
+    the seed row's id, carried into the failure candidates for a human to trace.
+    """
+
     text: str
     style: str
     lang: Lang
     intended_category: Category
     intended_priority: Priority
     expected_flags: frozenset[str] = frozenset()
+    base_text: str | None = None
+    base_id: str | None = None
 
 
 @dataclass
 class Scorecard:
+    """A red-team run (ARCHITECTURE §2.4): pass rates in [0, 1] per style, per language and overall.
+
+    `created_at`, `n` (items scored) and `seed` (generator seed) were added by D-013 so the stored
+    history can be shown by `/v1/metrics`. They are keyword-only to keep the positional order of the
+    original fields. `failures` rows carry the keys of `dto.RedTeamFailureOut`.
+    """
+
     run_id: str
     by_style: dict[str, float]
     by_lang: dict[str, float]
     overall: float
     failures: list[Mapping[str, object]] = field(default_factory=list)
+    created_at: datetime = field(kw_only=True)
+    n: int = field(kw_only=True)
+    seed: int = field(kw_only=True)

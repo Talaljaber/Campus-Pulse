@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 
 from campuspulse_ai.application import dto
-from campuspulse_ai.domain.entities import CoreResult, Explanation
+from campuspulse_ai.domain.entities import CoreResult, Explanation, Scorecard
 from campuspulse_ai.domain.labels import CATEGORY_ORDER, PRIORITY_ORDER, Category, Priority
 from campuspulse_ai.domain.values import (
     FLAGS,
@@ -137,6 +137,23 @@ def understood_as(req: NormalizedRequest) -> str | None:
 def flags_out(flags: Iterable[str]) -> list[str]:
     """Sorted API flags; debug-only and unknown names (e.g. evidence names) are dropped."""
     return sorted(set(flags) & API_FLAGS)
+
+
+def scorecard_out(s: Scorecard) -> dto.ScorecardOut:
+    """A red-team scorecard (P4.11) for `/v1/redteam/run` and the `/v1/metrics` history.
+
+    Raises `ValueError` (pydantic) when a stored scorecard does not fit the contract.
+    """
+    return dto.ScorecardOut(
+        run_id=s.run_id,
+        created_at=s.created_at,
+        n=s.n,
+        seed=s.seed,
+        overall=_prob(s.overall),
+        by_style=dict(s.by_style),
+        by_lang=dict(s.by_lang),
+        failures=[dto.RedTeamFailureOut.model_validate(f) for f in s.failures],
+    )
 
 
 def _prob(p: float) -> float:

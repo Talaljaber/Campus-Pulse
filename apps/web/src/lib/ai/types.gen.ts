@@ -2301,7 +2301,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. */
+            /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. */
             503: {
                 headers: {
                     [name: string]: unknown;

@@ -87,6 +87,22 @@ class TicketStatus(StrEnum):
     ESCALATED = "escalated"
     MERGED = "merged"
 
+    @property
+    def rank(self) -> int:
+        """Lifecycle order (ARCHITECTURE §2.2, D-013): open < escalated < in_progress < resolved <
+        closed = merged. An inbound change applies only when it raises the rank (P4.9)."""
+        return TICKET_STATUS_RANK[self]
+
+
+TICKET_STATUS_RANK: Mapping[TicketStatus, int] = {
+    TicketStatus.OPEN: 0,
+    TicketStatus.ESCALATED: 1,
+    TicketStatus.IN_PROGRESS: 2,
+    TicketStatus.RESOLVED: 3,
+    TicketStatus.CLOSED: 4,
+    TicketStatus.MERGED: 4,
+}
+
 
 class ActionType(StrEnum):
     FAQ_ANSWER = "faq_answer"

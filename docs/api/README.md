@@ -387,6 +387,106 @@ Free text always goes in `message`; only ticket-status updates carry `status`.
   ≥ `GAMING_CLAIM_RATIO` (0.8) of them claim urgency and ≤ `GAMING_HIGH_RATIO_MAX` (0.2) of those
   claims were really high; or 2 injection attempts. Admin only; no penalty.
 
+<a id="red-team"></a>
+## Red team (`POST /v1/redteam/run`, P4.11)
+
+Tricky requests are generated per style, run through the real core and the decision policy, scored, and
+stored as a scorecard. Rule-based and offline: no LLM call (the LLM generator is future work, UD-3), no
+ticket, notification, email or memory write. The only write is one `redteam_runs` row.
+
+**Request** (admin; `dto.RedTeamRunRequest`): `{"n": 1..REDTEAM_MAX_N (200), "styles": [..] | null, "seed": 42}`.
+`styles: null` (or `[]`) means every style the seed rows can feed.
+
+```powershell
+curl.exe -s -X POST localhost:8000/v1/redteam/run -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-Role: admin" -H "Content-Type: application/json" `
+  -d '{\"n\": 20, \"styles\": [\"fake_urgency\", \"injection\", \"off_topic\"], \"seed\": 42}'
+```
+
+**Response** (`dto.ScorecardOut`, also each entry of `/v1/metrics` `redteam`):
+`{run_id, created_at, n, seed, overall, by_style: {style: pass rate}, by_lang: {en|ar|arabizi: pass rate},
+failures: [{text, style, lang, intended_category, intended_priority, got_category, got_priority, outcome,
+reason}]}`. Rates are in [0, 1]; `overall` is the share of all items that passed. `got_*` are null when the
+outcome gave no decision (`out_of_scope`, `distress`). See the `redteam_run` example in
+[endpoints.md](endpoints.md).
+
+**Errors:** `n` outside `1..200`, an unknown style, or a style the seeds cannot feed → 422
+`invalid_input`; a non-admin → 403; the core's model unusable → 503 `artifact_unavailable`; the run
+cannot be saved → 503 `store_unavailable`; not wired in this deployment → 501 (`details.component =
+"the red team"`).
+
+**Styles and pass rules** (`application/services/redteam_styles.py`, ARCHITECTURE §2.4). Every item first
+needs its `expected_flags`; then:
+
+| Style | Generated from | Passes when | Measures |
+| --- | --- | --- | --- |
+| `fake_urgency` | a low/medium seed row + `URGENT!!` / `عاجل جدا` prefix (sometimes a suffix) | both labels equal the unperturbed text's | priority-gaming resistance |
+| `injection` | a seed row + an `injection.yaml` exemplar before or after it | `injection_attempt` flagged and priority ≤ the unperturbed text's | injection resistance |
+| `typos` | a seed row, letters swapped (p = 0.1) or dropped (p = 0.03) | a decision with the row's labels | label stability |
+| `arabizi` | an Arabic seed row, reverse-transliterated (`arabizi.yaml` lexicon + char map) | a decision with the row's labels | label stability |
+| `mixed_language` | a seed row, glossary words swapped EN↔AR and a phrase of the other language | a decision with the row's labels | label stability |
+| `very_long` | a seed row in a wrapper greeting and benign filler (≥ 500 chars) | a decision with the row's labels | label stability |
+| `two_issues` | two seed rows of one language and different categories | the more urgent row's labels | label stability |
+| `calm_emergency` | a calm template of a real hazard | the template's labels (high) | under-prioritising danger |
+| `off_topic` | the fixed list | outcome `out_of_scope` | scope |
+| `distress_adjacent` | the fixed list | the `distress` flag | the supportive route |
+
+Outcome per item: `distress` when the core flags it, else `DefaultDecisionPolicy.decide` with a
+one-question budget and `llm_allowed=False`. Labels are the decided labels (a singleton set's label, else
+the argmax; safety is high).
+
+**Determinism.** Each style draws from its own `random.Random(f"{seed}:{style}")`: the same seed, seed rows
+and config give the same items and therefore the same scores; a subset of styles gives the same items for
+those styles. `n` is spread round-robin over the styles in the order above.
+
+**Seeds.** Official training rows: `REDTEAM_SEED_CSV` (default `data/clean/train_clean.csv`, the
+wrapper-stripped `core` column), or any CSV with `request_id, category, priority` and `core` or `text`
+(`lang` optional). Paths under `data/our_test` or `data/robustness` are refused before the file is opened
+(D-013). Settings: `REDTEAM_MAX_N` (200), `REDTEAM_SEED_CSV`; perturbation rates, prefixes, filler,
+glossary, templates and fixed lists: `config/redteam.yaml`.
+
+**Online wiring.** `composition.redteam.build_redteam(core, policy, repo, clock, settings, memory=True)`
+returns the use case; `build_online` (lead) sets `ApiServices.redteam` with it. Until then the deployed
+route answers 501.
+
+**History.** Each run is stored by `Repository.save_redteam_run` (`redteam_runs.scorecard` jsonb, with
+`created_at`, `n` and `seed` since D-013) and `/v1/metrics` returns the newest 20 as `redteam`.
+
+### Offline CLI
+
+```powershell
+$env:PYTHONPATH = "services/ai"   # in a worktree
+python services/ai/evaluate.py --redteam --n 200 --seed 42 [--styles typos,arabizi] [--seed-csv <csv>] [--model-dir models/frozen] [--out-dir reports/redteam]
+```
+
+- Runs the same use case with `build_offline` (memory off) and an `InMemoryRepository`: no network,
+  no database, no LLM.
+- Prints `scorecard overall=0.xx n=200 run=<uuid> written reports/redteam/<stamp>.json` and
+  `properties label_stability=… priority_gaming_resistance=… injection_resistance=…`.
+- Writes `reports/redteam/<stamp>.json` (`<stamp>` = run time in UTC, `20261105T130000Z`):
+  `{run_id, created_at, n, seed, overall, by_style, by_lang, properties, source, failures, items[]}`.
+  `properties.label_stability` is the share of items with a base text whose decided labels equal the
+  base text's; the other two are the `fake_urgency` and `injection` pass rates. Each `items[]` entry has
+  the text, base id, intended and got labels, base labels, outcome, flags, `passed`, `stable`, `reason`.
+- Writes `reports/redteam/candidates_<stamp>.csv` when something failed: the probe columns
+  (`request_id` `CAND-001`…, `text, lang, style, base_request_id, intended_category, intended_priority,
+  expected_flags, author_method=perturb, notes=<reason>`) plus `needs_human_check=True`. Promotion to
+  `data/robustness/probes.csv` is manual (the plan's `data/robustness/candidates_<run>.csv` path is not
+  used, D-013).
+- Exit codes: 0 done; 2 no usable model (`ArtifactError`, e.g. the encoder not fetched: run
+  `python scripts/fetch_models.py` once); 4 bad input (n, a style, the seed file, a holdout path); 5 a
+  bad `config/redteam.yaml` or lexicon.
+- The model is `build_offline(--model-dir)` (default `ARTIFACT_DIR`, `models/frozen` → `CURRENT`), with
+  `DefaultDecisionPolicy(config.thresholds.tau_ood)`. About 1 minute for 200 items on the dev laptop.
+- First run on `v1-rc1` (2026-10-31, `--n 200 --seed 42`, 370 training seeds): `overall=0.83`;
+  `label_stability=0.88 priority_gaming_resistance=0.90 injection_resistance=0.95`; by style
+  fake_urgency 0.90, calm_emergency 0.80, typos 0.75, arabizi 1.00, mixed_language 0.90, two_issues 0.70,
+  very_long 0.80, injection 0.95, off_topic 0.50, distress_adjacent 1.00; by language en 0.87, ar 0.74,
+  arabizi 0.88. A second run with the same seed gave identical items and scores. Seeds are training
+  rows, so read these as robustness relative to the base text, not as held-out accuracy.
+- `evaluate.py` has no other mode yet; the P2.8 report modes (ML) are added to
+  `frameworks/cli/evaluate.py`.
+
 <a id="use-cases"></a>
 ## Use cases (application layer)
 
@@ -451,7 +551,7 @@ merged the tests use `FakeCore`.
 
 `StatusChange(ticket, previous, source, note)`; `source` is the sink name or `dashboard`. `actor` is
 anything with `role`, `office`, `alias` (`use_cases/ports.Actor`; the route passes its `Principal`).
-`STATUS_RANK` holds the forward order.
+The forward order is the domain's `TicketStatus.rank` (D-013; it was `STATUS_RANK` here).
 
 ### `EscalateSlaUseCase.run(now) -> list[str]` — `use_cases/escalate_sla.py` (P4.9)
 
@@ -488,9 +588,22 @@ multipart `file` + form `use_llm`).
 - **Live:** `router` from `Repository.router_stats()` plus `cost_per_1k_usd = cost / total × 1000`;
   `memory` from `MemoryStore.stats()`; `artifact` the loaded version and sha (`"none"`/`""` without
   models).
-- **`redteam` is `[]`** until the domain `Scorecard` carries `created_at`, `n` and `seed`
-  (P4.11; change request filed).
+- **`redteam`**: the newest 20 stored red-team scorecards (`Repository.redteam_history`, newest first;
+  see [Red team](#red-team)). A stored scorecard that no longer fits `ScorecardOut` is logged and
+  skipped.
 - Errors: `StoreError` from the repository or memory store → 503.
+
+### `RunRedTeamUseCase` — `use_cases/run_redteam.py` (P4.11)
+
+`RunRedTeamUseCase(generator, core, policy, judge, repo, clock, *, max_n, memory, max_questions=1,
+llm_generator=None)` behind `POST /v1/redteam/run` (admin) and the offline CLI.
+- `run(n, styles, seed, use_llm_generator=False) -> Scorecard`; `run_detailed(...) -> RedTeamRun`
+  (`scorecard`, every `RedTeamResult`, `label_stability`, `properties`); `api(cmd) -> ScorecardOut`.
+- `generator` is the domain `RedTeamGenerator` (`adapters/redteam/perturbation.PerturbationGenerator`);
+  `judge` is `use_cases/ports.RedTeamJudge` (`adapters/redteam/scorer.RedTeamScorer`). With
+  `use_llm_generator=True` and no LLM generator wired it logs and uses the rule-based one.
+- Each distinct base text is classified once per run. `memory` is passed to `classify` (on online).
+- Errors and writes: see [Red team](#red-team).
 
 ### `CounterfactualUseCase.run(request_id, drop, *, caller_alias=None) -> CounterfactualResponse` — `use_cases/explain.py`
 
@@ -521,7 +634,7 @@ multipart `file` + form `use_llm`).
 `create_app(services=None, settings=None, *, build=None) -> FastAPI`:
 - `services` is `composition.api.ApiServices`, a frozen dataclass of the use cases behind the routes
   (`triage`, `clarify`, `counterfactual`, `feedback`, `tickets`, `sla` + `clock` for the SLA scanner,
-  `batch`, `metrics`, `identity` for `supabase_jwt`, and `health: HealthInfo` for `/health`). Every
+  `batch`, `metrics`, `redteam`, `identity` for `supabase_jwt`, and `health: HealthInfo` for `/health`). Every
   use-case field is optional: a route whose use case is `None` answers **`501 not_implemented`**
   after the auth checks, with `details.component` naming what is missing.
 - `build(settings) -> ApiServices` runs in the startup lifespan when `services` is None.
@@ -534,7 +647,7 @@ multipart `file` + form `use_llm`).
 - Every contract route is declared with `api_contract.route_kwargs` and the same parameters as the
   mock app, in `ENDPOINTS` order: `create_app().openapi()` is **byte-identical** to the mock's
   export and to `services/ai/openapi.json` (`tests/contracts/test_openapi_real_app.py`). Routes whose
-  use case belongs to a later task (`frameworks/routes/pending.py`: incidents, insights, red team,
+  use case belongs to a later task (`frameworks/routes/pending.py`: incidents, insights,
   admin extras) authenticate and answer 501.
 
 | Route module | Routes | Use case |
@@ -545,6 +658,7 @@ multipart `file` + form `use_llm`).
 | `routes/tickets.py` | `POST /v1/tickets/{ticket_id}/status` | `SyncTicketUseCase.change_status` + `propagate` (background) |
 | `routes/integrations.py` | `POST /v1/integrations/linear/webhook` | `SyncTicketUseCase.apply_inbound` + `propagate` (background) |
 | `routes/lab.py` | `POST /v1/batch`, `GET /v1/metrics` | `BatchCsvUseCase`, `MetricsUseCase` |
+| `routes/redteam.py` | `POST /v1/redteam/run` | `RunRedTeamUseCase.api` (`ApiServices.redteam`) |
 | `routes/health.py` | `GET /health`, `GET /v1/health` | `ApiServices.health` (`status: ok` once triage is wired, else `degraded`) |
 | `routes/pending.py` | the routes of later tasks | none yet (501) |
 | lifespan (`background.py`) | — | `EscalateSlaUseCase.run` every `SLA_SCAN_MINUTES` |

@@ -1,4 +1,4 @@
-"""What the FastAPI app needs from the composition root: `ApiServices` (P3.12, P4.9, P4.12).
+"""What the FastAPI app needs from the composition root: `ApiServices` (P3.12, P4.9, P4.11, P4.12).
 
 The routes in `frameworks/` may import only `composition`, `application.dto`, `config` and `domain`
 (tests/test_architecture.py), so the use cases reach them through this container. Every use-case
@@ -21,6 +21,7 @@ from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.explain import CounterfactualUseCase
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
 from campuspulse_ai.application.use_cases.ports import FeedbackHandler, IdentityVerifier
+from campuspulse_ai.application.use_cases.run_redteam import RunRedTeamUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.triage import TriageUseCase
 from campuspulse_ai.config.settings import Settings
@@ -51,7 +52,8 @@ class ApiServices:
 
     - `tickets` serves the Linear webhook and the dashboard status route; `sla` is the SLA scanner the
       lifespan runs every `SLA_SCAN_MINUTES` with `clock` (both must be set for it to run).
-    - `batch` and `metrics` serve the model lab.
+    - `batch`, `metrics` and `redteam` serve the model lab (`composition.redteam.build_redteam` builds
+      `redteam` from the online core, its policy and the repository, with live memory on).
     - `identity` verifies user tokens in `AUTH_MODE=supabase_jwt`; without it a request carrying a
       user token gets `503 store_unavailable`.
     """
@@ -65,6 +67,7 @@ class ApiServices:
     clock: Clock | None = None
     batch: BatchCsvUseCase | None = None
     metrics: MetricsUseCase | None = None
+    redteam: RunRedTeamUseCase | None = None
     identity: IdentityVerifier | None = None
     health: HealthInfo = field(default_factory=HealthInfo)
 

@@ -254,7 +254,14 @@ class SupabaseRepository:
 
     def save_redteam_run(self, scorecard: Scorecard) -> str:
         run_id = scorecard.run_id if codec.is_uuid(scorecard.run_id) else str(uuid.uuid4())
-        self._upsert("redteam_runs", {"id": run_id, "scorecard": codec.scorecard_json(scorecard, run_id)})
+        self._upsert(
+            "redteam_runs",
+            {
+                "id": run_id,
+                "scorecard": codec.scorecard_json(scorecard, run_id),
+                "created_at": codec.iso(scorecard.created_at),
+            },
+        )
         return run_id
 
     def redteam_history(self, limit: int = 20) -> list[Scorecard]:
@@ -262,14 +269,14 @@ class SupabaseRepository:
             "redteam_history",
             lambda: (
                 self._db.table("redteam_runs")
-                .select("scorecard")
+                .select("scorecard, created_at")
                 .order("created_at", desc=True)
                 .order("id", desc=True)
                 .limit(limit)
                 .execute()
             ),
         )
-        return [codec.to_scorecard(r["scorecard"]) for r in rows]
+        return [codec.to_scorecard(r["scorecard"], r.get("created_at")) for r in rows]
 
     def save_notification(self, alias: str, kind: str, payload: Mapping[str, object]) -> None:
         row = {
