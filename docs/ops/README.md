@@ -52,6 +52,10 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `OPENROUTER_TIER2_MODEL` | (unset) | no | ai | documented only; tier 2 is off (UD-3) |
 | `ENABLE_LLM` | local, Render | no | ai | default `false`; Render blueprint sets `false` |
 | `LLM_DAILY_BUDGET_USD` | local, Render | no | ai | default `5.0` |
+| `LLM_TIMEOUT_S` | local, Render | no | ai | default `20` (seconds per OpenRouter call) |
+| `LLM_MAX_RETRIES` | local, Render | no | ai | default `2` (5xx and timeouts only) |
+| `LLM_RETRY_BACKOFF_S` | local, Render | no | ai | default `0.5` (linear backoff) |
+| `LLM_CACHE_PATH` | local, Render | no | ai | default `.cache/llm.sqlite` (gitignored) |
 | `SUPABASE_URL` | local, Render | no | ai | |
 | `SUPABASE_SERVICE_ROLE_KEY` | local, Render | yes | ai | never on Netlify |
 | `AI_SERVICE_TOKEN` | local, Render, Netlify | yes | ai, web | same value on both; on Netlify scope it to Functions/runtime as well as Builds |

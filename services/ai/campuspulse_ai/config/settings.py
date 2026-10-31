@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     openrouter_tier2_model: str | None = None
     enable_llm: bool = False
     llm_daily_budget_usd: float = 5.0
+    llm_timeout_s: float = 20.0
+    llm_max_retries: int = 2
+    llm_retry_backoff_s: float = 0.5
+    llm_cache_path: Path = Path(".cache/llm.sqlite")
 
     # Supabase (service role is server-side only)
     supabase_url: str | None = None
