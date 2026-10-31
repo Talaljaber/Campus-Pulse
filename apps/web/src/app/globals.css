@@ -34,3 +34,23 @@
     }
   }
 }
+
+/* Pulse map: an expanding, fading ring around an incident. Only defined when motion is
+   allowed; IncidentRing also skips rendering it under prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .cp-ring-pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: cp-ring-pulse 1.8s ease-out infinite;
+  }
+  @keyframes cp-ring-pulse {
+    from {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    to {
+      transform: scale(1.7);
+      opacity: 0;
+    }
+  }
+}

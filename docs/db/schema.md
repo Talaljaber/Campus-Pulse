@@ -15,10 +15,24 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 | 0005 | `0005_vectors.sql` | `faq`, `memory_examples`, `request_embeddings` (vector(384), HNSW), `match_vectors`, `vector_dim`, `faq_v`, `memory_examples_v` |
 | 0006 | `0006_private_helpers.sql` | moves the `cp_*` helpers into schema `private` so PostgREST does not expose them as `/rpc/cp_*` |
 | 0007 | `0007_repository.sql` | `requests.model_text/truncated/location_source`, `predictions.core jsonb`; RPC `bump_student_signals`; trigger that copies a ticket's `office` onto its incident |
+| 0008 | `0008_fk_indexes.sql` | one index per foreign key the performance advisor flagged (cases ×4, llm_calls, memory_examples, outbox, requests.building_id, review_queue ×2) |
 
 **Applying a migration.** Commit the file first. Then apply the same SQL with the Supabase MCP `apply_migration`, or with `supabase db push` on a linked CLI.
 - **MCP version repair.** MCP records a timestamp version. Afterwards, set the row in `supabase_migrations.schema_migrations` to the file's version and name (`0001`/`init`, …). This is what `supabase migration repair` does. It keeps the remote history identical to the file names, so a later `db push` does not re-apply anything.
 - **Rebuilding from scratch** (P6): `supabase db reset` locally, or `supabase db push` to an empty project.
+
+## TypeScript types
+
+`supabase/types/database.types.ts` holds the generated `Database` type for `@supabase/supabase-js` (tables, views, RPC args/returns). It is DB-owned; the web app imports it from there and never edits it. Embedding columns appear as `string` (pgvector text form), but clients cannot select them anyway.
+
+**Regenerate after every migration**, in the same commit as the migration's docs:
+1. Supabase MCP `generate_typescript_types` (what produced the current file), or `npx supabase@2.121.0 gen types typescript --project-id efsanbaklpiakhsndhph > supabase/types/database.types.ts` (needs `supabase login`).
+2. Keep the two-line `// GENERATED` header and update the migration number in it.
+3. Check it: `npx -p typescript@5.9.3 tsc --noEmit --strict supabase/types/database.types.ts`.
+
+**Advisors:** run MCP `get_advisors` (security and performance) after each migration. As of 0008:
+- **Security:** only expected items. `request_embeddings` has RLS with no policy (intentional: service role only), and `public.rls_auto_enable()` is Supabase-managed, left alone by decision.
+- **Performance:** only `unused_index` INFO notes, expected on a near-empty database.
 
 ## Labels and enums (checked by constraints)
 
@@ -186,6 +200,57 @@ The frozen training index and the injection/safety exemplars are **not** in Post
   - **Scope:** it is the only store `build_offline` may construct. `collections=` pre-creates empty collections (tests).
 - **Isolation:** the pgvector modules import `supabase` for typing only, and `local_numpy` imports nothing online. `tests/invariants/test_vector_isolation.py` enforces this.
 
+## Memory stores (`adapters/memory/`)
+
+| Class | Where | Behaviour |
+| --- | --- | --- |
+| `PgVectorMemoryStore(vectors, client)` | online | `memory_examples` via `PgVectorStore("memory")` |
+| `InMemoryMemoryStore()` | tests, offline red team | dict-backed; same contract (`tests/contracts/test_memory_store_contract.py`, 7 cases) |
+| `NullMemoryStore()` | `build_offline` (§3.11) | always empty; `add` raises `StoreError`, `deactivate` raises `NotFound` |
+
+All three implement the same `MemoryStore` contract:
+- `neighbors` are cosine matches over **active** examples, ties broken by id, with `source="memory"`.
+- `stats.by_category` counts active examples only.
+- `last_added_at` is the newest `created_at`.
+
+## FAQ retrieval
+
+`adapters/faq/retriever.py`: **`VectorFAQRetriever(vectors, encoder, collection="faq")`** implements `FAQRetriever`.
+- **Query:** `search(text, lang, k)` embeds the question with the shared encoder (the encoder adds the e5 `query: ` prefix, LD-9).
+- **Language:** it searches only the request language. `arabizi` maps to the `ar` entries, because the FAQ has no Arabizi rows.
+- **Results:** up to `k` `FAQHit`s, score descending, each with `answer`, `source_url` (`""` when none) and `is_demo`.
+- **Errors:** `StoreError` propagates (Act falls back to a ticket).
+- **Threshold:** it does **not** apply `tau_faq`; the action engine does. The answer text is always the retrieved text plus its source, with `[demo]` marking placeholders.
+
+**Tuning:** `python scripts/tune_faq.py [--dry-run]` runs `config/faq_tuning.yaml` (15 answerable paraphrases, 15 uncovered questions; EN/AR/Arabizi) through encoder → retriever → pgvector. It sweeps τ over 0.50–0.95 and writes the lowest τ with precision 1.00 to `config/hand_tuned.yaml` `tau_faq` (current default 0.75). It needs the frozen encoder and embedded FAQ rows (`seed_faq.py` first).
+
+## Incident detection (Pulse)
+
+`adapters/pulse/incident_detector.py`: **`WindowedCentroidDetector(repo, vectors, clock, tau_inc, window_min, min_reports=3, bump_at=6)`** implements `IncidentDetector`.
+
+For each located request, `detect(req, pred, embedding)` works like this:
+1. **Attach (D-007):** if an incident is open for that building and category, **whatever its age**, the request attaches to the oldest one (`report_count + 1`, `members = [req.id]`). One ongoing outage stays one incident.
+2. **Search:** otherwise, `vectors.search("requests", embedding, k=50, filters={building_id, category, since: now − window_min, with_embedding: true})`. The request itself is excluded if it is already stored. The window bounds **opening** only.
+3. **Cluster:** centroid = normalised mean of those embeddings plus the new one. Members = rows with cosine to the centroid ≥ `tau_inc`, and the request must be one of them.
+4. **Decide:** at least `min_reports` members → `new` (`report_count = members`); fewer → `none`.
+5. **Save:** the incident is saved through the repository.
+   - Priority = max of the member priorities (on attach, raised to the request's if higher).
+   - It is bumped one level, once, when `report_count` first reaches `bump_at` (capped at high).
+   - `incidents.office` is filled by the 0007 trigger when the first member ticket is attached.
+6. **Return:** `IncidentDecision.members` = the member request ids, with `req` last.
+
+The action engine (P4.8) owns the rest: marking member tickets `merged` with `incident_id`, the single incident ticket through the sinks, the broadcast, and `ResolveIncidentUseCase`.
+
+**Config:**
+- `tau_inc`: constructor argument until `config/hand_tuned.yaml` → FrozenConfig exists (LD-11); default 0.80.
+- `window_min`: Settings `INCIDENT_WINDOW_MIN` (30).
+- `min_reports` and `bump_at`: constructor arguments.
+
+**Simulator:** `python scripts/simulate_pulse.py --scenario config/simulation/wifi_m.yaml [--interval 4] [--reset]` replays 8 fictional reports (EN/AR/Arabizi, building M) as `sim-0N` with `requests.simulated = true`.
+- **Direct mode (default):** writes request, prediction and embedding through `SupabaseRepository` + `PgVectorStore`, then calls the detector. It uses the frozen encoder if `models/frozen/v1/encoder` exists, otherwise synthetic topic vectors (it prints which).
+- **API mode:** `--mode api` is a TODO for P4.14 (`/v1/triage`).
+- **`--reset`:** deletes earlier simulated requests and the open incident from this window.
+
 ## Realtime
 
 Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, `outbox`, `notifications` and `requests` (`requests` is for the Pulse dots, LD-25). Supabase applies RLS to `postgres_changes`, so each subscriber receives only rows its SELECT policy allows. Students subscribe to `notifications` only.
@@ -203,7 +268,7 @@ Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, 
 | `Ticket` | `tickets` + `ticket_links` | `save_ticket` also upserts its links; links are read back ordered by `sink`. `(sink, external_id)` is unique. |
 | `Incident` | `incidents` | `building` ⇄ `building_id`. `member_ticket_ids` is derived from `tickets.incident_id` (by `created_at, id`); `save_incident` points the listed tickets at the incident. |
 | `OutboxMessage` | `outbox` | The domain `kind` (transport) is written to both `kind` and `channel`. `alias`/`request_id` are not in the entity, so they stay null. |
-| `StudentSignals` | `student_signals` | `bump_student_signals` is atomic (RPC). `gaming_suspected` = the stored `gaming_flag`; no port method sets it yet (P3.6 decides it). |
+| `StudentSignals` | `student_signals` | `bump_student_signals` is atomic (RPC). `gaming_suspected` = the stored `gaming_flag`, which stays unused (lead decision): GamingDetector (P3.6) computes suspicion from the returned counters. |
 | `Scorecard` | `redteam_runs.scorecard` | `run_id` is kept if it is a UUID, else a new UUID is returned. History is newest first. |
 | `Slot`, `Advisor`, `Case` | `advisor_slots`, `advisors`, `cases` | `claim_slot` = `update … where id = ? and booked_by is null`, true only for the winner. `free_slots` = unbooked and inside the window, by `starts_at, id`. |
 | events, notifications | `events`, `notifications` | Payloads go through a JSON round trip (datetimes become ISO strings); `at`/`created_at` = `clock.now()`. |
@@ -230,15 +295,16 @@ The seed files are `supabase/seed/*.sql`, loaded by `supabase db reset` (`config
 
 **Scripts:**
 - `python scripts/check_seed_contacts.py` fails unless every email in the seeds passes `RecipientPolicy(DEMO_EMAIL_ALLOWLIST)`. The allow-list must contain the 6 advisor plus-addresses.
-- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles`:
+- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles`. All three share `DEMO_USER_PASSWORD`.
 
   | Login | Role | Office | Alias |
   | --- | --- | --- | --- |
-  | `student-demo-17@demo.local` | student | — | `student-17` |
-  | `staff-it@demo.local` | staff | `it` | `staff-it` |
+  | `talal@demo.local` | student | — | `talal` |
+  | `it@demo.local` | staff | `it` | `staff-it` |
   | `admin@demo.local` | admin | — | `admin` |
 
-  No mail is sent to these addresses: the users are created already confirmed.
+  - **Login names:** chosen by the user on 2026-10-31. They replace `student-demo-17@demo.local` and `staff-it@demo.local`; the script renames users still on those names in place, keeping their ids.
+  - **No mail:** nothing is sent to these addresses. The users are created already confirmed.
 - `python scripts/seed_faq.py [--model-dir models/frozen/v1] [--all]` embeds FAQ questions with the frozen `OnnxEncoder` and writes them through `PgVectorStore`. It refuses to run when `config.json` `encoder.dim` ≠ `vector_dim()`.
 
 `rls.sql` creates its own fictional users (`rls-*@example.invalid`) and rolls them back. The contract tests tag their rows per run and delete them afterwards.

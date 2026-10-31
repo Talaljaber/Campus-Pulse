@@ -332,6 +332,318 @@
 - **Limitations / TODO / known issues:** no `config.json` exists yet (P1.16). `encoder.runtime` also allows `hashing` for the `tiny_model_dir` fixture (`HashingEncoder`). Thresholds `tau_injection`/`tau_safety` have no upper bound (max similarity + margin may exceed 1, LD-18). The manifest's `artifact_version` falls back to the directory name when there is no `config.json`.
 - **Affects streams:** ML (every later component reads `FrozenConfig`; `train.py`/`predict.py` use `FileArtifactStore`); Backend (`/health` reports `Manifest.sha`; `build_test()` fixtures can use `valid_config_dict`); Foundation (`fetch_models.py` verification).
 
+### P3.7 / P1.15 (moved to DB) — InMemoryMemoryStore and NullMemoryStore  (DB, 2026-10-31, commit a27fc43)
+- **What now exists:** `adapters/memory/inmemory.py` (dict-backed `MemoryStore` for tests and the offline red team) and `adapters/memory/null.py` (the offline store `build_offline` wires, §3.11).
+- **Public interfaces added or changed:** `InMemoryMemoryStore()`, `NullMemoryStore()`. See [schema.md › Memory stores](../db/schema.md#memory-stores-adaptersmemory).
+- **How to use it:** `memory = InMemoryMemoryStore(); memory.add(MemoryExample(id="", ...)); memory.neighbors(emb, k=5, min_sim=0.8)`.
+- **Config / env added:** none.
+- **Acceptance:** `pytest services/ai/tests/contracts/test_memory_store_contract.py services/ai/tests/unit/test_null_memory.py -q` → `15 passed`. The 7 inmemory cases (previously skipped), the 7 live pgvector cases and the null test all pass.
+- **Limitations / TODO / known issues:** the memory-aware kNN merge (P3.7) stays with ML/Backend.
+- **Affects streams:** ML (`build_offline` uses `NullMemoryStore`), Backend (`build_test()` uses `InMemoryMemoryStore`).
+
+### P4.10 (partial) — WindowedCentroidDetector and the Pulse simulator  (DB, 2026-10-31, commits f3796ec, 1f2cf3e)
+- **What now exists:**
+  - `adapters/pulse/incident_detector.py`
+  - `scripts/simulate_pulse.py` (direct mode)
+  - `config/simulation/wifi_m.yaml` (8 fictional EN/AR/Arabizi reports, building M)
+  - `tests/unit/test_incident_detector.py`
+- **Public interfaces added or changed:** `WindowedCentroidDetector(repo, vectors, clock, tau_inc, window_min, min_reports=3, bump_at=6).detect(req, pred, embedding) -> IncidentDecision`. The detector saves the incident; `members` = member request ids with `req` last. See [schema.md › Incident detection](../db/schema.md#incident-detection-pulse).
+- **How to use it:** in `TriageUseCase`, after `vectors.upsert("requests", ...)` ([12b]): `decision = detector.detect(req, pred, embedding)`, then (P4.8) merge member tickets, open the one incident ticket, and broadcast.
+- **Config / env added:** `tau_inc` is a constructor argument (default 0.80 in the simulator) until `hand_tuned.yaml` exists (LD-11); `INCIDENT_WINDOW_MIN` (30) comes from Settings.
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_incident_detector.py -q` → `7 passed` local (InMemoryRepository + LocalNumpyVectorStore) and `7 passed` with `-m supabase`. Cases: 2 → none, 3 → new, 4 → attach; priority max, bumped once at 6; other building/category separate; outside the window → none; no location or a dissimilar report → none; thresholds from config.
+  - Live simulator, `python scripts/simulate_pulse.py --interval 0 --reset`, with synthetic embeddings: `[3/8] … incident created: 759ea121-… building=M category=IT Support reports=3 priority=medium` → `[6/8] … reports=6 priority=high` + `priority bumped -> high` → `[8/8] … reports=8`. The simulated rows were deleted afterwards.
+  - Full suites: default `169 passed, 1 skipped`; `-m supabase` `44 passed, 1 skipped`.
+- **Limitations / TODO / known issues:**
+  - **Not built (waits for Backend P4.8):** `ResolveIncidentUseCase`, the broadcast, the incidents route, and the simulator's `--mode api` (P4.14).
+  - **Attach window:** an incident is only attached to when it was opened inside the window; after 30 minutes a new one opens.
+  - **`tau_inc` on the real encoder:** with synthetic embeddings the clustering is trivially tight. Measuring `tau_inc` on the real encoder (X4.3 note) waits for P1.6.
+- **Affects streams:** Backend (the detector call in TriageUseCase/Act and the merge/broadcast), UI (Pulse page: `incidents` rows plus Realtime; run the simulator for live data).
+
+### P4.3 follow-up — seed contacts  (DB, 2026-10-31)
+- **Acceptance:** `python scripts/check_seed_contacts.py` → `seed contacts OK: 6 addresses in 4 files, all allow-listed`. The user added two personal Gmail inboxes to the local `DEMO_EMAIL_ALLOWLIST`; a GJU address they offered was left out (CLAUDE.md non-negotiable).
+- **Pending:** `seed_demo_users.py` waits for `DEMO_USER_PASSWORD` in the worktree `.env`.
+
+### P3.2 — Question bank and expected-information-gain clarifier  (backend, 2026-10-31, commits 4c61049, 5f806a3)
+- **What now exists:**
+  - `config/clarify_questions.yaml`: 7 EN / Jordanian-Arabic questions (the SPEC §5.1 [8] six plus `cat:Facilities|IT Support`), each with option effects and a `not_sure` chip.
+  - The out_of_scope `topic` chip list (LD-36) in the same file.
+  - `InfoGainStrategy`, which implements the `ClarificationStrategy` port.
+- **Public interfaces added:** see [docs/api/README.md › Clarification](../api/README.md#clarification-llm-understanding).
+  - `adapters/clarify/bank.py`:
+    - `QuestionBank.load(path, *, features=None)`, `.questions` (7), `.topic`, `.applicable(set_cat, set_pri, *, top_category=None)` and `.get(question_id)` (NotFound);
+    - `BankQuestion` (bilingual entry; `.render(lang) -> domain ClarificationQuestion`), `QuestionOption`, `TOPIC_QUESTION_ID = "topic"`.
+  - `adapters/clarify/info_gain.py`:
+    - `InfoGainStrategy(bank, rephraser=None)` with `.select(core, lang, asked)`, `.apply(core, question_id, option_id)` and `.topic_question(lang)`;
+    - `expected_set_size(core, question)`, `QuestionRephraser` (protocol) and `NullRephraser`.
+- **How to use it:**
+  ```python
+  strategy = InfoGainStrategy(QuestionBank.load("config/clarify_questions.yaml", features=config.priority_head.features))
+  q = strategy.select(core, req.lang, asked=[c.question_id for c in repo.clarifications_for(request_id)])  # None = no question
+  _, constraints = strategy.apply(core, q.id, "registration")   # then TriageCore.classify(raw, loc, constraints) (LD-29)
+  chips = strategy.topic_question(req.lang)                     # for status out_of_scope
+  ```
+- **Config / env added:** none. The bank path is passed in; a `Settings.config_dir` does not exist yet (see the change requests in the hand-back).
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_clarify.py -q` → `19 passed`.
+  - `python -c "from campuspulse_ai.adapters.clarify.bank import QuestionBank as B; print(len(B.load('config/clarify_questions.yaml').questions))"` → `7`.
+- **Limitations / TODO / known issues:**
+  - The plan sketch names the bank entry `ClarificationQuestion`. That name is the frozen domain value (one language), so the bilingual entry is `BankQuestion` and `select` returns the rendered domain value. `expected_info_gain` holds the expected number of labels removed (|S| − E[size]).
+  - Scoring: for a split smaller than the set, uncovered mass counts as "the set stays as it is" (a remainder term); for an exact split this is the SPEC formula. Every full split scores 1, so for pairs the category-first rule and the bank order decide.
+  - New optional field `when_category` keeps the safety question for Facilities/Transportation and the deadline question for the other categories.
+  - `{low, high}` has no question: `select` returns None, and P3.9 must then continue the policy as if the budget were spent.
+  - Arabizi requests get the Arabic text. **The Arabic wording is a draft and needs a native-speaker check.**
+  - Feature names are checked only when `features=` is passed; P3.9 should pass `FrozenConfig.priority_head.features`.
+  - The LLM rephraser is cut (B-list); `NullRephraser` is the default.
+  - Test fakes live in `tests/fixtures/backend_fakes.py` (`make_core`, `make_request`, `FakeLAC`, `FrozenClock`, `ScriptedOracle`, `fake_call`), separate from ML's `fakes.py`.
+- **Affects streams:**
+  - Backend: P3.9 ASK and out_of_scope, P3.10 apply and second question.
+  - UI: the question ids and option ids above are the real ones; the fixtures already use `cat:Registration|IT Support` with `registration`/`it`/`not_sure`.
+  - ML: feature effects use the evidence names `deadline_today` and `safety_risk`, which the priority head must accept as constraints.
+
+### P3.3 — Tier-1 LLM oracle, caches, cost logging and merge  (backend, 2026-10-31, commits 35603b5, dd2e8e1, bdb827f, 25b4ed9)
+- **What now exists:** the set-constrained tier-1 tie-breaker over OpenRouter (plain httpx), its response caches and cost logger, and the `LLMMerger`. Tier 2 is not wired (UD-3).
+- **Public interfaces added:** see [docs/api/README.md › LLM tier](../api/README.md#clarification-llm-understanding).
+  - `adapters/llm/openrouter.py`:
+    - `OpenRouterClient(api_key, *, timeout_s, base_url=..., max_retries=2, retry_backoff_s=0.5, sleep=time.sleep, transport=None)` with `.chat(model_id, messages, *, params, response_format=None) -> ChatResult` (`LLMUnavailable`);
+    - `OpenRouterOracle(tier, model_id, http, cache, cost, *, prompt, max_input_tokens, daily_budget_usd)` implements `LabelOracle` (`LLMUnavailable`, `LLMOutputOutOfSet`);
+    - `make_call(...)` builds the `LLMCall` records.
+  - `adapters/llm/set_constrained.py`: `build_messages`, `answer_schema`, `response_format`, `cache_key`, `parse_answer(raw, allowed_cat, allowed_pri, *, max_reason_words)`, `load_json_object` and `truncate_tokens`.
+  - `adapters/llm/prompt.py`: `PromptTemplate.load(path)`, `.render(**values)` and `.limit(name)`; `load_prompt(dir, name, version)`. Prompts are Markdown with YAML front matter (pinned request parameters and output limits) and `# system` / `# user` sections.
+  - Ports:
+    - `adapters/llm/null.py`: `NullOracle` (`LabelOracle`, always `LLMUnavailable`);
+    - `adapters/llm/cache_sqlite.py`: `SqliteCache(path)`;
+    - `adapters/llm/cache_dict.py`: `DictCache`;
+    - `adapters/llm/cost.py`: `InMemoryCostLogger(clock=None)` (per-day totals when given a clock), `estimate_cost` and `PRICES_PER_MTOK`.
+  - `application/services/llm_merge.py`: `LLMMerger.merge(core, answer, w_llm, conf_cat, conf_pri) -> CoreResult` and `merge_vector`.
+  - `config/prompts/oracle_v1.md`.
+- **How to use it:**
+  ```python
+  http = OpenRouterClient(settings.openrouter_api_key.get_secret_value(), timeout_s=20)
+  oracle = OpenRouterOracle(Tier.TIER1, settings.openrouter_tier1_model, http, SqliteCache(".cache/llm.sqlite"),
+                            InMemoryCostLogger(SystemClock()), prompt=load_prompt("config/prompts", "oracle", config.llm.prompt_version),
+                            max_input_tokens=config.guards.max_tokens, daily_budget_usd=settings.llm_daily_budget_usd)
+  answer = oracle.choose(req, core.set_cat, core.set_pri, OracleContext(req.lang, core.neighbors, "v1"))
+  core = LLMMerger().merge(core, answer, config.llm.w_llm, conformal_cat, conformal_pri)
+  ```
+- **Config / env added:** none new. It reads `OPENROUTER_API_KEY`, `OPENROUTER_TIER1_MODEL` and `LLM_DAILY_BUDGET_USD` (existing Settings). The timeout and cache path are constructor arguments until Settings has `LLM_TIMEOUT_S` / `LLM_CACHE_PATH` (change request). The request parameters (`temperature 0`, `top_p 1`, `seed 42`, `max_tokens 80`) and `max_reason_words 20` are in the prompt front matter.
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_oracle.py services/ai/tests/unit/test_llm_merge.py services/ai/tests/unit/test_cost.py -q` → `26 passed`.
+  - `pytest services/ai/tests/test_architecture.py -q` → `5 passed`.
+  - `python -c "import sys, campuspulse_ai.adapters.llm.openrouter, campuspulse_ai.adapters.llm.null, campuspulse_ai.adapters.understand.llm_understander; print('httpx' in sys.modules)"` → `False`; the same check is a unit test.
+  - The manual run with a key was **not done**: there is no OpenRouter key on this machine.
+- **Limitations / TODO / known issues:**
+  - Deviations from the plan sketch:
+    - `OpenRouterOracle` takes a shared `OpenRouterClient` (as P3.3a's understander does) and a loaded `PromptTemplate` instead of `api_key`/`timeout_s`/`base_url`/`prompt_version`;
+    - it takes no `clock`: the daily budget is per Amman day inside `InMemoryCostLogger(clock)`;
+    - it takes `max_input_tokens` (`guards.max_tokens`).
+  - The response format is a strict JSON schema whose enums are the allowed sets (stronger than `json_object`), and the reply is still validated locally.
+  - `require_parameters` is **not** sent, because `seed` is not supported by every provider. Unsupported parameters are ignored and the local validation still applies.
+  - The text sent is `req.core` (wrapper-stripped), so a stripped "URGENT:" never reaches the model.
+  - Out-of-set and invalid replies are costed but not cached.
+  - The `tests/fixtures/openrouter/*.json` replies are hand-written in OpenRouter's response shape. Replace them with real recordings once a key exists.
+  - Unknown model ids are costed at the highest pinned price.
+  - `NullOracle` lives in `adapters/llm/null.py` (Backend-owned): the P1.15 task must not re-create it.
+  - `composition/offline.py` does not exist yet, so the plan's "`import composition.offline` has no httpx" check is covered by the module-level check above.
+- **Affects streams:**
+  - Backend: P3.9 ESCALATE loop, `build_online` wiring.
+  - ML: P1.15 `build_offline(use_llm=True)` builds `OpenRouterOracle` + `SqliteCache`; the P2 "ensemble+router" benchmark row. `LLMMerger` needs the real `LACConformal` predictors.
+  - Foundation: Settings change request.
+
+### P3.3a — RequestUnderstander: LLM and rule-based understanding  (backend, 2026-10-31, commits 0fa1dab, 4fed015, f53d031)
+- **What now exists:** structured understanding of a request (UD-10): EN and AR summaries, entities, a student reply, and the ticket title and body.
+  - It comes from the tier-1 model, schema-validated, at temperature 0, cached and costed.
+  - It falls back to rules when there is no key, on an error or a rejected reply, and for injection-flagged requests.
+  - It never changes the labels.
+- **Public interfaces added:** see [docs/api/README.md › Understanding](../api/README.md#clarification-llm-understanding).
+  - `adapters/understand/llm_understander.py`: `LLMUnderstander(http, model_id, prompt, cache, cost, fallback, *, clock, max_input_tokens, daily_budget_usd, tier=TIER1)` implements `RequestUnderstander`. It never raises.
+  - `adapters/understand/rule_understander.py`: `RuleBasedUnderstander(templates, clock, limits)`, `ReplyTemplates.load(dir)` and `clip`.
+  - `adapters/understand/schema.py`:
+    - `UnderstandLimits.from_prompt(prompt)`, `decided_labels(core)` (a singleton set's label, else the argmax);
+    - `understanding_schema`, `response_format`, and `parse_understanding(raw, req, category, priority, limits, prompt_version)` (`LLMOutputOutOfSet`).
+  - `adapters/understand/entities.py`: `extract_entities(req, today)`, `grounded(value, req)` and text helpers.
+  - `application/services/understanding.py`: `understanding_flags(u)` → `{"understanding_fallback"}` when `u.source == "rules"`.
+  - Config: `config/prompts/understand_v1.md` and `config/templates/replies.{en,ar}.yaml`.
+- **How to use it:**
+  ```python
+  prompt = load_prompt("config/prompts", "understand", "v1")
+  rules = RuleBasedUnderstander(ReplyTemplates.load("config/templates"), clock, UnderstandLimits.from_prompt(prompt))
+  understander = LLMUnderstander(http, settings.openrouter_tier1_model, prompt, cache, cost, rules, clock=clock,
+                                 max_input_tokens=config.guards.max_tokens, daily_budget_usd=settings.llm_daily_budget_usd) \
+      if llm_on else rules
+  u = understander.understand(req, decided_core, plan.kind)
+  flags |= understanding_flags(u)
+  ```
+- **Config / env added:** none in Settings. `understand.model_id` is `OPENROUTER_TIER1_MODEL`. `prompt_version` (`v1`) and the limits (`max_title_chars 80`, `max_reply_chars 400`, `max_summary_chars 300`, `max_body_chars 1200`, `max_entity_chars 60`) are in the prompt front matter. The timeout is the shared client's. `understand.enabled` = the composition choosing `LLMUnderstander` or `RuleBasedUnderstander`.
+- **Acceptance:** `pytest services/ai/tests/test_understander.py -q` → `7 passed`. The manual `curl.exe` check with a key was **not done** (no key, and no real `/v1/triage` until P3.12).
+- **Limitations / TODO / known issues:**
+  - Grounding:
+    - The model must echo the decided labels (single-value enums), and a different label is rejected.
+    - Course codes, rooms and buildings must occur in the request.
+    - The reply must be in the request language (Arabic script for `ar`/`arabizi`).
+    - Free-text claims inside the reply (e.g. an invented fee) are not machine-checked beyond the prompt rules; the P4.11 red team should cover them.
+  - The schema sent to the model carries length limits as descriptions, not `maxLength`, because strict modes reject them. The limits are enforced locally.
+  - The cache key adds the model id, action, location and date to the spec's (prompt version, text, labels), so "today" resolves per day.
+  - The understander also honours the shared `LLM_DAILY_BUDGET_USD`.
+  - The rule-based summaries quote the request text and do not translate it.
+  - **The Arabic templates and prompt examples are drafts and need a native-speaker check.**
+  - Files added beyond the plan: `entities.py`, `application/services/understanding.py`, and an empty `adapters/understand/__init__.py`.
+  - Not wired into `build_online` yet (LD-37: assigned later). P3.9 adds `understanding` to the response.
+- **Affects streams:**
+  - Backend: P3.9 `understanding` and the fallback flag, P4.8 Linear title/body and the outbox reply, P4.11 red-team reply attacks.
+  - DB: P4.21 can use `entities`.
+  - UI: `understanding.source` and `understanding_fallback`.
+
+### P4.10 — attach rule D-007  (DB, 2026-10-31, commit bc9235f)
+- **What changed:** a report attaches to the oldest **open** incident for its building and category whatever the incident's age. `INCIDENT_WINDOW_MIN` only bounds which recent requests count toward **opening** one. On attach the detector skips the vector search and returns `members = [req.id]`.
+- **Acceptance:** `pytest services/ai/tests/unit/test_incident_detector.py -q` → `16 passed` (8 local + 8 live). The new case `test_open_incident_takes_reports_whatever_its_age` has a report at 3× the window attaching to the same incident (reports=4), while another building gets none.
+- **Affects streams:** Backend (attach decisions can arrive for long-running incidents), UI (one incident per ongoing outage).
+
+### P4.5 — VectorFAQRetriever and the tau_faq tuning script  (DB, 2026-10-31, commits 6133684, ebc57d1)
+- **What now exists:** `adapters/faq/retriever.py`, `tests/unit/test_faq.py`, `scripts/tune_faq.py`, `config/faq_tuning.yaml` (30 hand-written probes).
+- **Public interfaces added or changed:** `VectorFAQRetriever(vectors, encoder, collection="faq").search(text, lang, k) -> list[FAQHit]`. See [schema.md › FAQ retrieval](../db/schema.md#faq-retrieval).
+- **How to use it:** `hits = VectorFAQRetriever(pg_store, encoder).search(text, req.lang, k=1)`, then `if hits and hits[0].score >= config.thresholds.tau_faq:` answer with `hits[0].answer`, `hits[0].source_url` and the `[demo]` marker when `is_demo`.
+- **Config / env added:** `tau_faq` stays 0.75 in `config/hand_tuned.yaml` until the tuning runs.
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_faq.py -q` → `9 passed` (5 local with LocalNumpyVectorStore + a signed bag-of-words hashing encoder, 4 live on pgvector). Covered: best match first with source/demo fields, language filter (Arabizi → AR), k, empty store → [], missing collection → StoreError.
+  - `tune_faq.py`: the sweep/choice logic was checked on a toy set (picks the lowest τ with precision 1.00); its in-place `tau_faq` rewrite keeps the comments; with no frozen model it exits 2 with a clear message and `hand_tuned.yaml` stays unchanged.
+- **Limitations / TODO / known issues:**
+  - **Not run yet:** the real tuning and `seed_faq.py` wait for the ML encoder (P1.6). The lead will signal when it merges, and the `OnnxEncoder(model_dir / "encoder")` constructor will be confirmed then.
+  - **Test encoder:** the tests use their own hashing encoder because the shared `HashingEncoder` fake does not exist yet.
+- **Affects streams:** Backend (FAQ answer-first in Act P4.8), ML (encoder needed for tuning).
+
+### P4.1/P5 support — FK indexes, advisor pass, generated TypeScript types  (DB, 2026-10-31)
+- **What now exists:**
+  - migration `0008_fk_indexes` (applied, version repaired to `0008`): one btree index on each of the 10 foreign keys the performance advisor flagged
+  - `supabase/types/database.types.ts`, generated by MCP `generate_typescript_types` after 0008, for the UI to import
+- **Public interfaces added or changed:** `Database`, `Tables<...>`, `TablesInsert<...>`, `TablesUpdate<...>` from `supabase/types/database.types.ts`. How to regenerate: [schema.md › TypeScript types](../db/schema.md#typescript-types).
+- **How to use it:** `import type { Database, Tables } from "../../supabase/types/database.types"`, then `createBrowserClient<Database>(url, anonKey)` and `type Ticket = Tables<"tickets">`.
+- **Config / env added:** none.
+- **Acceptance:**
+  - **Advisors before:** security = 1 INFO (`request_embeddings` RLS without policy, intended) + 2 WARN on the Supabase-managed `rls_auto_enable`; performance = 10 `unindexed_foreign_keys` + 5 `unused_index` (INFO).
+  - **Advisors after 0008:** security unchanged; performance = 0 unindexed foreign keys, 15 `unused_index` INFO (the new indexes are unused on an empty DB, as expected).
+  - **Types:** `tsc --noEmit --strict` (TypeScript 5.9.3) on the file → exit 0. Its 24 tables/views match `pg_class` for schema public.
+- **Limitations / TODO / known issues:**
+  - The types must be regenerated after every migration; this is not automated (no Supabase access token for the CLI).
+  - Columns with check constraints are typed as `string`, not unions; the UI can narrow them with the label constants.
+- **Affects streams:** UI (typed Supabase client and repos), Foundation (optional CI check that the file is fresh).
+
+### P0.9 — GitHub Actions CI  (foundation, 2026-10-31, commit see git log)
+- **What now exists:** `.github/workflows/ci.yml` with jobs `changes` (path filter), `python` (3.11 and 3.13), `data-gates`, `api-contract`, `web` and `docker` (push to `main` only).
+- **Public interfaces added or changed:** none. Check names for branch protection: `python (3.11)`, `python (3.13)`, `data-gates`, `api-contract`, `web`.
+- **How to use it:** see [docs/ops/README.md](../ops/README.md#ci) for what each job checks and how to reproduce it locally.
+- **Config / env added:** none, no secrets.
+- **Acceptance:** every command run locally: ruff `All checks passed!`; `mypy --strict` `Success: no issues found in 58 source files`; pytest `237 passed, 8 skipped, 38 deselected`; `test_clean.py` `ALL TESTS PASSED` with no diff in `data/clean` apart from CRLF (Windows only); `DATA AUDIT TESTS PASSED`; leakage `0 identical text_norm across groups; 0 cross-group pairs >= 0.8 (max 0.375)`; `gen_api_docs.py --check` up to date; fresh mock export identical to `services/ai/openapi.json`; web typecheck, lint, vitest (`38 passed`) and `next build` pass; `docker build` succeeds. YAML parses. The workflow has not run on GitHub yet.
+- **Limitations / TODO / known issues:** the generated-types check is skipped until `apps/web` defines `gen:types`. No Windows leg, no Playwright, no `artifacts` job (P1.19). `pnpm test` is run with `--run` because the script is plain `vitest`.
+- **Affects streams:** all (keep CI green); UI (add `gen:types` and commit its output); ML (any change to `data/clean` must be a regeneration of `clean_data.py`).
+
+### P5.4 — Generated API types and triage display components  (ui, 2026-10-31, commits d49fdac..2a1b119)
+- **What now exists:**
+  - `src/lib/ai/types.gen.ts`, generated from `services/ai/openapi.json` (`pnpm gen:types`; `openapi-typescript` 7.13.0 was already pinned), plus type-only aliases in `src/lib/ai/types.ts` and a test that fails when the generated file is stale.
+  - `ProbBar` and `SetBadge` in `components/ui`; `EvidenceText`, `CounterfactualHint` and `ExplanationPanel` in `components/explain`; `ResultCard`, `ActionSummary`, `FlagBadges` and `UnderstandingView` in `components/chat`. They render the DTO types only and fetch nothing.
+  - Stories on `/dev/ui` from the real API fixtures (EN, AR, Arabizi, all five statuses, an audience switch).
+- **Public interfaces added or changed:** see [docs/ui/README.md](../ui/README.md#triage-display-components-p54) and [Generated API types](../ui/README.md#generated-api-types). Counterfactual click: `onCounterfactual(token)` on `ExplanationPanel`, `CounterfactualHint` and `ResultCard`; `onTokenClick(token)` on `EvidenceText`. The language comes from `useLang()`, so there is no `lang` prop.
+- **How to use it:** `import { ResultCard } from "@/components/chat"; <ResultCard result={triageResponse} text={requestText} audience="student" onCounterfactual={(t) => ...} counterfactual={liveAnswerOrNull} />`. After an `openapi.json` change run `pnpm gen:types` in `apps/web`.
+- **Config / env added:** script `gen:types`; tsconfig and vitest alias `@fixtures/*` -> `services/ai/tests/fixtures/api/*`; ESLint now uses `@typescript-eslint/no-restricted-imports` so components may `import type` from `@/lib/ai/*` (runtime imports from it, `@/lib/supabase/*` and `@/lib/repos/*` are still errors); `types.gen.ts` is ESLint-ignored.
+- **Acceptance:** `vitest run src/components/explain src/components/chat` -> `2 files, 41 tests passed` (spec asks >= 10); `vitest run src/components/ui` -> `3 files, 24 tests passed` (>= 12); full `vitest run` -> `9 files, 104 tests passed`; typecheck, lint and build exit 0.
+- **Limitations / TODO / known issues:**
+  - `ResultCard` needs the request text passed in to highlight words inside it, because the API does not echo it.
+  - `action.message` is English-only server prose, so `ActionSummary` builds localised sentences from the structured fields instead of printing it.
+  - Evidence types without a dictionary entry fall back to a humanised string (only the seven seen in the fixtures are translated).
+  - The Arabic strings are first-draft Jordanian Arabic and should get a native read-through.
+  - `FlagBadges` follows the visibility table in docs/api/README.md exactly: flags documented as visible to "all" (including technical ones such as `empty_set`) are shown to students.
+- **Affects streams:** Backend (DTO changes must keep `types.gen.ts` regenerable: the stale test fails otherwise); UI P5.8, P5.10, P5.12 (consume `ResultCard`, `ExplanationPanel`).
+
+### P5.5 — Map primitives  (ui, 2026-10-31, commit 270f603)
+- **What now exists:** `CampusMap`, `BuildingShape`, `RequestDot`, `IncidentRing` and `MapLegend` in `src/components/pulse/map`, with `campus.ts` (geometry, footprints, `dotPosition`, an 11-building fixture campus). Hand-built SVG, no map library, fictional layout on a 1000 x 600 grid. `/dev/ui` shows the map with 20 fixture dots and one incident ring.
+- **Public interfaces added or changed:** see [docs/ui/README.md](../ui/README.md#map-primitives-p55). `buildings.map_x/map_y` is the centre of a footprint; `dotPosition(building, requestId)` gives a deterministic spot inside it.
+- **How to use it:** `<CampusMap buildings={rows} onBuildingClick={...}>{dots}{rings}</CampusMap><MapLegend />`.
+- **Config / env added:** none (CSS keyframes `cp-ring-pulse` in `globals.css`).
+- **Acceptance:** `vitest run src/components/pulse` -> `1 file, 18 tests passed` (dot size by priority, ring with reduced motion, building click, RTL geometry unchanged); build exit 0.
+- **Limitations / TODO / known issues:**
+  - The plan text says "10 buildings" but A to M without I and J is 11 letters. The fixture uses 11. The DB seed (P4.1) must say which, and give coordinates in the same convention; unknown building codes fall back to a 120 x 80 footprint.
+  - A static map is `role="img"`; with `onBuildingClick` it becomes `role="group"` with button children, because an image role hides interactive children.
+  - The pulse animation is not covered by an automated visual test.
+- **Affects streams:** DB (the `buildings` seed convention and coordinates); UI P5.11 (Pulse page).
+
+### P4.3 follow-up — demo users seeded  (DB, 2026-10-31)
+- **Acceptance:** `python scripts/seed_demo_users.py` → `created: student-demo-17@demo.local role=student office=- alias=student-17`, `created: staff-it@demo.local role=staff office=it alias=staff-it`, `created: admin@demo.local role=admin office=- alias=admin`, `3 users ready`.
+- **Check:** each user signed in with the anon key (as the web app does) and read `profiles` under RLS. Student and staff saw only their own row; admin saw all 3.
+- **Password:** `DEMO_USER_PASSWORD` lives only in the gitignored worktree `.env`. The user will change it later: edit `.env` and re-run the script, which resets existing users' passwords.
+- **Affects streams:** UI (the login page's three "Sign in as" buttons can now be tested against the real project).
+
+### P4.3 follow-up — demo login names changed by the user  (DB, 2026-10-31)
+- **What changed:** the student login is now `talal@demo.local` (alias `talal`), the IT staff login is `it@demo.local` (alias `staff-it`, office `it`), and admin stays `admin@demo.local`. All three share the user's `DEMO_USER_PASSWORD` from `.env`. The old names (`student-demo-17@demo.local`, `staff-it@demo.local`) were renamed in place, so the user ids and profiles are unchanged.
+- **Acceptance:** `python scripts/seed_demo_users.py` → `renamed (was student-demo-17@demo.local): talal@demo.local …`, `renamed (was staff-it@demo.local): it@demo.local …`, `updated: admin@demo.local …`, `3 users ready`. With the anon key, all three new logins sign in and see the right profiles under RLS; the two old names are rejected.
+- **Affects streams:** UI and Lead. ARCHITECTURE §1.7 and the P5 Playwright steps still name the old logins. The "Sign in as" buttons and tests should use `talal@demo.local` / `it@demo.local` / `admin@demo.local`, and student-facing rows now carry the alias `talal`.
+### P3.6 — GamingDetector (anti-gaming signals)  (backend, 2026-10-31, commits 94430f2, a3ba020)
+- **What now exists:** `application/services/gaming.py`: after the priority is final it adds `urgency_unsupported` (staff-only) and `priority_gaming_suspected` (admin-only) from the counters `Repository.bump_student_signals` returns (D-006). It never returns or changes a label.
+- **Public interfaces added:** `GamingDetector(repo, min_requests, claim_ratio, high_ratio_max, *, injection_strikes=2, high_evidence=HIGH_EVIDENCE_FEATURES)`, `.check(req, priority, evidence, alias, injection) -> GamingResult(flags, signals)`, `.suspected(signals)`, `.has_high_evidence(evidence)`; constants `URGENCY_UNSUPPORTED`, `GAMING_SUSPECTED`. See [docs/api/README.md › Anti-gaming flags](../api/README.md#actions-side-effects).
+- **How to use it:** `g = GamingDetector(repo, s.gaming_min_requests, s.gaming_claim_ratio, s.gaming_high_ratio_max)`; `flags |= g.check(req, final_priority, core.evidence, alias, "injection_attempt" in core.flags).flags`.
+- **Config / env added:** Settings `GAMING_MIN_REQUESTS` (5), `GAMING_CLAIM_RATIO` (0.8), `GAMING_HIGH_RATIO_MAX` (0.2), in `.env.example` and the ops env table (separate commit `94430f2`, which also adds the P4.4/P4.6 settings).
+- **Acceptance:** `pytest services/ai/tests/unit/test_gaming.py -q` → `11 passed` (5 claimed-urgent/0 high → flag; supported claims → no flag; the note needs a claim and no high evidence; 2 injections → flag; label and inputs unchanged; anonymous not counted; per-alias; thresholds validated; `to_student_view` strips both flags).
+- **Limitations / TODO / known issues:**
+  - **Placement:** `application/services/gaming.py`, not the plan's `adapters/guards/gaming.py` (an ML-owned path). It is pure policy over the `Repository` port, so the application layer is a natural home.
+  - **High ratio:** `StudentSignals` carries no plain high count, so "high/n" is measured over the alias's claims: `(claimed_urgent − claimed_urgent_not_high) / claimed_urgent ≤ high_ratio_max`. The exact spec formula needs `StudentSignals.high` (the DB already has `n_high`): optional change request.
+  - Empty alias → not counted, never suspected. The injection-strike count (2) is a constructor default, not a Setting.
+- **Affects streams:** Backend (P3.9 calls it at [9b]); UI (the flags are already filtered by `to_student_view` and `predictions_student_v`).
+
+### P3.8 (ActionPlanner part) — routing table and TableActionPlanner  (backend, 2026-10-31, commit c806d05)
+- **What now exists:** `config/actions.yaml` (the SPEC §5.1 [11] table with UD-1, D-005 office codes, SLA hours, safety and provisional rules) and `TableActionPlanner` in `domain/routing.py` (pure, stdlib-only, validated from the parsed dict).
+- **Public interfaces added:** `ActionsConfig.from_dict(data)` (strict: unknown keys, missing cells, unknown offices or kinds → `ValueError`), `.route(category, priority)`; `Route`, `SafetyRule`; `TableActionPlanner(config).plan(category, priority, flags, provisional) -> ActionPlan`; `deferred_kind(plan)`; `SAFETY_FLAG`, `DEFERRED_TAG_PREFIX`. Table: [docs/api/README.md › Routing](../api/README.md#actions-side-effects).
+- **How to use it:** `planner = TableActionPlanner(ActionsConfig.from_dict(yaml.safe_load(Path("config/actions.yaml").read_text("utf-8"))))`; `plan = planner.plan(cat, pri, pred_flags | fired_evidence_names, provisional)`.
+- **Config / env added:** `config/actions.yaml`: `offices`, `sla_hours {high: 24, medium: 72, low: 336}`, `safety {kind: safety_alert, also_ticket: true, tags: [safety]}`, `provisional {tags: [unconfirmed]}`, `routes[category]{office, low, medium, high}` with `kind`, `tags`, `also_ticket`, `evidence_tags`.
+- **Acceptance:** `pytest services/ai/tests/unit/test_routing.py -q` → `37 passed` (18 cells → kind/office; offices = D-005 exactly; SLA hours; only Academic Support × high books; Registration × high = escalation ticket; safety overrides any category even when provisional; provisional → ticket + `deferred:<kind>`; `exam_now` → `exam-in-progress`; 8 invalid configs rejected). `pytest services/ai/tests/test_architecture.py -q` → `5 passed` (routing stays stdlib-only).
+- **Limitations / TODO / known issues:**
+  - Rules: safety first (fires even when provisional, plus `unconfirmed`), then provisional → ticket only with `deferred:<kind>`, else the cell. Evidence tags apply when the evidence *name* is in `flags`, so ActUseCase passes `pred.flags | {fired evidence names}`.
+  - Transportation × high is a `ticket` tagged `transport-alert` (there is no plain `alert` ActionType, and a late bus is not a safety alert); P4.8 sends the office alert for that tag. Finance × high (`escalation`): P4.8 may move `sla_due_at` earlier from `understanding.entities.deadline`.
+  - `build_test()` and the DTO work are skipped as instructed (LD-36; waits for the ML `tiny_model_dir`).
+- **Affects streams:** Backend (P3.9 act v0, P4.8); UI (`action.type`/`action.tags` values); DB (office codes match D-005).
+
+### P4.4 — Notifications: AllowlistedNotifier, GmailSmtpNotifier, InAppNotifier, outbox  (backend, 2026-10-31, commits 16497b5, 96532f7)
+- **What now exists:** `adapters/notify/{allowlist,gmail_smtp,inapp,outbox,channels}.py` and the opt-in `scripts/smoke_email.py`. The allow-list is enforced in code on every email path; no test can send mail.
+- **Public interfaces added:** see [docs/integrations.md › Notifications](../integrations.md#3-notifications).
+  - `AllowlistedNotifier(inner, policy, repo).send(msg)`: the outermost decorator and the only writer of notifier outbox rows (`rejected` / `failed` / sent).
+  - `GmailSmtpNotifier(host, port, user, app_password: SecretStr, *, policy, clock, timeout_s, max_retries, backoff_s, daily_cap, use_ssl=None, sender_name=..., smtp_factory=None, sleep=time.sleep)`; `classify(exc) -> NotificationError`; `default_smtp_factory`.
+  - `InAppNotifier(repo, *, notification_kind="message")`; `ChannelNotifier({kind: notifier})`; `OutboxRecorder(repo)`.
+  - Test fakes in `tests/fixtures/backend_fakes.py`: `FakeNotifier`, `make_outbox`.
+- **How to use it:** the chain in [integrations.md §3](../integrations.md#3-notifications): `AllowlistedNotifier(ChannelNotifier({"email": GmailSmtpNotifier(...), "in_app": InAppNotifier(repo)}), RecipientPolicy(s.demo_email_allowlist), repo)`.
+- **Config / env added:** `SMTP_TIMEOUT_S` (10), `SMTP_MAX_RETRIES` (2), `SMTP_BACKOFF_S` (1.0), `SMTP_DAILY_CAP` (100).
+- **Acceptance:**
+  - X4.7 `pytest services/ai/tests/unit/test_allowlist.py -q` → `15 passed` (`real.person@gju.edu.jo` → `RecipientNotAllowed`, outbox `rejected`, provider called 0 times; an empty list rejects all; exact case-insensitive match with no plus/subdomain wildcards; failures recorded `failed`; the SMTP notifier refuses before connecting).
+  - `pytest services/ai/tests/unit/test_gmail_smtp.py -q` → `23 passed` (STARTTLS flow, 465 implicit TLS, 535 not retried, 421 retried twice, 12 error mappings, Message-ID recorded, password masked, daily cap, default factory = stdlib smtplib).
+  - `pytest services/ai/tests/unit/test_notifications.py services/ai/tests/unit/test_smoke_email.py -q` → `8 passed`.
+  - The `import campuspulse_ai.composition.offline` check was **not run**: `composition/offline.py` does not exist yet (ML P1.15). The notify modules import only stdlib and pydantic `SecretStr`.
+  - The live send was **not run** (opt-in, for the user).
+- **Limitations / TODO / known issues:**
+  - `OutboxMessage` has no `error` field and no `deferred`/`simulated` status, so reasons go to `events` (`outbox.rejected` / `outbox.failed`) and the daily cap raises `NotificationError(retryable=False)` → `failed` (change request filed).
+  - The daily cap is counted in-process (it resets on restart); Gmail's own limit is 500/day.
+  - `ActUseCase` must not save notifier outbox rows itself (the decorator does); it only catches the errors.
+- **Affects streams:** Backend (P4.8/P4.9/P4.10 notifier chain); DB (outbox `error` column unused until the entity has it); UI (outbox statuses `sent`/`failed`/`rejected`).
+
+### P4.6 — Ticket sinks: SupabaseSink, RetryingSink, LinearSink, docs/integrations.md  (backend, 2026-10-31, commits 28d79e2, 0d049e6)
+- **What now exists:** `adapters/integrations/{supabase_sink,retrying,linear}.py`, `config/integrations.yaml` with the verified CampusPulse workspace values (team **CDP**, its state types, the six labels), Linear fixtures and [docs/integrations.md](../integrations.md).
+- **Public interfaces added:** `SupabaseSink(repo)`; `RetryingSink(inner, max_attempts, base_backoff_s, sleep=time.sleep)`; `LinearSink(api_key: SecretStr, webhook_secret: SecretStr, mapping, http: httpx.Client, clock)` with `create`/`update_status`/`close`/`handle_inbound`; `LinearMapping.load(path)` / `.from_dict(raw)` / `.team_key(office)` / `.priority_for(priority, safety=False)`; `verify_signature(secret, raw, sig)`, `sign(secret, raw)`. Fakes: `FakeSink`, `make_ticket`.
+- **How to use it:** [integrations.md §1.4](../integrations.md#14-linearsink--adaptersintegrationslinearpy): `RetryingSink(LinearSink(s.linear_api_key, s.linear_webhook_secret, mapping, httpx.Client(timeout=mapping.timeout_s), clock), s.sink_retry_max, s.sink_retry_base_s)` with `mapping = LinearMapping.load(Path("config/integrations.yaml"))`.
+- **Config / env added:** `SINK_RETRY_MAX` (3), `SINK_RETRY_BASE_S` (0.5); `config/integrations.yaml` (`enabled`, `linear.{api_url, timeout_s 10, webhook_tolerance_s 60, timezone, default_team CDP, team_by_office, label_by_category, priority_map {high 2, medium 3, low 4, safety 1}, state_type_by_status, status_by_state_type}`).
+- **Acceptance:** `pytest services/ai/tests/unit/test_linear_sink.py services/ai/tests/unit/test_retrying_sink.py -q` → `58 passed` (fields and the no-Bearer header; Amman due date; idempotent create, 2 calls → 1 `issueCreate`; existing link → 0 HTTP; duplicate-id and timed-out creates recovered; 503 retried 3 times then raised; 10 error mappings; state moves incl. merged → Duplicate; bad signature / stale or missing timestamp → `Unauthorized`; 7 state mappings; non-state events ignored; mapping validation). `pytest services/ai/tests/unit/test_supabase_sink.py -q` → `4 passed, 4 skipped` (the skips are `-m supabase`: no keys in the worktree). `python scripts/gen_api_docs.py --check` → `docs/api/endpoints.md is up to date`.
+- **Limitations / TODO / known issues:**
+  - Verified live by the lead: `issueCreate(input:{teamId,title,description,priority,dueDate,labelIds})` with `Authorization: <key>`. **UNVERIFIED:** the `issueCreate` `id` input, `teams`, `issueLabels`, `issueUpdate`, `issue`, and the webhook payload shape (fixtures are hand-written).
+  - Safety tickets cannot get Linear priority 1 yet because `Ticket` has no tags, and `ticket_links.last_error` cannot be written because `TicketLink` has no error field (change requests).
+  - Our own updates echo back as webhooks (closed → completed → `resolved`); P4.9 should ignore backwards moves.
+  - The API fixture `linear_webhook_status_sync` now includes `updatedFrom.stateId` (the handler ignores updates without it); endpoints.md was regenerated.
+  - `WebhookSink` is not built (UD-3); its payload is specified in integrations.md §5.
+- **Affects streams:** Backend (P4.8 ActUseCase sinks, P4.9 SyncTicketUseCase + webhook route); UI (`action.external[]` links); DB (`ticket_by_link`).
+
+### P4.7 — Calendar: SlotsTableCalendar and FallbackCalendar  (backend, 2026-10-31, commit b350dd7)
+- **What now exists:** `adapters/calendar/{slots_table,fallback}.py`: the earliest free advisor slot within the window and Amman office hours, a race-safe claim, the attendee allow-list before any write, and an ordered fallback chain.
+- **Public interfaces added:** `SlotsTableCalendar(repo, clock, policy)` with `find_slot(advisor_ids, window, office_hours)` / `book(slot, attendees, title)`; `in_office_hours(slot, hours)`; `FallbackCalendar(providers, policy)`. Fake: `FakeCalendar`. See [integrations.md §4](../integrations.md#4-advisor-booking-calendar).
+- **How to use it:** `cal = FallbackCalendar([SlotsTableCalendar(repo, clock, policy)], policy)`; `slot = cal.find_slot([a.id for a in repo.advisors_for("academic")], (now, now + timedelta(hours=plan.sla_hours)), hours)`; `cal.book(slot, [student_inbox, advisor.email], title)`.
+- **Config / env added:** none (the Google Calendar settings stay future work, UD-3).
+- **Acceptance:** `pytest services/ai/tests/unit/test_calendar.py -q` → `12 passed, 5 skipped` (earliest slot; office hours, Friday and closing-time slots skipped; window; booking claims; double booking prevented with one retry; non-allow-listed attendee → nothing written; store failure → `CalendarUnavailable`; fallback order, empty provider, finder-then-fall-through, all unavailable, a real attendee never reaches a provider). The 5 skips are the `-m supabase` cases: no keys in the worktree `.env`.
+- **Limitations / TODO / known issues:** `booked_by` is the first attendee (the student's demo inbox) because `CalendarProvider.book` carries no alias. Per-advisor `OfficeHours` is not exposed by the repository (`advisors_for` does not read `advisors.office_hours`), so P4.8 passes the seed hours (Sun–Thu 09:00–15:00 Amman).
+- **Affects streams:** Backend (P4.8 booking path); DB (`free_slots`/`claim_slot` semantics relied on).
+
 ### P1.0 (tooling only) — Dataset validator `scripts/validate_dataset.py`  (ML, 2026-10-31)
 - **What now exists:** the validator for the three hand-written / drafted dataset kinds (`our_test`, `augmented`, `probes`) and its `config/datasets.yaml` blocks. **No rows were written to `data/our_test/our_test.csv`**: the developer writes them by hand (P1.0 authoring is still open and must be committed before P1.10).
 - **Public interfaces added:** `python scripts/validate_dataset.py --kind {our_test|augmented|probes} <csv>`; `validate(path, kind, spec) -> ValidationReport`, `DatasetSpec.load(kind)` ([docs/ml/models.md §3.2](../ml/models.md#32-dataset-validator-scriptsvalidate_datasetpy-p10)).

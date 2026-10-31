@@ -1,0 +1,38 @@
+# Rule-based understanding templates, Jordanian Arabic (UD-10 fallback, P3.3a). Owner: Backend stream.
+#
+# Arabic and Arabizi requests get these replies (Arabic script). Same rules as replies.en.yaml: state
+# only what the system really does; never a person, a fee, a date or a policy. The Arabic is a draft in
+# Jordanian register and needs a native-speaker check.
+
+category_names:
+  Registration: تسجيل
+  IT Support: دعم تقني
+  Finance: مالية
+  Transportation: مواصلات
+  Facilities: مرافق وصيانة
+  Academic Support: دعم أكاديمي
+
+priority_names:
+  low: منخفضة
+  medium: متوسطة
+  high: عالية
+
+teams:
+  Registration: فريق التسجيل
+  IT Support: فريق الدعم التقني
+  Finance: الفريق المالي
+  Transportation: فريق المواصلات
+  Facilities: فريق الصيانة
+  Academic Support: فريق الدعم الأكاديمي
+
+summary: "طلب {category_name}، أولوية {priority_name}: {gist}"
+
+reply:
+  ticket: "وصلنا طلبك وحولناه على {team}، ورح يتابعوه معك هون."
+  faq_answer: "شكراً على سؤالك. عم ندور على الجواب بصفحات المساعدة، وإذا ما لقيناه رح يرد عليك {team} هون."
+  booking: "فاهمين إنه الموضوع مستعجل. عم نحجزلك أقرب موعد متاح مع مرشد، ورح نبعتلك التفاصيل على الإيميل."
+  safety_alert: "إذا في حدا بخطر، ابعدوا عن المكان واتصلوا على 911 هلأ. بلّغنا {team}."
+  incident_merge: "في طلاب تانيين بلّغوا عن نفس المشكلة، و{team} شغالين عليها. رح نحدّث الكل هون."
+  none: "وصلنا طلبك، و{team} رح يتابعوه."
+
+deadline_today: " وانتبهنا إنه الموضوع بخص اليوم."

@@ -1,7 +1,7 @@
 """MemoryStore contract (P4.2 step 5): the same cases run against every live-learning store.
 
 PgVectorMemoryStore runs when SUPABASE_TEST_URL / SUPABASE_TEST_SERVICE_ROLE_KEY are set.
-InMemoryMemoryStore (Backend P3.7) joins automatically once it exists.
+InMemoryMemoryStore always runs.
 """
 
 from __future__ import annotations

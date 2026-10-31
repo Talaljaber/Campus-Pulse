@@ -53,6 +53,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     data = text.encode("ascii")
     if args.out is not None:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_bytes(data)
     else:
         sys.stdout.buffer.write(data)

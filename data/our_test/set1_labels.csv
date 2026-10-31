@@ -1,0 +1,61 @@
+request_id,category,priority,scenario_family
+HT-0001,Facilities,medium,en_Facilities_1
+HT-0002,Finance,low,ar_Finance_1
+HT-0003,Transportation,high,en_Transportation_0
+HT-0004,Academic Support,low,ar_Academic Support_0
+HT-0005,Transportation,high,en_Transportation_0
+HT-0006,Facilities,medium,en_Facilities_1
+HT-0007,Registration,medium,en_Registration_1
+HT-0008,Finance,low,ar_Finance_1
+HT-0009,Academic Support,low,ar_Academic Support_0
+HT-0010,Registration,medium,en_Registration_1
+HT-0011,Registration,medium,en_Registration_1
+HT-0012,Registration,medium,en_Registration_1
+HT-0013,Registration,medium,en_Registration_1
+HT-0014,Transportation,high,en_Transportation_0
+HT-0015,Registration,medium,en_Registration_1
+HT-0016,Transportation,high,en_Transportation_0
+HT-0017,Facilities,medium,en_Facilities_1
+HT-0018,Transportation,high,en_Transportation_0
+HT-0019,Academic Support,low,ar_Academic Support_0
+HT-0020,Transportation,high,en_Transportation_0
+HT-0021,Academic Support,low,ar_Academic Support_0
+HT-0022,IT Support,medium,ar_IT Support_1
+HT-0023,Registration,medium,en_Registration_1
+HT-0024,Academic Support,low,ar_Academic Support_0
+HT-0025,Academic Support,low,ar_Academic Support_0
+HT-0026,Finance,low,ar_Finance_1
+HT-0027,IT Support,medium,ar_IT Support_1
+HT-0028,Finance,low,ar_Finance_1
+HT-0029,Transportation,high,en_Transportation_0
+HT-0030,Registration,medium,en_Registration_1
+HT-0031,Academic Support,low,ar_Academic Support_0
+HT-0032,Transportation,high,en_Transportation_0
+HT-0033,Facilities,medium,en_Facilities_1
+HT-0034,Transportation,high,en_Transportation_0
+HT-0035,Transportation,high,en_Transportation_0
+HT-0036,Transportation,high,en_Transportation_0
+HT-0037,Facilities,medium,en_Facilities_1
+HT-0038,IT Support,medium,ar_IT Support_1
+HT-0039,Finance,low,ar_Finance_1
+HT-0040,Finance,low,ar_Finance_1
+HT-0041,IT Support,medium,ar_IT Support_1
+HT-0042,IT Support,medium,ar_IT Support_1
+HT-0043,Facilities,medium,en_Facilities_1
+HT-0044,Academic Support,low,ar_Academic Support_0
+HT-0045,Registration,medium,en_Registration_1
+HT-0046,IT Support,medium,ar_IT Support_1
+HT-0047,Finance,low,ar_Finance_1
+HT-0048,Registration,medium,en_Registration_1
+HT-0049,Facilities,medium,en_Facilities_1
+HT-0050,IT Support,medium,ar_IT Support_1
+HT-0051,Facilities,medium,en_Facilities_1
+HT-0052,Academic Support,low,ar_Academic Support_0
+HT-0053,Facilities,medium,en_Facilities_1
+HT-0054,Facilities,medium,en_Facilities_1
+HT-0055,Registration,medium,en_Registration_1
+HT-0056,IT Support,medium,ar_IT Support_1
+HT-0057,IT Support,medium,ar_IT Support_1
+HT-0058,Finance,low,ar_Finance_1
+HT-0059,Facilities,medium,en_Facilities_1
+HT-0060,Finance,low,ar_Finance_1

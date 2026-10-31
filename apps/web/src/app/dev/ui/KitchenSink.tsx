@@ -20,6 +20,8 @@ import {
   PRIORITY_TONE,
   type Tone,
 } from "@/components/ui";
+import { MapStories } from "./MapStories";
+import { TriageStories } from "./TriageStories";
 import { CATEGORY_VALUES, LangScope, PRIORITY_VALUES, labelOf, useLang, useT, type Lang } from "@/i18n";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -162,6 +164,14 @@ function Showcase() {
             <Button onClick={() => setDialog(false)}>{t("common.confirm")}</Button>
           </div>
         </Dialog>
+      </Section>
+
+      <Section title={t("devui.triageTitle")}>
+        <TriageStories />
+      </Section>
+
+      <Section title={t("devui.mapTitle")}>
+        <MapStories />
       </Section>
 
       <Section title={t("devui.skeleton")}>

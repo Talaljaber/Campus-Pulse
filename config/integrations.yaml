@@ -1,0 +1,63 @@
+# Ticket sinks (SPEC §5.1 [12], P4.6). Owner: Backend stream. Docs: docs/integrations.md.
+# Parsed by yaml.safe_load; the `linear` section is validated by
+# campuspulse_ai.adapters.integrations.linear.LinearMapping.from_dict (unknown keys are errors).
+#
+# `enabled` is the sink order. SupabaseSink is the system of record and always runs first;
+# LinearSink is built only when ENABLE_SINKS=true and LINEAR_API_KEY is set. WebhookSink is future
+# work (UD-3) and is not built.
+enabled: [supabase, linear]
+
+linear:
+  api_url: https://api.linear.app/graphql
+  timeout_s: 10              # per GraphQL call (the composition root builds httpx.Client with it)
+  webhook_tolerance_s: 60    # reject webhooks whose webhookTimestamp is further than this from now
+  timezone: Asia/Amman       # dueDate = the sla_due_at date in this zone
+
+  # Team KEYS, resolved to ids with one `teams` query. Workspace "CampusPulse" (urlKey
+  # campus-pulse) uses ONE team for every office: CDP (id 8b4300c4-0a05-4581-bd9d-b761e8b6ee70;
+  # states Backlog, Todo, In Progress, Done, Canceled, Duplicate). Do not use the other team (CAM).
+  # An office with "" uses default_team; both empty -> the ticket is not pushed to Linear
+  # (SinkError, recorded by ActUseCase) and stays in Supabase.
+  default_team: CDP
+  team_by_office:
+    registrar: ""
+    it: ""
+    finance: ""
+    transport: ""
+    facilities: ""
+    academic: ""
+
+  # Issue label NAMES, resolved with one `issueLabels` query. These six exist as workspace-level
+  # labels in CampusPulse. A name that does not exist is skipped (labels are cosmetic; the ticket
+  # is still created).
+  label_by_category:
+    Registration: registration
+    IT Support: it-support
+    Finance: finance
+    Transportation: transportation
+    Facilities: facilities
+    Academic Support: academic-support
+
+  # Linear priority: 0 none, 1 urgent, 2 high, 3 medium, 4 low. `safety` is used for safety alerts.
+  priority_map: {high: 2, medium: 3, low: 4, safety: 1}
+
+  # Outbound: our ticket status -> the Linear workflow state TYPE to move the issue to (the team's
+  # first state of that type). null = leave the state alone (escalation changes only the priority).
+  # New issues land in the team's default state (Backlog on CDP), which maps back to `open`.
+  state_type_by_status:
+    open: unstarted
+    in_progress: started
+    resolved: completed
+    closed: completed
+    merged: duplicate        # merged into an incident; CDP has a Duplicate state of type duplicate
+    escalated: null
+
+  # Inbound (webhook): Linear state type -> our ticket status. Unlisted types are ignored.
+  status_by_state_type:
+    triage: open
+    backlog: open
+    unstarted: open
+    started: in_progress
+    completed: resolved
+    canceled: closed
+    duplicate: closed

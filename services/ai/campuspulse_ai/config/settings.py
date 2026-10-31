@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     openrouter_tier2_model: str | None = None
     enable_llm: bool = False
     llm_daily_budget_usd: float = 5.0
+    llm_timeout_s: float = 20.0
+    llm_max_retries: int = 2
+    llm_retry_backoff_s: float = 0.5
+    llm_cache_path: Path = Path(".cache/llm.sqlite")
 
     # Supabase (service role is server-side only)
     supabase_url: str | None = None
@@ -48,6 +52,10 @@ class Settings(BaseSettings):
     gmail_app_password: SecretStr | None = None
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
+    smtp_timeout_s: float = 10.0
+    smtp_max_retries: int = 2  # 4xx, disconnects and timeouts only
+    smtp_backoff_s: float = 1.0  # exponential: backoff * 2**attempt
+    smtp_daily_cap: int = 100  # far below Gmail's 500/day; counted per Amman day in-process
     # Comma-separated, lower-cased. Empty rejects every recipient.
     demo_email_allowlist: Annotated[frozenset[str], NoDecode] = frozenset()
 
@@ -57,6 +65,13 @@ class Settings(BaseSettings):
     outbound_webhook_url: str | None = None
     outbound_webhook_secret: SecretStr | None = None
     enable_sinks: bool = True
+    sink_retry_max: int = 3  # attempts per sink call, retryable errors only
+    sink_retry_base_s: float = 0.5  # exponential: base * 2**(attempt - 1)
+
+    # Anti-gaming thresholds (P3.6); flags only, never a label change
+    gaming_min_requests: int = 5
+    gaming_claim_ratio: float = 0.8
+    gaming_high_ratio_max: float = 0.2
 
     # Background loops
     sla_scan_minutes: int = 5

@@ -78,7 +78,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-2"></a>
 ## P3.2 — Build the question bank and the expected-information-gain clarifier
 
-- [ ] Done
+- [x] Done
 - Depends on: P3.1; P2 (`LACConformal` quantiles)
 - Est: 2 h · Cut: no. The LLM rephraser is cut (B-list).
 - Files:
@@ -129,7 +129,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-3"></a>
 ## P3.3 — Add the LLM tiers: OpenRouterOracle (set-constrained), caches, cost and merge
 
-- [ ] Done
+- [x] Done
 - Depends on: P3.1; P0 (`LabelOracle`, `ResponseCache` and `CostLogger` ports, `LLMError*`)
 - Est: 2.5 h · Cut: tier 2 wiring is cut-order #3. Tier 1 is not cut.
 - **User decision [UD-3](../PLAN.md#ud-3):** tier 2 is future work. Build tier 1 (Haiku) only; leave `OPENROUTER_TIER2_MODEL` unset, so `oracles = [tier1]`. [UD-5](../PLAN.md#ud-5): the trained ensemble labels first, and tier 1 is consulted only inside an ambiguous conformal set.
@@ -186,7 +186,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-3a"></a>
 ## P3.3a — RequestUnderstander: structured NLP understanding (summary, entities, reply, ticket text) ([UD-10](../PLAN.md#ud-10))
 
-- [ ] Done
+- [x] Done
 - **Goal:** turn every live request into a structured, human-readable understanding:
   - a summary in EN and AR
   - entities: building, room, course code, deadline, system/service
@@ -345,7 +345,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-6"></a>
 ## P3.6 — Add the anti-gaming signals (GamingDetector)
 
-- [ ] Done
+- [x] Done
 - Depends on: P3.8 (`InMemoryRepository.bump_student_signals`)
 - Est: 0.75 h · Cut: no
 - Files:
@@ -405,6 +405,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 ## P3.8 — Write the DTOs, test fakes, `build_test()`, InMemoryRepository and ActionPlanner v0
 
 - [ ] Done
+- Progress (2026-10-31): `TableActionPlanner` + `config/actions.yaml` merged (e921144); DTOs done in P0.13; InMemoryRepository moved to DB (D-002). Left: `FakeCore`, `HashingEncoder`, `build_test()`.
 - Depends on: P3.1–P3.7 (types only)
 - Est: 2 h · Cut: no
 - Files:

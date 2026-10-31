@@ -137,6 +137,140 @@ These errors are degraded inside the use cases and never reach the client:
 - `NotificationError` and `RecipientNotAllowed`: recorded as outbox `failed` / `rejected`.
 - `CalendarUnavailable`: falls back to the slots table.
 
+<a id="clarification-llm-understanding"></a>
+## Clarification, LLM tier and understanding
+
+These three pieces decide what the student sees after the model has labelled a request (P3.2, P3.3, P3.3a). The trained ensemble always labels first (UD-5): the clarifier and the LLM tier only narrow its conformal sets, and the understander only describes the decided labels. The use cases that wire them into `/v1/triage` are P3.9 and P3.10.
+
+### Clarifying question (`status: needs_clarification`)
+
+When a set holds two labels and no question has been used, the response carries one question from `config/clarify_questions.yaml`.
+
+- **Language.** `en` requests get English text; `ar` and `arabizi` requests get Jordanian Arabic in Arabic script.
+- **Choice.** The question with the smallest expected set size after the answer wins. Category questions go before priority questions, ties follow the bank order, and a question is never asked twice. If no bank question splits the set (for example `{low, high}`), no question is asked and the policy moves on.
+- **Answer.** `POST /v1/triage/{request_id}/clarify` with `option_id` (or `free_text`, which is appended to the request and re-classified). The answer becomes a constraint and the core is re-run with it (LD-29).
+- **`not_sure`.** It applies nothing and allows one more question (at most two in total).
+- **Errors.** An unknown `question_id` or `option_id` is `404 not_found`.
+
+| `question_id` | Splits | Asked when | Options (`id` → effect) |
+| --- | --- | --- | --- |
+| `cat:Registration\|IT Support` | category | the category set contains both | `registration` → Registration, `it` → IT Support, `not_sure` |
+| `cat:Academic Support\|IT Support` | category | the category set contains both | `content` → Academic Support, `platform` → IT Support, `not_sure` |
+| `cat:Finance\|Registration` | category | the category set contains both | `payment` → Finance, `registration` → Registration, `not_sure` |
+| `cat:Facilities\|IT Support` | category | the category set contains both | `room_equipment` → Facilities, `computer_network` → IT Support, `not_sure` |
+| `pri:deadline` | priority | `{medium, high}`; top category Registration, IT Support, Finance or Academic Support | `yes_today` → evidence `deadline_today`, `no_deadline` → medium, `not_sure` |
+| `pri:safety` | priority | `{medium, high}`; top category Facilities or Transportation | `yes_danger` → evidence `safety_risk`, `no_danger` → medium, `not_sure` |
+| `pri:low\|medium` | priority | `{low, medium}` | `broken_now` → medium, `information` → low, `not_sure` |
+
+A category or priority effect fixes that set to one label. An evidence effect sets the feature and lets the priority head decide. The safety floor still wins over any answer (ARCHITECTURE §2.1 [9]).
+
+### Topic chips (`status: out_of_scope`)
+
+Off-topic or gibberish requests get `clarification.question_id: "topic"` with six chips whose ids are the category labels ("Which of these topics is closest?" / "أي موضوع من هدول أقرب لطلبك؟"). Answering one through the clarify route fixes the category to that label.
+
+### LLM tier (`tier: tier1`)
+
+- **When.** Only when the policy escalates: a set still has two or more labels after the question budget, `ENABLE_LLM=true`, `OPENROUTER_API_KEY` and `OPENROUTER_TIER1_MODEL` are set, and the request has no `injection_attempt` flag. Tier 2 is not wired (UD-3).
+- **What it can do.** The model sees only the allowed labels, and the response schema's enums are exactly the current sets. An answer outside them is discarded and the flag `llm_out_of_set` is added. A valid answer is merged as one more ensemble member, `p' = (1 − w_llm)·p_S + w_llm·onehot` with `w_llm = 0.5`, and the sets are recomputed and never grow. The coverage guarantee holds for tier 0 only.
+- **What the student sees.** `tier` becomes `tier1`. With `?debug=members` (admin), `explanation.trace.per_model` also holds `tier1.category` and `tier1.priority`.
+- **Failures.** No key, a timeout, 5xx after two retries, 402/429 or a spent daily budget all leave the request at tier 0, then `human_review`. They never return an error to the client.
+- **Pinned calls.** `temperature 0`, `top_p 1`, `seed 42`, `max_tokens 80`, prompt `config/prompts/oracle_v1.md`. The request text sent is the wrapper-stripped original plus the normalized text, cut at `guards.max_tokens`.
+
+### Understanding (`understanding`)
+
+Filled for `decided` and `human_review` responses (UD-10).
+
+| Field | Content |
+| --- | --- |
+| `summary_en`, `summary_ar` | one sentence each, in English and in Jordanian Arabic |
+| `entities` | `building`, `room`, `course_code`, `deadline` (ISO date: "today"/"اليوم" is today in Asia/Amman, "tomorrow"/"بكرا" the day after), `system` (e.g. `registration portal`, `e-learning`, `wifi`) |
+| `student_reply` | in the request language (Arabic script for Arabic and Arabizi); it says only what the planned action really does |
+| `ticket_title`, `ticket_body` | English text for staff (at most 80 and 1,200 characters) |
+| `source` | `llm` (tier-1 model, `prompt_version: "v1"`) or `rules` (templates, `prompt_version: null`) |
+
+- **It never changes the labels.** The model must echo the decided category and priority, and a reply with other labels is rejected.
+- **Grounding.** A reply is rejected, and the rules are used instead, when it breaks the schema or a limit, replies in the wrong language, or names a course code, room or building that is not in the request.
+- **`understanding_fallback`.** Set whenever `source` is `rules`: no key, an LLM error, a rejected reply, a spent budget, or an `injection_attempt` request (those never reach the model).
+- **Pinned calls.** `temperature 0`, prompt `config/prompts/understand_v1.md`, cached per text, labels, action, location and date.
+
+### Cost logging
+
+Every LLM call (oracle and understander) is logged through the `CostLogger` port as an `LLMCall`.
+
+| Field | Value |
+| --- | --- |
+| `tier`, `model` | `tier1` and the pinned model id from `OPENROUTER_TIER1_MODEL` |
+| `prompt_hash` | the cache key: sha256 of the model id, prompt version, text and allowed sets (oracle) or decided labels (understander) |
+| `tokens_in`, `tokens_out` | from OpenRouter `usage`; `0` on a failure |
+| `cost.usd` | OpenRouter `usage.cost` when reported, else the pinned price table (`adapters/llm/cost.py`, Appendix B); `0` for cache hits and failures |
+| `cached` | `true` for a cache hit (no HTTP call) |
+
+- **Budget.** Before each network call, the day's total (Asia/Amman) is compared with `LLM_DAILY_BUDGET_USD` (default 5). At or above it, no call is made.
+- **Failures are logged too**, with zero tokens and cost.
+- **Where it shows.** `explanation.trace.cost_usd`, and `router` in `/v1/metrics`. Online, `SupabaseCostLogger` writes the `llm_calls` rows (P4); offline and in tests it is `InMemoryCostLogger`.
+- **Caches.** `SqliteCache` (offline `--use-llm`) or `SupabaseCache` (online, P4) keep the raw validated reply under the same key. A second identical request makes no call.
+
+<a id="actions-side-effects"></a>
+## Actions and side effects (tickets, emails, bookings)
+
+What `/v1/triage` (and `/v1/feedback` after a confirmation) *does* once the labels are decided. The
+building blocks exist (P3.6, P3.8, P4.4, P4.6, P4.7); `ActUseCase` wires them into the routes in
+P4.8 and the webhook route arrives in P4.9, so the side effects below are the contract those tasks
+implement. Integration details: [docs/integrations.md](../integrations.md).
+
+### Routing (`action.type`, `action.tags`) — `config/actions.yaml`, UD-1
+
+| Category | low | medium | high |
+| --- | --- | --- | --- |
+| Academic Support (`academic`) | `faq_answer` | `ticket` + `office-hours-queue` | `booking` + a ticket (the **only** booking cell) |
+| Registration (`registrar`) | `faq_answer` | `ticket` | `ticket` + `same-day-escalation` (no booking) |
+| IT Support (`it`) | `faq_answer` + `self-help` | `ticket` | `ticket` (+ `exam-in-progress` when the `exam_now` evidence fired) |
+| Finance (`finance`) | `faq_answer` | `ticket` | `ticket` + `escalation` |
+| Transportation (`transport`) | `faq_answer` + `timetable` | `ticket` | `ticket` + `transport-alert` (also alerts the transport office) |
+| Facilities (`facilities`) | `ticket` | `ticket` | `safety_alert` + a ticket, tag `safety` |
+
+- **Office** (in brackets) is the D-005 code written to `tickets.office`; staff see their office's tickets.
+- **SLA:** `action.sla_due_at` = creation + 24 h (high), 72 h (medium), 336 h = 14 days (low).
+- **Flag `safety`** (any category): `safety_alert` + ticket, priority high, fires immediately, even
+  for `human_review`.
+- **`human_review` (provisional):** a ticket only, `action.provisional: true`, tag `unconfirmed`;
+  the cell's own action is kept as tag `deferred:<kind>` (e.g. `deferred:booking`) and runs only
+  after staff confirm via `/v1/feedback`.
+- **`faq_answer`:** answered from the FAQ when the best match ≥ `tau_faq`, otherwise a ticket.
+
+### Side effects
+
+| Effect | When | Where it shows |
+| --- | --- | --- |
+| `tickets` row | every `ticket`, `booking`, `safety_alert` (and an unanswered FAQ) | `action.ticket_id`; staff dashboard (RLS by office) |
+| Linear issue | each ticket, when `LINEAR_API_KEY` is set (team CDP, label = category, due date = SLA date) | `action.external[]` `{sink: "linear", external_id, url}`. A Linear failure never fails triage. |
+| Ticket status from Linear | a signed `POST /v1/integrations/linear/webhook` that changes the issue state | ticket status; the student gets an in-app `notifications` row |
+| Advisor booking | Academic Support × high, not provisional | `action.booking`; the slot's `booked_by`; a `cases` row |
+| Email | booking confirmation (student + advisor), safety/transport alerts, resolution notices | `outbox` row (`sent`, `provider_id` = Message-ID) |
+| In-app message | status changes and replies to students (D-006) | `notifications` row for the alias (Realtime) |
+
+### Allow-list behaviour (never contacting real people)
+
+- Every email recipient and every booking attendee must be on `DEMO_EMAIL_ALLOWLIST`: an exact,
+  case-insensitive match with no plus-address or subdomain wildcards. **An empty list rejects all.**
+- A rejected email is **not sent**: an `outbox` row with `status: "rejected"` is written, and the
+  reason is in the `events` audit log (`action: outbox.rejected`). A provider failure is an `outbox`
+  row with `status: "failed"` (`events` `outbox.failed`). Neither changes the HTTP response: the
+  triage still succeeds.
+- A booking with a non-allow-listed attendee is refused before the slot is claimed.
+- In-app messages go to an alias inside our database and are not checked, but are recorded in
+  `outbox` the same way.
+
+### Anti-gaming flags (P3.6)
+
+`GamingDetector` runs after the priority is final and only adds flags; it never changes a label.
+- `urgency_unsupported`: this request claims urgency ("URGENT", "عاجل") but the priority is not high
+  and no high-urgency evidence fired (`deadline_today`, `exam_now`, `safety_risk`, `stranded`,
+  `enrollment_blocked`). Staff only.
+- `priority_gaming_suspected`: for this alias, after at least `GAMING_MIN_REQUESTS` (5) requests,
+  ≥ `GAMING_CLAIM_RATIO` (0.8) of them claim urgency and ≤ `GAMING_HIGH_RATIO_MAX` (0.2) of those
+  claims were really high; or 2 injection attempts. Admin only; no penalty.
+
 ## Optional extras
 
 `POST /v1/admin/simulate` (P5.19) and `POST /v1/admin/reindex` (P4.20) are B-list extras.

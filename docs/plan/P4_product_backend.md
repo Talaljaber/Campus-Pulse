@@ -199,7 +199,7 @@
      - 6 advisors with fictional names, each `demo_email` an allow-listed plus-address (`campuspulse.support+adv-reg@gmail.com` …), office hours Sun–Thu 09:00–15:00 Asia/Amman;
      - slots for the next 14 days generated with `generate_series`;
      - FAQ text: every non-`[demo]` entry quotes `docs/reference/gju_public_policies.md` with its source URL, and every other entry is `is_demo = true`, at least 24 entries EN+AR.
-  2. **`seed_demo_users.py`** uses the service key on the dev machine only. It calls `auth.admin.create_user` for `student-demo-17@demo.local`, `staff-it@demo.local` and `admin@demo.local` (§1.7), with passwords from `DEMO_USER_PASSWORD`, and inserts their `profiles`.
+  2. **`seed_demo_users.py`** uses the service key on the dev machine only. It calls `auth.admin.create_user` for `talal@demo.local`, `it@demo.local` and `admin@demo.local` (§1.7), with passwords from `DEMO_USER_PASSWORD`, and inserts their `profiles`.
   3. **`seed_faq.py`** embeds FAQ questions with the frozen `OnnxEncoder` and upserts them with `PgVectorStore`. It refuses to run if `config.json.encoder.dim != vector_dim()`.
   4. **Repository** maps PostgREST errors to `StoreError`/`NotFound`, uses no SDK exceptions outside the adapter, and stores datetimes as ISO UTC.
 - Acceptance:
@@ -213,7 +213,7 @@
 <a id="p4-4"></a>
 ## P4.4 — Notifications: RecipientPolicy, AllowlistedNotifier, GmailSmtpNotifier, InAppNotifier and outbox
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.3
 - Est: 1.5 h · Cut: no
 - Files:
@@ -273,7 +273,7 @@
 <a id="p4-5"></a>
 ## P4.5 — Write VectorFAQRetriever and hand-tune `tau_faq`
 
-- [ ] Done
+- [ ] Done — partial: VectorFAQRetriever and tune_faq.py are merged. Still to do: seed_faq + the real tau_faq tuning once the P1.6 encoder is merged.
 - Depends on: P4.2, P4.3
 - Est: 1 h · Cut: no
 - Files:
@@ -301,7 +301,7 @@
 <a id="p4-6"></a>
 ## P4.6 — Ticket sinks: SupabaseSink, RetryingSink, LinearSink and docs/integrations.md
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.0 (Linear IDs), P4.3
 - Est: 2.5 h · Cut: no
 - Files:
@@ -354,7 +354,7 @@
 <a id="p4-7"></a>
 ## P4.7 — Calendar: SlotsTableCalendar and FallbackCalendar
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.3
 - Est: 1 h · Cut: no. GoogleCalendarProvider is P4.16, cut #5.
 - Files:

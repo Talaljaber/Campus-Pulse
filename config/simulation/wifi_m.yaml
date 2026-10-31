@@ -1,0 +1,24 @@
+# Pulse simulation (P4.10, video moment 2): a Wi-Fi outage in building M reported by eight
+# fictional students (aliases sim-01..sim-08) in EN, Jordanian Arabic and Arabizi.
+# category/priority are only used by --mode direct (no classifier yet); --mode api (P4.14)
+# lets /v1/triage classify the text.
+building: M
+room: "204"
+category: IT Support
+reports:
+  - text: "The Wi-Fi in building M is down, I can't open the LMS"
+    priority: medium
+  - text: "الانترنت مقطوع بمبنى M من الصبح"
+    priority: medium
+  - text: "el wifi msh shaghal fi M, wala ishi bifta7"
+    priority: medium
+  - text: "No internet in M-204, the whole floor lost Wi-Fi"
+    priority: medium
+  - text: "الواي فاي واقف بالمبنى M، مش قادر أسلّم الواجب"
+    priority: medium
+  - text: "wifi M mafsoul kaman, el lab kolo bala net"
+    priority: medium
+  - text: "Still no Wi-Fi in building M, our quiz is online in 20 minutes"
+    priority: medium
+  - text: "النت بمبنى M لسا مقطوع، صارلنا ساعة"
+    priority: medium
