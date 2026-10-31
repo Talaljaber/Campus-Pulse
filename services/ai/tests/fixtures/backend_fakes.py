@@ -1,4 +1,4 @@
-"""Backend-stream test fakes (P3.2, P3.3, P3.3a).
+"""Backend-stream test fakes (P3.2, P3.3, P3.3a, P4.4, P4.6, P4.7).
 
 Kept apart from `tests/fixtures/fakes.py` (created by the ML stream in P1.4) so the two streams do not
 edit the same file; P3.8 re-exports these from `fakes.py` for `build_test()`.
@@ -9,18 +9,22 @@ edit the same file; P3.8 re-exports these from `fakes.py` for `build_test()`.
 - `FrozenClock`: a `Clock` fixed at one Asia/Amman instant.
 - `ScriptedOracle`: a `LabelOracle` that replays scripted answers or errors and records its calls.
 - `make_request(...)`: a `NormalizedRequest` without running the normalizer.
+- `FakeNotifier`: a `Notifier` that records every message and can be scripted to fail.
+- `make_outbox(...)`: an `OutboxMessage` ready to send.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import math
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Literal
 
-from campuspulse_ai.domain.entities import CoreResult, LLMCall, OracleAnswer, OracleContext
+from campuspulse_ai.domain.entities import CoreResult, LLMCall, OracleAnswer, OracleContext, OutboxMessage
 from campuspulse_ai.domain.labels import CATEGORY_LABELS, PRIORITY_LABELS, Category, Priority
 from campuspulse_ai.domain.values import (
     ArtifactVersion,
@@ -184,3 +188,45 @@ class ScriptedOracle:
         return OracleAnswer(
             category=cat, priority=pri, rationale="scripted", call=fake_call(self.tier, self.model_id)
         )
+
+
+def make_outbox(
+    to_address: str,
+    *,
+    kind: Literal["email", "in_app", "whatsapp"] = "email",
+    subject: str = "Your CampusPulse request",
+    body: str = "We opened a ticket for you.",
+    created_at: datetime | None = None,
+) -> OutboxMessage:
+    """A queued OutboxMessage (empty id: the repository assigns one)."""
+    return OutboxMessage(
+        id="",
+        kind=kind,
+        to_address=to_address,
+        subject=subject,
+        body=body,
+        provider_id=None,
+        status="queued",
+        created_at=created_at or datetime(2026, 11, 5, 9, 5, tzinfo=AMMAN),
+    )
+
+
+@dataclass
+class FakeNotifier:
+    """A Notifier that records each message in `sent` and returns it as delivered.
+
+    If `fail_with` is set, every call records the message and raises that error instead.
+    """
+
+    fail_with: Exception | None = None
+    sent: list[OutboxMessage] = field(default_factory=list)
+
+    @property
+    def calls(self) -> int:
+        return len(self.sent)
+
+    def send(self, msg: OutboxMessage) -> OutboxMessage:
+        self.sent.append(msg)
+        if self.fail_with is not None:
+            raise self.fail_with
+        return dataclasses.replace(msg, status="sent", provider_id=f"fake:{len(self.sent)}")
