@@ -1910,7 +1910,7 @@ One ablation arm (P2.9), scored on the same rows as the full system.
 | --- | --- | --- | --- |
 | `arm` | string | yes |  |
 | `target` | `category` \| `priority` | yes |  |
-| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `probes` | yes |  |
+| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `our_test_set1` \| `our_test_set2` \| `our_test_set3` \| `probes` | yes |  |
 | `macro_f1` | number \| null | yes | >= 0.0, <= 1.0 |
 | `delta` | number \| null | yes | macro_f1 minus the full system's |
 
@@ -1956,7 +1956,7 @@ One benchmark cell (SPEC §6.2). Null metrics = `n/a` (no key) or `cut` (M3).
 | --- | --- | --- | --- |
 | `model` | string | yes |  |
 | `target` | `category` \| `priority` | yes |  |
-| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `probes` | yes |  |
+| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `our_test_set1` \| `our_test_set2` \| `our_test_set3` \| `probes` | yes |  |
 | `macro_f1` | number \| null | yes | >= 0.0, <= 1.0 |
 | `accuracy` | number \| null | yes | >= 0.0, <= 1.0 |
 | `n_rows` | integer | yes | >= 0.0 |
@@ -2064,7 +2064,7 @@ A confusion matrix: rows = true label, columns = predicted, in `labels` order.
 | --- | --- | --- | --- |
 | `model` | string | yes |  |
 | `target` | `category` \| `priority` | yes |  |
-| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `probes` | yes |  |
+| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `our_test_set1` \| `our_test_set2` \| `our_test_set3` \| `probes` | yes |  |
 | `labels` | array of string | yes |  |
 | `matrix` | array of array of integer | yes |  |
 
@@ -2104,7 +2104,7 @@ Conformal coverage for one target/dataset/language slice (approximate; effective
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `target` | `category` \| `priority` | yes |  |
-| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `probes` | yes |  |
+| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `our_test_set1` \| `our_test_set2` \| `our_test_set3` \| `probes` | yes |  |
 | `lang` | string | yes | `all`, `en`, `ar` or `arabizi` |
 | `coverage` | number | yes | >= 0.0, <= 1.0 |
 | `mean_set_size` | number | yes | >= 0.0 |
@@ -2194,7 +2194,7 @@ Macro-F1 on one language slice, with counts (LD-32, LD-33).
 | --- | --- | --- | --- |
 | `slice` | string | yes | `en`, `ar` or `arabizi` |
 | `target` | `category` \| `priority` | yes |  |
-| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `probes` | yes |  |
+| `dataset` | `oof_official` \| `oof_all` \| `our_test` \| `our_test_set1` \| `our_test_set2` \| `our_test_set3` \| `probes` | yes |  |
 | `macro_f1` | number \| null | yes | >= 0.0, <= 1.0 |
 | `n_rows` | integer | yes | >= 0.0 |
 | `n_groups` | integer \| null | yes |  |
