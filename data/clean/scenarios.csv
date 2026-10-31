@@ -1,0 +1,43 @@
+scenario_id,split,lang,core,category,priority,n_variants,translation_of
+TR-S01,train,ar,حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم,IT Support,high,9,TR-S32
+TR-S02,train,en,I need a copy of my payment receipt,Finance,low,11,
+TR-S03,train,en,A laboratory door is stuck and students cannot leave,Facilities,high,11,
+TR-S04,train,en,The system removed my registered course without warning,Registration,high,11,
+TR-S05,train,ar,علامتي غلط وآخر يوم اعتراض اليوم,Academic Support,high,9,VA-S05
+TR-S06,train,en,I need help understanding the prerequisite rule,Registration,medium,11,
+TR-S07,train,en,My tuition payment is not reflected and registration closes today,Finance,high,11,TR-S26
+TR-S08,train,ar,وين بلاقي مواعيد السحب والاضافة؟,Registration,low,9,VA-S01
+TR-S09,train,en,Where can I meet my academic advisor?,Academic Support,low,11,
+TR-S10,train,ar,كيف بغير كلمة السر؟,IT Support,low,9,VA-S06
+TR-S11,train,en,The learning platform is unavailable during an online quiz,IT Support,high,11,
+TR-S12,train,en,The student portal shows an error when I upload a file,IT Support,medium,11,
+TR-S13,train,en,My scholarship discount is missing from the invoice,Finance,medium,11,
+TR-S14,train,en,The university bus is running twenty minutes late,Transportation,medium,11,VA-S03
+TR-S15,train,ar,وين جدول الباصات؟,Transportation,low,9,TR-S36
+TR-S16,train,en,The campus Wi-Fi disconnects every few minutes,IT Support,medium,11,
+TR-S17,train,en,Where do I check the tuition installment dates?,Finance,low,11,
+TR-S18,train,en,I cannot access the feedback on my assignment,Academic Support,medium,11,
+TR-S19,train,en,Water is leaking near an electrical socket in the lab,Facilities,high,11,TR-S29
+TR-S20,train,en,An air conditioner stopped working in the lecture room,Facilities,medium,11,
+TR-S21,train,en,I cannot add my courses because the registration portal rejects my request,Registration,high,11,TR-S25
+TR-S22,train,en,My bus pass stopped working this morning,Transportation,medium,11,
+TR-S23,train,en,The bus route changed without an announcement,Transportation,medium,11,
+TR-S24,train,en,The exam schedule has two tests at the same time,Academic Support,medium,11,TR-S34
+TR-S25,train,ar,مش قادر اسجل مواد والنظام بعطيني خطأ,Registration,high,9,TR-S21
+TR-S26,train,ar,دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم,Finance,high,9,TR-S07
+TR-S27,train,en,A hallway light is broken,Facilities,low,11,TR-S33
+TR-S28,train,en,I need advice choosing an elective course,Academic Support,low,11,
+TR-S29,train,ar,في مي بتسرب جنب كهربا المختبر,Facilities,high,9,TR-S19
+TR-S30,train,ar,صفحة التسجيل معلقة عندي,Registration,medium,9,
+TR-S31,train,ar,الباص الاخير انلغى وضلوا طلاب بدون مواصلات,Transportation,high,9,
+TR-S32,train,en,My university account is locked and I have an online exam today,IT Support,high,11,TR-S01
+TR-S33,train,ar,الضو بالممر خربان,Facilities,low,9,TR-S27
+TR-S34,train,ar,عندي امتحانين بنفس الوقت,Academic Support,medium,9,TR-S24
+TR-S35,train,ar,المبلغ الظاهر على حسابي مش صحيح,Finance,medium,9,VA-S02
+TR-S36,train,en,Where can I see the shuttle bus timetable?,Transportation,low,11,TR-S15
+VA-S01,val,en,Where can I find the add-drop period dates?,Registration,low,11,TR-S08
+VA-S02,val,en,The finance portal shows the wrong outstanding balance,Finance,medium,11,TR-S35
+VA-S03,val,ar,باص الجامعة اتأخر عن موعده,Transportation,medium,9,TR-S14
+VA-S04,val,ar,البروجكتور بالغرفة مش شغال,Facilities,medium,9,
+VA-S05,val,en,My exam grade was recorded incorrectly and the appeal deadline is today,Academic Support,high,11,TR-S05
+VA-S06,val,en,How can I reset my university password?,IT Support,low,11,TR-S10

@@ -1,0 +1,21 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.venv/
+# never commit organizer-only files
+*hidden_test*
+JUDGE_GUIDE.md
+.tmp/
+.cache/
+dist/
+models/frozen/*/encoder/
+models/frozen/*/m3/
+*.tar.gz
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+apps/web/.netlify/

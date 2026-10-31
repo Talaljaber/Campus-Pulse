@@ -1,0 +1,10 @@
+scenario_id,core,field,official_label,decision,soft_target,rationale,app_behaviour
+TR-S27,A hallway light is broken,priority,low,keep + soft,"{""low"":0.75,""medium"":0.25}","Only ambient fault in data; definition says concrete issue = medium. Labeller rule: ambient fixture = low, in-room equipment = medium.",Predict low; route to human review if uncertain
+TR-S33,الضو بالممر خربان,priority,low,keep + soft,"{""low"":0.75,""medium"":0.25}",Arabic twin of TR-S27,Predict low; route to human review if uncertain
+TR-S06,I need help understanding the prerequisite rule,priority,medium,keep + soft,"{""medium"":0.75,""low"":0.25}",Reads as a general question (Low by definition); contrast TR-S28 elective advice = low. Weakest label.,Predict medium; review flag
+TR-S18,I cannot access the feedback on my assignment,category,Academic Support,keep + soft,"{""Academic Support"":0.8,""IT Support"":0.2}","Topic beats channel, but 'cannot access' leans IT",Show IT Support as secondary suggestion
+TR-S04,The system removed my registered course without warning,priority,high,keep (hard),,Labeller rule: definitive loss/blocking of enrollment = high (not in written definition),Human-review flag only if confidence low
+TR-S30,صفحة التسجيل معلقة عندي,priority,medium,keep (hard),,Labeller rule: transient glitch = medium vs definitive rejection = high; category: topic beats channel,Flag medium vs high if uncertain
+TR-S21,I cannot add my courses because the registration portal rejects my request,category,Registration,keep (hard),,Topic beats channel; blocking = high,None beyond confidence threshold
+TR-S25,مش قادر اسجل مواد والنظام بعطيني خطأ,category,Registration,keep (hard),,Arabic twin of TR-S21,None beyond confidence threshold
+VA-S02,The finance portal shows the wrong outstanding balance,category,Finance,keep (hard),,Topic beats channel; worked example for report,None

@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.csv text eol=lf
+*.png binary
+*.onnx binary
+*.npy binary
+*.joblib binary
+# official organizer files: keep exact bytes (never normalize)
+data/raw/** -text
