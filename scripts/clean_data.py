@@ -280,4 +280,7 @@ def run():
 
 if __name__ == "__main__":
     run()
+    # P0.3c: a cp1252 Windows console cannot encode the Arabic report; print it as UTF-8. Outputs are unchanged.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     print((CLEAN / "cleaning_report.md").read_text(encoding="utf-8"))

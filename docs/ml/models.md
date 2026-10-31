@@ -1,0 +1,355 @@
+# ML stream: as-built reference (`docs/ml/models.md`)
+
+Owner: ML stream. This file describes **what exists now** (ARCHITECTURE.md is the design). It is updated at
+every ML task, so another agent or a judge can use the ML pieces without opening the code.
+
+Status: P0.3 to P1.4 (data pipeline, preprocessing, config and artifact plumbing). There is no trained model,
+`models/frozen/v1/`, metrics table or `predict.py` yet (P1.5+).
+
+## 1. Paths (`campuspulse_ai.config.paths`)
+
+```python
+from campuspulse_ai.config.paths import REPO_ROOT, DATA_CLEAN, LEXICONS, is_holdout
+```
+
+| constant | path |
+| --- | --- |
+| `REPO_ROOT` | the repo root: env `CAMPUSPULSE_ROOT`, else the first ancestor of the package (then of the cwd) holding both `data/` and `config/`; `RuntimeError` if none |
+| `DATA_RAW`, `DATA_CLEAN`, `DATA_AUGMENTED` | `data/raw`, `data/clean`, `data/augmented` |
+| `OUR_TEST`, `ROBUSTNESS` | `data/our_test`, `data/robustness` (holdouts, never trained on) |
+| `CONFIG_DIR`, `LEXICONS` | `config`, `config/lexicons` |
+| `MODELS_FROZEN`, `REPORTS` | `models/frozen`, `reports` |
+
+`is_holdout(path)` is true when the path contains `our_test` or `robustness` anywhere (a case-insensitive
+substring match, deliberately strict). `load_pool` (P1.8) and `train.py` refuse such paths.
+
+## 2. Data files
+
+All under `data/clean/`, UTF-8 without BOM. `data/raw/*.csv` are the official files (UTF-8 **with** BOM: read
+with `utf-8-sig`) and are never edited.
+
+| file | produced by | rows | columns |
+| --- | --- | --- | --- |
+| `train_clean.csv`, `val_clean.csv` | `scripts/clean_data.py` | 370, 62 | `request_id,split,text,lang,prefix,suffix,core,text_norm,scenario_id,category,priority,has_urgent_marker,n_chars` |
+| `train_val_combined.csv` | `scripts/clean_data.py` | 432 | the columns above + `cv_group` |
+| `scenarios.csv` | `scripts/clean_data.py` | 42 | `scenario_id,split,lang,core,category,priority,n_variants,translation_of` |
+| `label_flags.csv` | hand-written (label debate) | 9 | `scenario_id,core,field,official_label,decision,soft_target,rationale,app_behaviour` |
+| `cv_folds.csv` | `scripts/make_folds.py` (P0.3a) | 30 | `cv_group,cv_fold` |
+| `train_val_features.csv` | `scripts/add_derived_columns.py` (P0.3b) | 432 | `request_id,lang_script,is_arabizi,stated_urgency` |
+
+Column meanings (`train_val_combined.csv`):
+- `text`: the raw official text. `prefix`/`suffix`: the stripped wrapper strings (empty when none).
+- `core`: `text` without wrappers. `text_norm`: `core` normalised (see §4).
+- `lang`: **script only** (`ar` if Arabic letters outnumber Latin letters, else `en`). The CSVs have no Arabizi
+  label; the package `LangIdentifier` (P1.2) owns it (LD-33).
+- `scenario_id`: one id per distinct (`lang`, `text_norm`); the 432 rows are 42 scenarios × 9–11 wrapper variants.
+- `cv_group`: the **leakage unit**. A scenario and its verified AR↔EN translation share one group (30 groups,
+  5 per category). The group id is the lexically smaller scenario id, so a `TR-*` group can contain val rows
+  (cosmetic; use `split` for provenance).
+- `has_urgent_marker`: `"URGENT" in text` (case-sensitive); 27 rows (23 train + 4 val), no label signal.
+
+### 2.1 Frozen folds: `cv_folds.csv` (P0.3a, LD-31)
+
+- Five folds, ids `0..4`. Every validation fold has exactly **one group per category** (so all 6 categories),
+  all **3 priorities**, and at least 2 groups with Arabic rows.
+- Official result (seed 42): rows per fold `84/84/84/89/91`; priority groups per fold (high/low/medium)
+  `2/1/3, 3/2/1, 1/2/3, 1/2/3, 2/1/3`; Arabic groups per fold `2, 2, 2, 5, 4`.
+- Join it to any row table on `cv_group`. **Never** split randomly (ruff bans the sklearn splitters).
+- Re-running `python scripts/make_folds.py` reproduces the file byte for byte (LF line endings).
+- `--include-augmented` adds groups that exist only in `data/augmented/*.csv` (`NEW-Sxx`, `MEM-…`) without moving
+  an official group: each goes to the fold with the fewest groups of its category (ties → lowest fold id).
+  Augmented rows that inherit an official `cv_group` inherit its fold through the join.
+
+```bash
+python scripts/make_folds.py                 # -> wrote data/clean/cv_folds.csv: 30 groups, 5 folds, ...
+python scripts/make_folds.py --out .tmp/f.csv  # write elsewhere (used by the audit's determinism check)
+```
+
+Knobs (`config/train.yaml`): `seed: 42`, `cv.k: 5`, `cv.search_iterations: 20000`,
+`cv.min_arabic_groups_per_fold: 2`.
+
+### 2.2 Derived features: `train_val_features.csv` (P0.3b, LD-33)
+
+Join on `request_id`. `lang_script` = the CSV `lang` (script-only `ar`/`en`); `is_arabizi` = `False` for all
+432 rows (the script asserts no Latin letter touches a digit 2/3/5/6/7/8/9); `stated_urgency` =
+`has_urgent_marker` (27 `True`). The fairness slice key is `lang_script` + `is_arabizi`; for new text both come
+from the package `LangIdentifier` (§4.2). `stated_urgency` is a gaming signal only, never a model feature.
+
+```bash
+python scripts/add_derived_columns.py   # -> wrote data/clean/train_val_features.csv: 432 rows, is_arabizi=0, stated_urgency=27
+```
+
+### 2.3 Holdout and augmentation folders
+
+- `data/our_test/` (P1.0, hand-written by the developer) and `data/robustness/` (P2.5) are **never trained on**;
+  only `evaluate.py` reads them. Their READMEs state the schema.
+- `data/augmented/README.md` holds the augmentation schema (ARCHITECTURE §4.2):
+  `request_id,text,lang,source,source_scenario_id,cv_group,needs_human_check,author_method,category,priority`.
+  Only `needs_human_check == False` rows are trained on.
+
+## 3. Data scripts
+
+| command | does |
+| --- | --- |
+| `python scripts/clean_data.py` | regenerates `data/clean/{train_clean,val_clean,train_val_combined,scenarios}.csv` and `cleaning_report.md` from `data/raw` |
+| `python scripts/test_clean.py` | regenerates, then asserts structure; last line `ALL TESTS PASSED` |
+| `python scripts/make_folds.py` | writes `data/clean/cv_folds.csv` (§2.1) |
+| `python scripts/add_derived_columns.py` | writes `data/clean/train_val_features.csv` (§2.2) |
+| `python scripts/test_data_audit.py` | the standing data audit (checks 1–11 below); last line `DATA AUDIT TESTS PASSED` |
+
+`scripts/test_data_audit.py` (P0.3d) regenerates in two temporary copies (copying only `data/raw/train.csv` and
+`data/raw/validation.csv`, by name) and never touches the repo. Checks:
+
+| # | check |
+| --- | --- |
+| 1 | committed `data/clean` == regenerated (md5 after CRLF→LF) for the 4 CSVs; `cleaning_report.md` byte-equal, or equal up to line order (pandas tie order, see the known issue below) |
+| 2 | two regenerations hash equal |
+| 3 | `request_id`, `text`, `category`, `priority` in `train_val_combined.csv` equal raw for all 432 ids |
+| 4 | no cross-`cv_group` char_wb 3–5-gram TF-IDF cosine ≥ `audit.near_dup_cosine` (0.8; max today 0.375) |
+| 5 | each `cv_group` is a union of whole scenarios; the 12 translation pairs share a group; one category and priority per group |
+| 6 | `cv_folds.csv` covers all 30 groups once, folds `0..k-1`, 6 categories and 3 priorities per fold, `make_folds.py` re-run byte-identical |
+| 7 | `label_flags.csv`: ids exist, `official_label` and `core` equal the data, soft targets sum to 1 with the official label as the unique argmax |
+| 8 | no Latin letters in `ar` rows, no Arabic letters in `en` rows |
+| 9 | `clean_data.normalize` idempotent; no diacritics, tatweel or unmapped أ/إ/آ/ى/ة/ؤ/ئ in `text_norm` |
+| 10 | documents that `clean_data.py` does **not** strip `urgent: …` / `URGENT …` (the package stripper does, §4.1) |
+| 11 | `clean_data.py` exits 0 with `PYTHONIOENCODING=cp1252` |
+
+It also runs under pytest: `pytest services/ai/tests/unit/test_clean_pipeline.py` (3 tests).
+
+### 3.1 Leakage gate: `scripts/check_leakage.py` (P0.3e)
+
+```bash
+python scripts/check_leakage.py --official
+# -> 0 identical text_norm across groups; 0 cross-group pairs >= 0.8 (max 0.375)   (exit 0)
+```
+
+On unique `text_norm` values it fails (exit 1) on (a) an identical `text_norm` in two `cv_group`s, or (b) any
+cross-group pair with char_wb 3–5-gram TF-IDF cosine ≥ `leakage.char_cosine` (0.8), printing each offending
+pair. Functions (importable from the script): `exact_cross_group(df) -> list[(text_norm, group_a, group_b)]`,
+`char_near_pairs(df, threshold) -> list[NearPair(sim, text_a, text_b, group_a, group_b)]`,
+`max_cross_group_cosine(df) -> float`. Audit check 4 uses the same functions. The augmented mode and the
+encoder-cosine merge list (`leakage.cosine_merge: 0.90`) arrive in P2.1.
+
+`pytest services/ai/tests/unit/test_clean_pipeline.py` runs `test_clean.py` in a subprocess and checks the
+combined file's shape (432 rows, 30 groups).
+
+**Known issue (escalated to the lead):** under the pinned `pandas==3.0.6`, `clean_data.py` writes
+`cleaning_report.md` with tied `value_counts` rows in a different order than the committed file (made with
+pandas 2.2.3). The four CSVs are byte-identical (modulo CRLF) under both versions. On Windows, pandas also
+writes CRLF, so `git status` lists the files as modified even though `git diff` is empty for the CSVs. Restore
+with `git checkout -- data/clean` after running the script locally.
+
+## 4. Preprocessing (`campuspulse_ai.adapters.preprocess`)
+
+Lexicons live in `config/lexicons/*.yaml`. `train.py` will snapshot them into `models/frozen/vN/lexicons/`, and
+containers will read the snapshot (LD-12), so pass a path to every `from_yaml` and never hard-code one.
+
+### 4.1 Wrapper stripping and normalization: `wrappers.py` (P1.1)
+
+```python
+from campuspulse_ai.adapters.preprocess.wrappers import WrapperStripper, normalize_text, script_lang
+from campuspulse_ai.config.paths import LEXICONS
+
+ws = WrapperStripper.from_yaml(LEXICONS / "wrappers.yaml")
+r = ws.strip("Hi team, URGENT: My account is locked Please respond when possible.")
+# StripResult(prefix='Hi team, URGENT:', suffix='Please respond when possible.',
+#             core='My account is locked', stated_urgency=True)
+normalize_text(r.core, script_lang(r.core))     # 'my account is locked'
+```
+
+- `collapse_ws`, `script_lang` (`ar` if Arabic-block characters outnumber Latin letters, else `en`) and
+  `normalize_text(core, lang)` are literal copies of `clean_data.collapse_ws/detect_lang/normalize`.
+  English is lowercased. Arabic loses diacritics and tatweel, and أ/إ/آ→ا, ى→ي, ة→ه, ؤ→و, ئ→ي. Both have
+  leading/trailing punctuation stripped. **Parity:** `core`, `prefix`, `suffix`, `text_norm` and `lang`
+  equal `data/clean` on all 432 official rows (`test_normalizer_parity.py`).
+- `WrapperStripper.strip(raw)` repeats, until nothing changes: (1) exact known prefix, longest first (the
+  `clean_data` loop); (2) if no exact match: a case-insensitive match of a known wrapper, or of its base with
+  one of `variant_punctuation` appended (`Hello!`, `hi team,`, `وشكرا.`); (3) the `urgent_regex` prefix. Then
+  the same for suffixes (steps 1–2). A wrapper is stripped only when text remains after it. A bare base without
+  punctuation is never stripped (`Please help me ...` is content).
+- `stated_urgency` is true when the raw text contains an `urgency_markers` entry (`URGENT`, `عاجل`, `!!!`,
+  case-sensitive) or a stripped prefix matches `urgent_regex`. It equals `has_urgent_marker` on all 432 rows.
+  It is a gaming signal only, **never a model feature** (§3.8).
+
+| unseen input | `core` | `stated_urgency` |
+| --- | --- | --- |
+| `urgent: The bus is late` | `The bus is late` | True |
+| `URGENT The bus is late` | `The bus is late` | True |
+| `Hello! The bus is late` | `The bus is late` | False |
+| `hi team, The bus is late` | `The bus is late` | False |
+| `مرحبا، الباص تأخر وشكرا.` | `الباص تأخر` | False |
+| `Urgently need the bus timetable` | unchanged | False |
+
+`config/lexicons/wrappers.yaml` keys: `prefixes`, `suffixes` (exactly `clean_data.KNOWN_PREFIXES/SUFFIXES`,
+asserted by a test), `urgency_markers`, `urgent_regex` (`(?i)^urgent\b[\s:!.,،-]*`), `prefix_variants: true`,
+`variant_punctuation: [",", "!", ":", ".", "?", "،", "؟"]`.
+
+### 4.2 Language ID and Arabizi: `langid.py`, `arabizi.py` (P1.2, LD-33)
+
+```python
+from campuspulse_ai.adapters.preprocess.langid import LangIdentifier
+from campuspulse_ai.adapters.preprocess.arabizi import ArabiziTransliterator
+
+langid = LangIdentifier.from_yaml(LEXICONS / "arabizi.yaml")
+translit = ArabiziTransliterator.from_yaml(LEXICONS / "arabizi.yaml")
+langid.identify("My university account is locked and I have an online exam today")  # Lang.EN
+langid.identify("حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم")                       # Lang.AR
+langid.identify("7esabi msakkar w 3indi emte7an online elyom")                        # Lang.ARABIZI
+translit.model_text("7esabi msakkar w 3indi emte7an online elyom")
+# 'حسابي مسكر وعندي امتحان اونلاين اليوم | 7esabi msakkar w 3indi emte7an online elyom'
+```
+
+**`LangIdentifier.identify(text) -> Lang`**, conservative by design (a false Arabizi positive on an English
+hidden-test row is the only way this step can cost macro-F1):
+1. Arabic-block characters > Latin letters → `AR` (the `clean_data` script rule, so `AR`/`EN` equal the CSV
+   `lang` on all 432 rows).
+2. **Any guard hit → `EN`**: `guard_tokens` (English function words such as `the`, `my`, `is`, `please`, plus
+   `2nd`, `24/7`, `mp3`, `2fa` ...) or a full match of `guard_patterns` (ordinals, clock times `3pm`, units,
+   versions `ipv6`).
+3. ≥ `min_digit_tokens` (2) Arabizi digit-words, or ≥ `min_lexicon_hits` (1) evidence words → `ARABIZI`.
+   A digit-word has a signal digit (2/3/5/6/7/8/9) touching a letter and ≥ 2 letters; course and room codes
+   (`cs201`, `m214`, `ee-302`) match `ignore_patterns` and never count. Evidence words are the lexicon keys
+   plus `el`/`il`/`bel`/... minus `not_signals` (English homographs such as `fee`, `law`, `min`, `sir`, `men`,
+   and loanwords such as `bus`, `wifi`, `exam`).
+4. Otherwise `EN`.
+
+Measured: 0 Arabizi detections on the 432 official rows (297 EN); 24/24 golden Arabizi rows detected; English
+probes with digits (`I got a 2nd notice at 3pm`, `CS201 and MATH102 are both full`, `Tuition fee for semester 2`,
+`Exam in room A3 at 9am`, ...) stay `EN`. `signals(text)` returns `(digit_words, lexicon_hits, guard_hits)`.
+
+**`ArabiziTransliterator.transliterate(text) -> str`**, per lower-cased token: a standalone proclitic (`el`,
+`w`, `b`, `bel`, `lal`, `3al`) is glued to the next token; then a whole-token lexicon hit, or proclitic + lexicon
+word (`elbus` → `الباص`); otherwise digraphs (`sh`, `kh`, `gh`, `th`, `3'`, `aa`, ...) then the char map
+(`2`→ء, `3`→ع, `5`→خ, `6`→ط, `7`→ح, `8`→ق, `9`→ص, `g`→ق, short `e` dropped). Latin `?`/`,`/`;` become `؟`/`،`/`؛`,
+and the result is normalized like an Arabic `text_norm` (`ة`→`ه`, `أ`→`ا`, trailing punctuation removed).
+`model_text(original)` returns `f"{transliterate(original)} | {original}"`.
+
+| Arabizi | transliteration |
+| --- | --- |
+| `mesh 3arif` | `مش عارف` |
+| `wein el bus?` | `وين الباص` |
+| `el mokayyef bel 2a3a 5arban` | `المكيف بالقاعه خربان` |
+| `bade a3ref mawa3eed el sa7b w el edafe` | `بدي اعرف مواعيد السحب والاضافه` |
+
+`config/lexicons/arabizi.yaml`: `lexicon` (340 entries: pronouns, particles, time words such as
+`elyom`/`bokra`, campus nouns, Jordanian verbs; LLM-drafted, **to be checked by the developer**), `not_signals`,
+`proclitics`, `digraphs`, `charmap`, `punctuation`, `signal_digits`, `min_digit_tokens: 2`,
+`min_lexicon_hits: 1`, `min_letters_in_digit_token: 2`, `guard_tokens`, `guard_patterns`, `ignore_patterns`.
+Golden pairs: `services/ai/tests/fixtures/arabizi_golden.csv` (24 `arabizi,arabic` rows, **to be checked by the
+developer**).
+
+### 4.3 The normalizer: `DefaultNormalizer` (P1.3)
+
+Implements the `Normalizer` port. It is the only way raw text becomes model input (`TriageCore`, `load_pool`).
+
+```python
+from campuspulse_ai.adapters.preprocess.normalizer import DefaultNormalizer
+norm = DefaultNormalizer.from_lexicons(LEXICONS, max_tokens=256)   # P1.4+: config.guards.max_tokens, model_dir/"lexicons"
+```
+
+| raw | `core` | `text_norm` | `lang` | `model_text` | `stated_urgency` |
+| --- | --- | --- | --- | --- | --- |
+| `URGENT: My university account is locked and I have an online exam today` | `My university account is locked and I have an online exam today` | `my university account is locked and i have an online exam today` | en | = `text_norm` | True |
+| `مرحبا، حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم` | `حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم` | (same, already normalized) | ar | = `text_norm` | False |
+| `Hi team, mesh 3arif wein el bus` | `mesh 3arif wein el bus` | `mesh 3arif wein el bus` | arabizi | `مش عارف وين الباص \| mesh 3arif wein el bus` | False |
+
+Steps: reject empty/whitespace input (`InvalidInput`) → `WrapperStripper.strip` → truncate the core to
+`max_tokens` whitespace tokens (`truncated=True`) → `text_norm = normalize_text(core, script_lang(core))`;
+if nothing but punctuation remains, `InvalidInput` → `lang = LangIdentifier.identify(core)` →
+`model_text = translit | text_norm` for Arabizi, else `text_norm` → location: picked beats extracted.
+`is_arabizi = lang is ARABIZI`. On the 432 official rows, `core`, `text_norm` and `lang` equal `data/clean`.
+`stated_urgency` never reaches a model.
+
+`BatchPredictUseCase` (P1.15) must catch `InvalidInput` and emit the priors' argmax with the debug-only flag
+`empty_input` (LD-17).
+
+### 4.4 Location: `LocationExtractor` (P1.3, cut-flagged, online use only)
+
+`LocationExtractor.from_yaml(LEXICONS / "gazetteer.yaml").extract(text) -> Location | None`. A room
+(`M 214`, `M-214`, `M214`) gives `Location("M", "M 214", "extracted")`; otherwise a building alias
+(`building M`, `M building`, `block M`, `مبنى M`, `بمبنى M`, `بناية M`) gives `Location("M", None,
+"extracted")`. The code letter must be upper-case and a separate token, so `A hallway light is broken`,
+`I am in a building` and `Block b` give `None`. Codes: `A B C D E F G H K L M`. It never changes `text_norm` or
+`model_text` (tested on all 432 rows).
+
+## 5. `FrozenConfig` (`campuspulse_ai.config.frozen`, P1.4): the schema of `config.json`
+
+```python
+from campuspulse_ai.config.frozen import FrozenConfig
+cfg = FrozenConfig.load(Path("models/frozen/v1/config.json"))   # ArtifactMissing / ArtifactVersionMismatch
+cfg.thresholds.tau_ood, cfg.ensemble.weights_category["m1"], cfg.guards.max_tokens
+cfg.save(path)                                                    # sorted keys, indent 2, UTF-8, LF; byte-stable
+FrozenConfig.from_dict(mapping)                                   # validate an in-memory mapping
+```
+
+Strict pydantic: unknown or missing keys, wrong types and out-of-range values raise
+`ArtifactVersionMismatch` on load (thresholds ≤ 0 → "thresholds not trained"). The object is immutable.
+`train.py` (P1.16) is the only writer. It assembles the file from `config/train.yaml` (copied sections and
+knobs), `config/hand_tuned.yaml` and the values it learns. There is **no `config.json` yet** (no training has
+run), so "value" below is the input default and "source" says where the frozen value will come from.
+
+| key | value / default | source (how tuned) |
+| --- | --- | --- |
+| `schema_version` | 1 | code constant; a mismatch → `ArtifactVersionMismatch` |
+| `artifact_version` | `v1` | `train.yaml artifact_version` |
+| `trained_at`, `seed` | ISO time, 42 | train.py clock; `train.yaml seed` |
+| `encoder.{model_id, dim, max_tokens, query_prefix, runtime, file, pooling, normalize}` | `intfloat/multilingual-e5-small`, 384, 256, `"query: "`, `onnx_int8`, `encoder/model_int8.onnx`, `mean`, true | copied from `train.yaml encoder` (`runtime: hashing` only in test fixtures) |
+| `encoder.revision` | HF commit sha | resolved by `export_encoder.py` (P1.6) |
+| `ensemble.members` | `[m1, m2lr, m2knn]` | `train.yaml`; `m3` only if LD-6 passes |
+| `ensemble.weights_category`, `weights_priority` | a distribution over exactly `members` | simplex grid (step `grids.weight_step` 0.1) maximizing OOF macro-F1 (P2) |
+| `m1.char_ngram`, `m1.word_ngram` | [2,5], [1,2] | copied |
+| `m1.C`, `m2lr.C` | from grid `[0.5,1,2,4,8]` | OOF macro-F1 (`grids.m1_C`, `grids.m2lr_C`) |
+| `knn.{k, memory_weight_cap, max_memory_neighbors, memory_min_sim}` | 5, 0.6, 2, 0.80 | copied (memory is online-only) |
+| `priority_head.features` | the 10 evidence flags (`deadline_today` … `teaching_room`) | copied; `stated_urgency` is rejected by the schema (§3.8) |
+| `priority_head.C` | 1.0 | copied |
+| `conformal.method`, `mondrian_by_lang` | `lac`, false | copied; Mondrian only per `train.yaml mondrian` rule (P2) |
+| `conformal.alpha_category`, `alpha_priority` | 0.10, 0.10 | `train.yaml alpha` (`alpha_priority_fallback` 0.15 if the ASK rate > `ask_rate_max` 0.35) |
+| `conformal.q_category`, `q_priority`, `n_calib` | in [0, 1]; n | LAC quantile on OOF scores (P1.14/P2) |
+| `thresholds.tau_ood` | > 0 | `tau_ood_percentile` (5th) of OOF max-similarity of in-distribution rows |
+| `thresholds.tau_injection`, `tau_safety` | > 0 (may exceed 1) | max exemplar similarity over the pool + `tau_margin` 0.02 (LD-18) |
+| `thresholds.human_review_maxprob` | in (0, 1] | max-prob below which OOF accuracy < `human_review_min_acc` 0.6 |
+| `thresholds.tau_faq`, `tau_inc` | 0.75, 0.80 | `config/hand_tuned.yaml` (LD-11) |
+| `guards.{max_tokens, gibberish_min_tokens, gibberish_min_letter_ratio, injection_sentence_strip_ratio}` | 256, 2, 0.5, 0.6 | copied (LD-10) |
+| `llm.{w_llm, prompt_version}` | 0.5, `v1` | copied (LD-10) |
+| `explain.max_occlusions` | 20 | copied (LD-10) |
+| `priors.category`, `priors.priority` | distributions over exactly the official labels | training-pool label frequencies; argmax labels empty input (LD-17) |
+| `cv.{k, group_col, fold_col, folds_file}` | 5, `cv_group`, `cv_fold`, `data/clean/cv_folds.csv` | copied (LD-31) |
+| `cv.oof_macro_f1_category`, `oof_macro_f1_priority` | in [0, 1] | stage A OOF on the frozen folds |
+
+`config/train.yaml` also holds knobs that never reach `config.json`: `cv.search_iterations`,
+`cv.min_arabic_groups_per_fold` (make_folds), `grids`, `tau_ood_percentile`, `tau_margin`,
+`human_review_min_acc`, `ask_rate_max`, `alpha_priority_fallback`, `mondrian.{min_cov_minority, min_cov_en}`,
+`m3.{min_gain, max_predict_s_per_1000, time_box_h, max_download_mb, max_rss_mb}`.
+
+A valid example mapping for tests: `services/ai/tests/fixtures/frozen_config.py::valid_config_dict()`
+(import it as `from fixtures.frozen_config import valid_config_dict`; `services/ai/tests` is the pytest rootdir).
+
+## 6. Artifacts: `FileArtifactStore` and `MANIFEST.json` (`adapters/artifacts/io.py`, P1.4)
+
+```python
+from campuspulse_ai.adapters.artifacts.io import FileArtifactStore, sha256_file
+store = FileArtifactStore()                                  # FileArtifactStore(now=lambda: fixed_dt) for tests
+manifest = store.write_manifest(model_dir, [Path("config.json"), Path("m1/model.joblib"), ...])
+manifest = store.load_manifest(model_dir)                    # re-hashes every listed file
+manifest.sha                                                 # identity reported by /health and predict.py --debug
+```
+
+`models/frozen/vN/MANIFEST.json` (sorted keys, indent 2, LF):
+
+```json
+{
+  "artifact_version": "v1",
+  "created_at": "2026-11-01T10:00:00+00:00",
+  "files": {"config.json": "<sha256>", "encoder/model_int8.onnx": "<sha256>", "m1/model.joblib": "<sha256>"}
+}
+```
+
+- Paths are POSIX, relative to the model dir; files outside it, or the manifest itself, are rejected
+  (`ValueError`). `artifact_version` comes from `config.json` if present, else the directory name.
+- `load_manifest` raises `ArtifactMissing` (manifest or listed file absent; the message says
+  `run python scripts/fetch_models.py ...`), `ArtifactChecksumMismatch` (a sha256 differs, naming the file) or
+  `ArtifactVersionMismatch` (malformed JSON, an unsafe `..`/absolute entry, or `artifact_version` differs from
+  `config.json`).
+- The fetched encoder files (`encoder/model_int8.onnx`, `encoder/tokenizer.json`, ...) are listed too, so a
+  bad download fails before loading (ARCHITECTURE §3.12). Lexicon snapshots (`lexicons/*.yaml`, LD-12) will be
+  listed by `train.py`.

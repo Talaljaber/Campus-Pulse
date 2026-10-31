@@ -1,0 +1,5 @@
+# Thresholds that cannot be learned from the training data (LD-11, ARCHITECTURE §3.4).
+# train.py reads this file and copies the values into config.json `thresholds` (train.py stays the only writer
+# of config.json). Changing a value means a re-freeze (train.py --retune, or the P6.1 final train).
+tau_faq: 0.75   # FAQ answer cosine floor; hand-tuned on the seed FAQ in P4.5
+tau_inc: 0.80   # incident clustering cosine floor; verified by the simulator in P4.10
