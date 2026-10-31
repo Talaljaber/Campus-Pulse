@@ -535,3 +535,60 @@ shipped file is the one in the release asset (LD-5), not a rebuild.
 The fallback `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (revision
 `e8f8c211226b894fcb81acc59f3b34ba3efd5f42`, no prefix, 128 tokens) is exported to `.tmp/enc_minilm` with its
 report in `.tmp/enc_minilm_report.json` for P2.6 (not shipped).
+
+## 9. Training pool, soft targets and frozen folds (`adapters/training`, `adapters/models/soft_targets.py`, P1.8)
+
+```python
+from campuspulse_ai.adapters.training.pool import load_pool, default_pool_paths, OFFICIAL_CSV
+from campuspulse_ai.adapters.training.cv import group_folds
+from campuspulse_ai.adapters.models.soft_targets import SoftTargetExpander
+
+pool = load_pool(default_pool_paths(), DefaultNormalizer.from_lexicons(lexicon_dir, cfg.guards.max_tokens))
+for train_idx, test_idx in group_folds(pool, k=cfg.cv.k):           # frozen cv_fold 0..k-1 (LD-31)
+    ...
+rows, labels, weights = SoftTargetExpander(DATA_CLEAN / "label_flags.csv").expand(pool, "priority")
+X = [pool.model_text[i] for i in rows]                             # fit(X, labels, sample_weight=weights)
+```
+
+**`load_pool(paths, normalizer, *, use_augmentation=True, strip_wrappers=True, folds_csv=…, features_csv=…) -> Pool`**
+- `paths`: `default_pool_paths()` = `data/clean/train_val_combined.csv` + every `data/augmented/*.csv` (name
+  order). A file is official if it has the combined schema, augmented if its columns are exactly the §4.2
+  schema (`AUGMENTED_COLUMNS`, equal to `config/datasets.yaml augmented.columns`, tested).
+- **Refuses** (`InvalidInput`) any holdout path (`paths.is_holdout`: `our_test`, `robustness`, any case),
+  an unknown schema, labels outside the official set, an augmented row without `source_scenario_id` or with a
+  `needs_human_check` other than True/False, duplicate `request_id`s, and texts the normalizer rejects.
+- **Drops** augmented rows with `needs_human_check == True` (unreviewed rows never train).
+- Every row goes through the inference `Normalizer`, so `model_text` is exactly what models see at
+  inference (for the 432 official rows `model_text == text_norm ==` the clean `text_norm`).
+- `cv_fold` is joined from `cv_folds.csv` on `cv_group`; augmented rows inherit their source group's fold.
+  A group not in the file (a new `NEW-…` group before `make_folds.py --include-augmented`) gets `NO_FOLD`
+  (-1), which `group_folds` refuses.
+- `strip_wrappers=False` (P2.9 ablation): EN/AR rows feed `normalize_text(raw)` (wrappers kept) as
+  `model_text`; Arabizi rows keep the normalizer's `model_text`.
+
+**`Pool`** (frozen dataclass of aligned tuples): `request_id, raw, model_text, text_norm, lang` (package
+`LangIdentifier`: en/ar/arabizi), `lang_script` (CSV-style script label: `train_val_features.csv` for
+official rows, script ratio for augmented), `category, priority` (official hard labels), `cv_group, cv_fold,
+source` (`official` or the augmentation `source`), `scenario_id` (official id or `source_scenario_id`),
+`is_official`. `len(pool)`, `pool.select(indices)`.
+
+**`group_folds(pool, k) -> [(train_idx, test_idx)]`** for folds 0..k-1 from the frozen column (sorted int64
+arrays). `InvalidInput` on a `NO_FOLD` row, a fold id ≥ k, a `cv_group` in two folds, or an empty fold.
+Official result: test rows per fold `84/84/84/89/91` (train `348/348/348/343/341`), every test fold has all
+6 categories and 3 priorities, groups and `text_norm`s never cross folds, the 12 translation pairs stay
+together (`tests/invariants/test_cv_protocol.py`). No random split exists anywhere (ruff bans them).
+
+**`SoftTargetExpander(flags_csv).expand(pool, target) -> (row_idx, label, weight)`** (§3.3). Rows of a
+flagged scenario (`label_flags.csv`, `field == target`, non-empty `soft_target`), including augmented rows
+derived from it, are duplicated once per label with `weight = p` (labels in official order); every other row
+appears once with weight 1. On the official pool:
+
+| target | flagged scenarios | soft target | expanded rows (from 432) |
+| --- | --- | --- | --- |
+| category | TR-S18 (assignment feedback) | Academic Support 0.8 / IT Support 0.2 | 443 |
+| priority | TR-S27, TR-S33 (hallway light), TR-S06 (prerequisite rule) | low 0.75 / medium 0.25; medium 0.75 / low 0.25 | 463 |
+
+The constructor checks each soft target is a distribution over the target's labels whose unique argmax is
+the official label; `expand` checks each flagged row's hard label equals it. `keep (hard)` rows change
+nothing. Per scenario the weights sum to the row count, so the effective sample size is unchanged.
+Metrics always use the official hard label.
