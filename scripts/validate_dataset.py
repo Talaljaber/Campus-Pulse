@@ -11,7 +11,9 @@ Checks per kind:
 - all kinds: columns exactly as configured, UTF-8 (a BOM is accepted, read with `utf-8-sig`), unique
   `request_id` matching the configured pattern, non-empty text, `lang` in the configured set, labels spelled
   exactly as the official labels.
-- our_test: `author_method == hand`, a non-empty `notes` cell per row, at least `min_rows` rows,
+- our_test (D-010: built from set1..set3 by `scripts/build_our_test.py`): `author_method` in
+  {hand, claude}, `test_set` in {set1, set2, set3}, non-empty `scenario_family` and `notes`; on the POOLED
+  file: at least `min_rows` rows,
   `min_per_cell` rows in each of the 18 category x priority cells, `min_per_lang` rows per language,
   `min_wrapped_rows` rows carrying an official-style wrapper, no duplicate normalized text, and no row whose
   normalized core equals an official `text_norm` (`clean_data.normalize(core, lang)` via a read-only
@@ -168,14 +170,17 @@ class _Normalizer:
 
 
 def _overlaps(df: pd.DataFrame, official: Official, norm: _Normalizer, errors: list[str], *,
-              forbid_official: bool) -> tuple[int, int]:
-    """Errors for in-file duplicates and (if `forbid_official`) official-text overlaps.
+              forbid_official: bool, label_cols: tuple[str, str]) -> tuple[int, int, int]:
+    """Errors for official-text overlaps (if `forbid_official`) and for in-file label conflicts.
+
+    Several rows may share a normalized core (wrapper variants of one scenario, like the official data and
+    the D-010 holdout sets); they must then carry the same labels.
 
     Returns:
-        (rows overlapping an official text_norm, rows carrying a wrapper).
+        (rows overlapping an official text_norm, rows carrying a wrapper, distinct normalized cores).
     """
     overlaps = wrapped_rows = 0
-    seen: dict[str, str] = {}
+    seen: dict[str, tuple[str, tuple[str, str]]] = {}
     for row in df.itertuples(index=False):
         forms, wrapped = norm.forms(row.text)
         wrapped_rows += wrapped
@@ -184,22 +189,29 @@ def _overlaps(df: pd.DataFrame, official: Official, norm: _Normalizer, errors: l
             overlaps += 1
         if hit and forbid_official:
             errors.append(f"{row.request_id}: normalized text equals an official text_norm: {hit[0]!r}")
+        labels = (getattr(row, label_cols[0]), getattr(row, label_cols[1]))
         for form in sorted(forms):
-            if form in seen and seen[form] != row.request_id:
-                errors.append(f"{row.request_id}: same normalized text as {seen[form]}: {form!r}")
-            seen.setdefault(form, row.request_id)
-    return overlaps, wrapped_rows
+            first_id, first_labels = seen.setdefault(form, (row.request_id, labels))
+            if first_labels != labels:
+                errors.append(f"{row.request_id}: same normalized text as {first_id} but labels "
+                              f"{'/'.join(labels)} != {'/'.join(first_labels)}: {form!r}")
+    return overlaps, wrapped_rows, len(seen)
 
 
 def _validate_our_test(df: pd.DataFrame, rules: Mapping[str, Any], official: Official,
                        errors: list[str]) -> str:
     _common_checks(df, rules, ("category", "priority"), errors)
-    methods = rules["author_methods"]
+    methods, sets = rules["author_methods"], rules["test_sets"]
     for row in df.itertuples(index=False):
         if row.author_method not in methods:
             errors.append(f"{row.request_id}: author_method {row.author_method!r} not in {methods}")
+        if row.test_set not in sets:
+            errors.append(f"{row.request_id}: test_set {row.test_set!r} not in {sets}")
+        if not row.scenario_family.strip():
+            errors.append(f"{row.request_id}: scenario_family is required")
         if not row.notes.strip():
-            errors.append(f"{row.request_id}: notes must name the labelling rule used")
+            errors.append(f"{row.request_id}: notes must say how the row was written")
+    # floors are checked on the pooled file (D-010: set1 alone covers 6/18 cells and no Arabizi)
     if len(df) < rules["min_rows"]:
         errors.append(f"{len(df)} rows; need >= {rules['min_rows']}")
     cells = Counter(zip(df.category, df.priority, strict=True))
@@ -213,14 +225,17 @@ def _validate_our_test(df: pd.DataFrame, rules: Mapping[str, Any], official: Off
     for lang, floor in rules["min_per_lang"].items():
         if langs[lang] < floor:
             errors.append(f"lang {lang}: {langs[lang]} rows; need >= {floor}")
-    overlaps, wrapped = _overlaps(df, official, _Normalizer(), errors,
-                                  forbid_official=rules["forbid_official_overlap"]) if len(df) else (0, 0)
+    overlaps, wrapped, cores = _overlaps(df, official, _Normalizer(), errors,
+                                         forbid_official=rules["forbid_official_overlap"],
+                                         label_cols=("category", "priority")) if len(df) else (0, 0, 0)
     if wrapped < rules["min_wrapped_rows"]:
         errors.append(f"{wrapped} rows carry an official-style wrapper; need >= {rules['min_wrapped_rows']}")
     n_cells = len(CATEGORY_LABELS) * len(PRIORITY_LABELS)
     lang_text = " ".join(f"{lang}={langs[lang]}" for lang in rules["langs"])
+    per_set = Counter(df.test_set)
+    set_text = " ".join(f"{s}={per_set[s]}" for s in sets)
     return (f"{len(df)} rows; cells {len(full)}/{n_cells} (min ≥{rules['min_per_cell']}); langs {lang_text}; "
-            f"{overlaps} overlaps with official text_norm")
+            f"{overlaps} overlaps with official text_norm; sets {set_text}; {cores} distinct cores")
 
 
 def _parse_bool(value: str) -> bool | None:
@@ -301,7 +316,8 @@ def _validate_probes(df: pd.DataFrame, rules: Mapping[str, Any], official: Offic
         if styles[style] < rules["min_per_style"]:
             errors.append(f"style {style}: {styles[style]} rows; need >= {rules['min_per_style']}")
     if len(df):
-        _overlaps(df, official, _Normalizer(), errors, forbid_official=rules["forbid_official_overlap"])
+        _overlaps(df, official, _Normalizer(), errors, forbid_official=rules["forbid_official_overlap"],
+                  label_cols=("intended_category", "intended_priority"))
     full = sum(styles[s] >= rules["min_per_style"] for s in rules["styles"])
     langs = Counter(df.lang)
     lang_text = " ".join(f"{lang}={langs[lang]}" for lang in rules["langs"])

@@ -15,11 +15,13 @@ leakage:
 
 # ---- scripts/validate_dataset.py (P1.0): one block per --kind ----------------------------------------------
 # Labels are checked against campuspulse_ai.domain.labels (the only place label strings live).
-our_test:                       # data/our_test/our_test.csv, hand-written before any model exists (P1.0)
-  columns: [request_id, text, lang, category, priority, author_method, notes]
-  id_pattern: '^OT-\d{3}$'
+our_test:                       # data/our_test/our_test.csv, built from set1..set3 by build_our_test.py (D-010)
+  columns: [request_id, text, lang, category, priority, author_method, test_set, scenario_family, notes]
+  id_pattern: '^[A-Z0-9]+-\d{4}$'   # original set ids are kept: HT-0001, T2-0001, T3-0001
   langs: [en, ar, arabizi]
-  author_methods: [hand]        # no LLM: a different method from the LLM-drafted augmentation
+  author_methods: [hand, claude]    # set1 by the developer, sets 2-3 by Claude (D-010)
+  test_sets: [set1, set2, set3]
+  # Floors apply to the POOLED file: set1 alone covers 6/18 cells and has no Arabizi.
   min_rows: 60
   min_per_cell: 3               # 6 categories x 3 priorities = 18 cells
   min_per_lang: {en: 20, ar: 20, arabizi: 10}
