@@ -527,3 +527,9 @@
   - The types must be regenerated after every migration; this is not automated (no Supabase access token for the CLI).
   - Columns with check constraints are typed as `string`, not unions; the UI can narrow them with the label constants.
 - **Affects streams:** UI (typed Supabase client and repos), Foundation (optional CI check that the file is fresh).
+
+### P4.3 follow-up — demo users seeded  (DB, 2026-10-31)
+- **Acceptance:** `python scripts/seed_demo_users.py` → `created: student-demo-17@demo.local role=student office=- alias=student-17`, `created: staff-it@demo.local role=staff office=it alias=staff-it`, `created: admin@demo.local role=admin office=- alias=admin`, `3 users ready`.
+- **Check:** each user signed in with the anon key (as the web app does) and read `profiles` under RLS. Student and staff saw only their own row; admin saw all 3.
+- **Password:** `DEMO_USER_PASSWORD` lives only in the gitignored worktree `.env`. The user will change it later: edit `.env` and re-run the script, which resets existing users' passwords.
+- **Affects streams:** UI (the login page's three "Sign in as" buttons can now be tested against the real project).
