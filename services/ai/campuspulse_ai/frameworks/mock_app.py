@@ -55,6 +55,8 @@ from campuspulse_ai.application.dto import (
     TriageRequest,
 )
 from campuspulse_ai.frameworks.api_contract import (
+    API_DESCRIPTION,
+    API_TITLE,
     ENDPOINTS,
     ENDPOINTS_BY_ID,
     SERVICE_TOKEN_SCHEME,
@@ -64,12 +66,6 @@ from campuspulse_ai.frameworks.api_contract import (
 
 DEFAULT_FIXTURES_DIR = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "api"
 MOCK_FIXTURE_HEADER = "X-Mock-Fixture"
-
-API_TITLE = "CampusPulse AI API"
-API_DESCRIPTION = (
-    "Bilingual (EN / Jordanian Arabic / Arabizi) campus-request triage. Called only by the Next.js "
-    "server with the service token; see docs/api/README.md."
-)
 
 
 class MockError(Exception):

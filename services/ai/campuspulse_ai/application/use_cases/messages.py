@@ -41,21 +41,31 @@ class EmailTemplates:
     safety_body: str  # {building} {ticket_id} {text}
     transport_subject: str  # {title}
     transport_body: str  # {ticket_id} {text}
+    resolved_subject: str  # {title}
+    resolved_body: str  # {title} {ticket_id} {note}
+
+
+@dataclass(frozen=True, slots=True)
+class StaffMessages:
+    """In-app notes for office staff (P4.9), in English."""
+
+    escalated: str  # {old} {new} {sla_due_at}
 
 
 T = TypeVar("T")
 
-_TOP_KEYS = frozenset({"version", "student", "email"})
+_TOP_KEYS = frozenset({"version", "student", "email", "staff"})
 _LANG_KEYS = frozenset({"en", "ar"})
 
 
 @dataclass(frozen=True, slots=True)
 class Messages:
-    """All texts: `student` per language (Arabizi reads the Arabic texts) and `email`."""
+    """All texts: `student` per language (Arabizi reads the Arabic texts), `email` and `staff`."""
 
     en: StudentMessages
     ar: StudentMessages
     email: EmailTemplates
+    staff: StaffMessages
 
     def for_lang(self, lang: Lang) -> StudentMessages:
         """The student texts for `lang`; Arabic script for `ar` and `arabizi` (UD-10 reply rule)."""
@@ -64,13 +74,14 @@ class Messages:
     @classmethod
     def from_dict(cls, data: Mapping[str, object]) -> Messages:
         """Validate a parsed `messages.yaml`. Raises `ValueError` naming the bad key."""
-        _keys(data, _TOP_KEYS, "messages.yaml", required={"student", "email"})
+        _keys(data, _TOP_KEYS, "messages.yaml", required={"student", "email", "staff"})
         student = _mapping(data["student"], "student")
         _keys(student, _LANG_KEYS, "student", required=_LANG_KEYS)
         return cls(
             en=_build(StudentMessages, _mapping(student["en"], "student.en"), "student.en"),
             ar=_build(StudentMessages, _mapping(student["ar"], "student.ar"), "student.ar"),
             email=_build(EmailTemplates, _mapping(data["email"], "email"), "email"),
+            staff=_build(StaffMessages, _mapping(data["staff"], "staff"), "staff"),
         )
 
 
