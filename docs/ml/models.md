@@ -592,3 +592,35 @@ The constructor checks each soft target is a distribution over the target's labe
 the official label; `expand` checks each flagged row's hard label equals it. `keep (hard)` rows change
 nothing. Per scenario the weights sum to the row count, so the effective sample size is unchanged.
 Metrics always use the official hard label.
+
+## 10. Augmentation: rule-based Arabizi rows (`scripts/draft_augmentation.py arabizi-rule`, P1.9)
+
+```bash
+python scripts/draft_augmentation.py arabizi-rule --out data/augmented/arabizi.csv
+# -> wrote data\augmented\arabizi.csv: 30 rows from 15 Arabic scenarios x 2 variants;
+#    LangIdentifier detects 30/30 as arabizi; needs_human_check=True (review pending)
+python scripts/validate_dataset.py --kind augmented data/augmented/arabizi.csv
+# -> OK augmented: 30 rows; 0 reviewed; cv_groups all known; labels match source scenarios; cells covered 15/18
+```
+
+`reverse_transliterate(arabic, lexicon_rev, charmap_rev, variant) -> str`, per normalized Arabic token:
+1. a hit in the reversed `arabizi.yaml lexicon` (variant 0 = first spelling, 1 = second when there is one);
+2. else a proclitic (`وبال, وال, بال, فال, لل, ال, و, ب`) + a lexicon stem → `w el edafe`, `bel mamarr`;
+   the article family is always split (`el` + character map), `و`/`ب` only before a lexicon word;
+3. else a character map (variant 0 digits `7 5 3 2 6 9`, variant 1 letters `kh gh g s t`), medial و/ي/ا as
+   vowels and a final ه (from ة) as `a`/`e`.
+
+Rows: `request_id AUG-AZ-0001…`, `lang=arabizi`, `source=arabizi_rule`, `author_method=rule`,
+`needs_human_check=True`, labels and `cv_group` copied from the source scenario (so each row is held out with
+its scenario). Identical variants are de-duplicated. The command refuses to overwrite a file holding reviewed
+rows unless `--force`. Examples: `7esabi el jam3i tsakkar w 3indi emte7an online elyom` (TR-S01),
+`el daw bel mamarr kharban` (TR-S33), `el projector bel ghorfe mesh shaghal` (VA-S04).
+
+Checks on the 30 drafts: 0 injection regex hits; `danger` only on the four TR-S29/TR-S31 rows (both high);
+30/30 detected as Arabizi. Character-map words read badly and need the human pass (e.g. `56a` for خطأ,
+`wdloa` for وضلوا, `el mblgh` for المبلغ, `97i7` for صحيح).
+
+**Human check pending (developer):** open `data/augmented/arabizi.csv` in VS Code (not Excel), fix unnatural
+spellings, set `needs_human_check=False` per row, then
+`pytest services/ai/tests/unit/test_langid.py -q` (5 passed once reviewed rows exist; ≥ 95 % detection,
+`augmented.arabizi_min_detection`). Until then `load_pool` drops all 30 rows and the test skips.

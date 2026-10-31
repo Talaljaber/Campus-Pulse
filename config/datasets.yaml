@@ -35,6 +35,7 @@ augmented:                      # data/augmented/*.csv (ARCHITECTURE §4.2 schem
   author_method_pattern: '^(rule|hand|llm(:\S+)?)$'   # P2.2 writes llm:<model_id>
   new_group_pattern: '^(NEW|MEM)-[A-Za-z0-9-]+$'      # groups/scenarios that are not official
   arabizi_variants: 2           # scripts/draft_augmentation.py arabizi-rule: spellings per Arabic scenario
+  arabizi_min_detection: 0.95   # share of reviewed lang=arabizi rows LangIdentifier must call ARABIZI (§3.7)
 
 probes:                         # data/robustness/probes.csv (P2.5)
   columns: [request_id, text, lang, style, base_request_id, intended_category, intended_priority,

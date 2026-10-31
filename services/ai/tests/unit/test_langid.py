@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from campuspulse_ai.adapters.preprocess.langid import LangIdentifier
-from campuspulse_ai.config.paths import DATA_CLEAN, LEXICONS, REPO_ROOT
+from campuspulse_ai.config.paths import CONFIG_DIR, DATA_AUGMENTED, DATA_CLEAN, LEXICONS, REPO_ROOT
 from campuspulse_ai.domain.values import Lang
 
 GOLDEN = REPO_ROOT / "services" / "ai" / "tests" / "fixtures" / "arabizi_golden.csv"
@@ -61,3 +61,19 @@ ENGLISH_PROBES = (
 def test_english_with_digits_stays_en(langid: LangIdentifier) -> None:
     wrong = [text for text in ENGLISH_PROBES if langid.identify(text) is not Lang.EN]
     assert wrong == []
+
+
+def test_arabizi_detection_on_augmentation(langid: LangIdentifier) -> None:
+    """>= `augmented.arabizi_min_detection` of the REVIEWED Arabizi augmentation is detected (P1.9, §3.7)."""
+    import yaml
+
+    floor = yaml.safe_load((CONFIG_DIR / "datasets.yaml").read_text(encoding="utf-8"))["augmented"][
+        "arabizi_min_detection"]
+    frames = [pd.read_csv(p, encoding="utf-8-sig", dtype=str, keep_default_na=False)
+              for p in sorted(DATA_AUGMENTED.glob("*.csv"))]
+    rows = pd.concat(frames) if frames else pd.DataFrame(columns=["lang", "needs_human_check", "text"])
+    reviewed = rows[(rows.lang == "arabizi") & (rows.needs_human_check.str.lower() == "false")]
+    if reviewed.empty:
+        pytest.skip("no reviewed Arabizi augmentation rows yet (P1.9 human check pending)")
+    detected = sum(langid.identify(t) is Lang.ARABIZI for t in reviewed.text)
+    assert detected / len(reviewed) >= floor, f"{detected}/{len(reviewed)}"
