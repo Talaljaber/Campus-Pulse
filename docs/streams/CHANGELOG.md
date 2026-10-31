@@ -55,3 +55,12 @@
 - **Acceptance:** before the edit, `$env:PYTHONIOENCODING='cp1252'; python scripts/clean_data.py > $null` → `exit=1` (`UnicodeEncodeError`); after it → `exit=0` (cp1252 and default env). Hash parity (md5, CRLF-normalised) with the edited script under pandas 2.2.3: `train_clean 174582df…, val_clean c3af332d…, train_val_combined d0f17ae8…, scenarios 65074205…, cleaning_report eb2430a1…`, all equal to the committed files. Under the pinned pandas 3.0.6 the four CSVs are equal and `cleaning_report.md` is `ee82727f…` (tie order only; pre-existing, independent of this edit).
 - **Limitations / TODO / known issues:** the pandas-version difference in `cleaning_report.md` is escalated to the lead (P0.3 entry). `scripts/test_data_audit.py` (P0.3d) holds the standing parity check.
 - **Affects streams:** Foundation (the CI Windows leg can run the script).
+
+### P0.3d — Add `scripts/test_data_audit.py` (the audit's test gaps)  (ML, 2026-10-31)
+- **What now exists:** a standing plain-Python data audit with the 11 checks of the data audit (regeneration parity and determinism, labels vs raw, cross-group near-duplicates, group integrity, fold feasibility and reproducibility, `label_flags.csv` validity, script/lang consistency, `normalize` idempotence, unseen-wrapper documentation, cp1252 exit code). It runs in temp copies and never writes to the repo. `test_clean.py` is unchanged.
+- **Public interfaces added:** `python scripts/test_data_audit.py`; pytest `test_clean_pipeline.py::test_data_audit_passes` ([docs/ml/models.md §3](../ml/models.md#3-data-scripts)).
+- **How to use it:** run it after any change under `data/`, `scripts/clean_data.py` or `scripts/make_folds.py`.
+- **Config / env added:** `config/datasets.yaml` `audit.near_dup_cosine: 0.8`.
+- **Acceptance:** `python scripts/test_data_audit.py` → `ok 1 … ok 11` then `DATA AUDIT TESTS PASSED` (exit 0); check 4 reports `max 0.375`; check 6 `rows/fold 84/84/84/89/91; byte-identical re-run`. `pytest services/ai/tests/unit/test_clean_pipeline.py -q` → `3 passed`.
+- **Limitations / TODO / known issues:** check 1 accepts `cleaning_report.md` when it is equal up to line order, because pandas 3.0.6 orders tied `value_counts` rows differently from the committed (pandas 2.2.3) file; the four CSVs must be byte-equal. The check prints which case applied. Remove the tolerance once the lead regenerates the report with the pinned pandas.
+- **Affects streams:** Foundation (add `python scripts/test_data_audit.py` to CI, P0.9), ML.

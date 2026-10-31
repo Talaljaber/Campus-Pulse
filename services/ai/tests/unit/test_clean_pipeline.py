@@ -43,6 +43,13 @@ def test_clean_script_passes() -> None:
     assert result.stdout.strip().splitlines()[-1] == "ALL TESTS PASSED"
 
 
+def test_data_audit_passes() -> None:
+    """scripts/test_data_audit.py (P0.3d): the audit's checks 1-11, regenerating in temp copies."""
+    result = _run_script("test_data_audit.py")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip().splitlines()[-1] == "DATA AUDIT TESTS PASSED"
+
+
 def test_combined_shape() -> None:
     combined = pd.read_csv(
         DATA_CLEAN / "train_val_combined.csv", encoding="utf-8", dtype=str, keep_default_na=False

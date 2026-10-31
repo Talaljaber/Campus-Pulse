@@ -95,6 +95,26 @@ python scripts/add_derived_columns.py   # -> wrote data/clean/train_val_features
 | `python scripts/test_clean.py` | regenerates, then asserts structure; last line `ALL TESTS PASSED` |
 | `python scripts/make_folds.py` | writes `data/clean/cv_folds.csv` (§2.1) |
 | `python scripts/add_derived_columns.py` | writes `data/clean/train_val_features.csv` (§2.2) |
+| `python scripts/test_data_audit.py` | the standing data audit (checks 1–11 below); last line `DATA AUDIT TESTS PASSED` |
+
+`scripts/test_data_audit.py` (P0.3d) regenerates in two temporary copies (copying only `data/raw/train.csv` and
+`data/raw/validation.csv`, by name) and never touches the repo. Checks:
+
+| # | check |
+| --- | --- |
+| 1 | committed `data/clean` == regenerated (md5 after CRLF→LF) for the 4 CSVs; `cleaning_report.md` byte-equal, or equal up to line order (pandas tie order, see the known issue below) |
+| 2 | two regenerations hash equal |
+| 3 | `request_id`, `text`, `category`, `priority` in `train_val_combined.csv` equal raw for all 432 ids |
+| 4 | no cross-`cv_group` char_wb 3–5-gram TF-IDF cosine ≥ `audit.near_dup_cosine` (0.8; max today 0.375) |
+| 5 | each `cv_group` is a union of whole scenarios; the 12 translation pairs share a group; one category and priority per group |
+| 6 | `cv_folds.csv` covers all 30 groups once, folds `0..k-1`, 6 categories and 3 priorities per fold, `make_folds.py` re-run byte-identical |
+| 7 | `label_flags.csv`: ids exist, `official_label` and `core` equal the data, soft targets sum to 1 with the official label as the unique argmax |
+| 8 | no Latin letters in `ar` rows, no Arabic letters in `en` rows |
+| 9 | `clean_data.normalize` idempotent; no diacritics, tatweel or unmapped أ/إ/آ/ى/ة/ؤ/ئ in `text_norm` |
+| 10 | documents that `clean_data.py` does **not** strip `urgent: …` / `URGENT …` (the package stripper does, §4.1) |
+| 11 | `clean_data.py` exits 0 with `PYTHONIOENCODING=cp1252` |
+
+It also runs under pytest: `pytest services/ai/tests/unit/test_clean_pipeline.py` (3 tests).
 
 `pytest services/ai/tests/unit/test_clean_pipeline.py` runs `test_clean.py` in a subprocess and checks the
 combined file's shape (432 rows, 30 groups).

@@ -1,3 +1,8 @@
 # Dataset rules: validation floors, audit and leakage thresholds (ML stream).
 # Read by scripts/test_data_audit.py, scripts/check_leakage.py and (from P1.0) scripts/validate_dataset.py.
 # No threshold lives in code: change it here and re-run the scripts.
+
+audit:
+  # scripts/test_data_audit.py check 4: max allowed char 3-5-gram TF-IDF cosine between rows of
+  # different cv_groups (official max today: 0.375).
+  near_dup_cosine: 0.8
