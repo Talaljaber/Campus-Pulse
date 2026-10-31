@@ -96,6 +96,7 @@ python scripts/add_derived_columns.py   # -> wrote data/clean/train_val_features
 | `python scripts/make_folds.py` | writes `data/clean/cv_folds.csv` (§2.1) |
 | `python scripts/add_derived_columns.py` | writes `data/clean/train_val_features.csv` (§2.2) |
 | `python scripts/test_data_audit.py` | the standing data audit (checks 1–11 below); last line `DATA AUDIT TESTS PASSED` |
+| `python scripts/validate_dataset.py --kind {our_test\|augmented\|probes} <csv>` | schema and floor checks for hand-written / drafted datasets (§3.2) |
 
 `scripts/test_data_audit.py` (P0.3d) regenerates in two temporary copies (copying only `data/raw/train.csv` and
 `data/raw/validation.csv`, by name) and never touches the repo. Checks:
@@ -132,6 +133,34 @@ encoder-cosine merge list (`leakage.cosine_merge: 0.90`) arrive in P2.1.
 
 `pytest services/ai/tests/unit/test_clean_pipeline.py` runs `test_clean.py` in a subprocess and checks the
 combined file's shape (432 rows, 30 groups).
+
+### 3.2 Dataset validator: `scripts/validate_dataset.py` (P1.0)
+
+```bash
+python scripts/validate_dataset.py --kind our_test  data/our_test/our_test.csv
+# -> OK our_test: <N> rows; cells 18/18 (min ≥3); langs en=<n> ar=<n> arabizi=<n>; 0 overlaps with official text_norm
+python scripts/validate_dataset.py --kind augmented data/augmented/arabizi.csv
+# -> OK augmented: <N> rows; <n> reviewed; cv_groups all known; labels match source scenarios; cells covered <c>/18
+python scripts/validate_dataset.py --kind probes    data/robustness/probes.csv
+# -> OK probes: <N> rows; styles 11/11 (min ≥3); langs en=<n> ar=<n> arabizi=<n>
+```
+
+One `OK` line and exit 0, or one line per violation and exit 1 (e.g. `line 3 (OT-002): category 'IT support'
+is not an official category`, `cell Finance x low: 2 rows; need >= 3`, `OT-007: normalized text equals an
+official text_norm: 'where can i meet my academic advisor'`). It only reads files. Python API:
+`validate(path, kind, DatasetSpec.load(kind)) -> ValidationReport(kind, rows, errors, summary)` (`.ok`).
+
+| kind | checks (all floors and patterns from `config/datasets.yaml`) |
+| --- | --- |
+| all | columns exactly as configured; `utf-8-sig` read (a BOM is fine); unique `request_id` matching `id_pattern`; non-empty `text`; `lang` in `langs`; labels spelled exactly as `domain.labels` |
+| `our_test` | `author_method` = `hand`; non-empty `notes`; ≥ `min_rows` (60); ≥ `min_per_cell` (3) in each of the 18 category × priority cells; `min_per_lang` (en 20, ar 20, arabizi 10); ≥ `min_wrapped_rows` (6) rows with an official-style wrapper or urgency marker; no duplicate normalized text; **no row whose normalized core equals an official `text_norm`** (`forbid_official_overlap`) |
+| `augmented` | `source` in `sources`; `author_method` matches `^(rule\|hand\|llm(:\S+)?)$`; `needs_human_check` is `True`/`False`; `source_scenario_id` required; a row from an official scenario carries that scenario's `cv_group` and labels; other scenario ids and groups match `new_group_pattern` (`NEW-…`, `MEM-…`) unless merged into an official group; one label pair per new scenario |
+| `probes` | `style` in the 11 `styles` (≥ `min_per_style` 3 each); `author_method` in `hand`/`perturb`; `expected_flags` (`;`-separated) ⊆ `domain.values.FLAGS`; `base_request_id` (when set) exists in `data/our_test/our_test.csv`; no official-text overlap |
+
+"Normalized core" is computed two ways and both are compared: `clean_data.normalize(core, detect_lang(text))`
+after `clean_data.strip_wrappers` (the module is loaded read-only with `importlib`), and the same after the
+package `WrapperStripper` (which also strips `urgent:`/`Hello!` variants). Id patterns: `OT-\d{3}`,
+`AUG-[A-Z]+-\d{4}`, `PR-\d{3}`.
 
 **Known issue (escalated to the lead):** under the pinned `pandas==3.0.6`, `clean_data.py` writes
 `cleaning_report.md` with tied `value_counts` rows in a different order than the committed file (made with

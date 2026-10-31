@@ -12,3 +12,39 @@ leakage:
   char_cosine: 0.8
   # P2.1 (encoder mode): print cross-group pairs with encoder cosine >= this for a manual merge decision.
   cosine_merge: 0.90
+
+# ---- scripts/validate_dataset.py (P1.0): one block per --kind ----------------------------------------------
+# Labels are checked against campuspulse_ai.domain.labels (the only place label strings live).
+our_test:                       # data/our_test/our_test.csv, hand-written before any model exists (P1.0)
+  columns: [request_id, text, lang, category, priority, author_method, notes]
+  id_pattern: '^OT-\d{3}$'
+  langs: [en, ar, arabizi]
+  author_methods: [hand]        # no LLM: a different method from the LLM-drafted augmentation
+  min_rows: 60
+  min_per_cell: 3               # 6 categories x 3 priorities = 18 cells
+  min_per_lang: {en: 20, ar: 20, arabizi: 10}
+  min_wrapped_rows: 6           # rows carrying an official-style wrapper (URGENT:, مرحبا،, ...)
+  forbid_official_overlap: true # normalize(core, lang) must not equal any official text_norm
+
+augmented:                      # data/augmented/*.csv (ARCHITECTURE §4.2 schema, data/augmented/README.md)
+  columns: [request_id, text, lang, source, source_scenario_id, cv_group, needs_human_check, author_method,
+            category, priority]
+  id_pattern: '^AUG-[A-Z]+-\d{4}$'
+  langs: [en, ar, arabizi]
+  sources: [arabizi_rule, llm_paraphrase, llm_arabizi, new_scenario, hand]
+  author_method_pattern: '^(rule|hand|llm(:\S+)?)$'   # P2.2 writes llm:<model_id>
+  new_group_pattern: '^(NEW|MEM)-[A-Za-z0-9-]+$'      # groups/scenarios that are not official
+  arabizi_variants: 2           # scripts/draft_augmentation.py arabizi-rule: spellings per Arabic scenario
+
+probes:                         # data/robustness/probes.csv (P2.5)
+  columns: [request_id, text, lang, style, base_request_id, intended_category, intended_priority,
+            expected_flags, author_method, notes]
+  id_pattern: '^PR-\d{3}$'
+  langs: [en, ar, arabizi]
+  author_methods: [hand, perturb]
+  min_rows: 40
+  styles: [fake_urgency, calm_emergency, typos, arabizi, mixed_language, two_issues, very_long, injection,
+           off_topic, distress_adjacent, deadline_shortcut]
+  min_per_style: 3
+  flag_separator: ';'           # expected_flags: e.g. "injection_attempt;distress" (values from domain FLAGS)
+  forbid_official_overlap: true
