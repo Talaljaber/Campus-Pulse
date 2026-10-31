@@ -111,7 +111,9 @@ class LocalNumpyVectorStore:
                     coll.ids, coll.texts, coll.langs, coll.metas, coll.active, strict=True
                 )
             )
-            (coll_dir / ITEMS).write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+            # LF on every OS: the file is hashed into MANIFEST.json and git stores it with LF (.gitattributes)
+            body = "".join(f"{line}\n" for line in lines)
+            (coll_dir / ITEMS).write_text(body, encoding="utf-8", newline="\n")
             written += [coll_dir / EMBEDDINGS, coll_dir / ITEMS]
         return written
 

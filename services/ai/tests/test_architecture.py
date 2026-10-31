@@ -165,6 +165,12 @@ TRAIN_CLI_EXTRA: dict[Path, tuple[str, ...]] = {
         "torch", "sentence_transformers", "transformers", "huggingface_hub", "onnx", "onnxruntime", "numpy",
         "yaml", "tokenizers", f"{PKG}.adapters.models.encoder",
     ),
+    # Task 9 (batch 3): the vocabulary-pruning CLI edits the ONNX graph (onnx) and checks the gate over the
+    # same normalizer and lexicons as inference. Training machine only; never imported by predict.py/API.
+    PKG_DIR / "frameworks" / "cli" / "prune_encoder.py": (
+        "onnx", "numpy", "tokenizers", f"{PKG}.adapters.models.encoder", f"{PKG}.adapters.guards.bank",
+        f"{PKG}.adapters.preprocess.normalizer",
+    ),
 }
 
 
@@ -180,3 +186,22 @@ def test_checker_flags_forbidden_import(tmp_path: Path) -> None:
 
     found = violations(domain, ok, root=root, pkg="fakepkg")
     assert [(p.name, m) for p, m in found] == [("bad.py", "requests")]
+
+
+# P1.18: the offline graph at runtime (what `predict.py` actually loads), in a fresh interpreter.
+OFFLINE_FORBIDDEN = (
+    "supabase", "postgrest", "httpx", "torch", "sentence_transformers", "transformers",
+    f"{PKG}.adapters.vectors.pgvector", f"{PKG}.adapters.memory.pgvector_memory", f"{PKG}.adapters.store",
+    f"{PKG}.adapters.integrations", f"{PKG}.adapters.notify", f"{PKG}.adapters.calendar",
+)
+
+
+def test_offline_graph_sys_modules() -> None:
+    import subprocess
+
+    for module in (f"{PKG}.composition.offline", f"{PKG}.frameworks.cli.predict"):
+        code = f"import sys, {module}; print('\\n'.join(sorted(sys.modules)))"
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout
+        loaded = set(out.split())
+        bad = sorted(m for m in loaded if any(m == f or m.startswith(f + ".") for f in OFFLINE_FORBIDDEN))
+        assert bad == [], f"{module} loads {bad}"

@@ -910,6 +910,121 @@
 - **Limitations / TODO / known issues:** the byte-identity check against `predict.py` (`fc /b` on `data/raw/validation.csv`) was not run: `predict.py`, `BatchPredictUseCase` and the models are not merged; `predict.py` should write with `write_predictions_csv`. `redteam` in `/metrics` is `[]` until the domain `Scorecard` has `created_at`, `n` and `seed`. `model_lab.json` must be written by `evaluate.py` and copied into the image.
 - **Affects streams:** ML (`evaluate.py` writes `reports/model_lab.json`; `predict.py` uses `write_predictions_csv`; composition adapts `BatchPredictUseCase` to `BatchLabeler`), Foundation (copy `reports/` into the image; Render needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for user tokens), UI (forward `X-CP-User-JWT` from the Next.js server; send no `X-CP-Role` in production).
 
+### P1.10 — M1 `TfidfLR`  (ml, 2026-10-31, commit 44ec516)
+- **What now exists:** the TF-IDF (char_wb 2–5 + word 1–2) → balanced LR member, with per-word contributions for the explainer.
+- **Public interfaces added or changed:** `adapters/models/tfidf_lr.py::TfidfLR`; shared helpers `adapters/models/probs.py` (`balanced_sample_weight`, `row_proba`, `save_estimator`/`load_estimator`). See [models.md §13](../ml/models.md).
+- **How to use it:** `m = TfidfLR("category", (2, 5), (1, 2), C=2.0, seed=42); m.fit(texts, y, w); m.predict_proba(texts); m.token_contributions(text)`.
+- **Config / env added:** none (`m1.*` existed).
+- **Acceptance:** `pytest services/ai/tests/unit/test_tfidf_lr.py -q` → `4 passed`.
+- **Limitations / TODO / known issues:** weakest member on unseen scenarios (OOF category macro-F1 0.205).
+- **Affects streams:** Backend (P3.4 explainer uses `token_contributions`).
+
+### P1.11 — M2-LR, `ExampleIndex`, `KnnClassifier`, OOD score  (ml, 2026-10-31, commit 92659f5)
+- **What now exists:** the frozen-encoder members, the `train` index (one item per distinct text) and the OOD score.
+- **Public interfaces added or changed:** `EmbedLR`, `ExampleIndex`, `IndexEntry`, `KnnClassifier`, `ood_score`; new config key `knn.laplace_mass` (FrozenConfig + `config/train.yaml`, default 1.0). See [models.md §13](../ml/models.md).
+- **How to use it:** `KnnClassifier("category", ExampleIndex(store), enc, 5, 0.6, 2, memory_min_sim=0.8, laplace_mass=1.0).predict_from_embedding(vec, memory)`.
+- **Config / env added:** `knn.laplace_mass: 1.0`.
+- **Acceptance:** `pytest services/ai/tests/unit/test_embed_lr.py services/ai/tests/unit/test_knn.py -q` → `7 passed` (6 planned + a batch-independence test).
+- **Limitations / TODO / known issues:** `KnnClassifier.fit` raises by design (the index is the model).
+- **Affects streams:** Backend (P3 memory reaches the kNN vote, capped by `memory_weight_cap`).
+
+### P1.13 — `WeightedEnsemble`, `LogisticPriorityHead`, `PriorityFinalizer`  (ml, 2026-10-31, commit e98a53a)
+- **What now exists:** the config-driven ensemble, the 13-input priority head and the floors (safety beats a clarification answer; no rule lowers priority).
+- **Public interfaces added or changed:** `adapters/models/{ensemble,priority_head}.py`, `application/services/priority_finalizer.py` (`PriorityFinalizer`, `onehot`). See [models.md §13](../ml/models.md).
+- **How to use it:** `PriorityFinalizer().apply(p_head, safety, verdict, constraints) -> (p, floors)`.
+- **Config / env added:** none.
+- **Acceptance:** `pytest services/ai/tests/unit/test_ensemble.py services/ai/tests/unit/test_priority_head.py services/ai/tests/unit/test_priority_finalizer.py -q` → `9 passed`.
+- **Limitations / TODO / known issues:** weights are equal until P2.7.
+- **Affects streams:** Backend (clarification answers of kind `priority` become one-hot unless safety fired).
+
+### P1.15 — `TriageCore`, `BatchPredictUseCase`, `build_offline`  (ml, 2026-10-31, commit 87554ab)
+- **What now exists:** the one path that produces labels, wired offline; it satisfies `TriageClassifier`. `CoreResult.embedding` (D-012) is filled. A request that is entirely an injection gets the priors (no model sees it).
+- **Public interfaces added or changed:** `TriageCore.classify`, `classify_many` (batch, P1.17), `priors`; `BatchPredictUseCase`, `BatchRow`, `BatchPrediction`; `composition/offline.py::build_offline`, `OfflineContainer` (`core, oracle, config, manifest, batch, vectors, encoder`, `labeler`), `resolve_model_dir`; `adapters/clock.py::SystemClock`; domain `CoreResult.embedding: tuple[float, ...] = ()`. See [models.md §14](../ml/models.md).
+- **How to use it:** `c = build_offline(Path("models/frozen")); req, core = c.core.classify(text)`; tests: `build_offline(tiny_model_dir, encoder_override=HashingEncoder())`.
+- **Config / env added:** none.
+- **Acceptance:** `pytest services/ai/tests/unit/test_triage_core.py services/ai/tests/unit/test_batch_predict.py -q` → `10 passed` (8 planned + the `TriageClassifier` check + `classify_many` equivalence).
+- **Limitations / TODO / known issues:** `use_llm=True` raises `LLMUnavailable` until the P3 oracle is wired into `build_offline`.
+- **Affects streams:** Backend (wire the real core into `build_online`; reuse `CoreResult.embedding`), DB (Pulse can use the embedding).
+
+### P1.16 — `train.py`  (ml, 2026-10-31, commit ddd522d)
+- **What now exists:** stage A (OOF over the frozen folds), provisional stage B, stage C (freeze with manifest, lexicon snapshot, `CURRENT`), `reports/cv_p1.json`; the `tiny_model_dir` session fixture.
+- **Public interfaces added or changed:** `python services/ai/train.py`; `composition/training.py::run_training(TrainOptions)`; `adapters/training/{train_config,oof,stages,tuning,metrics}.py` (`run_cv`, `PipelineToggles`, `OOFResult`); `adapters/models/hashing_encoder.py::HashingEncoder` (moved from tests; `tests/fixtures/fakes.py` re-exports it); `tests/conftest.py::tiny_model_dir`. See [models.md §15](../ml/models.md).
+- **How to use it:** `python services/ai/train.py` → `froze v1: members=m1,m2lr,m2knn cat_macroF1_oof_official=0.490 pri_macroF1_oof_official=0.904 sha=8fb011621fb6`.
+- **Config / env added:** none.
+- **Acceptance:** the command above; `FrozenConfig.load(...).artifact_version` → `v1`; `pytest services/ai/tests/e2e/test_train_determinism.py -q` → `2 passed`.
+- **Limitations / TODO / known issues:** stage B is provisional (equal weights, mid-grid C); `run_cv` lives in `oof.py` (not `cv.py`) to keep the splitter model-free; `--fast`/`--retune` are accepted no-ops in P1.
+- **Affects streams:** Backend (`tiny_model_dir` for `build_test()`), Lead (retrain after the P1.9 review: `python services/ai/train.py`).
+
+### P1.17 — `predict.py`, `fetch_models.py`, `no_network.py`, `validate_predictions.py`  (ml, 2026-10-31, commits d762c5e, 308a9cb)
+- **What now exists:** the judges' command, offline and keyless, byte-identical to `POST /v1/batch` (shared `read_batch_csv` / `write_predictions_csv`); the network tripwire; the output validator; the stdlib fetcher; `OfflineBatchLabeler` for `/v1/batch`.
+- **Public interfaces added or changed:** `services/ai/predict.py`, `frameworks/cli/predict.py::main`; `scripts/{fetch_models,no_network,validate_predictions}.py`; `composition.offline.OfflineBatchLabeler` / `OfflineContainer.labeler`; M2-LR and the head now score row by row in float64 (`probs.row_proba`). See [models.md §16](../ml/models.md).
+- **How to use it:** `python scripts/no_network.py services/ai/predict.py --input data/raw/validation.csv --output .tmp/pred_val.csv`.
+- **Config / env added:** `CAMPUSPULSE_HF_REPO` (only for `fetch_models.py --source hf`; optional, not in `Settings`).
+- **Acceptance:** `wrote 62 rows → .tmp\pred_val.csv (artifact v1 sha=8fb011621fb6, tier0=62, llm=0, 3.0 s)`; validator `OK: 62 rows; ...; LF`; `--score` → `category acc=1.000` (wiring only); `pytest services/ai/tests/e2e/test_predict_cli.py -q -m "artifacts and not slow"` → `6 passed, 1 deselected`; slow speed test (1,000 distinct texts < 60 s) passes.
+- **Limitations / TODO / known issues:** the release asset does not exist yet (lead: P1.19 steps); `--use-llm` exits 3 until P3.
+- **Affects streams:** Backend (wire `container.labeler` as the `BatchLabeler`), Foundation (Docker: `python scripts/fetch_models.py --tag models-v1-rc1`).
+
+### P1.18 — Invariants and the offline import graph  (ml, 2026-10-31, commit 93dea00)
+- **What now exists:** URGENT-prefix invariance on all 432 rows, safety → high, injection never raises priority (42 cores), no `stated_urgency` feature; runtime import-graph check of `composition.offline` and the predict CLI; exact offline collections; predict with an unreachable Supabase URL; the null offline memory.
+- **Public interfaces added or changed:** `tests/invariants/{test_priority_invariants,test_memory_isolation}.py`, additions to `test_vector_isolation.py` and `test_architecture.py::test_offline_graph_sys_modules`.
+- **How to use it:** `pytest services/ai/tests/invariants services/ai/tests/test_architecture.py -q`.
+- **Config / env added:** none.
+- **Acceptance:** the three P1.18 files → `12 passed`; invariants + architecture → `27 passed`.
+- **Limitations / TODO / known issues:** §3.11 (c) (online memory vs offline batch) is P3's.
+- **Affects streams:** Backend (P3 extends `test_memory_isolation.py`).
+
+### Task 9 — Encoder vocabulary pruning  (ml, 2026-10-31, commit 2fc9218)
+- **What now exists:** the shipped encoder keeps 130,021 of 250,002 pieces (Latin/Arabic letters; every non-letter), with bit-identical embeddings on the 981-text gate. RSS after load 438 → 242 MB; peak 524 → 282 MB; int8 file 112.8 → 68.8 MB; release tarball 50.3 MB.
+- **Public interfaces added or changed:** `python -m campuspulse_ai.frameworks.cli.prune_encoder` (training machine); `reports/encoder_prune.json`; `encoder_meta.json` gains `vocab_pruning`. See [models.md §8.1](../ml/models.md).
+- **How to use it:** `python -m campuspulse_ai.frameworks.cli.prune_encoder --src models/frozen/v1/encoder --install`.
+- **Config / env added:** none.
+- **Acceptance:** `pieces 250002 -> 130021; gate PASSED (texts=981, token_mismatches=0, min_cos=1.000000); rss_mb_after_load 438.1 -> 242.2 (threads=1); installed=True`; retrain reproduced `reports/cv_p1.json` byte for byte.
+- **Limitations / TODO / known issues:** CJK/Cyrillic/Greek letters now map to `<unk>`.
+- **Affects streams:** Foundation (P4.13 Render memory test: expect ≈ 240 MB for the encoder instead of ≈ 440 MB).
+
+### P2.8 preview — First results report  (ml, 2026-10-31, commit 12204ed, regenerated in b65bd56)
+- **What now exists:** `reports/results_v1.{md,json}` (OOF and our_test per set, per language, per member, conformal coverage, ASK proxy, errors, findings, caveats) and `reports/model_lab.json` (offline `MetricsResponse` shape, DTO-validated).
+- **Public interfaces added or changed:** `python scripts/results_v1.py [--model-dir] [--out]`. See [models.md §17](../ml/models.md).
+- **How to use it:** run it after any retrain.
+- **Config / env added:** none.
+- **Acceptance:** `OOF official cat macroF1=0.490 pri macroF1=0.904; our_test pooled cat macroF1=0.710 pri macroF1=0.847`.
+- **Limitations / TODO / known issues:** a preview: no calibration (ECE), ablations or probes yet (P2.8 proper).
+- **Affects streams:** Backend/UI (`/v1/metrics` now has real offline numbers).
+
+### P1.19 — Package v1-rc1 locally  (ml, 2026-10-31, commit b65bd56)
+- **What now exists:** the committed small v1 artifacts (0.3 MB) and `models/frozen/CURRENT`; `dist/campuspulse-models-v1.tar.gz` (50.3 MB, sha256 `e9c57de6c15381c78fd6b140a15c4bd6886b975be176829f193403ec8c532617`) + `dist/SHA256SUMS` built locally (not committed). `LocalNumpyVectorStore.save` now writes LF (a CRLF `items.jsonl` would have failed the manifest check in a fresh clone).
+- **Public interfaces added or changed:** none new.
+- **How to use it:** fresh tree → `python scripts/fetch_models.py --from-file <tar.gz>` → `verified 29 files against MANIFEST.json (v1 sha=8fb011621fb6)` → offline predict identical to the worktree.
+- **Config / env added:** none.
+- **Acceptance:** committed size `0.3`; fresh-tree fetch and offline predict as above; P1 exit checks in the batch report.
+- **Limitations / TODO / known issues:** GitHub pre-release `models-v1-rc1` and the CI `artifacts` job are left to the lead.
+- **Affects streams:** Foundation (CI job, Docker fetch), Lead (release).
+### P4.9 — office notifications, Realtime for reviews and links, admin-only distress items  (db, 2026-10-31, commits a03e57c, c226c3d and the docs follow-up)
+- **What now exists:** migrations `0010_office_notifications` and `0011_distress_reviews_admin_only`, applied to the linked project (history repaired to `0010` and `0011`).
+  - `notifications_read` is altered in place: staff also read alias `office:<their profiles.office>` (escalation notes); students keep their own alias and admins everything.
+  - `review_queue` and `ticket_links` are in `supabase_realtime`.
+  - `review_queue_read` is altered: staff never read `reason = 'distress'` items; admins do.
+  - Reference: [db/schema.md › RLS policies](../db/schema.md#rls-policies-in-plain-words).
+- **Public interfaces added or changed:** what the two policies return (above) and two more Realtime tables. No column, grant or type changes; the types header now says 0011.
+- **How to use it:**
+  - Staff dashboard: `.from("notifications").select()` returns the office's notes.
+  - Subscribe with `postgres_changes` on `review_queue` / `ticket_links` instead of polling.
+  - Distress items appear only in the admin view.
+- **Config / env added:** none.
+- **Acceptance:**
+  - Live `supabase/tests/rls.sql` (via MCP, rolled back) → `RLS: 11/11 checks passed`. New check 10: `office_it=1 others=0`. New check 11: `staff=0 admin=1`.
+  - Live sign-in with the anon key (one-off script, rows cleaned up, `0 test rows left`):
+    - `it@demo.local` reads `office:it`, not `office:finance` or a student's note, and gets the `low_confidence` review item but not the `distress` one.
+    - `talal@demo.local` reads only their own note and no review items.
+    - `admin@demo.local` reads all of them.
+  - `pytest services/ai/tests -q -m supabase` → `59 passed, 1 skipped`.
+  - Advisors: no new lint.
+- **Limitations / TODO / known issues:**
+  - Known widening: staff read every non-distress review item from every office. The rows hold ids and a reason only; kept for the demo's cross-office queue.
+  - The policies are altered in place (`alter policy`): a `drop policy` migration was refused by the MCP apply.
+  - `scripts/test_rls.py` still needs the local Docker stack.
+- **Affects streams:** Backend (escalation notes now reach staff), UI (Realtime subscriptions; distress items in the admin view only), Lead (the X4.4 acceptance text now reads `RLS: 11/11`).
+
 ### P5.12 and P5.15 — Model lab `/lab` and outbox `/outbox`  (UI, 2026-10-31)
 - **What now exists:** the admin lands on a working model lab: benchmark per target with CV and our_test columns (set 1, 2, 3, pooled when the report has them), ablations, confusion matrices, conformal coverage and set size, calibration, per-language fairness, router and memory stats, a red-team runner and scorecard history. `/outbox` lists every outbox row with status filters and SIMULATED/REJECTED badges. A role-aware nav links `/lab`, `/staff`, `/pulse`, `/outbox`.
 - **Public interfaces added or changed:** `components/lab/*`, `components/outbox/*`, `components/shell/RoleNav`, `hooks/useLab`, `hooks/useOutbox`, `lib/lab/{metrics,redteam,service}`, `lib/outbox/view`, `formatDateTime` in `lib/time`; `PulseScreen` takes `role`; `lab.*`, `outbox.*`, `nav.*` i18n areas (`staff.pulseLink`, `pulse.back` removed). See [docs/ui/README.md](../ui/README.md#model-lab-lab-p512).

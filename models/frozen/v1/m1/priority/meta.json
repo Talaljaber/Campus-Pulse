@@ -1,0 +1,20 @@
+{
+  "C": 2.0,
+  "char_ngram": [
+    2,
+    5
+  ],
+  "kind": "tfidf_lr",
+  "labels": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "name": "m1",
+  "seed": 42,
+  "target": "priority",
+  "word_ngram": [
+    1,
+    2
+  ]
+}

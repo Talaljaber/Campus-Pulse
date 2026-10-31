@@ -1,0 +1,23 @@
+{
+  "C": 2.0,
+  "char_ngram": [
+    2,
+    5
+  ],
+  "kind": "tfidf_lr",
+  "labels": [
+    "Registration",
+    "IT Support",
+    "Finance",
+    "Transportation",
+    "Facilities",
+    "Academic Support"
+  ],
+  "name": "m1",
+  "seed": 42,
+  "target": "category",
+  "word_ngram": [
+    1,
+    2
+  ]
+}

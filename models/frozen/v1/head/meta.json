@@ -1,0 +1,22 @@
+{
+  "C": 1.0,
+  "features": [
+    "deadline_today",
+    "exam_now",
+    "safety_risk",
+    "stranded",
+    "enrollment_blocked",
+    "transient_glitch",
+    "info_request",
+    "fault_report",
+    "ambient_fixture",
+    "teaching_room"
+  ],
+  "kind": "priority_head",
+  "labels": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "seed": 42
+}

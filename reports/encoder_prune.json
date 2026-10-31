@@ -1,0 +1,114 @@
+{
+  "files_mb": {
+    "pruned": {
+      "model_int8.onnx": 68.8,
+      "tokenizer.json": 4.7
+    },
+    "unpruned": {
+      "model_int8.onnx": 112.8,
+      "tokenizer.json": 16.3
+    }
+  },
+  "gate": {
+    "max_abs_diff": 0.0,
+    "min_cosine": 0.9999999999999998,
+    "mismatch_examples": [],
+    "passed": true,
+    "per_source": {
+      "augmented": {
+        "texts": 60,
+        "token_mismatches": 0
+      },
+      "exemplars": {
+        "texts": 59,
+        "token_mismatches": 0
+      },
+      "official": {
+        "texts": 469,
+        "token_mismatches": 0
+      },
+      "our_test": {
+        "texts": 296,
+        "token_mismatches": 0
+      },
+      "parity_fixture": {
+        "texts": 97,
+        "token_mismatches": 0
+      }
+    },
+    "texts": 981,
+    "token_mismatches": 0
+  },
+  "generated_at": "2026-10-31T16:19:26+00:00",
+  "installed": true,
+  "measure": {
+    "pruned": [
+      {
+        "encoder_batch_size": 1,
+        "load_s": 1.27,
+        "ms_per_batch32_median": 807.8,
+        "ms_per_batch32_padded_median": 866.5,
+        "ms_per_text_median": 22.6,
+        "repeats_batch": 5,
+        "repeats_single": 20,
+        "rss_mb_after_encode": 244.9,
+        "rss_mb_after_load": 242.2,
+        "rss_mb_baseline": 25.0,
+        "rss_mb_peak": 282.3,
+        "threads": 1
+      },
+      {
+        "encoder_batch_size": 1,
+        "load_s": 0.65,
+        "ms_per_batch32_median": 285.8,
+        "ms_per_batch32_padded_median": 226.5,
+        "ms_per_text_median": 7.4,
+        "repeats_batch": 5,
+        "repeats_single": 20,
+        "rss_mb_after_encode": 247.4,
+        "rss_mb_after_load": 244.5,
+        "rss_mb_baseline": 25.2,
+        "rss_mb_peak": 283.1,
+        "threads": 4
+      }
+    ],
+    "unpruned": [
+      {
+        "encoder_batch_size": 1,
+        "load_s": 2.65,
+        "ms_per_batch32_median": 707.4,
+        "ms_per_batch32_padded_median": 907.7,
+        "ms_per_text_median": 20.9,
+        "repeats_batch": 5,
+        "repeats_single": 20,
+        "rss_mb_after_encode": 440.8,
+        "rss_mb_after_load": 438.1,
+        "rss_mb_baseline": 25.1,
+        "rss_mb_peak": 524.1,
+        "threads": 1
+      },
+      {
+        "encoder_batch_size": 1,
+        "load_s": 2.43,
+        "ms_per_batch32_median": 507.5,
+        "ms_per_batch32_padded_median": 240.9,
+        "ms_per_text_median": 14.4,
+        "repeats_batch": 5,
+        "repeats_single": 20,
+        "rss_mb_after_encode": 441.8,
+        "rss_mb_after_load": 438.9,
+        "rss_mb_baseline": 25.3,
+        "rss_mb_peak": 524.9,
+        "threads": 4
+      }
+    ]
+  },
+  "pieces": {
+    "after": 130021,
+    "before": 250002
+  },
+  "sha256_pruned": {
+    "model_int8.onnx": "535cf88a6a33a13d53df43a204851bc6dae66f868b2445b697f2e85d59245c60",
+    "tokenizer.json": "21e1d0ea0973db476a23063d24e0c171ab98ecfbd0fe887c7936c081945dcf52"
+  }
+}

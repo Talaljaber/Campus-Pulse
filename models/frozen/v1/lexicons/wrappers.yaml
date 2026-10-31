@@ -1,0 +1,39 @@
+# Wrapper prefixes/suffixes stripped before classification (P1.1, ARCHITECTURE §3.7, LD-35).
+# Read by campuspulse_ai.adapters.preprocess.wrappers.WrapperStripper.from_yaml.
+# train.py snapshots this file into models/frozen/vN/lexicons/ (LD-12); containers read the snapshot.
+
+# Exactly scripts/clean_data.py KNOWN_PREFIXES / KNOWN_SUFFIXES (EN then AR, same order); a test asserts it.
+prefixes:
+  - "Could you assist?"
+  - "This is my issue:"
+  - "Hello,"
+  - "Hi team,"
+  - "Please help:"
+  - "Student request:"
+  - "University helpdesk:"
+  - "URGENT:"
+  - "I need assistance."
+  - "مرحبا يا جماعة"
+  - "مرحبا،"
+  - "لو سمحت"
+  - "عندي مشكلة:"
+  - "سؤال:"
+  - "ممكن تساعدوني؟"
+  - "ارجو المساعدة،"
+suffixes:
+  - "Please respond when possible."
+  - "وشكرا"
+
+# A raw text containing any of these (case-sensitive substring) sets stated_urgency.
+# "URGENT" matches clean_data's has_urgent_marker exactly on the official rows.
+urgency_markers: ["URGENT", "عاجل", "!!!"]
+
+# Also strips unseen "urgent" prefixes ("urgent: ...", "URGENT ..." without a colon) and sets stated_urgency.
+# \b keeps "Urgently ..." intact (the plan's draft regex had no word boundary).
+urgent_regex: "(?i)^urgent\\b[\\s:!.,،-]*"
+
+# After the exact strings fail, known wrappers also match case-insensitively, and with their trailing
+# punctuation swapped for any of `variant_punctuation` ("hello!", "hi team,", "Please help,").
+# Exact matches are always tried first, so the 432 official rows are unaffected (asserted by tests).
+prefix_variants: true
+variant_punctuation: [",", "!", ":", ".", "?", "،", "؟"]
