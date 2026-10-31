@@ -16,6 +16,7 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 | 0006 | `0006_private_helpers.sql` | moves the `cp_*` helpers into schema `private` so PostgREST does not expose them as `/rpc/cp_*` |
 | 0007 | `0007_repository.sql` | `requests.model_text/truncated/location_source`, `predictions.core jsonb`; RPC `bump_student_signals`; trigger that copies a ticket's `office` onto its incident |
 | 0008 | `0008_fk_indexes.sql` | one index per foreign key the performance advisor flagged (cases ×4, llm_calls, memory_examples, outbox, requests.building_id, review_queue ×2) |
+| 0009 | `0009_ticket_tags_outbox_deferred.sql` | D-011: `tickets.tags text[] not null default '{}'`; `outbox_status_check` re-created with `deferred` added |
 
 **Applying a migration.** Commit the file first. Then apply the same SQL with the Supabase MCP `apply_migration`, or with `supabase db push` on a linked CLI.
 - **MCP version repair.** MCP records a timestamp version. Afterwards, set the row in `supabase_migrations.schema_migrations` to the file's version and name (`0001`/`init`, …). This is what `supabase migration repair` does. It keeps the remote history identical to the file names, so a later `db push` does not re-apply anything.
@@ -30,8 +31,8 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 2. Keep the two-line `// GENERATED` header and update the migration number in it.
 3. Check it: `npx -p typescript@5.9.3 tsc --noEmit --strict supabase/types/database.types.ts`.
 
-**Advisors:** run MCP `get_advisors` (security and performance) after each migration. As of 0008:
-- **Security:** only expected items. `request_embeddings` has RLS with no policy (intentional: service role only), and `public.rls_auto_enable()` is Supabase-managed, left alone by decision.
+**Advisors:** run MCP `get_advisors` (security and performance) after each migration. As of 0009:
+- **Security:** only expected items. `request_embeddings` has RLS with no policy (intentional: service role only), and `public.rls_auto_enable()` is Supabase-managed, left alone by decision. Auth also warns that leaked-password protection is off; that is a dashboard setting (Auth › Passwords), not a migration.
 - **Performance:** only `unused_index` INFO notes, expected on a near-empty database.
 
 ## Labels and enums (checked by constraints)
@@ -42,6 +43,8 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 - **tier:** `tier0`, `tier1`, `tier2`, `human`
 - **requests.status:** `received`, `needs_clarification`, `clarified`, `decided`, `human_review`, `out_of_scope`, `distress`, `actioned`, `resolved`, `merged`
 - **tickets.status:** `open`, `in_progress`, `resolved`, `closed`, `escalated`, `merged`
+- **outbox.status:** `queued`, `sent`, `failed`, `rejected`, `simulated`, `deferred` (D-011: held back by the action engine, reason in `error`)
+- **tickets.tags** are free text, not checked. In use (D-011): `safety`, `transport-alert`, `exam-in-progress`, `unconfirmed`, `deferred:<kind>`.
 
 These match `domain/labels.py` and `domain/values.py` exactly.
 
@@ -57,12 +60,12 @@ All ids are `uuid default gen_random_uuid()` unless stated. Every table has `cre
 | `predictions` | `request_id`, `category`, `priority`, `p_cat jsonb`, `p_pri jsonb`, `set_cat text[]`, `set_pri text[]`, `per_model jsonb`, `tier`, `models_used text[]`, `cost_usd numeric(10,6)`, `latency_ms`, `flags text[] default '{}'`, `explanation jsonb`, `artifact_version`, `core jsonb` (full CoreResult, 0007) | fk `request_id` (cascade); idx `(request_id, created_at desc)` |
 | `clarifications` | `request_id`, `question_id`, `options jsonb`, `answer`, `asked_at`, `answered_at` | fk request (cascade); idx `(request_id, asked_at)` |
 | `incidents` | `building_id`, `category`, `office` (filled from its first ticket by trigger `tickets_fill_incident_office`), `title`, `priority`, `report_count`, `status` (`open`/`resolved`), `opened_at`, `resolved_at` | fk building; idx `(building_id, status)` |
-| `tickets` | `request_id`, `incident_id`, `office`, `category`, `priority`, `status`, `provisional`, `title`, `body`, `sla_due_at`, `escalated_at`, `resolved_at` | fk request (cascade), incident (set null); idx `(office, status, sla_due_at)`, `(request_id)`, `(incident_id)` partial |
+| `tickets` | `request_id`, `incident_id`, `office`, `category`, `priority`, `status`, `provisional`, `title`, `body`, `sla_due_at`, `escalated_at`, `resolved_at`, `tags text[] not null default '{}'` (D-011) | fk request (cascade), incident (set null); idx `(office, status, sla_due_at)`, `(request_id)`, `(incident_id)` partial |
 | `ticket_links` | `ticket_id`, `sink`, `external_id`, `external_url`, `last_synced_at`, `last_error` | pk `(ticket_id, sink)`; unique `(sink, external_id)` (for `ticket_by_link`) |
 | `advisors` | `fictional_name`, `department`, `room`, `calendar_id`, `demo_email`, `office_hours jsonb` | — |
 | `advisor_slots` | `advisor_id`, `starts_at`, `ends_at`, `booked_by` (alias), `booked_at` | unique `(advisor_id, starts_at)`; check `ends_at > starts_at`; partial idx on free slots |
 | `cases` | `request_id`, `ticket_id`, `advisor_id`, `slot_id`, `slot_start`, `outcome_code`, `booking jsonb`, `closed_at` | fks (cascade / set null) |
-| `outbox` | `kind` (`email`,`ticket`,`booking`,`alert`,`broadcast`,`in_app`,`whatsapp`), `channel` (`email`/`in_app`/`whatsapp`, default `email`), `alias`, `request_id`, `to_address`, `subject`, `body`, `provider_id`, `status` (`queued`,`sent`,`failed`,`rejected`,`simulated`), `priority`, `flags text[]`, `error` | idx `(created_at desc)`, `(alias, created_at desc)` |
+| `outbox` | `kind` (`email`,`ticket`,`booking`,`alert`,`broadcast`,`in_app`,`whatsapp`), `channel` (`email`/`in_app`/`whatsapp`, default `email`), `alias`, `request_id`, `to_address`, `subject`, `body`, `provider_id`, `status` (`queued`,`sent`,`failed`,`rejected`,`simulated`,`deferred`), `priority`, `flags text[]`, `error` | idx `(created_at desc)`, `(alias, created_at desc)` |
 | `notifications` | `alias`, `kind`, `payload jsonb`, `read_at` | idx `(alias, created_at desc)` |
 | `review_queue` | `prediction_id`, `reason`, `status` (`open`/`confirmed`/`corrected`), `reviewer_id` → auth.users, `corrected_category`, `corrected_priority`, `note`, `resolved_at` | idx `(status, created_at)` |
 | `student_signals` | pk `alias`, `n_requests`, `n_claimed_urgent`, `n_claimed_urgent_not_high`, `n_high`, `n_injection`, `gaming_flag`, `updated_at` | pk `alias` |
@@ -265,9 +268,9 @@ Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, 
 | `Prediction` | `predictions` | The full `CoreResult` is in `core jsonb`, so round trips are lossless. The flat columns (`p_cat`/`p_pri` as label→p, sorted `set_*`, `per_model`, `models_used`, `flags`, `cost_usd`, `latency_ms`) are for the UI and SQL. `latest_prediction` = most recently saved (`created_at desc, id desc`). |
 | `Clarification` | `clarifications` | `options` jsonb `[{id, text, constraint}]`; listed by `asked_at, id`. |
 | `ReviewItem` | `review_queue` | `resolve_review` sets status, corrections, note and `resolved_at = clock.now()`. |
-| `Ticket` | `tickets` + `ticket_links` | `save_ticket` also upserts its links; links are read back ordered by `sink`. `(sink, external_id)` is unique. |
+| `Ticket` | `tickets` + `ticket_links` | `save_ticket` also upserts its links; links are read back ordered by `sink`. `(sink, external_id)` is unique. `tags` ⇄ `tickets.tags`; `TicketLink.error` ⇄ `ticket_links.last_error`. |
 | `Incident` | `incidents` | `building` ⇄ `building_id`. `member_ticket_ids` is derived from `tickets.incident_id` (by `created_at, id`); `save_incident` points the listed tickets at the incident. |
-| `OutboxMessage` | `outbox` | The domain `kind` (transport) is written to both `kind` and `channel`. `alias`/`request_id` are not in the entity, so they stay null. |
+| `OutboxMessage` | `outbox` | The domain `kind` (transport) is written to both `kind` and `channel`. `alias`/`request_id` are not in the entity, so they stay null. `status` and `error` map one to one, `deferred` included. |
 | `StudentSignals` | `student_signals` | `bump_student_signals` is atomic (RPC). `gaming_suspected` = the stored `gaming_flag`, which stays unused (lead decision): GamingDetector (P3.6) computes suspicion from the returned counters. |
 | `Scorecard` | `redteam_runs.scorecard` | `run_id` is kept if it is a UUID, else a new UUID is returned. History is newest first. |
 | `Slot`, `Advisor`, `Case` | `advisor_slots`, `advisors`, `cases` | `claim_slot` = `update … where id = ? and booked_by is null`, true only for the winner. `free_slots` = unbooked and inside the window, by `starts_at, id`. |

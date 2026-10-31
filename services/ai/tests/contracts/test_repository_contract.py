@@ -344,8 +344,8 @@ def test_ticket_round_trip_with_links(h: Harness) -> None:
 def test_ticket_tags_and_link_error_round_trip(h: Harness) -> None:
     """D-011: `Ticket.tags` and `TicketLink.error` (-> ticket_links.last_error) survive a round trip.
 
-    While `tickets.tags` is a pending column (codec.PENDING_COLUMNS) SupabaseRepository drops it on
-    write, so the save must still succeed and the tags read back empty (graceful degradation).
+    Should `tickets.tags` ever be a pending column again (codec.PENDING_COLUMNS), SupabaseRepository
+    drops it on write, so the save must still succeed and the tags read back empty.
     """
     req = h.repo.save_request(make_request(h))
     ticket = make_ticket(req.id, sla=T0 + timedelta(hours=24))
@@ -407,10 +407,14 @@ def test_outbox_notification_and_events_save(h: Harness) -> None:
     msg = OutboxMessage("", "email", f"{h.tag}@example.invalid", "Ticket opened", "Body", None, "rejected",
                         T0, Priority.HIGH, frozenset({"safety"}))  # fmt: skip
     assert h.repo.save_outbox(msg).id
-    # D-011: a held-back message is `deferred` with its reason (mapped while the status is pending).
+    # D-011: a held-back message is `deferred` with its reason (migration 0009 allows the status).
     held = OutboxMessage("", "email", f"{h.tag}@example.invalid", "Cap", "Body", None, "deferred", T0,
                          error="daily email cap of 100 reached")  # fmt: skip
-    assert h.repo.save_outbox(held).error == "daily email cap of 100 reached"
+    saved = h.repo.save_outbox(held)
+    assert saved.error == "daily email cap of 100 reached"
+    if isinstance(h, SupabaseHarness) and not codec.PENDING_VALUES.get(("outbox", "status")):
+        row = h.db.table("outbox").select("status,error").eq("id", saved.id).execute().data[0]
+        assert row == {"status": "deferred", "error": "daily email cap of 100 reached"}
     h.repo.save_notification(h.tag, "ticket_status", {"status": "resolved", "at": T0})
     h.repo.append_event(h.tag, "test", "request", {"n": 1, "at": T0})
 
