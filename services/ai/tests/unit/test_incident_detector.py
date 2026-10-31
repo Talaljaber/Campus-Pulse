@@ -13,7 +13,7 @@ from typing import Any, Protocol
 import pytest
 from fixtures.supabase_test import supabase_test_client
 
-from campuspulse_ai.adapters.pulse.incident_detector import WindowedCentroidDetector
+from campuspulse_ai.adapters.pulse.incident_detector import WindowedCentroidDetector, majority
 from campuspulse_ai.adapters.store.inmemory import InMemoryRepository
 from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
 from campuspulse_ai.domain.entities import CoreResult, IncidentDecision, Prediction, Request, Ticket
@@ -206,16 +206,74 @@ def test_priority_is_max_then_bumped_once_at_six(h: Harness) -> None:
     assert seventh.incident is not None and seventh.incident.priority == Priority.HIGH  # not bumped again
 
 
-def test_other_building_and_category_are_separate(h: Harness) -> None:
+def test_other_buildings_are_separate(h: Harness) -> None:
     det = detector(h)
     for i in range(2):
         report(h, det, around(3, i), building=B1)
         report(h, det, around(3, 10 + i), building=B2)
-        report(h, det, around(3, 20 + i), building=B1, category=Category.FACILITIES)
     assert report(h, det, around(3, 30), building=B2).kind == "new"
     assert report(h, det, around(3, 31), building=B1).kind == "new"
-    assert len(h.repo.open_incidents(B1, Category.IT_SUPPORT, h.clock.now() - timedelta(hours=1))) == 1
-    assert h.repo.open_incidents(B1, Category.FACILITIES, h.clock.now() - timedelta(hours=1)) == []
+    since = h.clock.now() - timedelta(hours=1)
+    assert (
+        len(h.repo.open_incidents(B1, None, since)) == 1 and len(h.repo.open_incidents(B2, None, since)) == 1
+    )
+
+
+def test_d017_one_outage_with_mixed_predicted_categories_is_one_incident(h: Harness) -> None:
+    """D-017: v1-rc1 scattered the Wi-Fi reports across categories; similarity groups them, and the
+    incident takes the majority category."""
+    det = detector(h, tau_inc=0.92)
+    topic = around(12, 0, noise=0.0)
+    it, fac = Category.IT_SUPPORT, Category.FACILITIES
+    labels = [it, Category.TRANSPORTATION, it, fac, Category.REGISTRATION, fac, fac, fac]
+    decisions = [report(h, det, toward(topic, 0.97, 900 + i), category=c) for i, c in enumerate(labels)]
+    assert [d.kind for d in decisions] == ["none", "none", "new"] + ["attach"] * 5
+    ids = {d.incident.id for d in decisions[2:] if d.incident is not None}
+    assert len(ids) == 1
+    assert (
+        decisions[2].incident is not None and decisions[2].incident.category == Category.IT_SUPPORT
+    )  # 2 of 3
+    assert (
+        decisions[4].incident is not None and decisions[4].incident.category == Category.IT_SUPPORT
+    )  # 2 of 5
+    assert (
+        decisions[5].incident is not None and decisions[5].incident.category == Category.IT_SUPPORT
+    )  # 2:2, the incident keeps its category
+    last = decisions[-1].incident
+    assert last is not None and last.category == Category.FACILITIES and last.report_count == 8
+    assert last.title == f"Facilities reports in building {B1}"
+    assert h.repo.open_incidents(B1, Category.FACILITIES, h.clock.now() - timedelta(hours=1))[0].id in ids
+
+
+def test_d017_an_unrelated_it_complaint_in_the_building_does_not_attach(h: Harness) -> None:
+    det = detector(h, tau_inc=0.92)
+    topic = around(13, 0, noise=0.0)
+    mixed = [Category.TRANSPORTATION, Category.IT_SUPPORT, Category.FACILITIES]
+    wifi = [report(h, det, toward(topic, 0.97, 1000 + i), category=c) for i, c in enumerate(mixed)]
+    assert wifi[-1].kind == "new" and wifi[-1].incident is not None
+    printer = report(h, det, toward(topic, 0.89, 1100), category=Category.IT_SUPPORT)
+    assert printer.kind == "none"
+    assert h.repo.get_incident(wifi[-1].incident.id).report_count == 3
+
+
+@pytest.mark.parametrize(
+    ("reported", "prefer", "expected"),
+    [
+        (
+            [Category.IT_SUPPORT, Category.IT_SUPPORT, Category.FACILITIES],
+            Category.FACILITIES,
+            Category.IT_SUPPORT,
+        ),
+        ([Category.IT_SUPPORT, Category.FACILITIES], Category.FACILITIES, Category.FACILITIES),  # tie: prefer
+        ([Category.IT_SUPPORT, Category.FACILITIES, Category.FINANCE], Category.FINANCE, Category.FINANCE),
+        ([None, Category.FINANCE], Category.REGISTRATION, Category.FINANCE),
+        ([None], Category.REGISTRATION, Category.REGISTRATION),
+    ],
+)
+def test_d017_majority_category(
+    reported: list[Category | None], prefer: Category, expected: Category
+) -> None:
+    assert majority(reported, prefer) == expected
 
 
 def test_reports_outside_the_window_do_not_count(h: Harness) -> None:

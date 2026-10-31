@@ -180,22 +180,14 @@ class SupabaseRepository:
             )
         return self._incidents([self._one("incidents", "id", saved.id)])[0]
 
-    def open_incidents(self, building: str, category: Category, since: datetime) -> list[Incident]:
-        rows = self._rows(
-            "open_incidents",
-            lambda: (
-                self._db.table("incidents")
-                .select("*")
-                .eq("status", "open")
-                .eq("building_id", building)
-                .eq("category", str(category))
-                .gte("opened_at", codec.iso(since))
-                .order("opened_at")
-                .order("id")
-                .execute()
-            ),
-        )
-        return self._incidents(rows)
+    def open_incidents(self, building: str, category: Category | None, since: datetime) -> list[Incident]:
+        def run() -> Any:
+            q = self._db.table("incidents").select("*").eq("status", "open").eq("building_id", building)
+            if category is not None:
+                q = q.eq("category", str(category))
+            return q.gte("opened_at", codec.iso(since)).order("opened_at").order("id").execute()
+
+        return self._incidents(self._rows("open_incidents", run))
 
     def incident_members(self, incident_id: str) -> list[tuple[Ticket, Request]]:
         tickets = self._tickets(self._member_rows([incident_id]))

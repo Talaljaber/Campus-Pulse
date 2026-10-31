@@ -15,6 +15,7 @@ from dataclasses import dataclass
 
 import pytest
 from fixtures.api import api_client, auth
+from fixtures.backend_fakes import FakeCore, make_core
 from fixtures.containers import BackendTestContainer, build_test
 
 from campuspulse_ai.application.dto import TriageRequest, TriageResponse
@@ -179,3 +180,24 @@ def test_only_scripts_and_admins_can_mark_traffic_simulated(c: BackendTestContai
     service = client.post("/v1/triage", json={**body, "student_alias": "sim-01"}, headers=auth()).json()
     rows = c.repo.tables["requests"]
     assert not rows[student["request_id"]].get("simulated") and rows[service["request_id"]]["simulated"]
+
+
+def test_d017_the_incident_ticket_follows_the_majority_category() -> None:
+    """D-017: reports the model labels differently form one incident; its ticket's office is the
+    majority category's and moves (mirrored) when the majority changes."""
+    labels = ["Transportation", "IT Support", "Transportation", "IT Support", "IT Support"]
+    texts = [f"wifi is down in building M ({n})" for n in range(1, 6)]
+    core = FakeCore()
+    for text, label in zip(texts, labels, strict=True):
+        core.add(text, make_core({label: 0.9}, {"medium": 0.9}))
+    c = build_test(core=core, pulse_encoder=TopicEncoder(), record_sink=True)
+    out = [report(c, n, text) for n, text in enumerate(texts, start=1)]
+    kinds = [r.action.type if r.action else None for r in out]
+    assert kinds == ["ticket", "ticket", "incident_merge", "incident_merge", "incident_merge"]
+    assert len({r.action.incident_id for r in out[2:] if r.action}) == 1
+    [incident] = c.repo.list_incidents(open_only=True, limit=5)
+    assert (incident.category, incident.report_count) == ("IT Support", 5)  # 3 of 5
+    [ticket] = [t for t in tickets(c) if "incident" in t["tags"]]  # type: ignore[operator]
+    assert (ticket["office"], ticket["category"]) == ("it", "IT Support")
+    assert str(ticket["title"]).startswith("IT Support reports in building M")
+    assert ("update_status", ticket["id"]) in c.sink.calls  # it opened as transport, then moved

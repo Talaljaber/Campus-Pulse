@@ -190,14 +190,14 @@ class InMemoryRepository:
                 self.tables["tickets"][ticket_id]["incident_id"] = saved.id
         return self._incident(self.tables["incidents"][saved.id])
 
-    def open_incidents(self, building: str, category: Category, since: datetime) -> list[Incident]:
+    def open_incidents(self, building: str, category: Category | None, since: datetime) -> list[Incident]:
         start = _ts(codec.iso(since) or "")
         rows = [
             r
             for r in self.tables["incidents"].values()
             if r["status"] == "open"
             and r["building_id"] == building
-            and r["category"] == str(category)
+            and (category is None or r["category"] == str(category))
             and _ts(r["opened_at"]) >= start
         ]
         return [self._incident(r) for r in sorted(rows, key=lambda r: (_ts(r["opened_at"]), r["id"]))]

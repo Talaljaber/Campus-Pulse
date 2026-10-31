@@ -208,6 +208,11 @@ class ActUseCase:
             flags |= {SAFETY_FLAG}
         return self._planner.plan(pred.category, pred.priority, flags, provisional)
 
+    def office_for(self, category: Category, priority: Priority) -> str:
+        """The routing table's office for a category x priority (D-005); e.g. a Pulse incident's
+        ticket follows the incident's majority category (D-017)."""
+        return self._planner.plan(category, priority, frozenset(), False).office
+
     def run(
         self, pred: Prediction, req: Request, provisional: bool, understanding: Understanding | None = None
     ) -> dto.ActionOut:
