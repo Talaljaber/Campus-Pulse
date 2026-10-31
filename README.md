@@ -43,6 +43,9 @@ components are added.
   Shipped as an int8 ONNX export whose vocabulary we pruned to Latin, Arabic, digit and symbol pieces with our
   own tool (`frameworks/cli/prune_encoder.py`). The embeddings are bit-identical to the unpruned int8 model on
   981 checked texts.
+- `Helsinki-NLP/opus-mt-ar-en` at revision `c5b2a50db78d6be98ae207223f8d4f63bc7a0ff1` (Apache-2.0), converted
+  to CTranslate2 int8. Used only in the P2.14 translate-test experiment (`scripts/translate_test.py`); it is not
+  part of the shipped model or `predict.py`.
 
 **External services**
 - **Supabase**: Postgres with pgvector, Auth and Realtime (app data, request embeddings, FAQ vectors).
@@ -60,6 +63,15 @@ components are added.
 - `data/augmented/arabizi.csv`: rule-based Arabizi transliterations (`author_method=rule`).
 - `data/augmented/new_scenarios.csv`: 78 new scenarios (390 rows), written by an LLM (`author_method=llm`).
   They are used for training only after human review (`needs_human_check`).
+- `data/augmented/paraphrases.csv` and `translations.csv`: paraphrases, EN/AR translations and Arabizi versions
+  of the official scenarios, drafted by `anthropic/claude-sonnet-5.5` via OpenRouter (temperature 0, cached,
+  0.27 USD; `author_method=llm:<model>`). Trained on only after human review.
+- `data/augmented/review/review_sheet.csv`: independent labels from `anthropic/claude-haiku-5.5` (OpenRouter)
+  for every unreviewed draft, used only to focus the human review; never used as labels.
+- `config/office_descriptions.yaml`: short descriptions of each office's work (EN/AR), written with an AI coding
+  assistant (Claude) from the challenge category definitions and public GJU pages, not copied from any dataset;
+  embedded as the `m2proto` member's office prototypes. Its author had read the official training texts, so
+  the office part is not fully held out from them (see `reports/results_v2.md`).
 - `data/our_test/`: our holdout, never trained on. Set 1 was hand-written by the developer; sets 2 and 3 were
   written by an LLM (decision D-010 in `docs/PLAN.md`). Scores are reported per set.
 

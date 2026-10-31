@@ -2,16 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useLabMetrics, useRedTeam } from "@/hooks/useLab";
-import { useSignOut } from "@/hooks/useSignIn";
 import { useLang, useT, type DictKey } from "@/i18n";
 import type { RedTeamRunRequest } from "@/lib/ai/types";
 import { mergeScorecards, noOfflineReport, percent } from "@/lib/lab/metrics";
 import { formatDateTime } from "@/lib/time";
-import { RoleNav } from "../shell/RoleNav";
+import { AppShell } from "../shell/AppShell";
+import { PageHeader } from "../shell/PageHeader";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
-import { LanguageSwitch } from "../ui/LanguageSwitch";
 import { Loadable } from "../ui/Loadable";
 import { TabPanel, Tabs } from "../ui/Tabs";
 import { useToast } from "../ui/Toast";
@@ -30,17 +29,22 @@ const TAB_IDS = ["benchmark", "calibration", "live", "redteam"] as const;
 type TabId = (typeof TAB_IDS)[number];
 const ID_BASE = "lab";
 
+/** Props for {@link LabScreen}. */
+export interface LabScreenProps {
+  /** The signed-in admin's alias, for the header greeting. */
+  alias?: string | null;
+}
+
 /**
  * The model lab `/lab` (admin): the benchmark, calibration and fairness numbers from the evaluation
  * report, the live router and memory, and the red team. It only wires `GET /v1/metrics` and
  * `POST /v1/redteam/run` to presentational sections. Without an evaluation report the offline tabs
  * say so plainly and the live system and the red team keep working.
  */
-export function LabScreen() {
+export function LabScreen({ alias = null }: LabScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const toast = useToast();
-  const signOut = useSignOut();
   const metrics = useLabMetrics();
   const redTeam = useRedTeam();
   const [tab, setTab] = useState<TabId>("benchmark");
@@ -63,20 +67,8 @@ export function LabScreen() {
   const empty = <EmptyState title={t("lab.empty.title")} hint={t("lab.empty.hint")} />;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-6xl flex-col gap-4 p-4 sm:p-6">
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold">{t("lab.title")}</h1>
-          <p className="text-fg-2">{t("lab.subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <RoleNav role="admin" current="lab" />
-          <LanguageSwitch />
-          <Button variant="ghost" size="sm" onClick={() => void signOut()}>
-            {t("auth.signOut")}
-          </Button>
-        </div>
-      </header>
+    <AppShell role="admin" current="lab" alias={alias}>
+      <PageHeader title={t("lab.title")} subtitle={t("lab.subtitle")} />
 
       <div className="flex flex-wrap items-center gap-2">
         {data && (
@@ -148,6 +140,6 @@ export function LabScreen() {
           <ScorecardHistory runs={history} />
         </div>
       </TabPanel>
-    </main>
+    </AppShell>
   );
 }

@@ -1,27 +1,51 @@
 /*
  * CampusPulse design tokens. Every component styles against these variables.
- * Light is the default; dark applies under prefers-color-scheme unless the user
- * forced light (data-theme="light"), or when forced dark (data-theme="dark").
+ * The app is light only (no dark theme, no OS-following).
+ *
+ * Palette: GJU-inspired blue + orange-yellow + warm grey (UI batch 6). Original tokens, not
+ * the official brand assets. Orange (--cp-orange) fails contrast against white, so it is for
+ * borders, fills behind dark text and icons only; text that needs orange uses --cp-orange-ink.
  *
  * Rules enforced by src/design/__tests__/tokens.test.ts:
  *  - text tokens reach >= 4.5:1 on every surface
  *  - category/priority/semantic colours reach >= 3:1 on every surface (graphics)
  *  - badge text (text-1) reaches >= 4.5:1 on each 16% tint of a tone
+ *  - every named foreground/background pair of the shell (band, nav, panel, footer, tabs)
+ *    reaches its WCAG AA minimum
  */
 
 :root {
+  /* Light only: native controls and scrollbars stay light even on a dark OS. */
+  color-scheme: light;
+
   /* surfaces + text + lines */
   --cp-surface-0: #ffffff;
-  --cp-surface-1: #f5f7fa;
-  --cp-surface-2: #e9edf2;
-  --cp-text-1: #12161d;
-  --cp-text-2: #3a4351;
-  --cp-text-3: #566070;
-  --cp-border: #d2d8e0;
+  --cp-surface-1: #f4f6f8;
+  --cp-surface-2: #e6eaee;
+  --cp-text-1: #1c2025;
+  --cp-text-2: #3e444c;
+  --cp-text-3: #545b65;
+  --cp-border: #ccd3db;
   --cp-border-strong: #76808f;
-  --cp-focus: #0b5cd5;
+  --cp-focus: #1a68ac;
   --cp-on-accent: #ffffff;
-  --cp-accent: #0b5cd5;
+  --cp-accent: #1a68ac;
+
+  /* GJU-style brand. brand = decorative blue (graphics >= 3:1); accent = interactive blue (text >= 4.5:1) */
+  --cp-brand: #1b84c9;
+  --cp-heading: #5b5d60;
+  --cp-page: #eef2f6;
+  --cp-band: #1f78c4;
+  --cp-band-2: #155a99;
+  --cp-on-band: #ffffff;
+  --cp-orange: #f0a81f;
+  --cp-on-orange: #1c2025;
+  --cp-orange-ink: #b86e00;
+  --cp-panel: #52769a;
+  --cp-on-panel: #ffffff;
+  --cp-footer: #3a3a3a;
+  --cp-on-footer: #e8e8e8;
+  --cp-footer-link: #9dcdf5;
 
   /* categories (Okabe-Ito inspired; the label is always shown next to colour) */
   --cp-cat-registration: #0066b3;
@@ -40,7 +64,7 @@
   --cp-ok: #17713a;
   --cp-warn: #8f5900;
   --cp-danger: #c4161c;
-  --cp-info: #0b5cd5;
+  --cp-info: #1a68ac;
 
   /* spacing (4px scale) */
   --cp-space-1: 0.25rem;
@@ -70,89 +94,14 @@
   /* elevation + motion */
   --cp-shadow-1: 0 1px 2px rgb(18 22 29 / 0.08), 0 1px 1px rgb(18 22 29 / 0.06);
   --cp-shadow-2: 0 8px 24px rgb(18 22 29 / 0.16), 0 2px 6px rgb(18 22 29 / 0.1);
+  --cp-shadow-card: 0 2px 6px rgb(20 50 90 / 0.06), 0 8px 32px rgb(20 50 90 / 0.12);
   --cp-motion-fast: 120ms;
   --cp-motion-slow: 280ms;
   --cp-overlay: rgb(18 22 29 / 0.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --cp-surface-0: #0e1218;
-    --cp-surface-1: #161b23;
-    --cp-surface-2: #1f2631;
-    --cp-text-1: #eef1f5;
-    --cp-text-2: #c5ccd7;
-    --cp-text-3: #9aa4b3;
-    --cp-border: #2e3744;
-    --cp-border-strong: #7f8a9b;
-    --cp-focus: #86b7ff;
-    --cp-on-accent: #0e1218;
-    --cp-accent: #86b7ff;
-
-    --cp-cat-registration: #5fadff;
-    --cp-cat-it: #c996f2;
-    --cp-cat-finance: #f2a65a;
-    --cp-cat-transport: #3fd1a2;
-    --cp-cat-facilities: #e8cd52;
-    --cp-cat-academic: #f58cbf;
-
-    --cp-pri-low: #9db0c6;
-    --cp-pri-medium: #f0b040;
-    --cp-pri-high: #ff8585;
-
-    --cp-ok: #55d08a;
-    --cp-warn: #f0b040;
-    --cp-danger: #ff8585;
-    --cp-info: #86b7ff;
-
-    --cp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
-    --cp-shadow-2: 0 8px 24px rgb(0 0 0 / 0.6);
-    --cp-overlay: rgb(0 0 0 / 0.65);
-  }
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --cp-surface-0: #0e1218;
-  --cp-surface-1: #161b23;
-  --cp-surface-2: #1f2631;
-  --cp-text-1: #eef1f5;
-  --cp-text-2: #c5ccd7;
-  --cp-text-3: #9aa4b3;
-  --cp-border: #2e3744;
-  --cp-border-strong: #7f8a9b;
-  --cp-focus: #86b7ff;
-  --cp-on-accent: #0e1218;
-  --cp-accent: #86b7ff;
-
-  --cp-cat-registration: #5fadff;
-  --cp-cat-it: #c996f2;
-  --cp-cat-finance: #f2a65a;
-  --cp-cat-transport: #3fd1a2;
-  --cp-cat-facilities: #e8cd52;
-  --cp-cat-academic: #f58cbf;
-
-  --cp-pri-low: #9db0c6;
-  --cp-pri-medium: #f0b040;
-  --cp-pri-high: #ff8585;
-
-  --cp-ok: #55d08a;
-  --cp-warn: #f0b040;
-  --cp-danger: #ff8585;
-  --cp-info: #86b7ff;
-
-  --cp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
-  --cp-shadow-2: 0 8px 24px rgb(0 0 0 / 0.6);
-  --cp-overlay: rgb(0 0 0 / 0.65);
-}
-
 /* Tailwind v4 CSS-first mapping (LD-2). `inline` keeps utilities pointing at the
-   live --cp-* variables so theme switches need no rebuild. */
+   live --cp-* variables. */
 @theme inline {
   --color-surface-0: var(--cp-surface-0);
   --color-surface-1: var(--cp-surface-1);
@@ -165,6 +114,20 @@
   --color-focus: var(--cp-focus);
   --color-accent: var(--cp-accent);
   --color-on-accent: var(--cp-on-accent);
+  --color-brand: var(--cp-brand);
+  --color-heading: var(--cp-heading);
+  --color-page: var(--cp-page);
+  --color-band: var(--cp-band);
+  --color-band-2: var(--cp-band-2);
+  --color-on-band: var(--cp-on-band);
+  --color-orange: var(--cp-orange);
+  --color-on-orange: var(--cp-on-orange);
+  --color-orange-ink: var(--cp-orange-ink);
+  --color-panel: var(--cp-panel);
+  --color-on-panel: var(--cp-on-panel);
+  --color-footer: var(--cp-footer);
+  --color-on-footer: var(--cp-on-footer);
+  --color-footer-link: var(--cp-footer-link);
   --color-cat-registration: var(--cp-cat-registration);
   --color-cat-it: var(--cp-cat-it);
   --color-cat-finance: var(--cp-cat-finance);
@@ -195,4 +158,5 @@
 
   --shadow-1: var(--cp-shadow-1);
   --shadow-2: var(--cp-shadow-2);
+  --shadow-card: var(--cp-shadow-card);
 }

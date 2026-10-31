@@ -88,3 +88,29 @@ def test_per_model_keys() -> None:
     assert len(out.embedding) == enc.dim
     assert out.neighbors and out.neighbors[0].text == "where is the bus timetable"
     assert out.ood_score == pytest.approx(1.0, abs=1e-6)
+
+
+def test_a_memory_neighbour_moves_the_category_even_when_knn_has_no_category_weight() -> None:
+    """D-016 gives kNN category weight 0; a staff correction must still move the label online (P3.11)."""
+    from datetime import UTC, datetime
+
+    from campuspulse_ai.adapters.memory.inmemory import InMemoryMemoryStore
+    from campuspulse_ai.domain.entities import MemoryExample
+    from campuspulse_ai.domain.labels import Category, Priority
+
+    enc = HashingEncoder()
+    members, index = _members(enc)
+    cat_w = {"m1": 0.5, "m2lr": 0.5, "m2knn": 0.0}
+    text = "the projector is broken"
+    memory = InMemoryMemoryStore(enc.dim)
+    memory.add(MemoryExample(id="", text_norm=text, lang=Lang.EN, embedding=tuple(enc.encode([text])[0]),
+                             category=Category.IT_SUPPORT, priority=Priority.MEDIUM, author_id="staff-1",
+                             created_at=datetime(2026, 11, 1, tzinfo=UTC)))
+    plain = WeightedEnsemble(members, enc, index, cat_w, _even(list(members)))
+    learning = WeightedEnsemble(members, enc, index, cat_w, _even(list(members)), memory_weight_category=0.5)
+    base = plain.predict([text], memory)[0]
+    moved = learning.predict([text], memory)[0]
+    assert any(n.source == "memory" for n in moved.neighbors)
+    assert moved.p_cat.prob("IT Support") > base.p_cat.prob("IT Support")
+    offline = learning.predict([text], None)[0]  # no memory: exactly the offline vote
+    assert np.allclose(offline.p_cat.values, plain.predict([text], None)[0].p_cat.values)

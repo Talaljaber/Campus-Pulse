@@ -258,6 +258,6 @@ describe("MapLegend", () => {
       </LangScope>,
     );
     expect(container.querySelector("section")!.closest("[dir]")).toHaveAttribute("dir", "rtl");
-    expect(container.querySelector("svg")).toHaveAttribute("dir", "ltr");
+    expect(container.querySelector("svg[role=img]")).toHaveAttribute("dir", "ltr");
   });
 });

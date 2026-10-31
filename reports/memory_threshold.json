@@ -1,0 +1,29 @@
+{
+  "cross_quantile": 0.995,
+  "cross_scenario_above_proposal": 0.00378,
+  "cross_scenario_max": 0.9562,
+  "cross_scenario_percentiles": {
+    "50": 0.8244,
+    "90": 0.8715,
+    "99": 0.9019,
+    "99.5": 0.9077
+  },
+  "encoder": {
+    "dir": "models/frozen/v1",
+    "model_id": "intfloat/multilingual-e5-small"
+  },
+  "note": "pool texts only (official + every augmented draft); no holdout is read",
+  "pairs": {
+    "cross_scenario": 145955,
+    "same_scenario_same_lang": 270
+  },
+  "proposed_memory_min_sim": 0.91,
+  "same_scenario_kept_at_proposal": 0.5185,
+  "same_scenario_percentiles": {
+    "5": 0.8558,
+    "25": 0.892,
+    "50": 0.9131,
+    "75": 0.936
+  },
+  "texts": 543
+}

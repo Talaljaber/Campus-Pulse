@@ -54,3 +54,24 @@ def test_distress_fixtures_flag_and_zero_on_official(guard: SafetyGuard, verdict
         assert isinstance(verdict, GuardVerdict)
         assert verdict.kind == "distress", line
     assert list(verdicts[verdicts.kind == "distress"].request_id) == []
+
+
+TRAPPED = [
+    "The elevator in building C is stuck between floors with people inside",
+    "Two students are stuck inside the lift on the 3rd floor",
+    "المصعد علق بين الطوابق وفيه ناس جواه",
+    "في ناس محبوسين بالأسانسير بمبنى C",
+]
+NOT_DANGER = [
+    "The elevator in building C is stuck on the ground floor",
+    "My locker door is stuck",
+    "The registration page is stuck on loading",
+    "المصعد واقف عن الشغل من مبارح",
+]
+
+
+def test_people_trapped_in_a_lift_is_danger_but_a_stuck_lift_is_not(guard: SafetyGuard) -> None:
+    """Live rc1 finding: trapped people must floor priority to high; a stuck lift alone stays a fault."""
+    normalizer = DefaultNormalizer.from_lexicons(LEXICONS, MAX_TOKENS)
+    assert [t for t in TRAPPED if guard.inspect(normalizer.normalize(t)).kind != "danger"] == []
+    assert [t for t in NOT_DANGER if guard.inspect(normalizer.normalize(t)).kind == "danger"] == []

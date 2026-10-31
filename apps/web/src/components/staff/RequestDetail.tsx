@@ -7,10 +7,11 @@ import { knownFlags } from "@/lib/staff/flags";
 import type { TicketView } from "@/lib/staff/tickets";
 import { ExplanationPanel } from "../explain/ExplanationPanel";
 import { textDir } from "../explain/text";
-import { FlagBadges, type Audience } from "../chat/FlagBadges";
+import { FlagBadges, isFlagVisible, type Audience } from "../chat/FlagBadges";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+import { InfoGrid, InfoPanel } from "../ui/InfoPanel";
 import { Loadable } from "../ui/Loadable";
 import { CATEGORY_TONE, PRIORITY_TONE } from "../ui/tone";
 
@@ -50,32 +51,36 @@ export function RequestDetail({ ticket, detail, load, audience, counterfactual, 
         <Loadable state={load} lines={3}>
           {detail && (
             <>
-              <section aria-label={t("staff.detail.request")} className="flex flex-col gap-1">
-                <h4 className="text-sm font-semibold text-fg-1">{t("staff.detail.request")}</h4>
-                <p dir={textDir(detail.text)} className="rounded-md border border-line bg-surface-0 p-3 text-base text-fg-1">
+              <InfoPanel title={t("staff.detail.request")}>
+                <p dir={textDir(detail.text)} className="rounded-md bg-surface-1 p-3 text-base text-fg-1">
                   {detail.text}
                 </p>
-              </section>
-              <div className="flex flex-wrap items-center gap-2">
-                {detail.simulated && <Badge tone="info">{t("staff.detail.simulated")}</Badge>}
-                {detail.inputMode === "voice" && <Badge tone="neutral">{t("staff.detail.voice")}</Badge>}
-                {detail.buildingId && <span className="text-sm text-fg-2">{t("staff.detail.building", { code: detail.buildingId })}</span>}
-                {detail.room && <span className="text-sm text-fg-2">{t("staff.detail.room", { room: detail.room })}</span>}
-              </div>
-              <section aria-label={t("staff.detail.decision")} className="flex flex-col gap-2">
-                <h4 className="text-sm font-semibold text-fg-1">{t("staff.detail.decision")}</h4>
+                <div className="flex flex-wrap items-center gap-2">
+                  {detail.simulated && <Badge tone="info">{t("staff.detail.simulated")}</Badge>}
+                  {detail.inputMode === "voice" && <Badge tone="neutral">{t("staff.detail.voice")}</Badge>}
+                  {detail.buildingId && <span className="text-sm text-fg-2">{t("staff.detail.building", { code: detail.buildingId })}</span>}
+                  {detail.room && <span className="text-sm text-fg-2">{t("staff.detail.room", { room: detail.room })}</span>}
+                </div>
+              </InfoPanel>
+              <InfoPanel title={t("staff.detail.decision")}>
                 {p ? (
-                  <>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {p.category && <Badge tone={CATEGORY_TONE[p.category] ?? "neutral"}>{labelOf("category", p.category, lang)}</Badge>}
-                      {p.priority && <Badge tone={PRIORITY_TONE[p.priority] ?? "neutral"}>{labelOf("priority", p.priority, lang)}</Badge>}
-                    </div>
-                    <FlagBadges flags={knownFlags(p.flags)} audience={audience} />
-                  </>
+                  <InfoGrid
+                    rows={[
+                      ...(p.category
+                        ? [{ label: t("staff.detail.category"), value: <Badge tone={CATEGORY_TONE[p.category] ?? "neutral"}>{labelOf("category", p.category, lang)}</Badge> }]
+                        : []),
+                      ...(p.priority
+                        ? [{ label: t("staff.detail.priority"), value: <Badge tone={PRIORITY_TONE[p.priority] ?? "neutral"}>{labelOf("priority", p.priority, lang)}</Badge> }]
+                        : []),
+                      ...(knownFlags(p.flags).some((f) => isFlagVisible(f, audience))
+                        ? [{ label: t("staff.detail.flags"), value: <FlagBadges flags={knownFlags(p.flags)} audience={audience} /> }]
+                        : []),
+                    ]}
+                  />
                 ) : (
                   <p className="text-sm text-fg-2">{t("staff.detail.noDecision")}</p>
                 )}
-              </section>
+              </InfoPanel>
               {p?.explanation && (
                 <details className="rounded-md border border-line bg-surface-0 p-3">
                   <summary className="cursor-pointer text-sm font-medium text-fg-1">{t("staff.detail.explanation")}</summary>

@@ -35,17 +35,17 @@ export function Table<T>({ columns, rows, rowKey, empty, caption, className }: T
   const alignClass = (a?: "start" | "end") => (a === "end" ? "text-end" : "text-start");
   return (
     <div
-      className={cn("overflow-x-auto rounded-lg border border-line", className)}
+      className={cn("overflow-x-auto rounded-lg border border-line-strong bg-surface-0", className)}
       tabIndex={0}
       role="region"
       aria-label={caption}
     >
       <table className="w-full border-collapse text-sm">
         {caption && <caption className="sr-only">{caption}</caption>}
-        <thead className="bg-surface-2 text-fg-2">
+        <thead className="border-b-2 border-line-strong bg-surface-2 text-fg-1">
           <tr>
             {columns.map((c) => (
-              <th key={String(c.key)} scope="col" className={cn("px-3 py-2 font-semibold", alignClass(c.align))}>
+              <th key={String(c.key)} scope="col" className={cn("px-3 py-2.5 font-bold", alignClass(c.align))}>
                 {c.header}
               </th>
             ))}
@@ -60,7 +60,7 @@ export function Table<T>({ columns, rows, rowKey, empty, caption, className }: T
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={rowKey(row)} className="border-t border-line">
+              <tr key={rowKey(row)} className="border-t border-line even:bg-surface-1">
                 {columns.map((c) => (
                   <td key={String(c.key)} className={cn("px-3 py-2 text-fg-1", alignClass(c.align))}>
                     {c.render ? c.render(row) : String((row as Record<string, unknown>)[c.key as string] ?? "")}

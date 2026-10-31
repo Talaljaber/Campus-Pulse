@@ -69,6 +69,24 @@ def to_vectors(matrix: NDArray[np.float64], labels: Sequence[str]) -> list[ProbV
     return vectors
 
 
+PROB_EPS = 1e-12  # log of a zero probability: clipped here, never -inf
+
+
+def temperature_scale(p: NDArray[np.float64], temperature: float) -> NDArray[np.float64]:
+    """p^(1/T), renormalized per row: the softmax of the log-probabilities divided by T.
+
+    For a multinomial LR this is exactly softmax(logits / T). T > 1 softens, T < 1 sharpens, T = 1 is the
+    identity; the argmax never changes. Raises ValueError for T <= 0.
+    """
+    if temperature <= 0:
+        raise ValueError("temperature must be > 0")
+    logp = np.log(np.clip(np.asarray(p, dtype=np.float64), PROB_EPS, 1.0)) / temperature
+    logp -= logp.max(axis=1, keepdims=True)
+    e = np.exp(logp)
+    out: NDArray[np.float64] = e / e.sum(axis=1, keepdims=True)
+    return out
+
+
 def to_matrix(vectors: Sequence[ProbVector], labels: Sequence[str]) -> NDArray[np.float64]:
     """Stack vectors into an (n, len(labels)) array in `labels` order."""
     out = np.zeros((len(vectors), len(labels)), dtype=np.float64)

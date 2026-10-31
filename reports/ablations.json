@@ -1,0 +1,2526 @@
+{
+  "arms": {
+    "+knn_in_category": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "D-016: kNN joins the category vote only if this arm passes the rule",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            -0.1196,
+            0.0066
+          ],
+          "delta": -0.0488,
+          "macro_f1": 0.7576,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0785
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": -0.091,
+          "macro_f1": 0.6976,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": -0.2151,
+          "macro_f1": 0.7849,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": -0.0424,
+          "macro_f1": 0.6318,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": -0.0594,
+          "macro_f1": 0.6598,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "+m1_in_category": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "D-016 dropped M1 from the category vote; this arm checks that call",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            -0.1329,
+            0.0
+          ],
+          "delta": -0.0528,
+          "macro_f1": 0.7536,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": -0.0037,
+          "macro_f1": 0.7848,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0106,
+          "macro_f1": 0.6848,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": -0.0138,
+          "macro_f1": 0.7055,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "+unreviewed_augmentation": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": true
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "UNREVIEWED drafts (needs_human_check=True) in training: a measurement only, never frozen",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0273,
+            0.1739
+          ],
+          "delta": 0.0889,
+          "macro_f1": 0.8953,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.9915
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0717
+          ],
+          "delta": 0.0229,
+          "macro_f1": 0.9265,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.645
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": 0.0637,
+          "macro_f1": 0.8523,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0607,
+          "macro_f1": 0.9081,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.1436,
+          "macro_f1": 0.8179,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0414,
+          "macro_f1": 0.8239,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": 0.0406,
+          "macro_f1": 0.7599,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.1336,
+          "macro_f1": 0.9166,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 933,
+      "unreviewed_training_rows": true
+    },
+    "-augmentation": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "no reviewed augmentation exists yet (P2.4 pending), so this equals full",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.8064,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7886,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.6743,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7193,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "-m1": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "M1 has category weight 0 (D-016); this measures its priority role",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.8064,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7886,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.6743,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7193,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "-m2knn": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2proto"
+      ],
+      "note": "",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.8064,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7886,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.6743,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7193,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "-m2lr": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0601
+          ],
+          "delta": 0.0212,
+          "macro_f1": 0.8276,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.664
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": -0.0037,
+          "macro_f1": 0.7848,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0127,
+          "macro_f1": 0.6869,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": -0.0167,
+          "macro_f1": 0.7026,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "-m2proto": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn"
+      ],
+      "note": "category falls back to M2-LR alone",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            -0.365,
+            -0.1449
+          ],
+          "delta": -0.2453,
+          "macro_f1": 0.5611,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": -0.1143,
+          "macro_f1": 0.6742,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": -0.2151,
+          "macro_f1": 0.7849,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": -0.1049,
+          "macro_f1": 0.5693,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": -0.0809,
+          "macro_f1": 0.6384,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "-urgency_features": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.8064,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            -0.4648,
+            -0.1785
+          ],
+          "delta": -0.3156,
+          "macro_f1": 0.588,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0005
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7886,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": -0.2489,
+          "macro_f1": 0.5985,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": -0.3417,
+          "macro_f1": 0.6583,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.6743,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": -0.1704,
+          "macro_f1": 0.6121,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7193,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": -0.2901,
+          "macro_f1": 0.493,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "-wrapper_stripping": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            -0.108,
+            0.0041
+          ],
+          "delta": -0.054,
+          "macro_f1": 0.7524,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0635
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": -0.0662,
+          "macro_f1": 0.7224,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": -0.0667,
+          "macro_f1": 0.7806,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": -0.2151,
+          "macro_f1": 0.7849,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": -0.1499,
+          "macro_f1": 0.8501,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0103,
+          "macro_f1": 0.6846,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0547,
+          "macro_f1": 0.8372,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": -0.0189,
+          "macro_f1": 0.7003,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": -0.1214,
+          "macro_f1": 0.6616,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "full": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.8064,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7886,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.6743,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7193,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "hard_targets": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.8064,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7886,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.6743,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7193,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "mask_deadline": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "note": "the full model scoring our_test with every deadline_today lexicon span deleted from the input (LD-34); its OOF numbers are the full model's (the frozen folds are not re-scored masked)",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.8064,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": -0.0215,
+          "macro_f1": 0.7671,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": -0.0607,
+          "macro_f1": 0.7866,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": -0.0424,
+          "macro_f1": 0.6318,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0008,
+          "macro_f1": 0.7833,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": -0.0179,
+          "macro_f1": 0.7013,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": -0.1724,
+          "macro_f1": 0.6106,
+          "n_rows": 72
+        }
+      }
+    },
+    "proto_learned_only": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "D-014 part (a) only",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            -0.3347,
+            -0.0985
+          ],
+          "delta": -0.2099,
+          "macro_f1": 0.5965,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": -0.1748,
+          "macro_f1": 0.6137,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": -0.4083,
+          "macro_f1": 0.5917,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": -0.089,
+          "macro_f1": 0.5853,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": -0.1118,
+          "macro_f1": 0.6074,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "proto_office_only": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "D-014 part (b) only",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            -0.1636,
+            0.0667
+          ],
+          "delta": -0.0455,
+          "macro_f1": 0.7609,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.2215
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": -0.1893,
+          "macro_f1": 0.5993,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": -0.4083,
+          "macro_f1": 0.5917,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": -0.1228,
+          "macro_f1": 0.5514,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": -0.1885,
+          "macro_f1": 0.5307,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    },
+    "tuned_stage_b": {
+      "decision_rule": {
+        "min_gain": 0.05,
+        "note": "positive arms must also hold per language (bake-off)",
+        "passes": false
+      },
+      "members": [
+        "m1",
+        "m2lr",
+        "m2knn",
+        "m2proto"
+      ],
+      "note": "the P2.7 OOF search (C grids, simplex weights); in-sample selection, see the nested estimate",
+      "oof_official": {
+        "category": {
+          "ci90": [
+            0.0,
+            0.0601
+          ],
+          "delta": 0.0212,
+          "macro_f1": 0.8276,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.664
+        },
+        "priority": {
+          "ci90": [
+            0.0,
+            0.0
+          ],
+          "delta": 0.0,
+          "macro_f1": 0.9036,
+          "n_groups": 30,
+          "n_rows": 432,
+          "p_better": 0.0
+        }
+      },
+      "our_test": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7886,
+          "n_rows": 204
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.8473,
+          "n_rows": 204
+        }
+      },
+      "our_test_set1": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 1.0,
+          "n_rows": 60
+        }
+      },
+      "our_test_set2": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.6743,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.7825,
+          "n_rows": 72
+        }
+      },
+      "our_test_set3": {
+        "category": {
+          "delta": 0.0,
+          "macro_f1": 0.7193,
+          "n_rows": 72
+        },
+        "priority": {
+          "delta": 0.0,
+          "macro_f1": 0.783,
+          "n_rows": 72
+        }
+      },
+      "pool_rows": 432,
+      "unreviewed_training_rows": false
+    }
+  },
+  "artifact_version": "v1",
+  "generated_at": "2026-10-31T19:55:03+00:00",
+  "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
+  "rows": [
+    {
+      "arm": "full",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.8064,
+      "target": "category"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.7886,
+      "target": "category"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.6743,
+      "target": "category"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.7193,
+      "target": "category"
+    },
+    {
+      "arm": "full",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.8064,
+      "target": "category"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test",
+      "delta": -0.0215,
+      "macro_f1": 0.7671,
+      "target": "category"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set2",
+      "delta": -0.0424,
+      "macro_f1": 0.6318,
+      "target": "category"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set3",
+      "delta": -0.0179,
+      "macro_f1": 0.7013,
+      "target": "category"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test",
+      "delta": -0.0607,
+      "macro_f1": 0.7866,
+      "target": "priority"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set2",
+      "delta": 0.0008,
+      "macro_f1": 0.7833,
+      "target": "priority"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set3",
+      "delta": -0.1724,
+      "macro_f1": 0.6106,
+      "target": "priority"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "oof_official",
+      "delta": -0.054,
+      "macro_f1": 0.7524,
+      "target": "category"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test",
+      "delta": -0.0662,
+      "macro_f1": 0.7224,
+      "target": "category"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test_set1",
+      "delta": -0.2151,
+      "macro_f1": 0.7849,
+      "target": "category"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test_set2",
+      "delta": 0.0103,
+      "macro_f1": 0.6846,
+      "target": "category"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test_set3",
+      "delta": -0.0189,
+      "macro_f1": 0.7003,
+      "target": "category"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test",
+      "delta": -0.0667,
+      "macro_f1": 0.7806,
+      "target": "priority"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test_set1",
+      "delta": -0.1499,
+      "macro_f1": 0.8501,
+      "target": "priority"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test_set2",
+      "delta": 0.0547,
+      "macro_f1": 0.8372,
+      "target": "priority"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test_set3",
+      "delta": -0.1214,
+      "macro_f1": 0.6616,
+      "target": "priority"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.8064,
+      "target": "category"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.7886,
+      "target": "category"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.6743,
+      "target": "category"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.7193,
+      "target": "category"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.8064,
+      "target": "category"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.7886,
+      "target": "category"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.6743,
+      "target": "category"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.7193,
+      "target": "category"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "oof_official",
+      "delta": -0.3156,
+      "macro_f1": 0.588,
+      "target": "priority"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test",
+      "delta": -0.2489,
+      "macro_f1": 0.5985,
+      "target": "priority"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test_set1",
+      "delta": -0.3417,
+      "macro_f1": 0.6583,
+      "target": "priority"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test_set2",
+      "delta": -0.1704,
+      "macro_f1": 0.6121,
+      "target": "priority"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test_set3",
+      "delta": -0.2901,
+      "macro_f1": 0.493,
+      "target": "priority"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.8064,
+      "target": "category"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.7886,
+      "target": "category"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.6743,
+      "target": "category"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.7193,
+      "target": "category"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "oof_official",
+      "delta": 0.0212,
+      "macro_f1": 0.8276,
+      "target": "category"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test",
+      "delta": -0.0037,
+      "macro_f1": 0.7848,
+      "target": "category"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test_set2",
+      "delta": 0.0127,
+      "macro_f1": 0.6869,
+      "target": "category"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test_set3",
+      "delta": -0.0167,
+      "macro_f1": 0.7026,
+      "target": "category"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.8064,
+      "target": "category"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.7886,
+      "target": "category"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.6743,
+      "target": "category"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.7193,
+      "target": "category"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "oof_official",
+      "delta": -0.2453,
+      "macro_f1": 0.5611,
+      "target": "category"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test",
+      "delta": -0.1143,
+      "macro_f1": 0.6742,
+      "target": "category"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test_set1",
+      "delta": -0.2151,
+      "macro_f1": 0.7849,
+      "target": "category"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test_set2",
+      "delta": -0.1049,
+      "macro_f1": 0.5693,
+      "target": "category"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test_set3",
+      "delta": -0.0809,
+      "macro_f1": 0.6384,
+      "target": "category"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.8064,
+      "target": "category"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.7886,
+      "target": "category"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.6743,
+      "target": "category"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.7193,
+      "target": "category"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "oof_official",
+      "delta": -0.2099,
+      "macro_f1": 0.5965,
+      "target": "category"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test",
+      "delta": -0.1748,
+      "macro_f1": 0.6137,
+      "target": "category"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test_set1",
+      "delta": -0.4083,
+      "macro_f1": 0.5917,
+      "target": "category"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test_set2",
+      "delta": -0.089,
+      "macro_f1": 0.5853,
+      "target": "category"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test_set3",
+      "delta": -0.1118,
+      "macro_f1": 0.6074,
+      "target": "category"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "oof_official",
+      "delta": -0.0455,
+      "macro_f1": 0.7609,
+      "target": "category"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test",
+      "delta": -0.1893,
+      "macro_f1": 0.5993,
+      "target": "category"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test_set1",
+      "delta": -0.4083,
+      "macro_f1": 0.5917,
+      "target": "category"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test_set2",
+      "delta": -0.1228,
+      "macro_f1": 0.5514,
+      "target": "category"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test_set3",
+      "delta": -0.1885,
+      "macro_f1": 0.5307,
+      "target": "category"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "oof_official",
+      "delta": -0.0488,
+      "macro_f1": 0.7576,
+      "target": "category"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test",
+      "delta": -0.091,
+      "macro_f1": 0.6976,
+      "target": "category"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set1",
+      "delta": -0.2151,
+      "macro_f1": 0.7849,
+      "target": "category"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set2",
+      "delta": -0.0424,
+      "macro_f1": 0.6318,
+      "target": "category"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set3",
+      "delta": -0.0594,
+      "macro_f1": 0.6598,
+      "target": "category"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "oof_official",
+      "delta": -0.0528,
+      "macro_f1": 0.7536,
+      "target": "category"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test",
+      "delta": -0.0037,
+      "macro_f1": 0.7848,
+      "target": "category"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set2",
+      "delta": 0.0106,
+      "macro_f1": 0.6848,
+      "target": "category"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set3",
+      "delta": -0.0138,
+      "macro_f1": 0.7055,
+      "target": "category"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "oof_official",
+      "delta": 0.0212,
+      "macro_f1": 0.8276,
+      "target": "category"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.7886,
+      "target": "category"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.6743,
+      "target": "category"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.7193,
+      "target": "category"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "oof_official",
+      "delta": 0.0,
+      "macro_f1": 0.9036,
+      "target": "priority"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test",
+      "delta": 0.0,
+      "macro_f1": 0.8473,
+      "target": "priority"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set2",
+      "delta": 0.0,
+      "macro_f1": 0.7825,
+      "target": "priority"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.783,
+      "target": "priority"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "oof_official",
+      "delta": 0.0889,
+      "macro_f1": 0.8953,
+      "target": "category"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test",
+      "delta": 0.0637,
+      "macro_f1": 0.8523,
+      "target": "category"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "category"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set2",
+      "delta": 0.1436,
+      "macro_f1": 0.8179,
+      "target": "category"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set3",
+      "delta": 0.0406,
+      "macro_f1": 0.7599,
+      "target": "category"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "oof_official",
+      "delta": 0.0229,
+      "macro_f1": 0.9265,
+      "target": "priority"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test",
+      "delta": 0.0607,
+      "macro_f1": 0.9081,
+      "target": "priority"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set1",
+      "delta": 0.0,
+      "macro_f1": 1.0,
+      "target": "priority"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set2",
+      "delta": 0.0414,
+      "macro_f1": 0.8239,
+      "target": "priority"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set3",
+      "delta": 0.1336,
+      "macro_f1": 0.9166,
+      "target": "priority"
+    }
+  ],
+  "sha": "9a379d97c0cd"
+}

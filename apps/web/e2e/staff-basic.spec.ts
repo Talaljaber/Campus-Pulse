@@ -31,7 +31,7 @@ test("staff see their office queue, open a request, correct a review item and re
 
   // Request details with the collapsed explanation.
   await page.getByRole("button", { name: "Open details for Wi-Fi is down in building M" }).click();
-  await expect(page.getByRole("region", { name: "What the student wrote" })).toContainText("the wifi in building M is down again");
+  await expect(page.getByRole("group", { name: "What the student wrote" })).toContainText("the wifi in building M is down again");
   await expect(page.getByText("Dictated by voice")).toBeVisible();
   const details = page.locator("details", { hasText: "Why this result" });
   await expect(details).not.toHaveAttribute("open", "");

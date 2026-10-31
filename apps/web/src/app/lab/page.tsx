@@ -16,5 +16,5 @@ export default async function LabPage() {
   const profile = await fetchProfile(sb, data.user.id);
   if (!profile) redirect("/login");
   if (profile.role !== "admin") redirect(homeFor(profile.role));
-  return <LabScreen />;
+  return <LabScreen alias={profile.alias} />;
 }

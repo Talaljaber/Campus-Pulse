@@ -1,0 +1,90 @@
+# Office responsibilities: the "office description" prototypes of the m2proto member (D-014 part b).
+#
+# Source and provenance (ML batch 4): written by a separate assistant session that could read ONLY
+# docs/reference/CHALLENGE_RULES.md (the category definitions) and docs/reference/gju_public_policies.md (public
+# GJU pages), plus general knowledge of university offices; it had no access to data/, reports/ or any other
+# file. This replaces a first version whose author had seen the official training texts and the rc1 error table
+# (which quotes our_test rows); see reports/results_v2.md for both variants' scores. They are descriptions of
+# what each office handles, NOT student requests.
+#
+# train.py embeds every line once (same encoder and "query: " prefix as requests) into
+# models/frozen/vN/m2proto/, so predict.py stays offline. A category's office score is its best-matching line.
+offices:
+  Registration:
+    en:
+      - "The Registration office handles course enrollment, section changes, and seat availability during each semester's registration period."
+      - "The Registration office processes add/drop requests, late registration, and course withdrawals within the academic calendar deadlines."
+      - "The Registration office resolves prerequisite and corequisite holds, overrides, and registration blocks that prevent students from enrolling."
+      - "The Registration office manages schedule conflicts, closed sections, waitlists, and credit-hour load limits for each semester."
+      - "The Registration office handles major or track changes, transfer credit equivalency, enrollment certificates, and official transcripts."
+    ar:
+      - "مكتب التسجيل يتابع تسجيل المواد وتغيير الشعب وتوفر المقاعد خلال فترة التسجيل في كل فصل دراسي."
+      - "مكتب التسجيل يعالج طلبات السحب والإضافة والتسجيل المتأخر والانسحاب من المواد ضمن مواعيد التقويم الأكاديمي."
+      - "مكتب التسجيل يحل مشاكل المتطلبات السابقة والمتزامنة واستثناءاتها والقيود التي تمنع الطالب من التسجيل."
+      - "مكتب التسجيل يتعامل مع تعارض المواعيد والشعب المغلقة وقوائم الانتظار والحد الأعلى للساعات المعتمدة في الفصل."
+      - "مكتب التسجيل يتابع تغيير التخصص أو المسار ومعادلة المواد المنقولة وشهادات القيد وكشوف العلامات الرسمية."
+  IT Support:
+    en:
+      - "The IT Support office handles university account access, password resets, account lockouts, and multi-factor authentication problems."
+      - "The IT Support office maintains campus Wi-Fi, wired network connections, VPN access, and internet connectivity in all buildings."
+      - "The IT Support office supports the learning management system, including course pages, assignment uploads, and online exam access."
+      - "The IT Support office troubleshoots the MyGJU student portal, university email, and other online services when they fail."
+      - "The IT Support office manages lab computers, licensed software installation, printing services, and reports of suspicious or phishing messages."
+    ar:
+      - "مكتب الدعم الفني يتابع الدخول إلى الحساب الجامعي واستعادة كلمة المرور وقفل الحساب والتحقق بخطوتين."
+      - "مكتب الدعم الفني مسؤول عن شبكة الواي فاي والشبكة السلكية والـ VPN والاتصال بالإنترنت في جميع المباني."
+      - "مكتب الدعم الفني يدعم منصة التعلم الإلكتروني بما فيها صفحات المواد ورفع الواجبات والدخول إلى الامتحانات الإلكترونية."
+      - "مكتب الدعم الفني يحل أعطال بوابة MyGJU والبريد الجامعي وباقي الخدمات الإلكترونية عندما تتوقف عن العمل."
+      - "مكتب الدعم الفني يدير أجهزة المختبرات وتثبيت البرامج المرخصة وخدمات الطباعة والإبلاغ عن الرسائل المشبوهة أو الاحتيالية."
+  Finance:
+    en:
+      - "The Finance office handles tuition fees calculated per credit hour, semester invoices, and outstanding balance statements."
+      - "The Finance office processes payments, issues official receipts, and corrects duplicate charges or payments not yet reflected."
+      - "The Finance office administers scholarships, Ministry of Higher Education grants, tuition discounts, and student employment program payments."
+      - "The Finance office arranges tuition installment plans, payment deadline extensions, and financial holds that block registration or results."
+      - "The Finance office handles refunds after course withdrawal, deposits, fines, and fee clearance before graduation or travel abroad."
+    ar:
+      - "الدائرة المالية تتابع الرسوم الجامعية المحسوبة على الساعة المعتمدة وفواتير الفصل وكشوف الأرصدة المستحقة."
+      - "الدائرة المالية تستقبل الدفعات وتصدر الإيصالات الرسمية وتصحح الدفعات المكررة أو غير الظاهرة في النظام."
+      - "الدائرة المالية تدير المنح الدراسية ومنح وزارة التعليم العالي والخصومات على الرسوم ومستحقات برنامج تشغيل الطلبة."
+      - "الدائرة المالية تنظم تقسيط الرسوم وتمديد مواعيد الدفع والقيود المالية التي تمنع التسجيل أو عرض النتائج."
+      - "الدائرة المالية تتابع استرداد المبالغ بعد سحب المواد والتأمينات والغرامات وبراءة الذمة المالية قبل التخرج أو السفر."
+  Transportation:
+    en:
+      - "The Transportation office runs the university shuttle and bus service between campus and main pickup points across the city."
+      - "The Transportation office publishes bus routes, timetables, and stop locations, and announces schedule changes or cancelled trips."
+      - "The Transportation office issues, renews, and replaces bus passes and subscriptions, and handles lost or damaged cards."
+      - "The Transportation office follows up on late, missed, or overcrowded buses and complaints about driver conduct or vehicle condition."
+      - "The Transportation office manages parking permits, special transport for events or field trips, and accessible transport for students with disabilities."
+    ar:
+      - "مكتب النقل يشغّل خدمة الباصات والحافلات الجامعية بين الحرم الجامعي ونقاط التجمع الرئيسية في المدينة."
+      - "مكتب النقل ينشر خطوط الباصات ومواعيدها وأماكن المواقف، ويعلن عن تغيير المواعيد أو إلغاء الرحلات."
+      - "مكتب النقل يصدر اشتراكات الباص ويجددها ويستبدلها، ويتابع البطاقات المفقودة أو التالفة."
+      - "مكتب النقل يتابع تأخر الباصات أو عدم وصولها أو اكتظاظها والشكاوى عن سلوك السائقين أو حالة المركبات."
+      - "مكتب النقل يدير تصاريح مواقف السيارات والنقل الخاص للفعاليات والرحلات الميدانية ونقل الطلبة من ذوي الإعاقة."
+  Facilities:
+    en:
+      - "The Facilities office handles maintenance of classrooms, labs, and offices, including broken furniture, doors, windows, and locks."
+      - "The Facilities office responds to power outages, electrical faults, lighting failures, and heating or air conditioning problems in buildings."
+      - "The Facilities office repairs water leaks, plumbing faults, and restroom problems, and coordinates cleaning and waste collection across campus."
+      - "The Facilities office maintains classroom equipment such as projectors, screens, and sound systems, and manages room and hall bookings."
+      - "The Facilities office handles physical safety hazards, including stuck elevators, fire equipment, damaged walkways, and building accessibility."
+    ar:
+      - "مكتب المرافق يتابع صيانة القاعات والمختبرات والمكاتب، بما فيها الأثاث المكسور والأبواب والشبابيك والأقفال."
+      - "مكتب المرافق يستجيب لانقطاع الكهرباء والأعطال الكهربائية وتعطل الإنارة ومشاكل التدفئة والتكييف في المباني."
+      - "مكتب المرافق يصلح تسريبات المياه وأعطال التمديدات الصحية ومشاكل دورات المياه، وينسق التنظيف وجمع النفايات في الحرم."
+      - "مكتب المرافق يصون معدات القاعات مثل أجهزة العرض والشاشات وأنظمة الصوت، ويدير حجز القاعات والمدرجات."
+      - "مكتب المرافق يتعامل مع مخاطر السلامة مثل تعطل المصاعد ومعدات الإطفاء والممرات المتضررة وسهولة الوصول للمباني."
+  Academic Support:
+    en:
+      - "The Academic Support office provides academic advising, study plan reviews, and guidance on choosing courses toward graduation requirements."
+      - "The Academic Support office handles grade inquiries, grade objection requests, incomplete grades, and corrections to recorded marks."
+      - "The Academic Support office manages exam schedules, exam conflicts, makeup exams, and attendance or absence excuses with instructors."
+      - "The Academic Support office supports students on academic probation with tutoring, study skills help, and GPA improvement plans."
+      - "The Academic Support office guides field training and German Year requirements, including credit-hour minimums, GPA thresholds, and learning agreements."
+    ar:
+      - "مكتب الدعم الأكاديمي يقدم الإرشاد الأكاديمي ومراجعة الخطة الدراسية والمساعدة في اختيار المواد لإتمام متطلبات التخرج."
+      - "مكتب الدعم الأكاديمي يتابع الاستفسارات عن العلامات وطلبات الاعتراض عليها والعلامات غير المكتملة وتصحيح العلامات المرصودة."
+      - "مكتب الدعم الأكاديمي ينظم جداول الامتحانات وتعارضها والامتحانات التعويضية وأعذار الغياب بالتنسيق مع المدرسين."
+      - "مكتب الدعم الأكاديمي يساعد الطلبة تحت الإنذار الأكاديمي بالدروس المساندة ومهارات الدراسة وخطط رفع المعدل التراكمي."
+      - "مكتب الدعم الأكاديمي يوضح متطلبات التدريب الميداني والسنة الألمانية، مثل الحد الأدنى للساعات والمعدل واتفاقية التعلم."

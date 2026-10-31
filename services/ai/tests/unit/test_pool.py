@@ -61,6 +61,9 @@ def test_augmented_rows_reviewed_only(tmp_path: Path, normalizer: DefaultNormali
     with pytest.raises(InvalidInput, match="make_folds"):
         group_folds(pool, 5)
     assert len(load_pool([OFFICIAL_CSV, path], normalizer, use_augmentation=False)) == 432
+    # only check_leakage and the labelled "unreviewed" ablation arm ever see the unchecked row
+    everything = load_pool([OFFICIAL_CSV, path], normalizer, include_unreviewed=True)
+    assert len(everything) == 435 and "AUG-AZ-0002" in everything.request_id
 
 
 def test_schema_and_row_errors(tmp_path: Path, normalizer: DefaultNormalizer) -> None:

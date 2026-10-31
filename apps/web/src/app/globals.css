@@ -3,14 +3,14 @@
 
 @layer base {
   html {
-    background: var(--cp-surface-0);
+    background: var(--cp-page);
     color: var(--cp-text-1);
     font-family: var(--cp-font-sans);
     -webkit-text-size-adjust: 100%;
   }
   body {
     min-height: 100dvh;
-    background: var(--cp-surface-0);
+    background: var(--cp-page);
     color: var(--cp-text-1);
     font-size: var(--cp-text-md);
     line-height: 1.55;
@@ -20,9 +20,25 @@
   :lang(ar) {
     line-height: 1.8;
   }
+  h1,
+  h2 {
+    color: var(--cp-heading);
+    letter-spacing: -0.01em;
+  }
+  :lang(ar) h1,
+  :lang(ar) h2 {
+    letter-spacing: 0;
+  }
   :focus-visible {
     outline: 2px solid var(--cp-focus);
     outline-offset: 2px;
+  }
+  /* On the blue bands the focus ring must contrast with blue, so it turns white. */
+  [data-band] :focus-visible {
+    outline-color: var(--cp-on-band);
+  }
+  [data-footer] :focus-visible {
+    outline-color: var(--cp-footer-link);
   }
   @media (prefers-reduced-motion: reduce) {
     *,

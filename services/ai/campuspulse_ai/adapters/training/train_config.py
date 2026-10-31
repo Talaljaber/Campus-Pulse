@@ -31,6 +31,13 @@ class TrainCfg:
     m1_C_grid: tuple[float, ...]
     m2lr_C_grid: tuple[float, ...]
     weight_step: float
+    proto_temperature_grid: tuple[float, ...]
+    head_temperature_grid: tuple[float, ...]
+    conformal_calibration: str  # row | group (P2.7)
+    stage_b_mode: str  # fixed (D-016) | tuned (P2.7 search)
+    fixed_C: tuple[float, float]  # (m1, m2lr) in `fixed` mode
+    fixed_weights_category: dict[str, float]
+    fixed_weights_priority: dict[str, float]
     tau_ood_percentile: float
     tau_margin: float
     human_review_min_acc: float
@@ -40,7 +47,7 @@ class TrainCfg:
 
     @property
     def m1_C(self) -> float:
-        """Provisional stage B (P1.16): the grid midpoint. P2.7 replaces it with the OOF grid search."""
+        """The grid midpoint: the fallback when the OOF grid search is skipped (`--fast`, tests)."""
         return midpoint(self.m1_C_grid)
 
     @property
@@ -66,6 +73,13 @@ class TrainCfg:
             m1_C_grid=tuple(float(c) for c in grids["m1_C"]),
             m2lr_C_grid=tuple(float(c) for c in grids["m2lr_C"]),
             weight_step=float(grids["weight_step"]),
+            proto_temperature_grid=tuple(float(t) for t in grids["proto_temperature"]),
+            head_temperature_grid=tuple(float(t) for t in grids["head_temperature"]),
+            conformal_calibration=str(raw["conformal_calibration"]),
+            stage_b_mode=str(raw["stage_b"]["mode"]),
+            fixed_C=(float(raw["stage_b"]["m1_C"]), float(raw["stage_b"]["m2lr_C"])),
+            fixed_weights_category={str(k): float(v) for k, v in raw["stage_b"]["weights_category"].items()},
+            fixed_weights_priority={str(k): float(v) for k, v in raw["stage_b"]["weights_priority"].items()},
             tau_ood_percentile=float(raw["tau_ood_percentile"]),
             tau_margin=float(raw["tau_margin"]),
             human_review_min_acc=float(raw["human_review_min_acc"]),

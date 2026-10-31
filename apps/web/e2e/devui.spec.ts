@@ -36,7 +36,4 @@ test("kitchen sink: both languages, every interactive element is reachable by Ta
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 
-  // Theme forcing works.
-  await page.getByRole("radio", { name: "Dark" }).first().click();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 });

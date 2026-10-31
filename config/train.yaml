@@ -24,14 +24,67 @@ grids:
   m1_C: [0.5, 1, 2, 4, 8]
   m2lr_C: [0.5, 1, 2, 4, 8]
   weight_step: 0.1              # simplex grid step for ensemble weights
+  # m2proto softmax temperature over cosine scores (e5 cosines sit in a narrow band, so T is small);
+  # chosen by OOF category negative log-likelihood (argmax does not depend on it)
+  proto_temperature: [0.002, 0.003, 0.004, 0.005, 0.0075, 0.01, 0.02, 0.03, 0.05]
+  # priority-head calibration temperature, chosen by OOF negative log-likelihood of the final priority
+  # vectors (1 = the raw LR; > 1 softens the over-confident head so conformal sets can widen)
+  head_temperature: [0.75, 1, 1.5, 2, 3, 4, 6]
+
+# Stage-B structure (D-016). `fixed`: pre-declared C and ensemble weights, not tuned on ~30 groups:
+#   category = M2-LR (strongly regularized) + the department prototypes, equal weights; M1 and M2-kNN keep a
+#   category vector for the record but get weight 0 (kNN joins only if it passes the D-016 rule);
+#   priority = the rc1 members average (M1, M2-LR, M2-kNN, equal), then the head.
+# `tuned`: the P2.7 OOF grid/simplex search, kept as a reported variant (see cv report `nested`).
+# Temperatures (prototype, head) are always chosen by OOF negative log-likelihood: calibration, not accuracy.
+stage_b:
+  mode: fixed
+  m1_C: 2.0                     # the rc1 value; M1 now feeds priority only
+  m2lr_C: 0.5                   # "strongly regularized" (D-016): the smallest value of grids.m2lr_C
+  weights_category: {m1: 0.0, m2lr: 0.5, m2knn: 0.0, m2proto: 0.5}
+  weights_priority: {m1: 0.3333333333333333, m2lr: 0.3333333333333333, m2knn: 0.3333333333333334,
+                     m2proto: 0.0}
+
+# Conformal calibration (P2.7): `group` = the pooled-CDF quantile over cv_groups (Dunn, Wasserman & Ramdas
+# 2022): the wrapper variants of one scenario are one draw, so the finite-sample correction uses G ~ 30
+# groups, not n = 432 rows (LD-32). `row` = the P1 rule over rows.
+conformal_calibration: group
+
+# Department-prototype member m2proto (D-014): learned per-category prototypes (inside each CV fold) and the
+# office descriptions, embedded at train time into models/frozen/vN/m2proto/.
+prototype:
+  parts: [learned, office]
+  mix: 0.5                      # score = mix * learned + (1 - mix) * office when both parts are used
+  descriptions: config/office_descriptions.yaml
 
 tau_ood_percentile: 5           # tau_ood = this percentile of OOF max-similarity of in-distribution rows
 tau_margin: 0.02                # tau_injection / tau_safety = max exemplar similarity over the pool + this (LD-18)
 human_review_min_acc: 0.6       # human_review_maxprob = max-prob below which OOF accuracy < this
 
+memory_threshold:               # scripts/measure_memory_threshold.py -> knn.memory_min_sim (by hand)
+  cross_quantile: 0.995         # the threshold sits above 99.5 % of cross-scenario pair similarities
+
+eval:                           # evaluate.py (P2.8/P2.9); never copied into config.json
+  ece_bins: 10
+  langs: [en, ar, arabizi]
+  bootstrap:                    # paired bootstrap over official cv_groups (D-016)
+    resamples: 2000
+    seed: 42
+    low_pct: 5                  # 90 % interval
+    high_pct: 95
+  decision_rule:                # D-016: adopt a more complex/new option only if all hold
+    min_gain: 0.05              # delta macro-F1
+    max_slice_drop: 0.03        # no language slice worse by more than this
+    min_heads: 2                # of the 3 heads (encoder and head-variant comparisons)
+
 mondrian:                       # switch conformal to per-language quantiles only if (§3.5):
   min_cov_minority: 0.85        #   AR or Arabizi coverage on our test set < this
   min_cov_en: 0.90              #   while EN coverage >= this
+  # P2.10 (ML batch 4): with global quantiles the final rc2 covers our_test category EN 0.949, AR 0.813,
+  # Arabizi 0.719, so the rule fires for CATEGORY; for priority EN is 0.876 < 0.90, so it does not. our_test
+  # informed only this switch and alpha_priority (ASK proxy 0.319 <= 0.35, so 0.10 stays), as the brief says.
+  targets: [category]
+  min_groups: 10                # a language needs this many calibration groups for its own quantile
 
 m3:                             # LD-6 gates (M3 is cut by default, LD-32 / UD-4)
   min_gain: 0.01
@@ -70,7 +123,10 @@ encoder:                        # revision pinned at P1.6 (HF commit of intfloat
   normalize: true
 
 ensemble:
-  members: [m1, m2lr, m2knn]    # "m3" only if every LD-6 gate passes
+  members: [m1, m2lr, m2knn, m2proto]  # "m3" only if every LD-6 gate passes (cut, UD-4); m2proto: D-014
+  # online only: the weight of the memory-aware kNN category vector when a staff correction is among a request's
+  # neighbours (D-016 gives kNN category weight 0, which would silence live learning). 1/3 = kNN's rc1 weight.
+  memory_weight_category: 0.3333333333333333
 
 m1:
   char_ngram: [2, 5]
@@ -80,7 +136,7 @@ knn:
   k: 5
   memory_weight_cap: 0.6
   max_memory_neighbors: 2
-  memory_min_sim: 0.80
+  memory_min_sim: 0.91          # measured (reports/memory_threshold.json): above 99.5 % of cross-scenario e5 pairs
   laplace_mass: 1.0             # one pseudo-vote in total, spread evenly over the labels (P1.11)
 
 priority_head:
@@ -90,7 +146,7 @@ priority_head:
 
 conformal:
   method: lac
-  mondrian_by_lang: false
+  mondrian_by_lang: true        # P2.10 rule fired (see mondrian above); MondrianByLang for mondrian.targets
 
 guards:
   max_tokens: 256               # DefaultNormalizer truncates the core to this many whitespace tokens
