@@ -68,7 +68,7 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `SLA_SCAN_MINUTES` | local, Render | no | ai | default `5` |
 | `INCIDENT_WINDOW_MIN` | local, Render | no | ai | default `30` |
 | `ARTIFACT_DIR` | local, Render | no | ai | default `models/frozen` |
-| `ORT_INTRA_OP_THREADS` | Render (and Dockerfile) | no | ai | `1` on Render, `4` locally. Appendix D writes `ONNX_INTRA_OP_THREADS`; the code field is `ORT_INTRA_OP_THREADS` |
+| `ORT_INTRA_OP_THREADS` | Render (and Dockerfile) | no | ai | `1` on Render, `4` locally. Appendix D writes `ORT_INTRA_OP_THREADS`; the code field is `ORT_INTRA_OP_THREADS` |
 | `CAMPUSPULSE_ROOT` | local | no | ai | optional repo-root override |
 | `PORT` | Render (injected), local | no | uvicorn | default 10000 |
 | `NEXT_PUBLIC_SUPABASE_URL` | local, Netlify | no | web | |

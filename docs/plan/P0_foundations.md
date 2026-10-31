@@ -310,7 +310,7 @@
 <a id="p0-5"></a>
 ## P0.5 — Add `Settings` and `.env.example` (Gmail SMTP)
 
-- [ ] Done
+- [x] Done
 - **Goal:** one typed runtime-settings object. `.env.example` lists every variable, and a test keeps the two in sync.
 - **Depends on:** P0.3
 - **Est / Cut:** 0.5 h · Cut: no
@@ -376,7 +376,7 @@
 <a id="p0-6"></a>
 ## P0.6 — Write the architecture test (import-graph rules)
 
-- [ ] Done
+- [x] Done
 - **Goal:** the layer rules of §1.1 are enforced from the first commit. [P1.18](P1_scored_core.md#p1-18) extends the test with the offline-graph assertions.
 - **Depends on:** P0.4
 - **Est / Cut:** 0.5 h · Cut: no
@@ -405,7 +405,7 @@
 <a id="p0-7"></a>
 ## P0.7 — Build the FastAPI `/health`, Dockerfile and `render.yaml`
 
-- [ ] Done
+- [x] Done
 - **Goal:** an AI service that boots on Render Starter with a single worker and reports its RSS. It has no models yet.
 - **Depends on:** P0.5
 - **Est / Cut:** 0.75 h · Cut: no

@@ -574,7 +574,7 @@
 - Interfaces: `/health` reports `rss_mb`, `encoder_loaded`, `artifact`, `sha`, `sinks`, `llm_tiers` and `vector_store`.
 - Config keys:
   - Render env (secrets, `sync: false`): `AI_SERVICE_TOKEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_*`, `ENABLE_LLM`, `GMAIL_SMTP_USER`, `GMAIL_APP_PASSWORD`, `SMTP_HOST`, `SMTP_PORT`, `DEMO_EMAIL_ALLOWLIST`, `LINEAR_API_KEY`, `LINEAR_WEBHOOK_SECRET`, `ENABLE_SINKS`;
-  - `ONNX_INTRA_OP_THREADS=1`, `AUTH_MODE=supabase_jwt`, `TZ=Asia/Amman`.
+  - `ORT_INTRA_OP_THREADS=1`, `AUTH_MODE=supabase_jwt`, `TZ=Asia/Amman`.
 - Steps:
   1. **The Dockerfile** builds from the repo-root context:
      - base `python:3.11-slim`;
