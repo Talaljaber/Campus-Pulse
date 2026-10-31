@@ -30,6 +30,7 @@ from campuspulse_ai.application.dto import (
     ProblemClusterOut,
     ReindexResponse,
     ResolveIncidentResponse,
+    ReviewItemOut,
     ScorecardOut,
     SimulateResponse,
     TicketOut,
@@ -114,7 +115,9 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             "decided/human_review: opens a ticket (Supabase + Linear issue), may book an advisor slot, "
             "sends allow-listed email and in-app notifications (`outbox` rows), may create or attach "
             "to an incident",
-            "human_review, out_of_scope, distress: inserts a `review_queue` row",
+            "human_review, distress: inserts a `review_queue` row; human_review assigns it to the "
+            "student's advisor (UD-13) or an office queue and notifies the reviewer in-app (and by "
+            "allow-listed email)",
             "distress: no ticket, no email, no LLM call",
             "LLM tiers (if escalated) write `llm_calls` rows",
         ),
@@ -196,6 +199,77 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         side_effects=(
             "updates the `tickets` row; updates the Linear issue",
             "in-app notification to the student; email on `resolved` if allow-listed",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="ticket_forward",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/forward",
+        summary="Forward a ticket to another office",
+        purpose=(
+            "Staff hand a ticket to another office (UD-13): the ticket takes that office and its "
+            "category, keeps its status, priority and SLA, and the Linear issue is updated."
+        ),
+        roles=("staff", "admin"),
+        response_model=TicketOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "updates the `tickets` row (office, category, tag `forwarded`); appends an `events` row "
+            "`ticket.forwarded`",
+            "after the response: updates the Linear issue (label, title, description); one in-app "
+            "`ticket_forwarded` notification for `office:<new office>`",
+            "no prediction change and no live-memory write",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="list_reviews",
+        method="GET",
+        path="/v1/reviews",
+        summary="Review items for the caller",
+        purpose=(
+            "The unsure requests the caller may resolve (UD-13): an advisor gets their students' items "
+            "and the unassigned items of their office; other staff their office's unassigned items; "
+            "admins everything. Newest first."
+        ),
+        roles=("staff", "admin"),
+        response_model=list[ReviewItemOut],
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.FORBIDDEN, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("none (read-only)",),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="review_forward",
+        method="POST",
+        path="/v1/reviews/{review_id}/forward",
+        summary="Resolve a review by forwarding it to an office",
+        purpose=(
+            "The reviewer (the assigned advisor, staff of the item's office, or an admin) sends an "
+            "unsure request to an office. The office's category becomes the final label, the "
+            "correction enters live memory, and the ticket is finalized or opened for that office "
+            "(UD-13). Forwarding to the predicted office is a confirmation. Confirming with a "
+            "priority change stays `POST /v1/feedback`."
+        ),
+        roles=("staff", "admin"),
+        response_model=FeedbackResponse,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "as `POST /v1/feedback`: updates the prediction and resolves the `review_queue` row; inserts "
+            "a `memory_examples` row; finalizes the ticket (office re-routed, Linear updated, deferred "
+            "booking/alert fire) or opens one",
+            "one in-app `ticket_forwarded` notification for `office:<office>` when the office changed",
+            "appends `events` rows `feedback.confirmed`/`feedback.corrected` and `review.forwarded`",
         ),
         tag="staff",
     ),

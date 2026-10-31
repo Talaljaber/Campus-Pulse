@@ -39,6 +39,9 @@ REQUEST_MODELS: dict[str, type[BaseModel] | None] = {
     "explain_counterfactual": None,
     "feedback": dto.FeedbackRequest,
     "ticket_status": dto.TicketStatusRequest,
+    "ticket_forward": dto.ForwardRequest,
+    "list_reviews": None,
+    "review_forward": dto.ForwardRequest,
     "list_incidents": None,
     "resolve_incident": dto.ResolveIncidentRequest,
     "insights_recurring": None,
@@ -56,6 +59,7 @@ QUERY_MODELS: dict[str, type[BaseModel]] = {
     "explain_counterfactual": dto.CounterfactualQuery,
     "list_incidents": dto.IncidentListQuery,
     "insights_recurring": dto.RecurringQuery,
+    "list_reviews": dto.ReviewListQuery,
 }
 
 
@@ -203,6 +207,7 @@ def test_mock_app_enforces_roles(client: TestClient) -> None:
         (dto.NeighborSource, values.Neighbor, "source"),
         (dto.UnderstandingSource, values.Understanding, "source"),
         (dto.IncidentStatus, entities.Incident, "status"),
+        (dto.ReviewStatus, entities.ReviewItem, "status"),
     ],
 )
 def test_dto_literals_mirror_the_domain(dto_literal: Any, owner: type, field: str) -> None:
