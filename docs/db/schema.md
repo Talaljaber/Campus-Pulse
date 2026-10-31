@@ -234,7 +234,13 @@ All three implement the same `MemoryStore` contract:
 - **Errors:** `StoreError` propagates (Act falls back to a ticket).
 - **Threshold:** it does **not** apply `tau_faq`; the action engine does. The answer text is always the retrieved text plus its source, with `[demo]` marking placeholders.
 
-**Tuning:** `python scripts/tune_faq.py [--dry-run]` runs `config/faq_tuning.yaml` (15 answerable paraphrases, 15 uncovered questions; EN/AR/Arabizi) through encoder → retriever → pgvector. It sweeps τ over 0.50–0.95 and writes the lowest τ with precision 1.00 to `config/hand_tuned.yaml` `tau_faq` (current default 0.75). It needs the frozen encoder and embedded FAQ rows (`seed_faq.py` first).
+**Tuning:** `python scripts/tune_faq.py [--dry-run]` runs `config/faq_tuning.yaml` (15 answerable paraphrases, 15 uncovered questions; EN/AR/Arabizi) through encoder → retriever → pgvector. It sweeps τ over 0.50–0.95 and writes the lowest τ with precision 1.00 to `config/hand_tuned.yaml` `tau_faq`. It needs the frozen encoder and embedded FAQ rows (`seed_faq.py` first).
+
+**Result with the v1-rc1 encoder (2026-10-31):** all 28 FAQ rows embedded (dim 384); **`tau_faq = 0.90`**, precision 1.00, recall 0.47 (7/15: EN 5/10, AR 2/3, Arabizi 0/2).
+- e5 scores are compressed: uncovered questions reach 0.874 (`وين بقدر أصلي بالجامعة؟`), so any τ below 0.88 answers some of them.
+- The margin is thin. The CE-hours paraphrase scores 0.896 against the *CS*-hours entry (a wrong answer just under τ), and the top uncovered question is 0.026 below τ.
+- Arabizi paraphrases score 0.73–0.74 and are never answered; they become tickets.
+- More FAQ phrasings (or a reranker) would raise recall; lowering τ would not, without wrong answers.
 
 ## Incident detection (Pulse)
 

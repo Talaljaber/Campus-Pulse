@@ -1025,3 +1025,27 @@
   - The policies are altered in place (`alter policy`): a `drop policy` migration was refused by the MCP apply.
   - `scripts/test_rls.py` still needs the local Docker stack.
 - **Affects streams:** Backend (escalation notes now reach staff), UI (Realtime subscriptions; distress items in the admin view only), Lead (the X4.4 acceptance text now reads `RLS: 11/11`).
+
+### P4.5 — FAQ embedded with the v1-rc1 encoder, `tau_faq` tuned  (db, 2026-10-31)
+- **What now exists:** the 28 live `faq` rows carry embeddings from the frozen `OnnxEncoder` (models v1-rc1, tarball sha256 e9c57de6…532617, 29 files verified). `config/hand_tuned.yaml` `tau_faq` changes from 0.75 to **0.90**. Reference: [db/schema.md › FAQ retrieval](../db/schema.md#faq-retrieval).
+- **Public interfaces added or changed:**
+  - `OnnxEncoder(model_dir / "encoder")` is confirmed as the constructor `seed_faq.py` and `tune_faq.py` use (dim 384, unit-norm output, `query: ` prefix added inside).
+  - `tune_faq.py` now writes `hand_tuned.yaml` with LF and prints UTF-8 on cp1252 consoles.
+- **How to use it:**
+  - `python scripts/seed_faq.py` re-embeds the FAQ after any change to its question text.
+  - `python scripts/tune_faq.py [--dry-run]`.
+  - `train.py` copies `tau_faq` into `config.json` at the next freeze (LD-11).
+- **Config / env added:** none.
+- **Acceptance:**
+  - `seed_faq.py` → `embedded 28 faq rows (dim=384)`.
+  - `tune_faq.py` → `chosen tau_faq=0.90 precision=1.00 recall=0.47 -> config\hand_tuned.yaml`. Sweep: τ 0.85 p=0.73 r=0.73; 0.88 p=0.89 r=0.53; 0.89 p=0.88 r=0.47; 0.90 p=1.00 r=0.47; 0.91 p=1.00 r=0.33.
+  - Also reviewed ML's `local_numpy.save` LF change: correct (`newline="\n"`; `load` is unaffected).
+- **Limitations / TODO / known issues:**
+  - The margin is thin: the CE-hours paraphrase hits the CS-hours entry at 0.896, and the top uncovered question scores 0.874.
+  - Arabizi paraphrases (0.73–0.74) are never answered.
+  - The `config.json` in the frozen v1-rc1 still has the old `tau_faq` until the next freeze.
+  - `tau_inc` measured on the same encoder (offline, `config/simulation/wifi_m.yaml` against other IT complaints in building M):
+    - same-incident pairs 0.821–0.929, and every report ≥ 0.926 to the incident centroid;
+    - other IT problems in M score 0.856–0.909 to that centroid.
+    - The current 0.80 therefore clusters unrelated problems; reported to the lead (decision pending).
+- **Affects streams:** Backend (ActUseCase reads `tau_faq` from config), ML (re-freeze picks up 0.90), Lead (`tau_inc`).
