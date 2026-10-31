@@ -536,3 +536,32 @@
 - **Acceptance:** every command run locally: ruff `All checks passed!`; `mypy --strict` `Success: no issues found in 58 source files`; pytest `237 passed, 8 skipped, 38 deselected`; `test_clean.py` `ALL TESTS PASSED` with no diff in `data/clean` apart from CRLF (Windows only); `DATA AUDIT TESTS PASSED`; leakage `0 identical text_norm across groups; 0 cross-group pairs >= 0.8 (max 0.375)`; `gen_api_docs.py --check` up to date; fresh mock export identical to `services/ai/openapi.json`; web typecheck, lint, vitest (`38 passed`) and `next build` pass; `docker build` succeeds. YAML parses. The workflow has not run on GitHub yet.
 - **Limitations / TODO / known issues:** the generated-types check is skipped until `apps/web` defines `gen:types`. No Windows leg, no Playwright, no `artifacts` job (P1.19). `pnpm test` is run with `--run` because the script is plain `vitest`.
 - **Affects streams:** all (keep CI green); UI (add `gen:types` and commit its output); ML (any change to `data/clean` must be a regeneration of `clean_data.py`).
+
+### P5.4 — Generated API types and triage display components  (ui, 2026-10-31, commits d49fdac..2a1b119)
+- **What now exists:**
+  - `src/lib/ai/types.gen.ts`, generated from `services/ai/openapi.json` (`pnpm gen:types`; `openapi-typescript` 7.13.0 was already pinned), plus type-only aliases in `src/lib/ai/types.ts` and a test that fails when the generated file is stale.
+  - `ProbBar` and `SetBadge` in `components/ui`; `EvidenceText`, `CounterfactualHint` and `ExplanationPanel` in `components/explain`; `ResultCard`, `ActionSummary`, `FlagBadges` and `UnderstandingView` in `components/chat`. They render the DTO types only and fetch nothing.
+  - Stories on `/dev/ui` from the real API fixtures (EN, AR, Arabizi, all five statuses, an audience switch).
+- **Public interfaces added or changed:** see [docs/ui/README.md](../ui/README.md#triage-display-components-p54) and [Generated API types](../ui/README.md#generated-api-types). Counterfactual click: `onCounterfactual(token)` on `ExplanationPanel`, `CounterfactualHint` and `ResultCard`; `onTokenClick(token)` on `EvidenceText`. The language comes from `useLang()`, so there is no `lang` prop.
+- **How to use it:** `import { ResultCard } from "@/components/chat"; <ResultCard result={triageResponse} text={requestText} audience="student" onCounterfactual={(t) => ...} counterfactual={liveAnswerOrNull} />`. After an `openapi.json` change run `pnpm gen:types` in `apps/web`.
+- **Config / env added:** script `gen:types`; tsconfig and vitest alias `@fixtures/*` -> `services/ai/tests/fixtures/api/*`; ESLint now uses `@typescript-eslint/no-restricted-imports` so components may `import type` from `@/lib/ai/*` (runtime imports from it, `@/lib/supabase/*` and `@/lib/repos/*` are still errors); `types.gen.ts` is ESLint-ignored.
+- **Acceptance:** `vitest run src/components/explain src/components/chat` -> `2 files, 41 tests passed` (spec asks >= 10); `vitest run src/components/ui` -> `3 files, 24 tests passed` (>= 12); full `vitest run` -> `9 files, 104 tests passed`; typecheck, lint and build exit 0.
+- **Limitations / TODO / known issues:**
+  - `ResultCard` needs the request text passed in to highlight words inside it, because the API does not echo it.
+  - `action.message` is English-only server prose, so `ActionSummary` builds localised sentences from the structured fields instead of printing it.
+  - Evidence types without a dictionary entry fall back to a humanised string (only the seven seen in the fixtures are translated).
+  - The Arabic strings are first-draft Jordanian Arabic and should get a native read-through.
+  - `FlagBadges` follows the visibility table in docs/api/README.md exactly: flags documented as visible to "all" (including technical ones such as `empty_set`) are shown to students.
+- **Affects streams:** Backend (DTO changes must keep `types.gen.ts` regenerable: the stale test fails otherwise); UI P5.8, P5.10, P5.12 (consume `ResultCard`, `ExplanationPanel`).
+
+### P5.5 — Map primitives  (ui, 2026-10-31, commit 270f603)
+- **What now exists:** `CampusMap`, `BuildingShape`, `RequestDot`, `IncidentRing` and `MapLegend` in `src/components/pulse/map`, with `campus.ts` (geometry, footprints, `dotPosition`, an 11-building fixture campus). Hand-built SVG, no map library, fictional layout on a 1000 x 600 grid. `/dev/ui` shows the map with 20 fixture dots and one incident ring.
+- **Public interfaces added or changed:** see [docs/ui/README.md](../ui/README.md#map-primitives-p55). `buildings.map_x/map_y` is the centre of a footprint; `dotPosition(building, requestId)` gives a deterministic spot inside it.
+- **How to use it:** `<CampusMap buildings={rows} onBuildingClick={...}>{dots}{rings}</CampusMap><MapLegend />`.
+- **Config / env added:** none (CSS keyframes `cp-ring-pulse` in `globals.css`).
+- **Acceptance:** `vitest run src/components/pulse` -> `1 file, 18 tests passed` (dot size by priority, ring with reduced motion, building click, RTL geometry unchanged); build exit 0.
+- **Limitations / TODO / known issues:**
+  - The plan text says "10 buildings" but A to M without I and J is 11 letters. The fixture uses 11. The DB seed (P4.1) must say which, and give coordinates in the same convention; unknown building codes fall back to a 120 x 80 footprint.
+  - A static map is `role="img"`; with `onBuildingClick` it becomes `role="group"` with button children, because an image role hides interactive children.
+  - The pulse animation is not covered by an automated visual test.
+- **Affects streams:** DB (the `buildings` seed convention and coordinates); UI P5.11 (Pulse page).
