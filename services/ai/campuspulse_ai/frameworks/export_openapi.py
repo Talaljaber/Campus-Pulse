@@ -26,7 +26,7 @@ def openapi_document(*, mock: bool) -> dict[str, Any]:
 
         return create_mock_app().openapi()
     try:
-        from campuspulse_ai.frameworks.fastapi_app import create_app  # type: ignore[import-not-found]
+        from campuspulse_ai.frameworks.fastapi_app import create_app
     except ImportError as exc:
         raise RuntimeError("the real app (frameworks/fastapi_app.py) does not exist yet; use --mock") from exc
     document: dict[str, Any] = create_app().openapi()
