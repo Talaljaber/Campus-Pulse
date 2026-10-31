@@ -1,0 +1,66 @@
+request_id,text,lang,source,source_scenario_id,cv_group,needs_human_check,author_method,category,priority
+AUG-PA-0004,Where can I get another copy of the receipt for my fee payment?,en,llm_paraphrase,TR-S02,TR-S02,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-PA-0007,"The lab door jammed shut and the students inside are trapped, they can't get out",en,llm_paraphrase,TR-S03,TR-S03,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-PA-0008,باب المختبر عالق وما بينفتح والطلاب جوا مش قادرين يطلعوا,ar,llm_paraphrase,TR-S03,TR-S03,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-PA-0011,المادة اللي كنت مسجلها انحذفت من جدولي فجأة وما حدا خبرني,ar,llm_paraphrase,TR-S04,TR-S04,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-PA-0012,el madde ely kent msajelha etshaTabat men jadwali fjea w ma had ba3athli ay eshaar,arabizi,llm_arabizi,TR-S04,TR-S04,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-PA-0013,علامة امتحاني انحطت غلط بالنظام وآخر موعد للاعتراض الليلة، بدي أقدم عليها قبل ما يسكر,ar,llm_paraphrase,TR-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-PA-0016,Can someone explain how the prerequisite requirement works for course registration? I don't get it.,en,llm_paraphrase,TR-S06,TR-S06,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-PA-0017,بدي مساعدة عشان أفهم شرط المتطلب السابق للمساق، مش فاهمه.,ar,llm_paraphrase,TR-S06,TR-S06,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-PA-0022,شو الموعد المحدد لفترة السحب والإضافة وين بقدر أعرفه؟,ar,llm_paraphrase,TR-S08,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-PA-0023,Which place lists the dates for the course add/drop window?,en,llm_paraphrase,TR-S08,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-PA-0024,wein benfaham mawa3eed el as7b wel edafe lel mawad?,arabizi,llm_arabizi,TR-S08,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-PA-0028,شو الطريقة اللي بقدر أغير فيها كلمة السر تبعتي؟,ar,llm_paraphrase,TR-S10,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
+AUG-PA-0029,What steps do I follow to change my account password?,en,llm_paraphrase,TR-S10,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
+AUG-PA-0034,"Whenever I try to attach a document on the student portal, it throws an error message",en,llm_paraphrase,TR-S12,TR-S12,True,llm:anthropic/claude-sonnet-5.5,IT Support,medium
+AUG-PA-0036,bawabet el talib betotla3li resalet khata2 kol ma bjarrib arfa3 malaf,arabizi,llm_arabizi,TR-S12,TR-S12,True,llm:anthropic/claude-sonnet-5.5,IT Support,medium
+AUG-PA-0037,"The invoice I got doesn't show the discount from my scholarship, so the amount looks too high.",en,llm_paraphrase,TR-S13,TR-S13,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-PA-0038,الفاتورة ما فيها خصم المنحة تبعتي، والمبلغ طالع أكثر من اللازم.,ar,llm_paraphrase,TR-S13,TR-S13,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-PA-0040,"The campus shuttle hasn't shown up on time, it's about 20 minutes behind schedule",en,llm_paraphrase,TR-S14,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-PA-0041,باص الجامعة متأخر عشرين دقيقة عن وقته,ar,llm_paraphrase,TR-S14,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-PA-0043,وين بلاقي مواعيد الباصات تبع الجامعة؟,ar,llm_paraphrase,TR-S15,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-PA-0044,Where do I find the university bus schedule?,en,llm_paraphrase,TR-S15,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-PA-0049,Which page shows when my tuition payments in installments are due?,en,llm_paraphrase,TR-S17,TR-S17,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-PA-0050,وين بلاقي مواعيد دفعات القسط الجامعي؟,ar,llm_paraphrase,TR-S17,TR-S17,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-PA-0053,ما عم بقدر أفتح الملاحظات اللي كتبها الدكتور على واجبي,ar,llm_paraphrase,TR-S18,TR-S18,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-PA-0054,ma b2dar aftah el mulahazat illi katabha el doctor 3ala el wajeb taba3i,arabizi,llm_arabizi,TR-S18,TR-S18,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-PA-0055,"There's water dripping right beside a power outlet in the lab, which looks dangerous",en,llm_paraphrase,TR-S19,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-PA-0056,في مي عم تنزل جنب فيشة الكهربا في المختبر,ar,llm_paraphrase,TR-S19,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-PA-0057,fi may 3am tenzel janb el fisheh el kahraba b el mukhtabar,arabizi,llm_arabizi,TR-S19,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-PA-0058,The AC in our lecture hall has stopped working and the room is getting hot.,en,llm_paraphrase,TR-S20,TR-S20,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-PA-0060,el mukayyef fi qa3et el muhadarat kharban w ma 3ad byeshteghel,arabizi,llm_arabizi,TR-S20,TR-S20,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-PA-0062,بوابة التسجيل بترفض طلب إضافة المواد تبعي وما عم أقدر أسجل مواد أبداً,ar,llm_paraphrase,TR-S21,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-PA-0063,bawabet el tasjeel bterfod talab idafet el mawad taba3i w ma 3am ba2dar asajjel ay madde,arabizi,llm_arabizi,TR-S21,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-PA-0064,"The pass I use for the bus isn't getting accepted anymore, it quit working earlier today",en,llm_paraphrase,TR-S22,TR-S22,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-PA-0067,"Nobody told us they rerouted the bus, and now it goes a different way than before",en,llm_paraphrase,TR-S23,TR-S23,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-PA-0068,غيروا خط الباص وما حدا أعلمنا، صار يمشي من طريق ثاني,ar,llm_paraphrase,TR-S23,TR-S23,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-PA-0071,جدول الامتحانات مبرمج لي امتحانين بنفس الموعد، مش قادر أقدم الاثنين,ar,llm_paraphrase,TR-S24,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-PA-0072,"jadwal el imte7anat feeh 2 imte7anat bnafs el maw3ed, mesh 2ader a2added el ithnein",arabizi,llm_arabizi,TR-S24,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-PA-0076,حولت رسوم الفصل من الصبح وما انعكست بالنظام، والتسجيل بنتهي قبل الساعة 3 هسا,ar,llm_paraphrase,TR-S26,TR-S07,True,llm:anthropic/claude-sonnet-5.5,Finance,high
+AUG-PA-0079,One of the lights in the corridor isn't working anymore,en,llm_paraphrase,TR-S27,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-PA-0082,Can someone help me decide which elective I should take this semester?,en,llm_paraphrase,TR-S28,TR-S28,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-PA-0083,بدي نصيحة شو مادة اختيارية أختار هالفصل,ar,llm_paraphrase,TR-S28,TR-S28,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-PA-0085,في ميّ عم تنزل وتقطّ قريب من مشبك الكهربا جوا المختبر,ar,llm_paraphrase,TR-S29,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-PA-0086,There's water dripping close to a power outlet inside the lab,en,llm_paraphrase,TR-S29,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-PA-0087,fi may 3am betnazzel 2areeb men plug el kahraba jowa el mukhtabar,arabizi,llm_arabizi,TR-S29,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-PA-0088,صفحة تسجيل المواد واقفة عندي وما بقدر أكمل التسجيل,ar,llm_paraphrase,TR-S30,TR-S30,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-PA-0091,آخر باص انلغى وهسا في طلاب عالطريق مش لاقيين شو يركبوا يرجعوا فيه,ar,llm_paraphrase,TR-S31,TR-S31,True,llm:anthropic/claude-sonnet-5.5,Transportation,high
+AUG-PA-0095,حسابي عالموقع انقفل ومش قادر أدخل، وعندي امتحان أونلاين الليلة,ar,llm_paraphrase,TR-S32,TR-S01,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-PA-0098,The light in the corridor isn't working.,en,llm_paraphrase,TR-S33,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-PA-0099,el lamba illi bel mamar mesh shaghale,arabizi,llm_arabizi,TR-S33,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-PA-0100,جدول الامتحانات مبرمج فيه امتحانين بنفس الموعد وما بقدر أقدم الاثنين,ar,llm_paraphrase,TR-S34,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-PA-0101,My exam timetable has two exams scheduled for the same time slot.,en,llm_paraphrase,TR-S34,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-PA-0103,الرصيد المطلوب مني اللي طالع بحسابي المالي غلط، مش هاد المبلغ اللي علي,ar,llm_paraphrase,TR-S35,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-PA-0104,"The amount I supposedly owe on my student account looks wrong, it doesn't match what I should owe.",en,llm_paraphrase,TR-S35,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-PA-0106,How do I find the timetable for the university buses?,en,llm_paraphrase,TR-S36,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-PA-0109,Which page shows when the course add and drop window opens and closes?,en,llm_paraphrase,VA-S01,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-PA-0110,شو الموقع اللي بيبين متى بيبلش وبينتهي وقت السحب والإضافة للمواد؟,ar,llm_paraphrase,VA-S01,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-PA-0111,wein basta3em a3raf mawa3eed el as7eb wel edafe lal mawad?,arabizi,llm_arabizi,VA-S01,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-PA-0112,The balance I supposedly owe on the university finance portal is incorrect and doesn't match what I should owe,en,llm_paraphrase,VA-S02,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-PA-0113,الرصيد المستحق عليّ اللي طالع بموقع المالية غلط وما بطابق اللي لازم أدفعه,ar,llm_paraphrase,VA-S02,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-PA-0116,The campus shuttle bus is twenty minutes behind its scheduled time.,en,llm_paraphrase,VA-S03,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-PA-0118,جهاز العرض اللي في القاعة ما بشتغل، مش راضي يفتح,ar,llm_paraphrase,VA-S04,VA-S04,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-PA-0120,"el projector fel ghorfe ma byeshteghel, mesh radi yefta7",arabizi,llm_arabizi,VA-S04,VA-S04,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-PA-0121,"They entered the wrong mark for my exam, and I only have until tonight to file an appeal.",en,llm_paraphrase,VA-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-PA-0122,علامة الامتحان تبعتي انحطت غلط، وآخر موعد للاعتراض الليلة,ar,llm_paraphrase,VA-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-PA-0124,What's the way to change my uni account password if I want a new one?,en,llm_paraphrase,VA-S06,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
