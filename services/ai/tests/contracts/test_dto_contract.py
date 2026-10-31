@@ -13,6 +13,8 @@ import csv
 import io
 import json
 import re
+import subprocess
+import sys
 import typing
 from pathlib import Path
 from typing import Any
@@ -237,3 +239,14 @@ def test_fixtures_contain_no_real_addresses_or_secrets() -> None:
         assert address.endswith("@example.com"), address
     assert "gju.edu" not in text.lower()
     assert not re.search(r"sk-or-|sk-ant-|service_role|eyJhbGci", text)
+
+
+def test_generated_endpoint_docs_are_current() -> None:
+    repo_root = SERVICE_AI.parents[1]
+    result = subprocess.run(
+        [sys.executable, str(repo_root / "scripts" / "gen_api_docs.py"), "--check"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
