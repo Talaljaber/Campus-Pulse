@@ -44,6 +44,7 @@ const explanation = {
   counterfactual: null,
   trace: {},
 };
+const outboxRow = (o) => ({ channel: "email", alias: null, request_id: null, body: "", priority: null, flags: [], error: null, provider_id: null, ...o });
 const TABLES = {
   tickets: [
     ticketRow({ id: "t-1", request_id: "r-1", office: "it", category: "IT Support", priority: "high", status: "open", title: "Wi-Fi is down in building M", sla_due_at: ago(3) }),
@@ -63,7 +64,14 @@ const TABLES = {
   ],
   review_queue: [{ id: "rv-1", prediction_id: "p-2", reason: "ambiguous", status: "open", created_at: ago(1), corrected_category: null, corrected_priority: null, note: null, resolved_at: null, reviewer_id: null }],
   incidents: [{ id: "e4f2a6c8-1b3d-4f5e-8a7c-9b0d1e2f0001", building_id: "M", category: "IT Support", office: "it", title: "Wi-Fi outage in building M", priority: "high", report_count: 4, status: "open", opened_at: ago(0.4), resolved_at: null, created_at: ago(0.4) }],
-  outbox: [{ id: "o-1", kind: "broadcast", channel: "in_app", alias: null, request_id: null, to_address: "", subject: "Wi-Fi in building M: we are on it", body: "", status: "simulated", priority: "high", flags: [], error: null, provider_id: null, created_at: ago(0.2) }],
+  outbox: [
+    { id: "o-1", kind: "broadcast", channel: "in_app", alias: null, request_id: null, to_address: "", subject: "Wi-Fi in building M: we are on it", body: "", status: "simulated", priority: "high", flags: [], error: null, provider_id: null, created_at: ago(0.2) },
+    // The outbox page: one row for each status that matters. Addresses are made up (example.test), never real.
+    outboxRow({ id: "o-2", kind: "booking", to_address: "advisor+demo@example.test", subject: "Your advisor slot is booked", status: "sent", created_at: ago(1) }),
+    outboxRow({ id: "o-3", kind: "email", to_address: "someone@real.example", subject: "Your password reset link", status: "rejected", error: "recipient is not on the demo allow-list", created_at: ago(2) }),
+    outboxRow({ id: "o-4", kind: "email", to_address: "student+demo@example.test", subject: "Ticket update", status: "deferred", error: "daily send cap reached", created_at: ago(3) }),
+    outboxRow({ id: "o-5", kind: "alert", to_address: "student+demo@example.test", subject: "Safety alert", status: "failed", error: "smtp timeout", created_at: ago(4) }),
+  ],
 };
 
 /** Applies PostgREST-style `col=eq.value` and `col=in.(a,b)` filters; everything else (select, order, limit) is ignored. */
