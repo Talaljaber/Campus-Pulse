@@ -40,9 +40,27 @@ m3:                             # LD-6 gates (M3 is cut by default, LD-32 / UD-4
   max_download_mb: 200
   max_rss_mb: 400
 
+encoder_export:                 # frameworks/cli/export_encoder.py (P1.6, LD-8); never copied into config.json
+  opset: 17
+  quantization:                 # onnxruntime.quantization.quantize_dynamic, portable int8 (no AVX512/VNNI file)
+    weight_type: QInt8
+    per_channel: true
+    reduce_range: true          # 7-bit weights: no u8s8 int16 saturation on AVX2-only CPUs (same result everywhere)
+  batch_size: 1                 # texts per ONNX call, written to encoder_meta.json: dynamic int8 scales activations
+                                # per batch tensor (padding included), so batch 1 makes a text's vector independent
+                                # of its neighbours; measured throughput is the same as padded batches of 32
+  min_cosine: 0.98              # parity gate vs sentence-transformers fp32 on tests/fixtures/encoder_parity.txt
+  max_size_mb: 130              # int8 model size gate (Appendix B/C budget)
+  rss_warn_mb: 250              # warn when rss_mb_after_load exceeds this (§3.17, Render 400 MB budget)
+  measure_threads: [1, 4]       # 1 = Render (ORT_INTRA_OP_THREADS=1); 4 = Settings default
+  measure_batch: 32
+  measure_repeats_single: 20
+  measure_repeats_batch: 5
+
 # ---- copied into config.json (not learned) ----
-encoder:                        # revision is resolved and recorded by export_encoder.py (P1.6)
+encoder:                        # revision pinned at P1.6 (HF commit of intfloat/multilingual-e5-small, 2026-04-02)
   model_id: intfloat/multilingual-e5-small
+  revision: 614241f622f53c4eeff9890bdc4f31cfecc418b3
   dim: 384
   max_tokens: 256
   query_prefix: "query: "       # LD-9

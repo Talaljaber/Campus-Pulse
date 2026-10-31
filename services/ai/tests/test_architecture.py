@@ -153,7 +153,19 @@ def test_frameworks_import_only_composition_and_dto() -> None:
         # The bare package import is only for ``__version__``.
         return _stdlib(m) or m in (PKG, f"{PKG}.__version__") or any(_under(m, p) for p in allowed_prefixes)
 
-    assert violations(PKG_DIR / "frameworks", ok) == []
+    found = violations(PKG_DIR / "frameworks", ok)
+    assert [(f, m) for f, m in found if not any(_under(m, x) for x in TRAIN_CLI_EXTRA.get(f, ()))] == []
+
+
+# P1.6 (lead to confirm): the training-machine CLI that produces the frozen encoder is the one module that
+# imports torch (ARCHITECTURE §1.4) and it re-runs the inference encoder for the parity / RSS report.
+# It is never imported by the API or by predict.py (P1.18 checks the offline import graph at runtime).
+TRAIN_CLI_EXTRA: dict[Path, tuple[str, ...]] = {
+    PKG_DIR / "frameworks" / "cli" / "export_encoder.py": (
+        "torch", "sentence_transformers", "transformers", "huggingface_hub", "onnx", "onnxruntime", "numpy",
+        "yaml", "tokenizers", f"{PKG}.adapters.models.encoder",
+    ),
+}
 
 
 def test_checker_flags_forbidden_import(tmp_path: Path) -> None:

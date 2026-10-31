@@ -453,3 +453,85 @@ caught by its own lexicon; near misses (`fire alarm test`, `fire extinguisher`, 
 flag never changes a batch label). The danger lexicon is deliberately narrow (precision over recall: a miss
 leaves the priority to the model, which already sees the `safety_risk` evidence feature). A request that
 matches both distress and danger gets `distress` (person first); batch then relies on the model for high.
+
+## 8. Encoder: ONNX int8 e5-small (`adapters/models/encoder.py`, `frameworks/cli/export_encoder.py`, P1.6)
+
+| item | value |
+| --- | --- |
+| model | `intfloat/multilingual-e5-small` (MIT), 384-d, BERT + XLM-R SentencePiece tokenizer (250,002 pieces) |
+| pinned revision | `614241f622f53c4eeff9890bdc4f31cfecc418b3` (HF commit, 2026-04-02), in `config/train.yaml encoder.revision` and `encoder_meta.json` |
+| export | `torch.onnx.export` (TorchScript exporter, `dynamo=False`, opset 17, dynamic batch/seq; inputs `input_ids`, `attention_mask`; output `last_hidden_state`), then `onnxruntime.quantization.quantize_dynamic(QInt8, per_channel=True, reduce_range=True)` (LD-8; no optimum, no AVX512-VNNI file) |
+| why `reduce_range` | 7-bit weights avoid the u8×s8 int16 saturation of AVX2-only kernels, so the same int8 file computes the same values on VNNI and non-VNNI CPUs (Render / judges' machines) |
+| files (`models/frozen/v1/encoder/`, **fetched, gitignored**) | `model_int8.onnx` 118,265,347 B (112.8 MB), sha256 `78f7c1e0…59c2`; `tokenizer.json` 17,082,730 B (byte copy of the pinned revision), sha256 `0b44a9d7…4c39`; `encoder_meta.json` |
+| fp32 ONNX (not shipped) | 448.4 MB |
+| query prefix | `"query: "` added inside `OnnxEncoder` (LD-9); callers never add it |
+| truncation | 256 tokens including `<s>`/`</s>` (`max_tokens`) |
+| pooling | masked mean over `last_hidden_state`, then L2 normalization (numpy) |
+| batch size | 1 (`encoder_meta.json batch_size`, from `encoder_export.batch_size`): dynamic int8 scales activations per batch tensor, padding included, so in a padded batch a text's vector depends on its neighbours (min cos 0.9934 alone vs in a batch). Per-text calls make every text's vector identical in `train.py`, `predict.py` and the API |
+
+**Parity** (`tests/fixtures/encoder_parity.txt`: 20 EN, 18 AR, 11 Arabizi, 1 long stress line truncated at 256):
+cosine(int8 `OnnxEncoder`, sentence-transformers fp32 at the same revision, same prefix and truncation) =
+**min 0.9895, mean 0.9963** (gate ≥ 0.98; worst line `مين المسؤول عن الاعتراض على العلامة؟`). Padded
+batches of 32: min 0.992. fp32 ONNX vs torch: 1.000000 (the export itself is exact; all loss is int8).
+
+**Latency and memory** (`reports/encoder_export.json`; Intel Core i7-10510U 4C/8T @ 1.8 GHz, Windows 11,
+Python 3.13.1; each row measured in a fresh process that imports only numpy + onnxruntime + tokenizers + the
+encoder module; RSS = psutil working set; numbers vary ±40 % between runs on this laptop):
+
+| intra-op threads | RSS after imports | **RSS after load** | RSS after encoding | peak | 1 text | 32 texts (per-text) | 32 texts (one padded batch) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 (Render) | 25 MB | **439 MB** | 442 MB | 524 MB | 15.3 ms | 741 ms | 734 ms |
+| 4 (Settings default) | 25 MB | **440 MB** | 443 MB | 525 MB | 8.5 ms | 377 ms | 246 ms |
+
+An earlier run of the same export measured 13.5 ms / 12.8 ms per text and 414 ms / 371 ms per padded
+batch of 32 at 1 / 4 threads.
+
+**RSS breakdown** (separate probe, one process per step): imports ≈ 54 MB, **the `tokenizers` Unigram
+tokenizer ≈ 250 MB** (its trie over 250,002 pieces; two instances = 528 MB, so it is retained structure,
+not parse garbage), the ORT int8 session ≈ 130 MB (prepacking/arena options change < 5 MB). **This is above
+the 250 MB warning and leaves no room in the §3.17 400 MB Render budget** (escalated; see the P1.6
+changelog entry). Measured option: pruning the vocabulary to Latin + Arabic + digits + punctuation pieces keeps
+126,920 of 250,002 pieces, and that tokenizer loads in ≈ 94 MB (−156 MB); the embedding table would shrink
+by ≈ 47 MB too. Tokenization of EN/AR/Arabizi text is unchanged by construction (removed pieces contain
+other scripts), but it is a model change, so it belongs to the P2.6 / §3.17 decision.
+
+```python
+from campuspulse_ai.adapters.models.encoder import OnnxEncoder, CachingEncoder
+enc = OnnxEncoder(model_dir / "encoder")                       # what seed_faq.py calls; meta supplies the rest
+enc = OnnxEncoder(model_dir / "encoder", query_prefix=cfg.encoder.query_prefix, max_tokens=cfg.encoder.max_tokens,
+                  intra_op_threads=settings.ort_intra_op_threads)  # build_offline / build_online
+enc.encode(["وين جدول الباصات"])      # -> [[384 floats]], unit norm;  enc.encode_array(texts) -> float32 (n, 384)
+enc.dim, enc.model_id, enc.revision, enc.query_prefix, enc.max_tokens
+cached = CachingEncoder(enc)          # train/CV: each distinct text embedded once; .hits / .misses
+```
+
+- `OnnxEncoder(encoder_dir, *, query_prefix=None, max_tokens=None, intra_op_threads=None, batch_size=None)`:
+  every `None` comes from `encoder_meta.json` (threads: the ORT default). Raises `ArtifactMissing` (no dir,
+  meta, ONNX or tokenizer file; the message names `scripts/fetch_models.py`) or `ArtifactVersionMismatch`
+  (malformed meta, pooling other than mean, graph inputs ≠ meta). Never imports torch.
+- `encoder_meta.json` keys: `schema_version, model_id, revision, dim, max_tokens, query_prefix, pooling,
+  normalize, runtime, onnx_file, tokenizer_file, pad_token_id (1), batch_size (1), input_names, output_name,
+  opset, quantization, exporter, sha256`. `train.py` (P1.16) copies `model_id, revision, dim, max_tokens,
+  query_prefix` into `config.json encoder` and lists both files in `MANIFEST.json`.
+- `HashingEncoder(dim=384, seed=42)` in `tests/fixtures/fakes.py`: deterministic signed feature hashing of
+  words + char 3-grams (blake2b), unit vectors, related texts have positive cosine. Tests only.
+
+**Re-export** (training machine, `requirements-train.txt` + `onnx`, see the changelog for the pins):
+
+```bash
+python -m campuspulse_ai.frameworks.cli.export_encoder --model intfloat/multilingual-e5-small \
+    --revision 614241f622f53c4eeff9890bdc4f31cfecc418b3 --out models/frozen/v1/encoder
+# int8 size=112.8 MB min_cos=0.990 rss_mb_after_load=439.4 ms_per_batch32=740.8 (threads=1, ms_per_text=15.3)
+# int8 size=112.8 MB min_cos=0.990 rss_mb_after_load=440.1 ms_per_batch32=376.8 (threads=4, ms_per_text=8.5)
+# WARNING: rss_mb_after_load 439.4 > 250 (threads=1; §3.17 budget)   (exit 0; exit 1 if min_cos < 0.98 or size > 130 MB)
+```
+
+Knobs (`config/train.yaml encoder_export`): `opset: 17`, `quantization.{weight_type: QInt8, per_channel: true,
+reduce_range: true}`, `batch_size: 1`, `min_cosine: 0.98`, `max_size_mb: 130`, `rss_warn_mb: 250`,
+`measure_threads: [1, 4]`, `measure_batch: 32`, `measure_repeats_{single: 20, batch: 5}`. The int8 bytes are
+deterministic only up to the toolchain: re-exporting with other torch/onnx versions may change the sha, so the
+shipped file is the one in the release asset (LD-5), not a rebuild.
+
+The fallback `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (revision
+`e8f8c211226b894fcb81acc59f3b34ba3efd5f42`, no prefix, 128 tokens) is exported to `.tmp/enc_minilm` with its
+report in `.tmp/enc_minilm_report.json` for P2.6 (not shipped).
