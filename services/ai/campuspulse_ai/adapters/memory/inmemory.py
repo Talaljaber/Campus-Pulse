@@ -15,7 +15,7 @@ from datetime import datetime
 import numpy as np
 
 from campuspulse_ai.domain.entities import MemoryExample
-from campuspulse_ai.domain.errors import NotFound
+from campuspulse_ai.domain.errors import NotFound, StoreError
 from campuspulse_ai.domain.values import MemoryStats, Neighbor
 
 
@@ -27,12 +27,18 @@ class InMemoryMemoryStore:
     - `deactivate` raises NotFound for an unknown id.
     - `neighbors` returns active examples with cosine >= min_sim (source="memory").
     - `stats`: total/active counts, active count per category, newest created_at.
+
+    `dim` (optional, P3.7): when given, `add` raises StoreError for an embedding of another width,
+    like pgvector's `vector(384)` column does.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, dim: int | None = None) -> None:
         self._items: dict[str, MemoryExample] = {}
+        self._dim = dim
 
     def add(self, ex: MemoryExample) -> MemoryExample:
+        if self._dim is not None and len(ex.embedding) != self._dim:
+            raise StoreError(f"memory embedding has {len(ex.embedding)} dimensions, expected {self._dim}")
         saved = dataclasses.replace(ex, id=ex.id or str(uuid.uuid4()), embedding=tuple(ex.embedding))
         self._items[saved.id] = saved
         return dataclasses.replace(saved)
