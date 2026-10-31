@@ -413,7 +413,12 @@ def cv_report(oof: OOFResult, tuned: Tuned, cfg: TrainCfg) -> dict[str, Any]:
 
 
 def build_config(
-    cfg: TrainCfg, tuned: Tuned, enc: EncoderInfo, members: Sequence[str], trained_at: str
+    cfg: TrainCfg,
+    tuned: Tuned,
+    enc: EncoderInfo,
+    members: Sequence[str],
+    trained_at: str,
+    proto_parts: Sequence[str] | None = None,
 ) -> FrozenConfig:
     """Assemble and validate `config.json` (the only writer is `train.py`, §1.6)."""
     encoder = cfg.section("encoder")
@@ -470,7 +475,7 @@ def build_config(
     if PROTO in members:
         proto = cfg.section("prototype")
         data["prototype"] = {
-            "parts": list(proto["parts"]),
+            "parts": list(proto_parts if proto_parts is not None else proto["parts"]),
             "mix": float(proto["mix"]),
             "temperature": tuned.proto_temperature,
         }
@@ -533,9 +538,9 @@ def freeze(
     if PROTO in oof.members:
         proto_cfg = cfg.section("prototype")
         sets = []
-        if "learned" in proto_cfg["parts"]:
+        if "learned" in oof.proto_parts:
             sets.append(learned_prototypes(emb, list(pool.category), list(pool.scenario_id)))
-        if "office" in proto_cfg["parts"] and kit.office is not None:
+        if "office" in oof.proto_parts and kit.office is not None:
             sets.append(kit.office)
         protos = PrototypeSet.concat(sets, encoder.dim)
         for t in TARGETS:
@@ -580,7 +585,7 @@ def freeze(
         written.append(dst)
 
     trained_at = (now or datetime.now(UTC)).isoformat(timespec="seconds")
-    config = build_config(cfg, tuned, enc, oof.members, trained_at)
+    config = build_config(cfg, tuned, enc, oof.members, trained_at, oof.proto_parts)
     config.save(out / "config.json")
     save_oof(out / OOF_FILE, oof)
     written += [out / "config.json", out / OOF_FILE, *enc.files]

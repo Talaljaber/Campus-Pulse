@@ -149,6 +149,7 @@ class OOFResult:
     selection: Mapping[str, Any] = field(default_factory=dict)
     nested: Mapping[str, Any] = field(default_factory=dict)
     head_members: tuple[str, ...] = ()
+    proto_parts: tuple[str, ...] = PARTS  # the m2proto parts this run used (ablation arms change them)
 
     @property
     def head_pri(self) -> NDArray[np.float64]:
@@ -720,4 +721,5 @@ def run_cv(
         selection=trace,
         nested=nested_out,
         head_members=tuple(m for m in members if m not in CATEGORY_ONLY),
+        proto_parts=tuple(toggles.proto_parts),
     )

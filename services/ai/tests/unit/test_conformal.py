@@ -97,4 +97,5 @@ def test_mondrian_uses_the_language_quantile_and_falls_back(tmp_path: Path) -> N
     mond.save(tmp_path / "category")
     again = MondrianByLang.load(tmp_path / "category")
     assert again.predict_set_for(p, "ar") == mond.predict_set_for(p, "ar")
-    assert LACConformal.load(tmp_path / "category").q == pytest.approx(0.5)  # the fallback file stays readable
+    # the fallback file stays readable on its own
+    assert LACConformal.load(tmp_path / "category").q == pytest.approx(0.5)

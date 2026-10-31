@@ -146,8 +146,9 @@ class MondrianByLang:
     `mondrian.min_cov_minority` while EN >= `mondrian.min_cov_en`). `predict_set_for(p, lang)` uses the
     language's own quantile, calibrated on that language's OOF scores; a language without its own
     quantile (too few calibration groups, e.g. Arabizi before reviewed augmentation exists) and the
-    language-free `predict_set(p)` use `fallback`, the global quantile. The guarantee becomes per language, which is what the fairness rule asks for; with
-    ~15 Arabic groups it is even more approximate than the global one (LD-32).
+    language-free `predict_set(p)` use `fallback`, the global quantile. The guarantee becomes per
+    language, which is what the fairness rule asks for; with ~15 Arabic groups it is even more
+    approximate than the global one (LD-32).
     """
 
     def __init__(self, inner_by_lang: dict[str, LACConformal], fallback: LACConformal) -> None:
