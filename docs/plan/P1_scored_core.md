@@ -83,7 +83,7 @@
 <a id="p1-1"></a>
 ## P1.1 — Strip wrappers and normalize text with byte-for-byte parity to `clean_data.py`
 
-- [ ] Done
+- [x] Done
 - **Goal:** the package reproduces `core` and `text_norm` for all 432 official rows exactly, and sets `stated_urgency` from wrappers and markers (§3.7).
 - **Depends on:** [P0.4](P0_foundations.md#p0-4)
 - **Est / Cut:** 0.75 h · Cut: no
@@ -129,7 +129,7 @@
 <a id="p1-2"></a>
 ## P1.2 — Add language ID and Arabizi transliteration
 
-- [ ] Done
+- [x] Done
 - **Goal:** a conservative Arabizi detector (zero false positives on official English rows) and a lexicon-first transliterator. Models see `translit | original` (§3.7, SPEC §5.1[2]).
 - **Depends on:** P1.1
 - **Est / Cut:** 1.5 h · Cut: no. The lexicon starts at ≥ 200 entries and grows to ~300 by the end of P2.
@@ -173,7 +173,7 @@
 <a id="p1-3"></a>
 ## P1.3 — Assemble `DefaultNormalizer` (+ location extraction)
 
-- [ ] Done
+- [x] Done
 - **Goal:** the `Normalizer` port implementation that every path uses.
 - **Depends on:** P1.1, P1.2
 - **Est / Cut:** 0.75 h
@@ -219,7 +219,7 @@
 <a id="p1-4"></a>
 ## P1.4 — Add `FrozenConfig`, `config/train.yaml` and the `ArtifactStore` (manifest + sha256)
 
-- [ ] Done
+- [x] Done
 - **Goal:** one validated schema for every learned value (§1.6) and checksummed artifact I/O (§3.12). All later tasks read thresholds from here, never from literals.
 - **Depends on:** [P0.4](P0_foundations.md#p0-4)
 - **Est / Cut:** 1 h · Cut: no

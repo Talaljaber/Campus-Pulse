@@ -103,6 +103,8 @@ def test_application_domain_numpy_only() -> None:
             or _under(m, f"{PKG}.domain")
             or _under(m, f"{PKG}.application")
             or _under(m, "numpy")
+            # LD-38: the typed frozen config is read-only data the core is built from.
+            or _under(m, f"{PKG}.config.frozen")
         )
 
     found = violations(PKG_DIR / "application", ok)

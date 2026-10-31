@@ -324,6 +324,8 @@ Decided by the lead on 2026-10-31 and applied throughout the phase files and [AR
     - `out_of_scope` returns topic chips (`question_id: "topic"`, which ClarifyUseCase accepts);
     - `frameworks/api_contract.route_kwargs` must be used by the real routes (P3.12), and `/health` adopts `dto.HealthResponse` there.
 - <a id="ld-37"></a>**LD-37 Ownership moves.** P1.7 `LocalNumpyVectorStore` and `InMemoryRepository` (formerly part of P3.8) move to the DB stream, because they sit in DB-owned paths (`adapters/vectors`, `adapters/store`). `build_online` (P4.3) is assigned later by the lead, once the notifier, sink and oracle adapters exist.
+- <a id="ld-38"></a>**LD-38 Application may read FrozenConfig.** `application/` may import `campuspulse_ai.config.frozen` (typed, read-only frozen config, pydantic-based) so `TriageCore` and the use cases are built from it directly. No other `config` module, and no pydantic elsewhere in `application/`, except `dto.py` (LD-36). `test_architecture.py` enforces this.
+- <a id="ld-39"></a>**LD-39 Clean-data checks on Windows.** pandas writes CRLF on Windows and `.gitattributes` normalizes to LF, so "data/clean unchanged" is checked with `git diff --exit-code -- data/clean`, not `git status --porcelain`. `cleaning_report.md` was regenerated once with the pinned pandas 3.0.6 (tie order of equal counts only; the CSVs are unchanged).
 
 ## Open questions for the user
 

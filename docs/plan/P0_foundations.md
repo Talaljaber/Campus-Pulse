@@ -24,7 +24,7 @@
 <a id="exit-criteria"></a>
 **Exit criteria (SPEC §12, as checks):**
 1. **CI green:** `gh run list --workflow ci.yml --branch main --limit 1 --json conclusion -q ".[0].conclusion"` → `success`.
-2. **Data pipeline:** `python scripts/test_clean.py` → last line `ALL TESTS PASSED`, then `git status --porcelain -- data/clean` → empty output (regeneration is deterministic). Also `python scripts/test_data_audit.py` → `DATA AUDIT TESTS PASSED` and `python scripts/check_leakage.py --official` → exit 0.
+2. **Data pipeline:** `python scripts/test_clean.py` → last line `ALL TESTS PASSED`, then `git diff --exit-code -- data/clean` → exit 0 output (regeneration is deterministic). Also `python scripts/test_data_audit.py` → `DATA AUDIT TESTS PASSED` and `python scripts/check_leakage.py --official` → exit 0.
 3. **Empty app deploys:**
    - `curl.exe -s https://<render-service>.onrender.com/health` → JSON with keys exactly `status, artifact, rss_mb` and `"status":"ok"`, `"artifact":null`.
    - `curl.exe -s -o NUL -w "%{http_code}" https://<site>.netlify.app/` → `200`.
@@ -51,7 +51,7 @@
   - `git ls-files CLAUDE.md docs/SPEC.md scripts/clean_data.py data/raw/train.csv` → exactly those 4 paths
   - `git check-ignore -v data/raw/hidden_test.csv` → `.gitignore:<n>:*hidden_test*	data/raw/hidden_test.csv`. This tests the rule only; nothing is listed or opened.
   - `git ls-files --eol docs/SPEC.md` → starts with `i/lf`
-  - `python scripts/test_clean.py` → `ALL TESTS PASSED`, then `git status --porcelain -- data/clean` → empty
+  - `python scripts/test_clean.py` → `ALL TESTS PASSED`, then `git diff --exit-code -- data/clean` → exit 0
   - `git remote -v` → `origin  https://github.com/Talaljaber/Ai-Quest.git (push)`
 - **Hands off:** a git root that is the project root, with a public remote.
 - **Notes:**
@@ -104,7 +104,7 @@
 <a id="p0-3"></a>
 ## P0.3 — Wire in the existing data pipeline and create the holdout folders
 
-- [ ] Done
+- [x] Done
 - **Goal:** the cleaning pipeline runs under pytest and CI. The package has one place for data paths. The holdout folders exist and say they are never trained on.
 - **Depends on:** P0.2
 - **Est / Cut:** 0.5 h · Cut: no
@@ -140,7 +140,7 @@
 <a id="p0-3a"></a>
 ## P0.3a — Freeze a category-stratified `cv_fold` assignment
 
-- [ ] Done
+- [x] Done
 - **Goal:** five folds in which every validation part contains all 6 categories and all 3 priorities. Plain GroupKFold(5) on the 30 `cv_group`s leaves validation folds with only 4–5 categories for every seed tried, which makes per-fold macro-F1 and calibration undefined or biased (data audit F1; [LD-31](../PLAN.md#ld-31)).
 - **Depends on:** P0.3
 - **Est / Cut:** 0.75 h · Cut: no
@@ -174,7 +174,7 @@
 <a id="p0-3b"></a>
 ## P0.3b — Add derived columns: `lang_script`, `is_arabizi`, `stated_urgency`
 
-- [ ] Done
+- [x] Done
 - **Goal:** the columns the plan assumes but the cleaned data does not provide, in a separate file so the existing CSVs keep their parity hashes (data audit F2; [LD-33](../PLAN.md#ld-33)).
 - **Depends on:** P0.3
 - **Est / Cut:** 0.25 h · Cut: no
@@ -194,7 +194,7 @@
 <a id="p0-3c"></a>
 ## P0.3c — Make `clean_data.py` safe on a cp1252 console (outputs byte-identical)
 
-- [ ] Done
+- [x] Done
 - **Goal:** `python scripts/clean_data.py` exits 0 on a Windows cp1252 console. Today it crashes with `UnicodeEncodeError` in its final `print` of the Arabic report, after all files are written (data audit F4).
 - **Depends on:** P0.3
 - **Est / Cut:** 0.1 h · Cut: no
@@ -207,14 +207,14 @@
 - **Acceptance:**
   - On Windows PowerShell: `python scripts/clean_data.py > $null; $LASTEXITCODE` → `0`
   - `python scripts/test_data_audit.py` → `DATA AUDIT TESTS PASSED` (P0.3d includes the hash-parity check)
-  - `git status --porcelain -- data/clean` → empty
+  - `git diff --exit-code -- data/clean` → exit 0
 - **Hands off:** a script that CI can run on the Windows leg.
 - **Notes:** labels and outputs must not change. If any hash differs, revert.
 
 <a id="p0-3d"></a>
 ## P0.3d — Add `scripts/test_data_audit.py` (the audit's test gaps)
 
-- [ ] Done
+- [x] Done
 - **Goal:** turn the data audit's findings into a standing test, without editing `test_clean.py` (data audit F5).
 - **Depends on:** P0.3a, P0.3b, P0.3c
 - **Est / Cut:** 1 h · Cut: no
@@ -239,7 +239,7 @@
 <a id="p0-3e"></a>
 ## P0.3e — Add the leakage gate `scripts/check_leakage.py` (official mode)
 
-- [ ] Done
+- [x] Done
 - **Goal:** the leakage check that §3.2 names, available from P0. [P2.1](P2_data_rigor.md#p2-1) extends it to augmented rows and holdouts.
 - **Depends on:** P0.3
 - **Est / Cut:** 0.5 h · Cut: no
