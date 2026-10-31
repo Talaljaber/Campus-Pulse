@@ -43,6 +43,9 @@ components are added.
   Shipped as an int8 ONNX export whose vocabulary we pruned to Latin, Arabic, digit and symbol pieces with our
   own tool (`frameworks/cli/prune_encoder.py`). The embeddings are bit-identical to the unpruned int8 model on
   981 checked texts.
+- `Helsinki-NLP/opus-mt-ar-en` at revision `c5b2a50db78d6be98ae207223f8d4f63bc7a0ff1` (Apache-2.0), converted
+  to CTranslate2 int8. Used only in the P2.14 translate-test experiment (`scripts/translate_test.py`); it is not
+  part of the shipped model or `predict.py`.
 
 **External services**
 - **Supabase**: Postgres with pgvector, Auth and Realtime (app data, request embeddings, FAQ vectors).
