@@ -132,3 +132,24 @@ def load_estimator(directory: Path, kind: str) -> tuple[Any, dict[str, Any]]:
         found = meta.get("kind") if isinstance(meta, dict) else None
         raise ArtifactVersionMismatch(f"{meta_path}: kind {found!r}, expected {kind!r}")
     return joblib.load(model_path), meta
+
+
+def row_proba(lr: Any, x: NDArray[Any]) -> NDArray[np.float64]:
+    """`lr.predict_proba(x)` computed one row at a time in float64.
+
+    sklearn scores the whole float32 matrix in one BLAS call, whose summation order depends on the batch
+    shape, so a text's probabilities would move by ~1e-8 with its batch neighbours. Row by row in float64,
+    every text gets the same vector in `classify`, `classify_many`, `train.py` and the API. Same model:
+    softmax of the decision function (multinomial), or the logistic of the single score (binary fit).
+    """
+    coef = np.asarray(lr.coef_, dtype=np.float64)
+    intercept = np.asarray(lr.intercept_, dtype=np.float64)
+    rows = np.asarray(x, dtype=np.float64)
+    scores = np.stack([coef @ row for row in rows]) + intercept
+    if coef.shape[0] == 1:  # binary: sklearn's expit on the single score, columns (classes_[0], classes_[1])
+        p1 = 1.0 / (1.0 + np.exp(-scores[:, 0]))
+        return np.stack([1.0 - p1, p1], axis=1)
+    scores -= scores.max(axis=1, keepdims=True)
+    e = np.exp(scores)
+    result: NDArray[np.float64] = e / e.sum(axis=1, keepdims=True)
+    return result

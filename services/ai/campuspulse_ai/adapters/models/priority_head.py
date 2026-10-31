@@ -21,6 +21,7 @@ from campuspulse_ai.adapters.models.probs import (
     check_labels,
     load_estimator,
     reorder,
+    row_proba,
     save_estimator,
     to_vectors,
 )
@@ -105,7 +106,7 @@ class LogisticPriorityHead:
         lr = self._fitted()
         if x.ndim != 2 or x.shape[1] != self.input_width:
             raise ValueError(f"input of shape {x.shape}, expected (n, {self.input_width})")
-        proba = lr.predict_proba(x)
+        proba = row_proba(lr, x)  # float64, row by row: the same numbers alone or in a batch
         return to_vectors(reorder(proba, [str(c) for c in lr.classes_], PRIORITY_LABELS), PRIORITY_LABELS)
 
     def coefficients(self) -> dict[str, dict[str, float]]:

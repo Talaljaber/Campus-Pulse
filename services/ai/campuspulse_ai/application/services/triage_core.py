@@ -29,10 +29,12 @@ from __future__ import annotations
 import dataclasses
 import time
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 
 from campuspulse_ai.application.services.priority_finalizer import PriorityFinalizer, onehot
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.domain.entities import CoreResult
+from campuspulse_ai.domain.errors import InvalidInput
 from campuspulse_ai.domain.labels import CATEGORY_LABELS, PRIORITY_LABELS
 from campuspulse_ai.domain.ports import Clock as ClockPort
 from campuspulse_ai.domain.ports import (
@@ -47,6 +49,7 @@ from campuspulse_ai.domain.ports import (
 from campuspulse_ai.domain.values import (
     ArtifactVersion,
     ClarificationConstraint,
+    EnsembleOutput,
     GuardVerdict,
     Location,
     NormalizedRequest,
@@ -60,6 +63,17 @@ MS_PER_S = 1000
 _VERDICT_RANK: Mapping[str, int] = {"injection": 0, "distress": 1, "danger": 2, "gibberish": 3, "none": 4}
 _FLAG_FOR: Mapping[str, str] = {"gibberish": "gibberish", "injection": "injection_attempt",
                                 "distress": "distress", "danger": "safety"}
+
+
+@dataclass(frozen=True)
+class _Prepared:
+    """A request after steps 1–2 (normalized, guarded)."""
+
+    req: NormalizedRequest
+    flags: frozenset[str] | set[str]
+    safety: bool
+    verdicts: tuple[GuardVerdict, ...]
+    injection: GuardVerdict
 
 
 def _vector(dist: Mapping[str, float], labels: tuple[str, ...]) -> ProbVector:
@@ -119,6 +133,32 @@ class TriageCore:
     ) -> tuple[NormalizedRequest, CoreResult]:
         """Classify one request (module docstring). `memory=False` ignores the live memory store."""
         started = time.perf_counter()
+        prepared = self._prepare(raw, picked_location)
+        out = self._ensemble([prepared], memory)[0]
+        return self._finish(prepared, out, constraints, started)
+
+    def classify_many(
+        self, raws: Sequence[str], memory: bool = False
+    ) -> list[tuple[NormalizedRequest, CoreResult] | InvalidInput]:
+        """Classify a batch: one ensemble call for all rows (batch speed), same results as `classify`.
+
+        Each entry is the `classify` result, or the `InvalidInput` that row raised (empty text), so one bad
+        row never fails the batch. No constraints, no picked location (batch mode, §2.5).
+        """
+        started = time.perf_counter()
+        prepared: list[_Prepared | InvalidInput] = []
+        for raw in raws:
+            try:
+                prepared.append(self._prepare(raw, None))
+            except InvalidInput as exc:
+                prepared.append(exc)
+        valid = [p for p in prepared if not isinstance(p, InvalidInput)]
+        outs = iter(self._ensemble(valid, memory))
+        return [p if isinstance(p, InvalidInput) else self._finish(p, next(outs), (), started)
+                for p in prepared]
+
+    def _prepare(self, raw: str, picked_location: Location | None) -> _Prepared:
+        """Steps 1–2: normalize and run the guards."""
         req = self.normalizer.normalize(raw, picked_location)
         flags: set[str] = set()
         safety = False
@@ -136,17 +176,38 @@ class TriageCore:
                 safety = True
         if req.truncated:
             flags.add("truncated")
+        return _Prepared(req, flags, safety, tuple(verdicts), injection)
 
+    def _ensemble(self, prepared: Sequence[_Prepared], memory: bool) -> list[EnsembleOutput | None]:
+        """Step 3 for every row with text, one call per distinct text; None for a row with no text left.
+
+        A text's ensemble output does not depend on the other texts in the call (the encoder runs one text at
+        a time and every member scores rows independently), so scoring each distinct `model_text` once is
+        exact: wrapper variants of one request share a `model_text` and its result.
+        """
+        distinct = list(dict.fromkeys(p.req.model_text for p in prepared if p.req.model_text))
+        outs = self.ensemble.predict(distinct, self.memory if memory else None) if distinct else []
+        by_text = dict(zip(distinct, outs, strict=True))
+        return [by_text[p.req.model_text] if p.req.model_text else None for p in prepared]
+
+    def _finish(
+        self,
+        prepared: _Prepared,
+        out: EnsembleOutput | None,
+        constraints: Sequence[ClarificationConstraint],
+        started: float,
+    ) -> tuple[NormalizedRequest, CoreResult]:
+        """Steps 4–8."""
+        req, flags = prepared.req, set(prepared.flags)
         evidence = self.evidence.extract(req)
-        if req.model_text:
-            out = self.ensemble.predict([req.model_text], self.memory if memory else None)[0]
+        if out is not None:
             p_cat, per_model = out.p_cat, dict(out.per_model)
             ood, neighbors, embedding = out.ood_score, out.neighbors, out.embedding
             p_pri_head = self.head.predict(out.p_pri_model, evidence, constraints)
         else:  # the whole request was an injection: no model sees anything (module docstring, step 3)
             p_cat, per_model, ood, neighbors, embedding = self._prior_cat, {}, 0.0, (), ()
             p_pri_head = self._prior_pri
-        p_pri, floors = self.finalizer.apply(p_pri_head, safety, injection, constraints)
+        p_pri, floors = self.finalizer.apply(p_pri_head, prepared.safety, prepared.injection, constraints)
 
         answered_cat = [c.value for c in constraints if c.kind == "category"]
         if answered_cat:
@@ -160,7 +221,7 @@ class TriageCore:
         if cat_empty or pri_empty:
             flags.add("empty_set")
 
-        top = min(verdicts, key=lambda v: _VERDICT_RANK[v.kind], default=GuardVerdict(kind="none"))
+        top = min(prepared.verdicts, key=lambda v: _VERDICT_RANK[v.kind], default=GuardVerdict(kind="none"))
         latency_ms = int((time.perf_counter() - started) * MS_PER_S)
         return req, CoreResult(
             p_cat=p_cat,
@@ -173,7 +234,7 @@ class TriageCore:
             neighbors=tuple(neighbors),
             evidence=evidence,
             guard=top,
-            safety=safety,
+            safety=prepared.safety,
             floors_applied=floors,
             tier=Tier.TIER0,
             latency_ms=latency_ms,

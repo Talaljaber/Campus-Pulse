@@ -45,12 +45,14 @@ from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
 from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
 from campuspulse_ai.application.services.priority_finalizer import PriorityFinalizer
 from campuspulse_ai.application.services.triage_core import TriageCore
-from campuspulse_ai.application.use_cases.batch_predict import BatchPredictUseCase
+from campuspulse_ai.application.use_cases.batch_predict import BatchPredictUseCase, BatchRow
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.domain.errors import ArtifactVersionMismatch, LLMUnavailable
 from campuspulse_ai.domain.ports import Guard, LabelOracle, ProbabilisticClassifier, SentenceEncoder
 from campuspulse_ai.domain.values import ArtifactVersion, Manifest
+
+__all__ = ["BatchRow", "OfflineContainer", "build_offline", "resolve_model_dir"]
 
 INDEX_DIR = "index"
 LEXICON_DIR = "lexicons"

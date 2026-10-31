@@ -22,6 +22,7 @@ from campuspulse_ai.adapters.models.probs import (
     check_labels,
     load_estimator,
     reorder,
+    row_proba,
     save_estimator,
     target_labels,
     to_vectors,
@@ -31,6 +32,7 @@ from campuspulse_ai.domain.ports import SentenceEncoder
 from campuspulse_ai.domain.values import ProbVector
 
 KIND = "embed_lr"
+
 
 
 class EmbedLR:
@@ -92,7 +94,7 @@ class EmbedLR:
             raise ValueError(f"embeddings of shape {emb.shape}, expected (n, {self.dim})")
         if emb.shape[0] == 0:
             return []
-        proba = lr.predict_proba(emb)
+        proba = row_proba(lr, emb)
         return to_vectors(reorder(proba, [str(c) for c in lr.classes_], self.labels), self.labels)
 
     def save(self, dir: Path) -> None:

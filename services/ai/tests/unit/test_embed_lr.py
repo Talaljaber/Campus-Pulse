@@ -8,6 +8,7 @@ import numpy as np
 from fixtures.fakes import HashingEncoder
 
 from campuspulse_ai.adapters.models.embed_lr import EmbedLR
+from campuspulse_ai.adapters.models.probs import row_proba
 from campuspulse_ai.domain.labels import PRIORITY_LABELS
 from campuspulse_ai.domain.ports import ProbabilisticClassifier
 
@@ -41,3 +42,14 @@ def test_save_load(tmp_path: Path) -> None:
     q = ["students stranded at the bus stop", "where do i pay fees"]
     assert [p.values for p in loaded.predict_proba(q)] == [p.values for p in m.predict_proba(q)]
     assert loaded.dim == enc.dim
+
+
+def test_row_proba_matches_sklearn_and_ignores_batch() -> None:
+    enc = HashingEncoder()
+    m = EmbedLR("priority", enc, C=8.0, seed=42)
+    m.fit(TEXTS, LABELS)
+    emb = np.asarray(enc.encode(TEXTS), dtype=np.float32)
+    lr = m._fitted()
+    assert np.allclose(row_proba(lr, emb), lr.predict_proba(emb), atol=1e-6)
+    alone = [m.predict_proba_from_embeddings(emb[i : i + 1])[0].values for i in range(len(TEXTS))]
+    assert [p.values for p in m.predict_proba_from_embeddings(emb)] == alone

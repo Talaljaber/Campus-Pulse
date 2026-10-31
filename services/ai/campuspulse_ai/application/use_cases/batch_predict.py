@@ -1,7 +1,8 @@
 """`BatchPredictUseCase`: labels for a CSV of requests (P1.15, ARCHITECTURE §2.5, SPEC §5.5).
 
-Used by `predict.py` (offline, the judges' command), `evaluate.py` and `/v1/batch`. For each row it runs
-`TriageCore.classify(text, memory=False)` and takes the argmax of `p_cat` and of the final `p_pri` (safety and
+Used by `predict.py` (offline, the judges' command), `evaluate.py` and `/v1/batch`. For each chunk it runs
+`TriageCore.classify_many(texts, memory=False)` (the same steps as `classify`, one ensemble call)
+and takes the argmax of `p_cat` and of the final `p_pri` (safety and
 other floors are already inside `p_pri`). Batch never applies the decision policy and never emits
 `out_of_scope` (§6.2 flag 13): every row gets one official category and priority.
 
@@ -65,19 +66,22 @@ class BatchPredictUseCase:
         if batch_size < 1:
             raise ValueError("batch_size must be >= 1")
         out: list[BatchPrediction] = []
-        for start in range(0, len(rows), batch_size):  # chunks keep memory flat on very large inputs
-            out.extend(self._one(row, use_llm) for row in rows[start : start + batch_size])
+        for start in range(0, len(rows), batch_size):  # one ensemble call per chunk; memory stays flat
+            chunk = rows[start : start + batch_size]
+            results = self.core.classify_many([r.text for r in chunk], memory=False)
+            out.extend(self._one(row, result, use_llm) for row, result in zip(chunk, results, strict=True))
         return out
 
-    def _one(self, row: BatchRow, use_llm: bool) -> BatchPrediction:
-        try:
-            req, core = self.core.classify(row.text, memory=False)
-        except InvalidInput:
+    def _one(
+        self, row: BatchRow, result: tuple[NormalizedRequest, CoreResult] | InvalidInput, use_llm: bool
+    ) -> BatchPrediction:
+        if isinstance(result, InvalidInput):
             p_cat, p_pri = self.core.priors
-            debug = {"flags": [EMPTY_INPUT_FLAG], "tier": str(Tier.TIER0),
+            empty = {"flags": [EMPTY_INPUT_FLAG], "tier": str(Tier.TIER0),
                      "artifact_version": self.core.artifact.name, "p_cat": p_cat.as_dict(),
                      "p_pri": p_pri.as_dict(), "set_cat": 0, "set_pri": 0, "ood_score": 0.0}
-            return BatchPrediction(row.request_id, p_cat.argmax(), p_pri.argmax(), debug)
+            return BatchPrediction(row.request_id, p_cat.argmax(), p_pri.argmax(), empty)
+        req, core = result
         if use_llm and self._needs_llm(core):
             core = self._ask(req, core)
         debug = {
