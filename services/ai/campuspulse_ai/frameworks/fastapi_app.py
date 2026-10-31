@@ -9,11 +9,16 @@ with the same declarations as the mock app, so `create_app().openapi()` equals
   `501 not_implemented`, `/health` says `degraded`).
 - `settings`: defaults to `Settings()` from the env; stored on `app.state.settings`.
 
+The lifespan also starts the SLA scanner (`background.sla_loop`) when `services.sla` and
+`services.clock` are wired and `SLA_SCAN_MINUTES > 0`, and cancels it on shutdown.
+
 Errors are mapped in `frameworks/errors.py`; auth is `frameworks/auth.py`.
 """
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import dataclasses
 import logging
 from collections.abc import AsyncIterator, Callable
@@ -26,14 +31,31 @@ from campuspulse_ai import __version__
 from campuspulse_ai.composition.api import ApiServices
 from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.frameworks.api_contract import API_DESCRIPTION, API_TITLE, ENDPOINTS
+from campuspulse_ai.frameworks.background import SECONDS_PER_MINUTE, sla_loop
 from campuspulse_ai.frameworks.errors import install_error_handlers
-from campuspulse_ai.frameworks.routes import explain, feedback, health, pending, triage
+from campuspulse_ai.frameworks.routes import (
+    explain,
+    feedback,
+    health,
+    integrations,
+    pending,
+    tickets,
+    triage,
+)
 
 log = logging.getLogger(__name__)
 
 Builder = Callable[[Settings], ApiServices]
 
-_ROUTERS = (triage.router, explain.router, feedback.router, pending.router, health.router)
+_ROUTERS = (
+    triage.router,
+    explain.router,
+    feedback.router,
+    tickets.router,
+    integrations.router,
+    pending.router,
+    health.router,
+)
 _ORDER = {e.op_id: i for i, e in enumerate(ENDPOINTS)}
 
 
@@ -51,7 +73,18 @@ def create_app(
         if services is None and build is not None:
             app.state.services = build(resolved)
             log.info("services built: %s", _wired(app.state.services))
-        yield
+        wired: ApiServices = app.state.services
+        task: asyncio.Task[None] | None = None
+        if wired.sla is not None and wired.clock is not None and resolved.sla_scan_minutes > 0:
+            interval_s = resolved.sla_scan_minutes * SECONDS_PER_MINUTE
+            task = asyncio.create_task(sla_loop(wired.sla.run, wired.clock, interval_s))
+        try:
+            yield
+        finally:
+            if task is not None:
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
 
     app = FastAPI(
         title=API_TITLE,

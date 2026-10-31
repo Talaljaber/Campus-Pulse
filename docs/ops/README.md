@@ -81,7 +81,7 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `GAMING_MIN_REQUESTS` | local, Render | no | ai | default `5`; requests before an alias can be flagged `priority_gaming_suspected` |
 | `GAMING_CLAIM_RATIO` | local, Render | no | ai | default `0.8`; share of requests that claim urgency |
 | `GAMING_HIGH_RATIO_MAX` | local, Render | no | ai | default `0.2`; max share of those claims that were really high |
-| `SLA_SCAN_MINUTES` | local, Render | no | ai | default `5` |
+| `SLA_SCAN_MINUTES` | local, Render | no | ai | default `5`; P4.9: the SLA scanner in the API lifespan scans at startup and then every N minutes; `0` disables it |
 | `INCIDENT_WINDOW_MIN` | local, Render | no | ai | default `30` |
 | `ARTIFACT_DIR` | local, Render | no | ai | default `models/frozen` |
 | `ORT_INTRA_OP_THREADS` | Render (and Dockerfile) | no | ai | `1` on Render, `4` locally. Appendix D writes `ORT_INTRA_OP_THREADS`; the code field is `ORT_INTRA_OP_THREADS` |

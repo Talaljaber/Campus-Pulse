@@ -274,11 +274,13 @@ Integration details: [docs/integrations.md](../integrations.md). Use-case refere
 | --- | --- | --- |
 | `tickets` row | every `ticket`, `booking`, `safety_alert` (and an unanswered FAQ) | `action.ticket_id`; staff dashboard (RLS by office) |
 | Linear issue | each ticket, when `LINEAR_API_KEY` is set (team CDP, label = category, due date = SLA date) | `action.external[]` `{sink: "linear", external_id, url}`. A Linear failure never fails triage. |
-| Ticket status from Linear | a signed `POST /v1/integrations/linear/webhook` that changes the issue state | ticket status; the student gets an in-app `notifications` row |
+| Ticket status from Linear | a signed `POST /v1/integrations/linear/webhook` that moves the issue's state forward | ticket status (+ `resolved_at`); the student gets an in-app `notifications` row; see [Ticket lifecycle](#ticket-lifecycle) |
+| Ticket status from the dashboard | `POST /v1/tickets/{id}/status` by staff of the ticket's office or an admin | ticket status; the Linear issue state; the student's `notifications` row (with the staff note) |
+| SLA escalation | the SLA scanner, every `SLA_SCAN_MINUTES` | priority bumped one level, status `escalated`, `escalated_at`; Linear priority; a `notifications` row for `office:<office>` |
 | Advisor booking | Academic Support × high, not provisional | `action.booking`; the slot's `booked_by`; a `cases` row |
-| Email | booking confirmation (to `DEMO_STUDENT_INBOX` + the advisor's demo inbox); safety and transport alerts (to `DEMO_OFFICE_INBOX`); resolution notices (P4.9) | `outbox` row (`sent` + `provider_id` = Message-ID, `rejected`/`failed` + `error`, or `deferred` + `error` over the daily cap) |
-| In-app message | one per action with a ticket or booking: `understanding.student_reply` (D-006); status changes (P4.9) | `notifications` row for the alias (Realtime), payload below; plus an `outbox` row `in_app` |
-| Audit events | every triage outcome and action | `events` (`triage.decided`, `triage.ask`, `triage.out_of_scope`, `triage.distress`, `act.ticket`, `act.booking`, `act.booking_refused`, `act.safety_alert`, `act.transport_alert`, `act.finalized`, `incident.new`/`incident.attach`) |
+| Email | booking confirmation (to `DEMO_STUDENT_INBOX` + the advisor's demo inbox); safety and transport alerts (to `DEMO_OFFICE_INBOX`); resolution notice when a ticket becomes `resolved` (to `DEMO_STUDENT_INBOX`, P4.9) | `outbox` row (`sent` + `provider_id` = Message-ID, `rejected`/`failed` + `error`, or `deferred` + `error` over the daily cap) |
+| In-app message | one per action with a ticket or booking: `understanding.student_reply` (D-006), kind `message` + an `outbox` row `in_app`; ticket status changes (P4.9), kind `ticket_status`, written directly (no outbox row) | `notifications` row for the alias (Realtime), payload below |
+| Audit events | every triage outcome, action and status change | `events` (`triage.decided`, `triage.ask`, `triage.out_of_scope`, `triage.distress`, `act.ticket`, `act.booking`, `act.booking_refused`, `act.safety_alert`, `act.transport_alert`, `act.finalized`, `incident.new`/`incident.attach`, `ticket.status`, `sla.escalated`) |
 
 ### Allow-list behaviour (never contacting real people)
 
@@ -303,10 +305,61 @@ Students receive updates through Realtime on `notifications` (RLS: their alias),
 | `kind` | Written by | `payload` keys | Chat shows |
 | --- | --- | --- | --- |
 | `message` | `InAppNotifier` (every in-app `Notifier.send`; today: `ActUseCase` replies) | `ref` (uuid, also in `outbox.provider_id` as `inapp:<ref>`), `message` (the text), `subject`, `priority` (`low`/`medium`/`high` or null), `flags` (list) | `message` verbatim. There is **never** a `status` key. |
-| `ticket_status` | `SyncTicketUseCase` / dashboard status change (**P4.9, next batch**; contract fixed here) | `ticket_id`, `status` (a `tickets.status` value), `title` (the ticket title), `message` (optional sentence) | "Your ticket <title> is now <status>" |
+| `ticket_status` | `SyncTicketUseCase` (Linear webhook or dashboard status change, P4.9) to the student's alias; `EscalateSlaUseCase` to the office alias `office:<office>` | `ticket_id`, `status` (a `tickets.status` value), `title` (the ticket title, or "<category> request"), `message` (only when there is text: the staff note of a dashboard change; the escalation note for staff) | "Your ticket <title> is now <status>" |
 | `incident` | incident broadcast (**P4.10**) | `incident_id`, `message` | `message` verbatim |
 
 Free text always goes in `message`; only ticket-status updates carry `status`.
+
+<a id="ticket-lifecycle"></a>
+### Ticket lifecycle (P4.9): webhook, dashboard and SLA scanner
+
+`open → in_progress → resolved → closed`, with `escalated` (SLA) and `merged` (incident) on the side
+(ARCHITECTURE §2.2). Code: `use_cases/sync_ticket.py`, `use_cases/escalate_sla.py`,
+`frameworks/routes/{integrations,tickets}.py`, `frameworks/background.py`.
+
+**Linear webhook, `POST /v1/integrations/linear/webhook`** (no service token):
+1. `LinearSink.handle_inbound` checks the HMAC of the raw body (`Linear-Signature`) and that
+   `webhookTimestamp` is within ±60 s. A missing or bad signature, or a stale timestamp, is
+   `401 unauthenticated` **before anything is read or written**. A signed body that is not a JSON
+   object is `422`. If Linear is not configured (no `LINEAR_WEBHOOK_SECRET` sink), every delivery is 401.
+2. Only an `Issue` `update` with `updatedFrom.stateId` is a state change; the Linear state type maps
+   to a ticket status (docs/integrations.md §2).
+3. The ticket is found by its `linear` link. The change is applied **only if it moves the ticket
+   forward** in the order `open (0) < escalated (1) < in_progress (2) < resolved (3) < closed = merged (4)`.
+   An equal or backward change is ignored. This is how our own pushes come back: closing a ticket on
+   the dashboard sets the issue to Done, whose webhook says `resolved`, which is behind `closed`.
+4. Applied: status saved, `resolved_at` set (on `resolved`/`closed`), an `events` row `ticket.status`
+   (`{from, to, source: "linear", note}`); the response is
+   `{"accepted": true, "ticket_id", "status"}`. Ignored (not a state change, an issue we never linked,
+   or not forward): `{"accepted": false, "ticket_id": null, "status": null}` with 200, so Linear does
+   not retry.
+5. **After the response** (a background task, so Linear's 5 s budget only covers steps 1–4): the
+   other sinks are updated (never Linear itself), the student gets a `ticket_status` notification, and
+   on `resolved` an email goes to `DEMO_STUDENT_INBOX` through the allow-listed notifier. Failures
+   there are logged and recorded (link `last_error`, outbox `failed`/`rejected`) and never retried.
+
+**Dashboard, `POST /v1/tickets/{id}/status`** (staff, admin):
+- Staff only for tickets of **their own office** (`office` from the profile; trusted headers in tests);
+  admins for any ticket. Anyone else `403 forbidden`; unknown ticket `404`.
+- Any direction is allowed (staff may reopen; reopening clears `resolved_at`); the same status is a
+  no-op. The response is the saved `TicketOut` (links with a push error are omitted).
+- After the response: Linear (and any other sink) gets the new status, the student gets a
+  `ticket_status` notification with the staff `note` as `message`, and `resolved` emails the
+  student's demo inbox.
+
+**SLA scanner** (`EscalateSlaUseCase`, lifespan task `background.sla_loop`):
+- Starts with the app (when `ApiServices.sla` and `clock` are wired and `SLA_SCAN_MINUTES > 0`), scans
+  at once and then every `SLA_SCAN_MINUTES` (5) in a worker thread; cancelled on shutdown. One
+  uvicorn worker means one scanner.
+- Picks `open`/`in_progress` tickets whose `sla_due_at` has passed and that were **never escalated**
+  (`escalated_at` null), so each ticket escalates exactly once, even if staff move it back to
+  `in_progress`.
+- Each: priority one level up (`high` stays `high`), status `escalated`, `escalated_at = now`; Linear
+  gets the new priority (no state change); a `ticket_status` notification for the alias
+  `office:<office>` with the message "SLA missed (due …): priority raised from X to Y."; an `events`
+  row `sla.escalated`. A failed scan or save is logged and retried at the next scan.
+- Staff can only read `office:<office>` notifications once the DB allows it (change request filed);
+  the escalated ticket itself is visible on the dashboard through `tickets` Realtime.
 
 ### Anti-gaming flags (P3.6)
 
@@ -367,6 +420,28 @@ merged the tests use `FakeCore`.
   (403); no pending question (e.g. a third answer) → `ClarificationBudgetExceeded` (409); a
   `question_id` that is not the pending one, or blank free text → `InvalidInput` (422).
 
+### `SyncTicketUseCase` — `use_cases/sync_ticket.py` (P4.9)
+
+`SyncTicketUseCase(sinks, repo, notifier, clock, messages, *, student_inbox)`. See
+[Ticket lifecycle](#ticket-lifecycle) for the behaviour.
+
+| Method | Returns | Errors |
+| --- | --- | --- |
+| `apply_inbound(sink_name, payload, signature)` | `StatusChange` or None (ignored) | `Unauthorized` (bad signature, stale, sink not configured), `InvalidInput`, `StoreError` |
+| `change_status(ticket_id, status, actor, note=None)` | `StatusChange` (`changed` false for the same status) | `NotFound`, `Unauthorized` (not staff of that office, not admin), `StoreError` |
+| `propagate(change)` | None; never raises | — |
+| `run(sink_name, payload, signature)` | `Ticket` or None: apply + propagate | as `apply_inbound` |
+| `from_dashboard(ticket_id, status, actor, note=None)` | `Ticket`: change + propagate | as `change_status` |
+
+`StatusChange(ticket, previous, source, note)`; `source` is the sink name or `dashboard`. `actor` is
+anything with `role`, `office`, `alias` (`use_cases/ports.Actor`; the route passes its `Principal`).
+`STATUS_RANK` holds the forward order.
+
+### `EscalateSlaUseCase.run(now) -> list[str]` — `use_cases/escalate_sla.py` (P4.9)
+
+`EscalateSlaUseCase(sinks, repo, messages)`; returns the ids it escalated. Never raises. Shared sink
+pushing for both use cases and `ActUseCase.finalize` is `use_cases/mirror.TicketMirror`.
+
 ### `CounterfactualUseCase.run(request_id, drop, *, caller_alias=None) -> CounterfactualResponse` — `use_cases/explain.py`
 
 - Loads the request (a student caller only for their own), checks that `drop` occurs in the request
@@ -395,7 +470,8 @@ merged the tests use `FakeCore`.
 
 `create_app(services=None, settings=None, *, build=None) -> FastAPI`:
 - `services` is `composition.api.ApiServices`, a frozen dataclass of the use cases behind the routes
-  (`triage`, `clarify`, `counterfactual`, `feedback`, and `health: HealthInfo` for `/health`). Every
+  (`triage`, `clarify`, `counterfactual`, `feedback`, `tickets`, `sla` + `clock` for the SLA scanner,
+  and `health: HealthInfo` for `/health`). Every
   use-case field is optional: a route whose use case is `None` answers **`501 not_implemented`**
   after the auth checks, with `details.component` naming what is missing.
 - `build(settings) -> ApiServices` runs in the startup lifespan when `services` is None.
@@ -415,8 +491,11 @@ merged the tests use `FakeCore`.
 | `routes/triage.py` | `POST /v1/triage`, `POST /v1/triage/{request_id}/clarify` | `TriageUseCase`, `ClarifyUseCase` |
 | `routes/explain.py` | `GET /v1/explain/{request_id}/counterfactual` | `CounterfactualUseCase` |
 | `routes/feedback.py` | `POST /v1/feedback` | any `FeedbackHandler` (`use_cases/ports.py`; P3.11 `FeedbackUseCase`) |
+| `routes/tickets.py` | `POST /v1/tickets/{ticket_id}/status` | `SyncTicketUseCase.change_status` + `propagate` (background) |
+| `routes/integrations.py` | `POST /v1/integrations/linear/webhook` | `SyncTicketUseCase.apply_inbound` + `propagate` (background) |
 | `routes/health.py` | `GET /health`, `GET /v1/health` | `ApiServices.health` (`status: ok` once triage is wired, else `degraded`) |
 | `routes/pending.py` | the routes of later tasks | none yet (501) |
+| lifespan (`background.py`) | — | `EscalateSlaUseCase.run` every `SLA_SCAN_MINUTES` |
 
 **Testing over HTTP.** `services/ai/tests/fixtures/api.py`: `api_client(build_test(...), **fields)`
 returns a `TestClient` over the real app with `AUTH_MODE=trusted_headers` and a test token, and

@@ -15,10 +15,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
+from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.explain import CounterfactualUseCase
 from campuspulse_ai.application.use_cases.ports import FeedbackHandler
+from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.triage import TriageUseCase
 from campuspulse_ai.config.settings import Settings
+from campuspulse_ai.domain.ports import Clock
 from campuspulse_ai.domain.values import Tier
 
 
@@ -41,12 +44,19 @@ class HealthInfo:
 
 @dataclass(frozen=True, slots=True)
 class ApiServices:
-    """The use cases behind the `/v1` routes. None = not wired here (the route answers 501)."""
+    """The use cases behind the `/v1` routes. None = not wired here (the route answers 501).
+
+    `tickets` serves the Linear webhook and the dashboard status route; `sla` is the SLA scanner the
+    lifespan runs every `SLA_SCAN_MINUTES` with `clock` (both must be set for it to run).
+    """
 
     triage: TriageUseCase | None = None
     clarify: ClarifyUseCase | None = None
     counterfactual: CounterfactualUseCase | None = None
     feedback: FeedbackHandler | None = None
+    tickets: SyncTicketUseCase | None = None
+    sla: EscalateSlaUseCase | None = None
+    clock: Clock | None = None
     health: HealthInfo = field(default_factory=HealthInfo)
 
 

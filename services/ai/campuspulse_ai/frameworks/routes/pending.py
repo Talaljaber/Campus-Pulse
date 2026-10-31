@@ -6,7 +6,6 @@ OpenAPI document as the mock app) and clients get a typed error instead of a 404
 - `GET /v1/insights/recurring`: Recurring problems (P4.21).
 - `POST /v1/redteam/run`: red team (P4.11).
 - `POST /v1/admin/simulate`, `POST /v1/admin/reindex`: optional extras (P5.19, P4.20).
-- `POST /v1/tickets/{id}/status`, `POST /v1/integrations/linear/webhook`: ticket lifecycle (P4.9).
 - `POST /v1/batch`, `GET /v1/metrics`: model lab (P4.12).
 """
 
@@ -14,7 +13,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, File, Form, Header, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from fastapi.responses import Response
 
 from campuspulse_ai.application.dto import (
@@ -24,24 +23,12 @@ from campuspulse_ai.application.dto import (
     ReindexRequest,
     ResolveIncidentRequest,
     SimulateRequest,
-    TicketStatusRequest,
 )
 from campuspulse_ai.frameworks.api_contract import route_kwargs
 from campuspulse_ai.frameworks.auth import Principal, authorize
 from campuspulse_ai.frameworks.errors import not_wired
 
 router = APIRouter()
-
-
-@router.api_route(**route_kwargs("ticket_status"))
-def ticket_status(
-    ticket_id: str,
-    body: TicketStatusRequest,
-    request: Request,
-    caller: Annotated[Principal, Depends(authorize("ticket_status"))],
-) -> Any:
-    """Dashboard ticket status change (P4.9)."""
-    raise not_wired("ticket status changes")
 
 
 @router.api_route(**route_kwargs("list_incidents"))
@@ -73,15 +60,6 @@ def insights_recurring(
 ) -> Any:
     """Recurring problems (P4.21)."""
     raise not_wired("recurring problems")
-
-
-@router.api_route(**route_kwargs("linear_webhook"))
-async def linear_webhook(
-    request: Request,
-    linear_signature: Annotated[str | None, Header(alias="Linear-Signature")] = None,
-) -> Any:
-    """Inbound Linear status sync (P4.9)."""
-    raise not_wired("the Linear webhook")
 
 
 @router.api_route(**route_kwargs("batch"), response_class=Response)
