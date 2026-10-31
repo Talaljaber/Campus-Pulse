@@ -273,7 +273,7 @@
 <a id="p4-5"></a>
 ## P4.5 — Write VectorFAQRetriever and hand-tune `tau_faq`
 
-- [ ] Done
+- [ ] Done — partial: VectorFAQRetriever and tune_faq.py are merged. Still to do: seed_faq + the real tau_faq tuning once the P1.6 encoder is merged.
 - Depends on: P4.2, P4.3
 - Est: 1 h · Cut: no
 - Files:
