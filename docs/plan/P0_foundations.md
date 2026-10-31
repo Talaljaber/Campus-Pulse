@@ -454,7 +454,7 @@
 <a id="p0-8"></a>
 ## P0.8 — Scaffold the Next.js app (`apps/web`)
 
-- [ ] Done
+- [x] Done
 - **Goal:** a strict-TypeScript Next.js app with Tailwind and ESLint, a placeholder `/` and a dev-only `/dev/ui`, all pinned exactly.
 - **Depends on:** P0.1
 - **Est / Cut:** 0.75 h · Cut: no

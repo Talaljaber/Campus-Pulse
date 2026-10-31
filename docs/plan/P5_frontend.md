@@ -42,7 +42,7 @@
 <a id="p5-1"></a>
 ## P5.1 — Design tokens, Tailwind v4 theme and fonts
 
-- [ ] Done
+- [x] Done
 - Depends on: P0 (`apps/web` scaffold)
 - Est: 1.5 h · Cut: no. Dark-mode polish is P5.17, cut.
 - Files:
@@ -78,7 +78,7 @@
 <a id="p5-2"></a>
 ## P5.2 — i18n dictionaries, `useT()`, RtlProvider and the language switch
 
-- [ ] Done
+- [x] Done
 - Depends on: P5.1
 - Est: 1 h · Cut: no
 - Files:
@@ -104,7 +104,7 @@
 <a id="p5-3"></a>
 ## P5.3 — UI primitives and the `/dev/ui` kitchen sink
 
-- [ ] Done
+- [x] Done
 - Depends on: P5.1, P5.2
 - Est: 2.5 h · Cut: no
 - Files:
