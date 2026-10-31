@@ -21,7 +21,8 @@ import {
 const METRICS = metricsFixture.response as MetricsResponse;
 const SCORECARD = redteamFixture.response as Scorecard;
 
-const row = (o: Partial<BenchmarkRow>): BenchmarkRow => ({
+/** A row whose dataset may be a per-set name the generated contract type does not list yet. */
+const row = (o: Omit<Partial<BenchmarkRow>, "dataset"> & { dataset?: string }): BenchmarkRow => ({
   model: "Ensemble (tier 0)",
   target: "category",
   dataset: "our_test",
@@ -31,7 +32,7 @@ const row = (o: Partial<BenchmarkRow>): BenchmarkRow => ({
   n_groups: 104,
   status: "ok",
   ...o,
-});
+} as BenchmarkRow);
 
 describe("BenchmarkTable", () => {
   it("shows the fixture as one row per model, with counts and the pooled-only note", () => {

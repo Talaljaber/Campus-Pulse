@@ -24,7 +24,8 @@ import { labErrorKind } from "../service";
 
 const METRICS = metricsFixture.response as MetricsResponse;
 
-const bench = (o: Partial<BenchmarkRow>): BenchmarkRow => ({
+/** A row whose dataset may be a per-set name the generated contract type does not list yet. */
+const bench = (o: Omit<Partial<BenchmarkRow>, "dataset"> & { dataset?: string }): BenchmarkRow => ({
   model: "M2-LR",
   target: "category",
   dataset: "oof_official",
@@ -34,7 +35,7 @@ const bench = (o: Partial<BenchmarkRow>): BenchmarkRow => ({
   n_groups: 30,
   status: "ok",
   ...o,
-});
+} as BenchmarkRow);
 
 describe("datasetKeyOf", () => {
   it("keeps the contract names and reads our_test as the pooled set", () => {
