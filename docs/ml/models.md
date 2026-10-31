@@ -237,3 +237,37 @@ and the result is normalized like an Arabic `text_norm` (`ة`→`ه`, `أ`→`ا
 `min_lexicon_hits: 1`, `min_letters_in_digit_token: 2`, `guard_tokens`, `guard_patterns`, `ignore_patterns`.
 Golden pairs: `services/ai/tests/fixtures/arabizi_golden.csv` (24 `arabizi,arabic` rows, **to be checked by the
 developer**).
+
+### 4.3 The normalizer: `DefaultNormalizer` (P1.3)
+
+Implements the `Normalizer` port. It is the only way raw text becomes model input (`TriageCore`, `load_pool`).
+
+```python
+from campuspulse_ai.adapters.preprocess.normalizer import DefaultNormalizer
+norm = DefaultNormalizer.from_lexicons(LEXICONS, max_tokens=256)   # P1.4+: config.guards.max_tokens, model_dir/"lexicons"
+```
+
+| raw | `core` | `text_norm` | `lang` | `model_text` | `stated_urgency` |
+| --- | --- | --- | --- | --- | --- |
+| `URGENT: My university account is locked and I have an online exam today` | `My university account is locked and I have an online exam today` | `my university account is locked and i have an online exam today` | en | = `text_norm` | True |
+| `مرحبا، حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم` | `حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم` | (same, already normalized) | ar | = `text_norm` | False |
+| `Hi team, mesh 3arif wein el bus` | `mesh 3arif wein el bus` | `mesh 3arif wein el bus` | arabizi | `مش عارف وين الباص \| mesh 3arif wein el bus` | False |
+
+Steps: reject empty/whitespace input (`InvalidInput`) → `WrapperStripper.strip` → truncate the core to
+`max_tokens` whitespace tokens (`truncated=True`) → `text_norm = normalize_text(core, script_lang(core))`;
+if nothing but punctuation remains, `InvalidInput` → `lang = LangIdentifier.identify(core)` →
+`model_text = translit | text_norm` for Arabizi, else `text_norm` → location: picked beats extracted.
+`is_arabizi = lang is ARABIZI`. On the 432 official rows, `core`, `text_norm` and `lang` equal `data/clean`.
+`stated_urgency` never reaches a model.
+
+`BatchPredictUseCase` (P1.15) must catch `InvalidInput` and emit the priors' argmax with the debug-only flag
+`empty_input` (LD-17).
+
+### 4.4 Location: `LocationExtractor` (P1.3, cut-flagged, online use only)
+
+`LocationExtractor.from_yaml(LEXICONS / "gazetteer.yaml").extract(text) -> Location | None`. A room
+(`M 214`, `M-214`, `M214`) gives `Location("M", "M 214", "extracted")`; otherwise a building alias
+(`building M`, `M building`, `block M`, `مبنى M`, `بمبنى M`, `بناية M`) gives `Location("M", None,
+"extracted")`. The code letter must be upper-case and a separate token, so `A hallway light is broken`,
+`I am in a building` and `Block b` give `None`. Codes: `A B C D E F G H K L M`. It never changes `text_norm` or
+`model_text` (tested on all 432 rows).
