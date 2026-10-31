@@ -97,6 +97,7 @@ jobs:
           git diff --exit-code -- data/clean
       - run: python scripts/test_data_audit.py
       - run: python scripts/check_leakage.py --official
+      - run: python scripts/build_our_test.py --check
 
   api-contract:
     needs: changes
