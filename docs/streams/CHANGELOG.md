@@ -493,3 +493,71 @@
   - Backend: P3.9 `understanding` and the fallback flag, P4.8 Linear title/body and the outbox reply, P4.11 red-team reply attacks.
   - DB: P4.21 can use `entities`.
   - UI: `understanding.source` and `understanding_fallback`.
+
+### P3.6 — GamingDetector (anti-gaming signals)  (backend, 2026-10-31, commits 94430f2, a3ba020)
+- **What now exists:** `application/services/gaming.py`: after the priority is final it adds `urgency_unsupported` (staff-only) and `priority_gaming_suspected` (admin-only) from the counters `Repository.bump_student_signals` returns (D-006). It never returns or changes a label.
+- **Public interfaces added:** `GamingDetector(repo, min_requests, claim_ratio, high_ratio_max, *, injection_strikes=2, high_evidence=HIGH_EVIDENCE_FEATURES)`, `.check(req, priority, evidence, alias, injection) -> GamingResult(flags, signals)`, `.suspected(signals)`, `.has_high_evidence(evidence)`; constants `URGENCY_UNSUPPORTED`, `GAMING_SUSPECTED`. See [docs/api/README.md › Anti-gaming flags](../api/README.md#actions-side-effects).
+- **How to use it:** `g = GamingDetector(repo, s.gaming_min_requests, s.gaming_claim_ratio, s.gaming_high_ratio_max)`; `flags |= g.check(req, final_priority, core.evidence, alias, "injection_attempt" in core.flags).flags`.
+- **Config / env added:** Settings `GAMING_MIN_REQUESTS` (5), `GAMING_CLAIM_RATIO` (0.8), `GAMING_HIGH_RATIO_MAX` (0.2), in `.env.example` and the ops env table (separate commit `94430f2`, which also adds the P4.4/P4.6 settings).
+- **Acceptance:** `pytest services/ai/tests/unit/test_gaming.py -q` → `11 passed` (5 claimed-urgent/0 high → flag; supported claims → no flag; the note needs a claim and no high evidence; 2 injections → flag; label and inputs unchanged; anonymous not counted; per-alias; thresholds validated; `to_student_view` strips both flags).
+- **Limitations / TODO / known issues:**
+  - **Placement:** `application/services/gaming.py`, not the plan's `adapters/guards/gaming.py` (an ML-owned path). It is pure policy over the `Repository` port, so the application layer is a natural home.
+  - **High ratio:** `StudentSignals` carries no plain high count, so "high/n" is measured over the alias's claims: `(claimed_urgent − claimed_urgent_not_high) / claimed_urgent ≤ high_ratio_max`. The exact spec formula needs `StudentSignals.high` (the DB already has `n_high`): optional change request.
+  - Empty alias → not counted, never suspected. The injection-strike count (2) is a constructor default, not a Setting.
+- **Affects streams:** Backend (P3.9 calls it at [9b]); UI (the flags are already filtered by `to_student_view` and `predictions_student_v`).
+
+### P3.8 (ActionPlanner part) — routing table and TableActionPlanner  (backend, 2026-10-31, commit c806d05)
+- **What now exists:** `config/actions.yaml` (the SPEC §5.1 [11] table with UD-1, D-005 office codes, SLA hours, safety and provisional rules) and `TableActionPlanner` in `domain/routing.py` (pure, stdlib-only, validated from the parsed dict).
+- **Public interfaces added:** `ActionsConfig.from_dict(data)` (strict: unknown keys, missing cells, unknown offices or kinds → `ValueError`), `.route(category, priority)`; `Route`, `SafetyRule`; `TableActionPlanner(config).plan(category, priority, flags, provisional) -> ActionPlan`; `deferred_kind(plan)`; `SAFETY_FLAG`, `DEFERRED_TAG_PREFIX`. Table: [docs/api/README.md › Routing](../api/README.md#actions-side-effects).
+- **How to use it:** `planner = TableActionPlanner(ActionsConfig.from_dict(yaml.safe_load(Path("config/actions.yaml").read_text("utf-8"))))`; `plan = planner.plan(cat, pri, pred_flags | fired_evidence_names, provisional)`.
+- **Config / env added:** `config/actions.yaml`: `offices`, `sla_hours {high: 24, medium: 72, low: 336}`, `safety {kind: safety_alert, also_ticket: true, tags: [safety]}`, `provisional {tags: [unconfirmed]}`, `routes[category]{office, low, medium, high}` with `kind`, `tags`, `also_ticket`, `evidence_tags`.
+- **Acceptance:** `pytest services/ai/tests/unit/test_routing.py -q` → `37 passed` (18 cells → kind/office; offices = D-005 exactly; SLA hours; only Academic Support × high books; Registration × high = escalation ticket; safety overrides any category even when provisional; provisional → ticket + `deferred:<kind>`; `exam_now` → `exam-in-progress`; 8 invalid configs rejected). `pytest services/ai/tests/test_architecture.py -q` → `5 passed` (routing stays stdlib-only).
+- **Limitations / TODO / known issues:**
+  - Rules: safety first (fires even when provisional, plus `unconfirmed`), then provisional → ticket only with `deferred:<kind>`, else the cell. Evidence tags apply when the evidence *name* is in `flags`, so ActUseCase passes `pred.flags | {fired evidence names}`.
+  - Transportation × high is a `ticket` tagged `transport-alert` (there is no plain `alert` ActionType, and a late bus is not a safety alert); P4.8 sends the office alert for that tag. Finance × high (`escalation`): P4.8 may move `sla_due_at` earlier from `understanding.entities.deadline`.
+  - `build_test()` and the DTO work are skipped as instructed (LD-36; waits for the ML `tiny_model_dir`).
+- **Affects streams:** Backend (P3.9 act v0, P4.8); UI (`action.type`/`action.tags` values); DB (office codes match D-005).
+
+### P4.4 — Notifications: AllowlistedNotifier, GmailSmtpNotifier, InAppNotifier, outbox  (backend, 2026-10-31, commits 16497b5, 96532f7)
+- **What now exists:** `adapters/notify/{allowlist,gmail_smtp,inapp,outbox,channels}.py` and the opt-in `scripts/smoke_email.py`. The allow-list is enforced in code on every email path; no test can send mail.
+- **Public interfaces added:** see [docs/integrations.md › Notifications](../integrations.md#3-notifications).
+  - `AllowlistedNotifier(inner, policy, repo).send(msg)`: the outermost decorator and the only writer of notifier outbox rows (`rejected` / `failed` / sent).
+  - `GmailSmtpNotifier(host, port, user, app_password: SecretStr, *, policy, clock, timeout_s, max_retries, backoff_s, daily_cap, use_ssl=None, sender_name=..., smtp_factory=None, sleep=time.sleep)`; `classify(exc) -> NotificationError`; `default_smtp_factory`.
+  - `InAppNotifier(repo, *, notification_kind="message")`; `ChannelNotifier({kind: notifier})`; `OutboxRecorder(repo)`.
+  - Test fakes in `tests/fixtures/backend_fakes.py`: `FakeNotifier`, `make_outbox`.
+- **How to use it:** the chain in [integrations.md §3](../integrations.md#3-notifications): `AllowlistedNotifier(ChannelNotifier({"email": GmailSmtpNotifier(...), "in_app": InAppNotifier(repo)}), RecipientPolicy(s.demo_email_allowlist), repo)`.
+- **Config / env added:** `SMTP_TIMEOUT_S` (10), `SMTP_MAX_RETRIES` (2), `SMTP_BACKOFF_S` (1.0), `SMTP_DAILY_CAP` (100).
+- **Acceptance:**
+  - X4.7 `pytest services/ai/tests/unit/test_allowlist.py -q` → `15 passed` (`real.person@gju.edu.jo` → `RecipientNotAllowed`, outbox `rejected`, provider called 0 times; an empty list rejects all; exact case-insensitive match with no plus/subdomain wildcards; failures recorded `failed`; the SMTP notifier refuses before connecting).
+  - `pytest services/ai/tests/unit/test_gmail_smtp.py -q` → `23 passed` (STARTTLS flow, 465 implicit TLS, 535 not retried, 421 retried twice, 12 error mappings, Message-ID recorded, password masked, daily cap, default factory = stdlib smtplib).
+  - `pytest services/ai/tests/unit/test_notifications.py services/ai/tests/unit/test_smoke_email.py -q` → `8 passed`.
+  - The `import campuspulse_ai.composition.offline` check was **not run**: `composition/offline.py` does not exist yet (ML P1.15). The notify modules import only stdlib and pydantic `SecretStr`.
+  - The live send was **not run** (opt-in, for the user).
+- **Limitations / TODO / known issues:**
+  - `OutboxMessage` has no `error` field and no `deferred`/`simulated` status, so reasons go to `events` (`outbox.rejected` / `outbox.failed`) and the daily cap raises `NotificationError(retryable=False)` → `failed` (change request filed).
+  - The daily cap is counted in-process (it resets on restart); Gmail's own limit is 500/day.
+  - `ActUseCase` must not save notifier outbox rows itself (the decorator does); it only catches the errors.
+- **Affects streams:** Backend (P4.8/P4.9/P4.10 notifier chain); DB (outbox `error` column unused until the entity has it); UI (outbox statuses `sent`/`failed`/`rejected`).
+
+### P4.6 — Ticket sinks: SupabaseSink, RetryingSink, LinearSink, docs/integrations.md  (backend, 2026-10-31, commits 28d79e2, 0d049e6)
+- **What now exists:** `adapters/integrations/{supabase_sink,retrying,linear}.py`, `config/integrations.yaml` with the verified CampusPulse workspace values (team **CDP**, its state types, the six labels), Linear fixtures and [docs/integrations.md](../integrations.md).
+- **Public interfaces added:** `SupabaseSink(repo)`; `RetryingSink(inner, max_attempts, base_backoff_s, sleep=time.sleep)`; `LinearSink(api_key: SecretStr, webhook_secret: SecretStr, mapping, http: httpx.Client, clock)` with `create`/`update_status`/`close`/`handle_inbound`; `LinearMapping.load(path)` / `.from_dict(raw)` / `.team_key(office)` / `.priority_for(priority, safety=False)`; `verify_signature(secret, raw, sig)`, `sign(secret, raw)`. Fakes: `FakeSink`, `make_ticket`.
+- **How to use it:** [integrations.md §1.4](../integrations.md#14-linearsink--adaptersintegrationslinearpy): `RetryingSink(LinearSink(s.linear_api_key, s.linear_webhook_secret, mapping, httpx.Client(timeout=mapping.timeout_s), clock), s.sink_retry_max, s.sink_retry_base_s)` with `mapping = LinearMapping.load(Path("config/integrations.yaml"))`.
+- **Config / env added:** `SINK_RETRY_MAX` (3), `SINK_RETRY_BASE_S` (0.5); `config/integrations.yaml` (`enabled`, `linear.{api_url, timeout_s 10, webhook_tolerance_s 60, timezone, default_team CDP, team_by_office, label_by_category, priority_map {high 2, medium 3, low 4, safety 1}, state_type_by_status, status_by_state_type}`).
+- **Acceptance:** `pytest services/ai/tests/unit/test_linear_sink.py services/ai/tests/unit/test_retrying_sink.py -q` → `58 passed` (fields and the no-Bearer header; Amman due date; idempotent create, 2 calls → 1 `issueCreate`; existing link → 0 HTTP; duplicate-id and timed-out creates recovered; 503 retried 3 times then raised; 10 error mappings; state moves incl. merged → Duplicate; bad signature / stale or missing timestamp → `Unauthorized`; 7 state mappings; non-state events ignored; mapping validation). `pytest services/ai/tests/unit/test_supabase_sink.py -q` → `4 passed, 4 skipped` (the skips are `-m supabase`: no keys in the worktree). `python scripts/gen_api_docs.py --check` → `docs/api/endpoints.md is up to date`.
+- **Limitations / TODO / known issues:**
+  - Verified live by the lead: `issueCreate(input:{teamId,title,description,priority,dueDate,labelIds})` with `Authorization: <key>`. **UNVERIFIED:** the `issueCreate` `id` input, `teams`, `issueLabels`, `issueUpdate`, `issue`, and the webhook payload shape (fixtures are hand-written).
+  - Safety tickets cannot get Linear priority 1 yet because `Ticket` has no tags, and `ticket_links.last_error` cannot be written because `TicketLink` has no error field (change requests).
+  - Our own updates echo back as webhooks (closed → completed → `resolved`); P4.9 should ignore backwards moves.
+  - The API fixture `linear_webhook_status_sync` now includes `updatedFrom.stateId` (the handler ignores updates without it); endpoints.md was regenerated.
+  - `WebhookSink` is not built (UD-3); its payload is specified in integrations.md §5.
+- **Affects streams:** Backend (P4.8 ActUseCase sinks, P4.9 SyncTicketUseCase + webhook route); UI (`action.external[]` links); DB (`ticket_by_link`).
+
+### P4.7 — Calendar: SlotsTableCalendar and FallbackCalendar  (backend, 2026-10-31, commit b350dd7)
+- **What now exists:** `adapters/calendar/{slots_table,fallback}.py`: the earliest free advisor slot within the window and Amman office hours, a race-safe claim, the attendee allow-list before any write, and an ordered fallback chain.
+- **Public interfaces added:** `SlotsTableCalendar(repo, clock, policy)` with `find_slot(advisor_ids, window, office_hours)` / `book(slot, attendees, title)`; `in_office_hours(slot, hours)`; `FallbackCalendar(providers, policy)`. Fake: `FakeCalendar`. See [integrations.md §4](../integrations.md#4-advisor-booking-calendar).
+- **How to use it:** `cal = FallbackCalendar([SlotsTableCalendar(repo, clock, policy)], policy)`; `slot = cal.find_slot([a.id for a in repo.advisors_for("academic")], (now, now + timedelta(hours=plan.sla_hours)), hours)`; `cal.book(slot, [student_inbox, advisor.email], title)`.
+- **Config / env added:** none (the Google Calendar settings stay future work, UD-3).
+- **Acceptance:** `pytest services/ai/tests/unit/test_calendar.py -q` → `12 passed, 5 skipped` (earliest slot; office hours, Friday and closing-time slots skipped; window; booking claims; double booking prevented with one retry; non-allow-listed attendee → nothing written; store failure → `CalendarUnavailable`; fallback order, empty provider, finder-then-fall-through, all unavailable, a real attendee never reaches a provider). The 5 skips are the `-m supabase` cases: no keys in the worktree `.env`.
+- **Limitations / TODO / known issues:** `booked_by` is the first attendee (the student's demo inbox) because `CalendarProvider.book` carries no alias. Per-advisor `OfficeHours` is not exposed by the repository (`advisors_for` does not read `advisors.office_hours`), so P4.8 passes the seed hours (Sun–Thu 09:00–15:00 Amman).
+- **Affects streams:** Backend (P4.8 booking path); DB (`free_slots`/`claim_slot` semantics relied on).

@@ -174,7 +174,17 @@ of a rejected/failed send is an audit event: actor `notifier`, action `outbox.re
 
 ## 4. Advisor booking (calendar)
 
-See §4 below once P4.7 lands. Google Calendar is future work (UD-3).
+Only Academic Support × high books (UD-1). Google Calendar is future work (UD-3), so the chain is
+`FallbackCalendar([SlotsTableCalendar(repo, clock, policy)], policy)`.
+
+| Class | Behaviour |
+| --- | --- |
+| `SlotsTableCalendar(repo, clock, policy)` — `adapters/calendar/slots_table.py` | `find_slot(advisor_ids, window, office_hours)`: `Repository.free_slots` for those advisors, from `max(window start, now)` to the window end, keeping only slots wholly inside office hours in `office_hours.tz` (seed: Sun–Thu 09:00–15:00 Asia/Amman); the earliest wins (ties by id); None if none. `book(slot, attendees, title)`: every attendee through `RecipientPolicy` **before any write**, then `claim_slot` (`update … where booked_by is null`). Losing the race re-runs the same search once and claims the next slot; otherwise `CalendarUnavailable`. `booked_by` = the first attendee (the port carries no alias). `Booking.provider = "slots_table"`, `external_id` = slot id. `StoreError` → `CalendarUnavailable`. |
+| `FallbackCalendar(providers, policy)` — `adapters/calendar/fallback.py` | Checks every attendee first (no provider is called for a non-allow-listed one). `find_slot` asks providers in order (unavailable or empty → next); `CalendarUnavailable` only if all are unavailable. `book` uses the provider that found the slot; if it is unavailable, the search runs on the later providers and their first slot is booked. |
+
+`ActUseCase` (P4.8) passes `window = (now, now + sla_hours)` (24 h for high), the advisors from
+`Repository.advisors_for("academic")`, and attendees = the student's demo inbox plus the advisor's
+`demo_email`, then saves a `cases` row and emails both through the notifier chain.
 
 ## 5. `WebhookSink` payload (future work, UD-3 — specified, not built)
 
