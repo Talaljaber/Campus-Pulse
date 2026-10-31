@@ -124,6 +124,9 @@ encoder:                        # revision pinned at P1.6 (HF commit of intfloat
 
 ensemble:
   members: [m1, m2lr, m2knn, m2proto]  # "m3" only if every LD-6 gate passes (cut, UD-4); m2proto: D-014
+  # online only: the weight of the memory-aware kNN category vector when a staff correction is among a request's
+  # neighbours (D-016 gives kNN category weight 0, which would silence live learning). 1/3 = kNN's rc1 weight.
+  memory_weight_category: 0.3333333333333333
 
 m1:
   char_ngram: [2, 5]

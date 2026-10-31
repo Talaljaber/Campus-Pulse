@@ -64,11 +64,11 @@ def test_train_yaml_has_every_p1_4_key() -> None:
     train = yaml.safe_load((CONFIG_DIR / "train.yaml").read_text(encoding="utf-8"))
     assert train["seed"] == 42 and train["cv"]["k"] == 5
     assert set(train["alpha"]) == {"category", "priority"}
-    assert set(train["grids"]) == {"m1_C", "m2lr_C", "weight_step"}
+    assert set(train["grids"]) == {"m1_C", "m2lr_C", "weight_step", "proto_temperature", "head_temperature"}
     for key in ("tau_ood_percentile", "tau_margin", "human_review_min_acc", "ask_rate_max",
                 "alpha_priority_fallback"):
         assert key in train
-    assert set(train["mondrian"]) == {"min_cov_minority", "min_cov_en"}
+    assert set(train["mondrian"]) == {"min_cov_minority", "min_cov_en", "targets", "min_groups"}
     m3_keys = {"min_gain", "max_predict_s_per_1000", "time_box_h", "max_download_mb", "max_rss_mb"}
     assert set(train["m3"]) == m3_keys
     assert train["encoder"]["query_prefix"] == "query: "

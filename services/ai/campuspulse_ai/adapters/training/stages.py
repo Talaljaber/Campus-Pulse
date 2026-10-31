@@ -435,6 +435,7 @@ def build_config(
             "members": list(members),
             "weights_category": {m: tuned.weights_category[m] for m in members},
             "weights_priority": {m: tuned.weights_priority.get(m, 0.0) for m in members},
+            "memory_weight_category": float(cfg.section("ensemble").get("memory_weight_category", 0.0)),
         },
         "m1": {"char_ngram": m1["char_ngram"], "word_ngram": m1["word_ngram"], "C": tuned.m1_C},
         "m2lr": {"C": tuned.m2lr_C},

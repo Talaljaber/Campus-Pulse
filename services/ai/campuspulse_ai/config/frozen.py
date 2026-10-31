@@ -71,6 +71,10 @@ class EnsembleCfg(_Section):
     members: tuple[Member, ...] = Field(min_length=1)
     weights_category: dict[str, float]
     weights_priority: dict[str, float]
+    # Online only (P3.11 live learning): when the kNN member found an active staff-correction (memory)
+    # neighbour for a request, its category vector joins the category mix with this weight. Offline there is
+    # no memory, so OOF and predict.py never use it. 0.0 (rc1 configs) = memory moves only kNN's own vote.
+    memory_weight_category: Probability = 0.0
 
     @model_validator(mode="after")
     def _weights_match_members(self) -> EnsembleCfg:

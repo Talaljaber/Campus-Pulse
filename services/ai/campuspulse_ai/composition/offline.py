@@ -153,7 +153,12 @@ def build_offline(
     for name in config.ensemble.members:
         members[name] = _member(name, model_dir, config, encoder, index)
     ensemble = WeightedEnsemble(
-        members, encoder, index, config.ensemble.weights_category, config.ensemble.weights_priority
+        members,
+        encoder,
+        index,
+        config.ensemble.weights_category,
+        config.ensemble.weights_priority,
+        memory_weight_category=config.ensemble.memory_weight_category,
     )
 
     lex = model_dir / LEXICON_DIR
