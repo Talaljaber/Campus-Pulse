@@ -1,0 +1,90 @@
+# Office responsibilities: the "office description" prototypes of the m2proto member (D-014 part b).
+#
+# Source: written by the ML stream (batch 4) from the challenge's category definitions
+# (docs/reference/CHALLENGE_RULES.md), the public GJU pages summarised in docs/reference/gju_public_policies.md
+# (MyGJU student system, credit hours, fees per credit hour, scholarships, field training, German Year) and
+# general knowledge of how a Jordanian university's offices divide the work. They are descriptions of what
+# each office handles, NOT student requests: no line was copied or adapted from data/raw, data/clean,
+# data/augmented, data/our_test or data/robustness. The Arabic lines are colloquial-neutral Jordanian usage.
+#
+# train.py embeds every line once (same encoder and "query: " prefix as requests) into
+# models/frozen/vN/m2proto/, so predict.py stays offline. A category's office score is its best-matching line.
+offices:
+  Registration:
+    en:
+      - The registrar handles course enrollment, adding and dropping courses, and section changes
+      - Prerequisite rules, course equivalency and permission to register a closed or full section
+      - Withdrawal from a course or from the semester, and the add/drop and withdrawal periods
+      - Credit hour limits, overload requests and the study plan in the MyGJU student system
+      - Registration holds, enrollment status and problems with the registration system
+    ar:
+      - دائرة القبول والتسجيل بتتابع تسجيل المواد والسحب والاضافة وتغيير الشعب
+      - المتطلبات السابقة ومعادلة المواد وفتح شعبة مغلقة او مليانة
+      - الانسحاب من مادة او من الفصل ومواعيد فترة السحب والاضافة
+      - عدد الساعات المسموح والعبء الزائد والخطة الدراسية على نظام MyGJU
+      - مشاكل حالة التسجيل والقيود على التسجيل ونظام التسجيل
+  IT Support:
+    en:
+      - The IT helpdesk handles university accounts, passwords, logins and two-factor authentication
+      - Campus Wi-Fi, internet access and network connection problems
+      - The learning management system, online exams platform and course pages
+      - University email, Microsoft Teams, software licenses and lab computers
+      - Errors, crashes and outages of university websites, portals and apps
+    ar:
+      - مركز الدعم الفني بتابع حسابات الجامعة وكلمات السر وتسجيل الدخول والتحقق الثنائي
+      - الواي فاي بالحرم الجامعي والانترنت ومشاكل الاتصال بالشبكة
+      - منصة التعليم الالكتروني ومنصة الامتحانات الالكترونية وصفحات المواد
+      - ايميل الجامعة والتيمز وتراخيص البرامج واجهزة المختبرات
+      - الاعطال والاخطاء وتوقف مواقع وبوابات وتطبيقات الجامعة
+  Finance:
+    en:
+      - The finance office handles tuition fees, the cost per credit hour and student account balances
+      - Invoices, payment receipts, refunds and payment installments
+      - Scholarships, grants, discounts and financial aid
+      - Late payment fines, financial holds and payment confirmation
+      - Paying fees online, by bank transfer or at the cashier
+    ar:
+      - الدائرة المالية بتتابع الرسوم الجامعية وسعر الساعة ورصيد حساب الطالب
+      - الفواتير ووصولات الدفع واسترداد المبالغ والاقساط
+      - المنح والخصومات والمساعدات المالية
+      - غرامات التأخير بالدفع والقيود المالية وتأكيد الدفع
+      - دفع الرسوم اونلاين او بتحويل بنكي او عند الصندوق
+  Transportation:
+    en:
+      - The transport office runs the university shuttle buses between campus and the city
+      - Bus routes, stops, timetables and departure times
+      - Bus passes, transport subscriptions and transport fees
+      - Late, missed, cancelled or broken-down buses and driver issues
+      - Getting students home or to campus when transport fails
+    ar:
+      - قسم النقل بشغل باصات الجامعة بين الحرم والمدينة
+      - خطوط الباصات والمواقف ومواعيد الانطلاق
+      - اشتراكات وبطاقات الباص ورسوم النقل
+      - تأخير الباصات او الغاؤها او تعطلها ومشاكل السواقين
+      - توصيل الطلاب للبيت او للجامعة لما يصير خلل بالمواصلات
+  Facilities:
+    en:
+      - The facilities and maintenance team handles buildings, classrooms, labs and offices
+      - Electricity, lighting, air conditioning, heating and water
+      - Leaks, plumbing, restrooms, doors, windows, furniture and elevators
+      - Classroom equipment such as projectors, screens and sound systems
+      - Cleaning, safety hazards, fire risks and damage on campus
+    ar:
+      - قسم الصيانة والمرافق بتابع المباني والقاعات والمختبرات والمكاتب
+      - الكهربا والانارة والتكييف والتدفئة والمي
+      - التسريبات والتمديدات الصحية والحمامات والابواب والشبابيك والاثاث والمصاعد
+      - اجهزة القاعات مثل البروجكتر والشاشات والسماعات
+      - النظافة ومخاطر السلامة والحريق والاضرار بالحرم الجامعي
+  Academic Support:
+    en:
+      - Academic advising helps students meet their advisor and plan their courses and major
+      - Grades, grade appeals, transcripts and GPA questions
+      - Exam schedules, exam conflicts, make-up exams and assignment feedback
+      - Choosing electives, study skills, tutoring and academic probation
+      - Recommendation letters, field training and the German Year requirements
+    ar:
+      - الارشاد الاكاديمي بساعد الطالب يقابل مرشده ويخطط مواده وتخصصه
+      - العلامات والاعتراض على العلامات وكشف العلامات والمعدل
+      - جدول الامتحانات وتعارض الامتحانات والامتحانات التعويضية والملاحظات على الواجبات
+      - اختيار المواد الاختيارية ومهارات الدراسة والدروس المساندة والانذار الاكاديمي
+      - رسائل التوصية والتدريب الميداني ومتطلبات السنة الالمانية

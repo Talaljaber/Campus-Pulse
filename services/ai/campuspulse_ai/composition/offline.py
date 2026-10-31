@@ -12,7 +12,8 @@ Steps (§1.5):
     match the config (a model trained with the test `hashing` encoder needs `encoder_override`).
  4. vectors = `LocalNumpyVectorStore.load(model_dir / "index")`, exactly `train`, `injection_exemplars` and
     `safety_exemplars` (LD-20).
- 5. members per `config.ensemble.members`: `TfidfLR.load`, `EmbedLR.load`, `KnnClassifier` over `train`.
+ 5. members per `config.ensemble.members`: `TfidfLR.load`, `EmbedLR.load`, `KnnClassifier` over `train`,
+    `PrototypeClassifier.load` (m2proto, D-014: the office descriptions are already embedded in the dir).
  6. guards Gibberish → Injection (`strip_regex_only`, Arabizi-aware) → Safety (danger from the lexicon only,
     no exemplars: LD-19), all built from the model dir's lexicon snapshot (LD-12).
  7. memory = `NullMemoryStore`; oracle = `NullOracle` (`use_llm=True` raises `LLMUnavailable` until P3).
@@ -39,6 +40,7 @@ from campuspulse_ai.adapters.models.ensemble import WeightedEnsemble
 from campuspulse_ai.adapters.models.evidence import LexiconEvidenceExtractor
 from campuspulse_ai.adapters.models.knn import TRAIN_COLLECTION, ExampleIndex, KnnClassifier
 from campuspulse_ai.adapters.models.priority_head import LogisticPriorityHead
+from campuspulse_ai.adapters.models.prototype import PrototypeClassifier
 from campuspulse_ai.adapters.models.tfidf_lr import TfidfLR
 from campuspulse_ai.adapters.preprocess.arabizi import ArabiziTransliterator
 from campuspulse_ai.adapters.preprocess.normalizer import DefaultNormalizer
@@ -61,6 +63,7 @@ INDEX_DIR = "index"
 LEXICON_DIR = "lexicons"
 ENCODER_DIR = "encoder"
 HEAD_DIR = "head"
+PROTO_TOLERANCE = 1e-9  # m2proto meta.json and config.json must carry the same temperature
 OFFLINE_COLLECTIONS = frozenset({TRAIN_COLLECTION, "injection_exemplars", "safety_exemplars"})
 USE_LLM_MESSAGE = ("--use-llm is not available yet: the LLM tier (OpenRouterOracle, P3) is not built; "
                    "run without --use-llm (tier 0 is fully offline)")
@@ -156,6 +159,7 @@ def build_offline(
     if head.features != config.priority_head.features:
         expected = config.priority_head.features
         raise ArtifactVersionMismatch(f"head features {head.features} != config {expected}")
+    head.temperature = config.priority_head.temperature  # config.json is the source of truth (P2.7)
     c = config.conformal
     core = TriageCore(
         normalizer=DefaultNormalizer.from_lexicons(lex, g.max_tokens),
@@ -209,4 +213,11 @@ def _member(
             KnnClassifier("priority", index, encoder, k.k, k.memory_weight_cap, k.max_memory_neighbors,
                           **settings),
         )
+    if name == "m2proto":
+        cat = PrototypeClassifier.load(model_dir / "m2proto" / "category", encoder)
+        pri = PrototypeClassifier.load(model_dir / "m2proto" / "priority", encoder)
+        frozen_t = config.prototype.temperature if config.prototype is not None else None
+        if frozen_t is None or abs(cat.temperature - frozen_t) > PROTO_TOLERANCE:
+            raise ArtifactVersionMismatch("m2proto temperature differs from config.json prototype")
+        return cat, pri
     raise ArtifactVersionMismatch(f"ensemble member {name!r} is not available offline (M3 is cut, UD-4)")

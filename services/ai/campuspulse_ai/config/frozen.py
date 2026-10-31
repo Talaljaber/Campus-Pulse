@@ -25,8 +25,9 @@ SCHEMA_VERSION = 1
 SUM_TOLERANCE = 1e-6
 FETCH_HINT = "run `python scripts/fetch_models.py` (or `python services/ai/train.py`) to create it"
 
-Member = Literal["m1", "m2lr", "m2knn", "m3"]
-MEMBERS: tuple[str, ...] = ("m1", "m2lr", "m2knn", "m3")
+Member = Literal["m1", "m2lr", "m2knn", "m2proto", "m3"]
+MEMBERS: tuple[str, ...] = ("m1", "m2lr", "m2knn", "m2proto", "m3")
+CATEGORY_ONLY_MEMBERS = frozenset({"m2proto"})  # no priority opinion: weights_priority must be 0 (D-014)
 FORBIDDEN_HEAD_FEATURES = frozenset({"stated_urgency"})  # §3.8: never a priority feature
 
 Probability = Annotated[float, Field(ge=0.0, le=1.0)]
@@ -77,6 +78,9 @@ class EnsembleCfg(_Section):
             raise ValueError(f"duplicate ensemble members {self.members}")
         _check_distribution("ensemble.weights_category", self.weights_category, self.members)
         _check_distribution("ensemble.weights_priority", self.weights_priority, self.members)
+        nonzero = sorted(m for m in CATEGORY_ONLY_MEMBERS if self.weights_priority.get(m, 0.0) > 0)
+        if nonzero:
+            raise ValueError(f"{nonzero} have no priority opinion; their weights_priority must be 0")
         return self
 
 
@@ -116,6 +120,7 @@ class HeadCfg(_Section):
 
     features: tuple[NonEmptyStr, ...] = Field(min_length=1)
     C: PositiveFloat
+    temperature: PositiveFloat = 1.0  # P2.7 calibration (OOF NLL); 1.0 = raw LR (rc1 configs omit it)
 
     @field_validator("features")
     @classmethod
@@ -138,6 +143,15 @@ class ConformalCfg(_Section):
     q_priority: Probability
     n_calib: NonNegativeInt
     mondrian_by_lang: bool
+    calibration: Literal["row", "group"] = "row"  # how q was computed (P2.7); rc1 configs omit it
+
+
+class PrototypeCfg(_Section):
+    """The department-prototype member m2proto (D-014): softmax(score / temperature) over the prototypes."""
+
+    parts: tuple[Literal["learned", "office"], ...] = Field(min_length=1)
+    mix: Probability
+    temperature: PositiveFloat
 
 
 class ThresholdsCfg(_Section):
@@ -227,6 +241,13 @@ class FrozenConfig(_Section):
     explain: ExplainCfg
     priors: PriorsCfg
     cv: CvCfg
+    prototype: PrototypeCfg | None = None  # required when m2proto is a member (D-014)
+
+    @model_validator(mode="after")
+    def _prototype_when_member(self) -> FrozenConfig:
+        if "m2proto" in self.ensemble.members and self.prototype is None:
+            raise ValueError("ensemble member m2proto needs the `prototype` section")
+        return self
 
     @classmethod
     def load(cls, path: Path) -> FrozenConfig:

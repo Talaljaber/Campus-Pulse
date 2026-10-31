@@ -23,6 +23,7 @@ from campuspulse_ai.adapters.models.probs import (
     reorder,
     row_proba,
     save_estimator,
+    temperature_scale,
     to_vectors,
 )
 from campuspulse_ai.domain.labels import PRIORITY_LABELS
@@ -57,6 +58,9 @@ class LogisticPriorityHead:
         self.features: tuple[str, ...] = tuple(features)
         self.C = float(C)
         self.seed = int(seed)
+        # Calibration temperature (P2.7): probabilities are softmax(logits / T). 1.0 = the raw LR; train.py
+        # picks T on OOF negative log-likelihood, so the conformal sets see honest confidence.
+        self.temperature = 1.0
         self._lr: LogisticRegression | None = None
 
     @property
@@ -107,6 +111,8 @@ class LogisticPriorityHead:
         if x.ndim != 2 or x.shape[1] != self.input_width:
             raise ValueError(f"input of shape {x.shape}, expected (n, {self.input_width})")
         proba = row_proba(lr, x)  # float64, row by row: the same numbers alone or in a batch
+        if self.temperature != 1.0:
+            proba = temperature_scale(proba, self.temperature)
         return to_vectors(reorder(proba, [str(c) for c in lr.classes_], PRIORITY_LABELS), PRIORITY_LABELS)
 
     def coefficients(self) -> dict[str, dict[str, float]]:
@@ -121,7 +127,7 @@ class LogisticPriorityHead:
     def save(self, dir: Path) -> None:
         lr = self._fitted()
         meta = {"kind": KIND, "features": list(self.features), "C": self.C, "seed": self.seed,
-                "labels": list(PRIORITY_LABELS)}
+                "labels": list(PRIORITY_LABELS), "temperature": self.temperature}
         save_estimator(dir, lr, meta)
 
     @classmethod
@@ -129,6 +135,7 @@ class LogisticPriorityHead:
         lr, meta = load_estimator(dir, KIND)
         head = cls(meta["features"], float(meta["C"]), int(meta["seed"]))
         head._lr = lr
+        head.temperature = float(meta.get("temperature", 1.0))  # rc1 heads predate the temperature
         return head
 
     def _fitted(self) -> LogisticRegression:
