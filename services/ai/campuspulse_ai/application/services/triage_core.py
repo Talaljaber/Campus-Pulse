@@ -212,8 +212,8 @@ class TriageCore:
         answered_cat = [c.value for c in constraints if c.kind == "category"]
         if answered_cat:
             p_cat = onehot(p_cat, answered_cat[-1])
-        set_cat, cat_empty = self._set(self.conformal_cat, p_cat)
-        set_pri, pri_empty = self._set(self.conformal_pri, p_pri)
+        set_cat, cat_empty = self._set(self.conformal_cat, p_cat, str(req.lang))
+        set_pri, pri_empty = self._set(self.conformal_pri, p_pri, str(req.lang))
         if answered_cat:
             set_cat = PredictionSet(frozenset({answered_cat[-1]}))
         if floors:
@@ -243,8 +243,13 @@ class TriageCore:
         )
 
     @staticmethod
-    def _set(conformal: ConformalPredictor, p: ProbVector) -> tuple[PredictionSet, bool]:
-        """(set, was_empty); uses the thread-safe form when the predictor offers it (LACConformal)."""
+    def _set(conformal: ConformalPredictor, p: ProbVector, lang: str) -> tuple[PredictionSet, bool]:
+        """(set, was_empty); the per-language form when the predictor is a MondrianByLang (P2.10), else the
+        thread-safe form when the predictor offers it (LACConformal)."""
+        by_lang = getattr(conformal, "predict_set_with_flag_for", None)
+        if callable(by_lang):
+            result = by_lang(p, lang)
+            return result[0], bool(result[1])
         with_flag = getattr(conformal, "predict_set_with_flag", None)
         if callable(with_flag):
             result = with_flag(p)

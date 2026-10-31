@@ -44,7 +44,7 @@ from campuspulse_ai.adapters.models.prototype import PrototypeClassifier
 from campuspulse_ai.adapters.models.tfidf_lr import TfidfLR
 from campuspulse_ai.adapters.preprocess.arabizi import ArabiziTransliterator
 from campuspulse_ai.adapters.preprocess.normalizer import DefaultNormalizer
-from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
+from campuspulse_ai.adapters.uncertainty.conformal import LACConformal, MondrianByLang
 from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
 from campuspulse_ai.application.services.priority_finalizer import PriorityFinalizer
 from campuspulse_ai.application.services.triage_core import TriageCore
@@ -56,8 +56,15 @@ from campuspulse_ai.domain.errors import ArtifactVersionMismatch, LLMUnavailable
 from campuspulse_ai.domain.ports import Guard, LabelOracle, ProbabilisticClassifier, SentenceEncoder
 from campuspulse_ai.domain.values import ArtifactVersion, Manifest
 
-__all__ = ["BatchRow", "OfflineBatchLabeler", "OfflineContainer", "build_offline", "read_batch_csv",
-           "resolve_model_dir", "write_predictions_csv"]
+__all__ = [
+    "BatchRow",
+    "OfflineBatchLabeler",
+    "OfflineContainer",
+    "build_offline",
+    "read_batch_csv",
+    "resolve_model_dir",
+    "write_predictions_csv",
+]
 
 INDEX_DIR = "index"
 LEXICON_DIR = "lexicons"
@@ -65,8 +72,10 @@ ENCODER_DIR = "encoder"
 HEAD_DIR = "head"
 PROTO_TOLERANCE = 1e-9  # m2proto meta.json and config.json must carry the same temperature
 OFFLINE_COLLECTIONS = frozenset({TRAIN_COLLECTION, "injection_exemplars", "safety_exemplars"})
-USE_LLM_MESSAGE = ("--use-llm is not available yet: the LLM tier (OpenRouterOracle, P3) is not built; "
-                   "run without --use-llm (tier 0 is fully offline)")
+USE_LLM_MESSAGE = (
+    "--use-llm is not available yet: the LLM tier (OpenRouterOracle, P3) is not built; "
+    "run without --use-llm (tier 0 is fully offline)"
+)
 
 
 class OfflineBatchLabeler:
@@ -136,31 +145,37 @@ def build_offline(
     vectors = LocalNumpyVectorStore.load(model_dir / INDEX_DIR, expected_dim=config.encoder.dim)
     if vectors.collections() != OFFLINE_COLLECTIONS:
         found = sorted(vectors.collections())
-        raise ArtifactVersionMismatch(f"{model_dir / INDEX_DIR}: collections {found}, "
-                                      f"expected {sorted(OFFLINE_COLLECTIONS)}")
+        raise ArtifactVersionMismatch(
+            f"{model_dir / INDEX_DIR}: collections {found}, expected {sorted(OFFLINE_COLLECTIONS)}"
+        )
     index = ExampleIndex(vectors, TRAIN_COLLECTION)
     members: dict[str, tuple[ProbabilisticClassifier, ProbabilisticClassifier]] = {}
     for name in config.ensemble.members:
         members[name] = _member(name, model_dir, config, encoder, index)
-    ensemble = WeightedEnsemble(members, encoder, index, config.ensemble.weights_category,
-                                config.ensemble.weights_priority)
+    ensemble = WeightedEnsemble(
+        members, encoder, index, config.ensemble.weights_category, config.ensemble.weights_priority
+    )
 
     lex = model_dir / LEXICON_DIR
     g = config.guards
     translit = ArabiziTransliterator.from_yaml(lex / "arabizi.yaml")
     guards: list[Guard] = [
         GibberishGuard(g.gibberish_min_tokens, g.gibberish_min_letter_ratio),
-        InjectionGuard(compile_bank(lex / "injection.yaml", "patterns"), "strip_regex_only",
-                       g.injection_sentence_strip_ratio, arabizi_model_text=translit.model_text),
-        SafetyGuard(compile_bank(lex / "safety.yaml", "danger"),
-                    compile_bank(lex / "safety.yaml", "distress")),
+        InjectionGuard(
+            compile_bank(lex / "injection.yaml", "patterns"),
+            "strip_regex_only",
+            g.injection_sentence_strip_ratio,
+            arabizi_model_text=translit.model_text,
+        ),
+        SafetyGuard(
+            compile_bank(lex / "safety.yaml", "danger"), compile_bank(lex / "safety.yaml", "distress")
+        ),
     ]
     head = LogisticPriorityHead.load(model_dir / HEAD_DIR)
     if head.features != config.priority_head.features:
         expected = config.priority_head.features
         raise ArtifactVersionMismatch(f"head features {head.features} != config {expected}")
     head.temperature = config.priority_head.temperature  # config.json is the source of truth (P2.7)
-    c = config.conformal
     core = TriageCore(
         normalizer=DefaultNormalizer.from_lexicons(lex, g.max_tokens),
         guards=guards,
@@ -168,16 +183,23 @@ def build_offline(
         evidence=LexiconEvidenceExtractor.from_yaml(lex / "urgency.yaml", config.priority_head.features),
         head=head,
         finalizer=PriorityFinalizer(),
-        conformal_cat=LACConformal.from_quantile("category", c.alpha_category, c.q_category, c.n_calib),
-        conformal_pri=LACConformal.from_quantile("priority", c.alpha_priority, c.q_priority, c.n_calib),
+        conformal_cat=conformal_predictor(config, "category"),
+        conformal_pri=conformal_predictor(config, "priority"),
         memory=NullMemoryStore(),
         clock=SystemClock(),
         config=config,
         artifact=ArtifactVersion(name=config.artifact_version, sha256=manifest.sha),
     )
     oracle = NullOracle()
-    return OfflineContainer(core=core, oracle=oracle, config=config, manifest=manifest,
-                            batch=BatchPredictUseCase(core, oracle, config), vectors=vectors, encoder=encoder)
+    return OfflineContainer(
+        core=core,
+        oracle=oracle,
+        config=config,
+        manifest=manifest,
+        batch=BatchPredictUseCase(core, oracle, config),
+        vectors=vectors,
+        encoder=encoder,
+    )
 
 
 def _onnx_encoder(model_dir: Path, config: FrozenConfig, settings: Settings) -> OnnxEncoder:
@@ -185,9 +207,12 @@ def _onnx_encoder(model_dir: Path, config: FrozenConfig, settings: Settings) -> 
         raise ArtifactVersionMismatch(
             f"{model_dir} was trained with the {config.encoder.runtime!r} encoder; pass encoder_override"
         )
-    encoder = OnnxEncoder(model_dir / ENCODER_DIR, query_prefix=config.encoder.query_prefix,
-                          max_tokens=config.encoder.max_tokens,
-                          intra_op_threads=settings.ort_intra_op_threads)
+    encoder = OnnxEncoder(
+        model_dir / ENCODER_DIR,
+        query_prefix=config.encoder.query_prefix,
+        max_tokens=config.encoder.max_tokens,
+        intra_op_threads=settings.ort_intra_op_threads,
+    )
     if (encoder.model_id, encoder.revision) != (config.encoder.model_id, config.encoder.revision):
         raise ArtifactVersionMismatch(
             f"encoder {encoder.model_id}@{encoder.revision} != config "
@@ -196,22 +221,41 @@ def _onnx_encoder(model_dir: Path, config: FrozenConfig, settings: Settings) -> 
     return encoder
 
 
+def conformal_predictor(config: FrozenConfig, target: str) -> LACConformal | MondrianByLang:
+    """The target's conformal predictor from `config.json`: one global LAC quantile, or `MondrianByLang`
+    when per-language quantiles were frozen (P2.10)."""
+    c = config.conformal
+    if target == "category":
+        alpha, q, per = c.alpha_category, c.q_category, c.q_category_by_lang
+    else:
+        alpha, q, per = c.alpha_priority, c.q_priority, c.q_priority_by_lang
+    lac = LACConformal.from_quantile(target, alpha, q, c.n_calib)  # type: ignore[arg-type]
+    if not (c.mondrian_by_lang and per):
+        return lac
+    inner = {lang: LACConformal.from_quantile(target, alpha, v, c.n_calib) for lang, v in per.items()}  # type: ignore[arg-type]
+    return MondrianByLang(inner, lac)
+
+
 def _member(
     name: str, model_dir: Path, config: FrozenConfig, encoder: SentenceEncoder, index: ExampleIndex
 ) -> tuple[ProbabilisticClassifier, ProbabilisticClassifier]:
     if name == "m1":
         return TfidfLR.load(model_dir / "m1" / "category"), TfidfLR.load(model_dir / "m1" / "priority")
     if name == "m2lr":
-        return (EmbedLR.load(model_dir / "m2lr" / "category", encoder),
-                EmbedLR.load(model_dir / "m2lr" / "priority", encoder))
+        return (
+            EmbedLR.load(model_dir / "m2lr" / "category", encoder),
+            EmbedLR.load(model_dir / "m2lr" / "priority", encoder),
+        )
     if name == "m2knn":
         k = config.knn
         settings = {"memory_min_sim": k.memory_min_sim, "laplace_mass": k.laplace_mass}
         return (
-            KnnClassifier("category", index, encoder, k.k, k.memory_weight_cap, k.max_memory_neighbors,
-                          **settings),
-            KnnClassifier("priority", index, encoder, k.k, k.memory_weight_cap, k.max_memory_neighbors,
-                          **settings),
+            KnnClassifier(
+                "category", index, encoder, k.k, k.memory_weight_cap, k.max_memory_neighbors, **settings
+            ),
+            KnnClassifier(
+                "priority", index, encoder, k.k, k.memory_weight_cap, k.max_memory_neighbors, **settings
+            ),
         )
     if name == "m2proto":
         cat = PrototypeClassifier.load(model_dir / "m2proto" / "category", encoder)

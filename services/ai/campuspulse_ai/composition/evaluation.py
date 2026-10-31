@@ -47,8 +47,7 @@ from campuspulse_ai.adapters.training.oof import PipelineToggles, run_cv
 from campuspulse_ai.adapters.training.pool import FOLDS_CSV, OFFICIAL_CSV
 from campuspulse_ai.adapters.training.stages import EncoderInfo, freeze, stage_b
 from campuspulse_ai.adapters.training.train_config import TrainCfg
-from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
-from campuspulse_ai.composition.offline import build_offline, resolve_model_dir
+from campuspulse_ai.composition.offline import build_offline, conformal_predictor, resolve_model_dir
 from campuspulse_ai.composition.training import TrainOptions, make_kit, make_pool
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.paths import DATA_AUGMENTED, LEXICONS, OUR_TEST, REPO_ROOT, ROBUSTNESS
@@ -125,12 +124,8 @@ def oof_rows(model_dir: Path, config: FrozenConfig) -> list[Row]:
     """Rows from `oof.npz`: the ensemble (category: ensemble, priority: head + safety floor) and members."""
     z = np.load(model_dir / "oof.npz", allow_pickle=False)
     members = list(config.ensemble.members)
-    lac_cat = LACConformal.from_quantile(
-        "category", config.conformal.alpha_category, config.conformal.q_category, config.conformal.n_calib
-    )
-    lac_pri = LACConformal.from_quantile(
-        "priority", config.conformal.alpha_priority, config.conformal.q_priority, config.conformal.n_calib
-    )
+    lac_cat = conformal_predictor(config, "category")
+    lac_pri = conformal_predictor(config, "priority")
     text_of = _official_texts()
     rows = []
     for i in range(len(z["request_id"])):
@@ -154,13 +149,19 @@ def oof_rows(model_dir: Path, config: FrozenConfig) -> list[Row]:
                 str(z["category"][i]),
                 str(z["priority"][i]),
                 pred,
-                lac_cat.predict_set(p_cat),
-                lac_pri.predict_set(p_pri),
+                _set_for(lac_cat, p_cat, lang),
+                _set_for(lac_pri, p_pri, lang),
                 max(p_cat.values),
                 max(p_pri.values),
             )
         )
     return rows
+
+
+def _set_for(predictor: Any, p: ProbVector, lang: str) -> PredictionSet:
+    """The set as `TriageCore` builds it: per language for a MondrianByLang, else the global quantile."""
+    by_lang = getattr(predictor, "predict_set_for", None)
+    return by_lang(p, lang) if callable(by_lang) else predictor.predict_set(p)  # type: ignore[no-any-return]
 
 
 def _renorm(v: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -1000,7 +1001,11 @@ def run_evaluation(opts: EvalOptions, *, settings: Settings | None = None) -> st
     lab = model_lab(now, ask, bench, cov, cal, fair, conf, reports)
     _dump(reports / "model_lab.json", lab)
     names = ",".join(f for f in (*REPORT_FILES, "confusions/") if f in written)
-    return f"wrote {reports.as_posix()}/{{{names}}} (artifact {config.artifact_version} sha={sha})"
+    try:
+        shown = reports.resolve().relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        shown = reports.as_posix()
+    return f"wrote {shown}/{{{names}}} (artifact {config.artifact_version} sha={sha})"
 
 
 def model_lab(

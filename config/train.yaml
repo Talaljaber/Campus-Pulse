@@ -80,6 +80,10 @@ eval:                           # evaluate.py (P2.8/P2.9); never copied into con
 mondrian:                       # switch conformal to per-language quantiles only if (§3.5):
   min_cov_minority: 0.85        #   AR or Arabizi coverage on our test set < this
   min_cov_en: 0.90              #   while EN coverage >= this
+  # P2.10 (ML batch 4): the rule fired for CATEGORY on rc2 (our_test AR 0.813 < 0.85, EN 0.959 >= 0.90) and
+  # not for priority (EN 0.876 < 0.90). our_test informed this switch only, as the brief prescribes.
+  targets: [category]
+  min_groups: 10                # a language needs this many calibration groups for its own quantile
 
 m3:                             # LD-6 gates (M3 is cut by default, LD-32 / UD-4)
   min_gain: 0.01
@@ -138,7 +142,7 @@ priority_head:
 
 conformal:
   method: lac
-  mondrian_by_lang: false
+  mondrian_by_lang: true        # P2.10 rule fired (see mondrian above); MondrianByLang for mondrian.targets
 
 guards:
   max_tokens: 256               # DefaultNormalizer truncates the core to this many whitespace tokens

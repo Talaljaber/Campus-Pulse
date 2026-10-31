@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
+from campuspulse_ai.adapters.uncertainty.conformal import LACConformal, MondrianByLang
 from campuspulse_ai.domain.labels import CATEGORY_LABELS
 from campuspulse_ai.domain.ports import ConformalPredictor
 from campuspulse_ai.domain.values import ProbVector
@@ -82,3 +82,19 @@ def test_save_load(tmp_path: Path) -> None:
     got = (back.target, back.alpha, back.q, back.n_calib, back.n_groups)
     assert got == ("category", ALPHA, lac.q, 200, 30)
     assert all(back.predict_set(p) == lac.predict_set(p) for p in cal_p[:50])
+
+
+def test_mondrian_uses_the_language_quantile_and_falls_back(tmp_path: Path) -> None:
+    """P2.10: a wider Arabic quantile widens Arabic sets only; unknown languages use the global q."""
+    glob = LACConformal.from_quantile("category", ALPHA, 0.5, 432, 30)
+    ar = LACConformal.from_quantile("category", ALPHA, 0.9, 135, 15)
+    mond = MondrianByLang({"ar": ar}, glob)
+    p = ProbVector((0.6, 0.2, 0.1, 0.05, 0.03, 0.02), CATEGORY_LABELS)
+    assert mond.predict_set_for(p, "en").size == 1  # q 0.5: labels with p >= 0.5
+    assert mond.predict_set_for(p, "arabizi").size == 1  # no own quantile: the global one
+    assert mond.predict_set_for(p, "ar").size == 3  # q 0.9: labels with p >= 0.1
+    assert mond.predict_set(p) == glob.predict_set(p)
+    mond.save(tmp_path / "category")
+    again = MondrianByLang.load(tmp_path / "category")
+    assert again.predict_set_for(p, "ar") == mond.predict_set_for(p, "ar")
+    assert LACConformal.load(tmp_path / "category").q == pytest.approx(0.5)  # the fallback file stays readable

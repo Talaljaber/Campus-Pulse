@@ -23,7 +23,7 @@ import json
 import shutil
 from collections import Counter
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -57,7 +57,7 @@ from campuspulse_ai.adapters.training.tuning import (
     tau_from_zero_hits,
     tau_ood,
 )
-from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
+from campuspulse_ai.adapters.uncertainty.conformal import MONDRIAN_FILE, LACConformal, MondrianByLang
 from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
 from campuspulse_ai.config.frozen import SCHEMA_VERSION, FrozenConfig
 from campuspulse_ai.domain.errors import ArtifactMissing, ArtifactVersionMismatch
@@ -104,6 +104,8 @@ class Tuned:
     m2lr_C: float
     proto_temperature: float
     head_temperature: float
+    q_category_by_lang: dict[str, float] = field(default_factory=dict)
+    q_priority_by_lang: dict[str, float] = field(default_factory=dict)
 
 
 def _argmax(matrix: NDArray[np.float64], labels: Sequence[str]) -> list[str]:
@@ -166,6 +168,41 @@ def quantiles(
     return out[0], out[1]
 
 
+def quantiles_by_lang(
+    p_cat: NDArray[np.float64],
+    p_pri: NDArray[np.float64],
+    y_cat: Sequence[str],
+    y_pri: Sequence[str],
+    groups: Sequence[str],
+    langs: Sequence[str],
+    cfg: TrainCfg,
+) -> tuple[dict[str, float], dict[str, float]]:
+    """Per-language quantiles for the `mondrian.targets` when `conformal.mondrian_by_lang` is on (P2.10):
+    the same rule as `quantiles` on each language's rows, for languages with at least `mondrian.min_groups`
+    calibration groups (the others use the global q). Empty dicts when Mondrian is off."""
+    if not bool(cfg.section("conformal")["mondrian_by_lang"]):
+        return {}, {}
+    mond = cfg.section("mondrian")
+    targets, min_groups = set(mond["targets"]), int(mond["min_groups"])
+    lang_arr = np.asarray([str(x) for x in langs])
+    out: list[dict[str, float]] = []
+    for target, p, y, labels, alpha in (
+        ("category", p_cat, y_cat, CATEGORY_LABELS, cfg.alpha_category),
+        ("priority", p_pri, y_pri, PRIORITY_LABELS, cfg.alpha_priority),
+    ):
+        per: dict[str, float] = {}
+        if target in targets:
+            idx = np.array([labels.index(v) for v in y], dtype=np.int64)
+            scores = 1.0 - p[np.arange(len(idx)), idx]
+            for lang in sorted(set(lang_arr.tolist())):
+                rows = np.nonzero(lang_arr == lang)[0]
+                g = [groups[int(i)] for i in rows]
+                if len(set(g)) >= min_groups:
+                    per[lang] = conformal_quantile(scores[rows], g, alpha, cfg.conformal_calibration)
+        out.append(per)
+    return out[0], out[1]
+
+
 def stage_b(oof: OOFResult, cfg: TrainCfg, encoder: SentenceEncoder, lexicon_dir: Path) -> Tuned:
     """Stage B (module docstring): the OOF choices plus the OOF-score thresholds."""
     pool = oof.pool
@@ -175,6 +212,15 @@ def stage_b(oof: OOFResult, cfg: TrainCfg, encoder: SentenceEncoder, lexicon_dir
         pool.category,
         pool.priority,
         pool.cv_group,
+        cfg,
+    )
+    q_cat_lang, q_pri_lang = quantiles_by_lang(
+        oof.probs["ensemble.category"],
+        oof.probs["final.priority"],
+        pool.category,
+        pool.priority,
+        pool.cv_group,
+        [str(x) for x in pool.lang],
         cfg,
     )
     injection, distress = exemplar_texts(lexicon_dir)
@@ -214,6 +260,8 @@ def stage_b(oof: OOFResult, cfg: TrainCfg, encoder: SentenceEncoder, lexicon_dir
         m2lr_C=ch.m2lr_C,
         proto_temperature=ch.proto_temperature,
         head_temperature=ch.head_temperature,
+        q_category_by_lang=q_cat_lang,
+        q_priority_by_lang=q_pri_lang,
     )
 
 
@@ -395,6 +443,8 @@ def build_config(
             "q_priority": tuned.q_priority,
             "n_calib": tuned.n_calib,
             "calibration": cfg.conformal_calibration,
+            "q_category_by_lang": dict(tuned.q_category_by_lang),
+            "q_priority_by_lang": dict(tuned.q_priority_by_lang),
         },
         "thresholds": {
             "tau_ood": tuned.tau_ood,
@@ -540,16 +590,44 @@ def freeze(
     return config, manifest
 
 
-def _write_conformal(out: Path, cfg: TrainCfg, tuned: Tuned) -> list[Path]:
+def write_conformal(
+    out: Path,
+    alphas: tuple[float, float],
+    qs: tuple[float, float],
+    by_lang: tuple[dict[str, float], dict[str, float]],
+    n_calib: int,
+    n_groups: int,
+) -> list[Path]:
+    """`conformal/<target>/conformal.json` (+ `mondrian.json` when per-language quantiles exist)."""
     paths = []
-    for target, q, alpha in (
-        ("category", tuned.q_category, cfg.alpha_category),
-        ("priority", tuned.q_priority, cfg.alpha_priority),
-    ):
-        lac = LACConformal.from_quantile(target, alpha, q, tuned.n_calib, tuned.n_groups)  # type: ignore[arg-type]
-        lac.save(out / "conformal" / target)
-        paths.append(out / "conformal" / target / "conformal.json")
+    for target, q, alpha, per in zip(("category", "priority"), qs, alphas, by_lang, strict=True):
+        lac = LACConformal.from_quantile(target, alpha, q, n_calib, n_groups)  # type: ignore[arg-type]
+        directory = out / "conformal" / target
+        stale = directory / MONDRIAN_FILE
+        if stale.exists() and not per:
+            stale.unlink()
+        if per:
+            inner = {
+                lang: LACConformal.from_quantile(target, alpha, v, n_calib, n_groups)  # type: ignore[arg-type]
+                for lang, v in per.items()
+            }
+            MondrianByLang(inner, lac).save(directory)
+            paths.append(directory / MONDRIAN_FILE)
+        else:
+            lac.save(directory)
+        paths.append(directory / "conformal.json")
     return paths
+
+
+def _write_conformal(out: Path, cfg: TrainCfg, tuned: Tuned) -> list[Path]:
+    return write_conformal(
+        out,
+        (cfg.alpha_category, cfg.alpha_priority),
+        (tuned.q_category, tuned.q_priority),
+        (tuned.q_category_by_lang, tuned.q_priority_by_lang),
+        tuned.n_calib,
+        tuned.n_groups,
+    )
 
 
 # --- retune: stage-B values from a frozen oof.npz (P2.7 / P2.10) ----------------------------------------
@@ -561,6 +639,9 @@ RETUNE_KEYS = (
     "conformal.q_category",
     "conformal.q_priority",
     "conformal.calibration",
+    "conformal.mondrian_by_lang",
+    "conformal.q_category_by_lang",
+    "conformal.q_priority_by_lang",
     "thresholds.human_review_maxprob",
 )
 
@@ -587,6 +668,9 @@ def retune(
     groups = [str(g) for g in z["cv_group"]]
     y_cat, y_pri = [str(v) for v in z["category"]], [str(v) for v in z["priority"]]
     q_cat, q_pri = quantiles(z["ensemble__category"], z["final__priority"], y_cat, y_pri, groups, cfg)
+    by_lang = quantiles_by_lang(
+        z["ensemble__category"], z["final__priority"], y_cat, y_pri, groups, [str(v) for v in z["lang"]], cfg
+    )
     p_cat = z["ensemble__category"]
     pred = _argmax(p_cat, CATEGORY_LABELS)
     correct = np.array([a == b for a, b in zip(pred, y_cat, strict=True)])
@@ -599,33 +683,29 @@ def retune(
             "q_category": q_cat,
             "q_priority": q_pri,
             "calibration": cfg.conformal_calibration,
+            "mondrian_by_lang": bool(cfg.section("conformal")["mondrian_by_lang"]),
+            "q_category_by_lang": by_lang[0],
+            "q_priority_by_lang": by_lang[1],
         }
     )
     data["thresholds"]["human_review_maxprob"] = hr
     data["trained_at"] = (now or datetime.now(UTC)).isoformat(timespec="seconds")
     config = FrozenConfig.from_dict(data, source="train.py --retune")
     changed = _changed(json.loads(old.to_json()), data)
-    tuned_like = _TunedQ(q_cat, q_pri, old.conformal.n_calib, len(set(groups)))
     config.save(model_dir / "config.json")
-    for target, q, alpha in (
-        ("category", q_cat, cfg.alpha_category),
-        ("priority", q_pri, cfg.alpha_priority),
-    ):
-        LACConformal.from_quantile(target, alpha, q, tuned_like.n_calib, tuned_like.n_groups).save(  # type: ignore[arg-type]
-            model_dir / "conformal" / target
-        )
+    conformal_files = write_conformal(
+        model_dir,
+        (cfg.alpha_category, cfg.alpha_priority),
+        (q_cat, q_pri),
+        by_lang,
+        old.conformal.n_calib,
+        len(set(groups)),
+    )
     # the old manifest is read for its file list only: config.json and the conformal files just changed
     listed = json.loads((model_dir / "MANIFEST.json").read_text(encoding="utf-8"))["files"]
-    manifest = FileArtifactStore().write_manifest(model_dir, [model_dir / rel for rel in sorted(listed)])
+    keep = {model_dir / rel for rel in listed if (model_dir / rel).is_file()} | set(conformal_files)
+    manifest = FileArtifactStore().write_manifest(model_dir, sorted(keep))
     return config, manifest, changed
-
-
-@dataclass(frozen=True)
-class _TunedQ:
-    q_category: float
-    q_priority: float
-    n_calib: int
-    n_groups: int
 
 
 def _changed(old: Mapping[str, Any], new: Mapping[str, Any]) -> dict[str, tuple[Any, Any]]:

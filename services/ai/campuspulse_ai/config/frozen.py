@@ -144,6 +144,15 @@ class ConformalCfg(_Section):
     n_calib: NonNegativeInt
     mondrian_by_lang: bool
     calibration: Literal["row", "group"] = "row"  # how q was computed (P2.7); rc1 configs omit it
+    # P2.10 MondrianByLang: per-language quantiles ({lang: q}); empty = the global q for every language
+    q_category_by_lang: dict[str, Probability] = Field(default_factory=dict)
+    q_priority_by_lang: dict[str, Probability] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _mondrian_consistent(self) -> ConformalCfg:
+        if (self.q_category_by_lang or self.q_priority_by_lang) and not self.mondrian_by_lang:
+            raise ValueError("per-language quantiles need conformal.mondrian_by_lang = true")
+        return self
 
 
 class PrototypeCfg(_Section):
