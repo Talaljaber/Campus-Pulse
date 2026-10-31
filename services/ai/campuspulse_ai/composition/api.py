@@ -5,10 +5,10 @@ The routes in `frameworks/` may import only `composition`, `application.dto`, `c
 field is optional: a route whose use case is not wired answers `501 not_implemented`, and `/health`
 reports `degraded` until triage is wired.
 
-`build_api(settings)` is the production builder used by `services/ai/api.py`. Today it wires only
-what needs neither models nor the repository: the Supabase identity verifier. `build_online` (P4.3,
-assigned by the lead) fills the rest from the `OnlineContainer` (ARCHITECTURE §1.5), e.g.
-`dataclasses.replace(build_api(settings), triage=..., tickets=..., batch=..., metrics=...)`.
+The production builder is `composition.online.build_online(settings)` (P4.3), which `services/ai/api.py`
+passes to `create_app`: the real frozen model, Supabase, the sinks and the notifier chain.
+`build_api(settings)` wires only the identity verifier (no models, no repository); it is kept for
+tools that need the contract without the model.
 """
 
 from __future__ import annotations

@@ -229,7 +229,7 @@ def test_pulse_stores_the_embedding_and_reports_the_incident() -> None:
     c = build_test(pulse=Pulse(vectors=vectors, encoder=FakeEncoder(), incidents=incidents))
     r = triage(c, "wifi down in M", location={"building": "M"})
     [(collection, [item])] = vectors.upserts
-    assert collection == "requests" and item.id == r.request_id and item.meta["building"] == "M"
+    assert collection == "requests" and item.id == r.request_id and item.meta["building_id"] == "M"
     assert r.action is not None and r.action.incident_id == "inc-1" and c.events("incident.attach")
 
 

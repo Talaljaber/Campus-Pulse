@@ -112,8 +112,9 @@ class LLMTiers:
 class Pulse:
     """Online-only wiring for [12b]/[13]: store the request embedding, then detect incidents.
 
-    `encoder` embeds `model_text` once per request (the core does not expose its embedding yet;
-    change request filed). `incidents` may be None (embeddings are still stored).
+    The embedding is the one the core computed (`CoreResult.embedding`, D-012); `encoder` embeds
+    `model_text` only when the core has none (e.g. a request that was entirely an injection).
+    `incidents` may be None (embeddings are still stored).
     """
 
     vectors: VectorStore
@@ -457,9 +458,9 @@ class DecisionFlow:
             return None
         location = req.location
         try:
-            embedding = tuple(pulse.encoder.encode([req.model_text])[0])
+            embedding = pred.core.embedding or tuple(pulse.encoder.encode([req.model_text])[0])
             meta: dict[str, MetaValue] = {
-                "building": location.building if location else None,
+                "building_id": location.building if location else None,
                 "room": location.room if location else None,
                 "category": str(pred.category),
                 "priority": str(pred.priority),
