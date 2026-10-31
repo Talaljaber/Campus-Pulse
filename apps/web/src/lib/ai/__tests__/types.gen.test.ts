@@ -20,5 +20,5 @@ describe("generated API types", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
-  }, 30_000);
+  }, 120_000); // the generator takes ~3 s alone but 45 s when the whole suite and a build share this machine
 });
