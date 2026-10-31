@@ -97,6 +97,7 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `NEXT_PUBLIC_SUPABASE_URL` | local, Netlify | no | web | |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | local, Netlify | no (public by design) | web | SPEC's `SUPABASE_ANON_KEY`, renamed for Next.js |
 | `AI_SERVICE_URL` | local, Netlify | no | web | the Render URL |
+| `CAMPUSPULSE_HF_REPO` | dev machine | no | `scripts/fetch_models.py --source hf` only | Hugging Face repo id for the model tarball; not part of `Settings` |
 | `NEXT_PUBLIC_DEMO_LOGIN_HINT` | local, Netlify | no | web | optional hint line on `/login`; never the password |
 | `PW_PYTHON`, `PW_API_PORT` (8765), `PW_SUPABASE_PORT` (54399), `E2E_PASSWORD` | dev machine, CI | no | Playwright e2e | test-only; see docs/ui/README.md |
 | `NODE_VERSION` | Netlify | no | Netlify build | `22` (P0.8) |
