@@ -1,0 +1,8 @@
+{
+  "alpha": 0.1,
+  "method": "lac",
+  "n_calib": 432,
+  "n_groups": 30,
+  "q": 0.8568117755684683,
+  "target": "category"
+}

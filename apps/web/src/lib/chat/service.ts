@@ -40,7 +40,8 @@ export function fetchCounterfactual(requestId: string, token: string): Promise<A
 export function chatErrorKind(fail: AiFail, during: "triage" | "clarify" | "other" = "other"): ChatErrorKind {
   if (fail.status === 401 || fail.code === "unauthenticated") return "session";
   if (fail.waking) return "waking";
-  if (during === "clarify" && (fail.status === 404 || fail.status === 409)) return "nothingToAnswer";
+  // 409: no question is pending. 422: the answer names a question that is not the pending one. 404: unknown request or option.
+  if (during === "clarify" && (fail.status === 404 || fail.status === 409 || fail.status === 422)) return "nothingToAnswer";
   return "generic";
 }
 
@@ -48,15 +49,19 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v : null);
 
 /**
- * Reduces a `notifications` row to what the thread prints. The payload shape is owned by
- * the backend and may grow, so anything unrecognised becomes a generic "new update".
- * Values are only ever rendered as text.
+ * Reduces a `notifications` row to what the thread prints, following the payload contract in
+ * docs/api/README.md ("Notifications payload"):
+ * - `message` rows carry `message` and never `status`; incident rows carry `message` too;
+ * - `ticket_status` rows carry `ticket_id`, `status`, `title` and optionally `message`.
+ * A `message`, when present, is shown as written (it wins over the status sentence). Without
+ * one, a `status` becomes "Your ticket <title> is now <status>". Anything else is a generic
+ * "new update". Values are only ever rendered as text.
  */
 export function noticeFromNotification(row: Pick<NotificationRow, "kind" | "payload">): NoticeData {
   const p = isRecord(row.payload) ? row.payload : {};
-  const status = str(p.status);
-  if (status) return { type: "ticket_status", title: str(p.title) ?? str(p.ticket_title) ?? "", status };
   const message = str(p.message);
   if (message) return { type: "message", message };
+  const status = str(p.status);
+  if (status) return { type: "ticket_status", title: str(p.title) ?? str(p.ticket_title) ?? "", status };
   return { type: "generic" };
 }

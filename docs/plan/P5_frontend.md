@@ -298,7 +298,7 @@
 <a id="p5-9"></a>
 ## P5.9 — Voice input with Web Speech (`ar-JO`/`en-US`)
 
-- [ ] Done
+- [x] Done
 - Depends on: P5.8
 - Est: 1 h · Cut: yes (#1. Brief §6.2 flag 7 recommends keeping Web Speech and cutting Whisper; follow the SPEC order unless the user agrees)
 - Files:
@@ -314,7 +314,7 @@
 <a id="p5-10"></a>
 ## P5.10 — Staff dashboard `/staff`
 
-- [ ] Done
+- [x] Done
 - Depends on: P5.4, P5.6, P5.7; [P4.9](P4_product_backend.md#p4-9) (status route)
 - Est: 2.5 h · Cut: no
 - Files:
@@ -340,7 +340,7 @@
 <a id="p5-11"></a>
 ## P5.11 — Pulse page `/pulse` (incidents list and feed, with the map when P5.5 exists)
 
-- [ ] Done
+- [x] Done
 - Depends on: P5.6; [P4.10](P4_product_backend.md#p4-10); P5.5 (optional)
 - Est: 1.5 h · Cut: no. The visuals are cut #6, and then the page uses `IncidentList` only.
 - Files:

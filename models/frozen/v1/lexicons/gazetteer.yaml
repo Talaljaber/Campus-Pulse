@@ -1,0 +1,18 @@
+# Fictional campus gazetteer for location extraction (P1.3, SPEC §5.1[2]). Online use only (incidents, P4);
+# never a model feature. Building codes must match the P4 `buildings` seed (supabase/seed/01_buildings.sql):
+# "A-M minus I/J" (that is 11 codes; P4.2 says "10 buildings", the DB stream must reconcile).
+
+buildings: ["A", "B", "C", "D", "E", "F", "G", "H", "K", "L", "M"]
+
+# Phrases that name a building; "{code}" is replaced by each code. Matching is case-insensitive EXCEPT that
+# the code itself must appear upper-case, so "a building" in "I am in a building" never matches.
+alias_templates:
+  - "{code} building"
+  - "building {code}"
+  - "block {code}"
+  - "{code} block"
+  - "مبنى {code}"
+  - "بناية {code}"
+
+# A room: building code + 3-digit number, optionally separated by a space or hyphen ("M 214", "M-214", "M214").
+room_regex: "(?<![A-Za-z0-9])(?P<building>[A-HK-M])[ -]?(?P<number>\\d{3})(?![0-9])"

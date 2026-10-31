@@ -63,6 +63,8 @@ class CoreResult:
     tier: Tier
     latency_ms: int
     artifact: ArtifactVersion
+    # The request's frozen-encoder vector (D-012), so Pulse and memory never re-encode; () when no model ran.
+    embedding: tuple[float, ...] = ()
 
 
 @dataclass

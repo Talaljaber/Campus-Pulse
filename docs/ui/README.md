@@ -1,6 +1,6 @@
 # UI (apps/web): as-built
 
-Owner: UI stream. Covers what exists after P0.8, P5.1 to P5.8. Later pages (staff, pulse, lab) and voice are appended by their tasks.
+Owner: UI stream. Covers what exists after P0.8, P5.1 to P5.11 (design system, data layer, auth, student chat, voice, staff dashboard, Pulse). Later pages (lab, outbox) are appended by their tasks.
 
 ## Run it
 
@@ -45,6 +45,8 @@ pnpm typecheck; pnpm lint; pnpm test -- --run
 pnpm build; node scripts/check-bundle-secrets.mjs      # prints: bundle clean (0 matches)
 $env:PW_PYTHON = "<path to the venv python>"; pnpm exec playwright test   # starts fake Supabase, mock API and next dev itself
 ```
+
+Playwright runs with one worker (two workers left the first sign-in of a spec hanging) and a 150 s test timeout, because `next dev` compiles each route on first visit. If another checkout already runs the e2e servers on the default ports (3100, 8765, 54399), set `PW_PORT`, `PW_API_PORT` and `PW_SUPABASE_PORT` to free ones so the config does not reuse the other checkout's servers.
 
 Notes: the package manager is pnpm 10.17.0 (`packageManager` in `apps/web/package.json`), not npm as the P0.8 text says. Every dependency is an exact pin from Appendix A. No service-role key exists in `apps/web`.
 
@@ -109,9 +111,11 @@ All are presentational: no fetching, no business logic, no keys. Every one expor
 | `ThemeSwitch` | system/light/dark | `ThemeSwitchProps` | labelled radiogroup; persisted in localStorage `cp_theme` (guarded) |
 | `RtlProvider` | owns language, syncs `<html lang dir>`, cookie `cp_lang` | `RtlProviderProps` | direction set server-side first, so there is no flash |
 | `TextField`, `TextArea` (P5.7/P5.8) | labelled input and textarea | `TextFieldProps`, `TextAreaProps` | visible `<label>` (textarea can hide it visually), `aria-describedby` for helper text, 44px target, `dir="auto"` on the textarea |
+| `Select` (P5.10) | labelled native select | `SelectProps` (`label`, `options`, `hideLabel`, `description`) | real `<label>`, 44px target, native keyboard and screen-reader behaviour |
+| `Loadable` (P5.10) | the three list states: skeleton while loading, an alert with Retry on failure, the children when ready | `LoadableProps` (`state`, `onRetry`, `lines`) | skeleton is one `role=status`; the failure is `role=alert` |
 | `ServiceBanner` (P5.7) | "AI waking up" / "unavailable" strip | `ServiceBannerProps` | polite `role="status"` region always in the DOM; empty when `state="ok"` |
 
-Helpers: `tone.ts` (`Tone`, `CATEGORY_TONE`, `PRIORITY_TONE`: exact backend label to tone), `cn.ts`.
+Helpers: `useDuration()` (ms to a short translated span, "5 min", "3 h", "2 d", using the `explain.ago.*` units; P5.10), `tone.ts` (`Tone`, `CATEGORY_TONE`, `PRIORITY_TONE`: exact backend label to tone), `cn.ts`.
 
 `ProbBar` and `SetBadge` (P5.4) live in the same folder and are exported from `index.ts`; they are listed in the next section because they render API data.
 
@@ -215,7 +219,9 @@ Every function takes the client first. `subscribe*` returns an unsubscribe funct
 | `listRequestsWithLocation(sb, limit=200)` / `subscribeRequestsWithLocation(sb, cb)` | table `requests` where `building_id` is set | staff and admin; the subscription drops rows without a building |
 | `listReviewQueue(sb)` | table `review_queue`, `status = open`, oldest first | staff and admin |
 | `listBuildings(sb)` | table `buildings` | any signed-in user |
-| `listOfficeTickets(sb, office)` / `subscribeTickets(sb, office, cb)` | table `tickets` | sorted by `sla_due_at`; the subscription filters `office=eq.<office>` |
+| `listTickets(sb, office \| null)` / `listOfficeTickets(sb, office)` / `subscribeTickets(sb, office \| null, cb)` | table `tickets` | sorted by `sla_due_at`; with an office the read and the channel are filtered (`office=eq.<office>`), with `null` (an admin) they carry every row RLS allows (P5.10) |
+| `listPredictionsByIds`, `listPredictionsForRequest`, `listLatestPredictions(sb, requestIds)`, `listFlaggedPredictions(sb, flags, limit)` / `subscribePredictions(sb, cb)` | table `predictions` (`repos/predictions.ts`, P5.10-P5.11) | staff and admin only. `listLatestPredictions` keeps the newest row per request (map dot colours); `listFlaggedPredictions` uses an array overlap on `flags`; the subscription reports inserts only |
+| `listRequestsByIds(sb, ids)` | table `requests` | staff and admin; RLS drops what the caller may not see (P5.10) |
 | `listTicketsForRequest(sb, requestId)`, `listTicketLinks(sb, ticketIds)` | `tickets`, `ticket_links` | link rows carry the Linear URL |
 | `listOpenIncidents(sb)` / `subscribeIncidents(sb, cb)` | table `incidents`, `status = open` | staff of the office, admin all |
 | `listOutbox(sb, {kind?, limit?})` / `subscribeOutbox(sb, cb)` | table `outbox` | student: rows for their alias; staff and admin all |
@@ -261,7 +267,7 @@ Env vars the web app reads: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_AN
 
 | Piece | Where | Behaviour |
 | --- | --- | --- |
-| `Composer({ onSubmit(text, mode), busy, micSlot? })` | `components/chat` | Enter sends, Shift+Enter adds a line, IME composition does not send; blank text is not sent; cleared after sending. `micSlot` is empty until P5.9. |
+| `Composer({ onSubmit(text, mode), busy, micSlot? })` | `components/chat` | Enter sends, Shift+Enter adds a line, IME composition does not send; blank text is not sent; cleared after sending. `micSlot` takes a node or a function of `{ begin, apply }` (see "Voice input"); a dictated transcript only fills the box and the request is sent as `voice`. |
 | `ClarificationBubble({ q, onPick, disabled, answered? })` | `components/chat` | the question in its own script's direction; options are buttons in a labelled group, not a radiogroup (an arrow key would otherwise send an answer on every move). Answered chip shows a check and `aria-pressed`. |
 | `BuildingPicker({ buildings, value, onChange, disabled })` | `components/chat` | native select, names in the UI language; `value` is the building id, which equals its code in the seed and is sent as `location.building`. |
 | `DistressCard({ message })` | `components/chat` | the service's supportive text as written (counselling placeholder and 911), no labels or ticket UI. |
@@ -274,9 +280,60 @@ Logic, outside components:
 - `src/lib/chat/service.ts` has `submitTriage`, `answerClarification`, `fetchCounterfactual` (all through `callAi`), `chatErrorKind` (the service's English prose is never shown: a status or code maps to `chat.error*`) and `noticeFromNotification`.
 - Hooks (`src/hooks`): `useChat` (state, send, pick, counterfactual, notice; locks against double sends), `useNotifications(alias, cb)` (Realtime on `notifications`, unsubscribes on unmount), `useBuildings`, `useServiceHealth`, `useSignIn` and `useSignOut`. The plan's `useTriage`, `useClarify` and `useCounterfactual` are one hook because they share the thread.
 - Clarification: the chip answer goes to `POST triage/{id}/clarify` with `question_id` and `option_id`; the result is appended and the chip stays selected. A failed answer re-opens the question. Counterfactual: clicking a highlighted word calls `GET explain/{id}/counterfactual?drop=<token>` and the answer appears inside the same `ResultCard`.
-- Live updates: ticket status and incident broadcasts arrive as notices. The notification payload shape is not fixed by the backend yet: `{status, title}` becomes "Your ticket ... is now ...", `{message}` is shown as is, anything else is "You have a new update".
+- Live updates: `noticeFromNotification` follows the contract in docs/api/README.md ("Notifications payload"). A `message` is shown as written and wins (kinds `message` and `incident` carry only `message`; `ticket_status` may carry one too). Without a message, a `status` becomes "Your ticket <title> is now <status>" (`ticket_status` rows carry `ticket_id`, `status`, `title`). Anything else is "You have a new update". The old `body` key is not read.
+- Clarify errors: 409 (no question pending), 422 (the answer names a question that is not the pending one) and 404 all become `chat.errorNothingToAnswer`; the question is re-opened by the reducer only for a failed call, so the student can send the request again.
 
 Tests: `src/components/chat/__tests__/flow.test.tsx` runs the real hook against the API fixtures (clarify, counterfactual, distress, waking, re-open, double send); `e2e/student-basic.spec.ts` runs the real app against the mock API and `e2e/support/fake-supabase.mjs` (a test double that accepts `E2E_PASSWORD`, default `e2e-password`).
+
+## Voice input (P5.9)
+
+Dictation for the student chat, through the browser's Web Speech API. It is offered only where the API exists (Chrome, Edge, Safari); on Firefox the mic button is not rendered and typing is the only path. The browser's own speech service hears the audio; the web app never receives it.
+
+| Piece | Where | Behaviour |
+| --- | --- | --- |
+| `useSpeech(lang: 'ar-JO' \| 'en-US'): { supported, listening, transcript, start, stop, error? }` | `src/hooks/useSpeech.ts` | `supported` is false on the server and in Firefox (so there is no hydration mismatch). `start()` creates one recogniser (`continuous=false`, `interimResults=true`), clears the transcript and error, and must come from a click. `transcript` joins every result, interim words included. `error` is the browser's code (`not-allowed`, `no-speech`, ...). The recogniser is aborted on unmount. |
+| `MicButton({ lang, onTranscript, onStart?, disabled? })` | `components/chat` | Toggle button (`aria-pressed`, label "Dictate in English/Arabic" or "Stop listening", 44 px, danger variant while listening) plus a polite sr-only "Listening" status. A failure becomes a toast (`chat.voice.error*`); an `aborted` session is silent. Renders nothing when unsupported. |
+| `Composer({ micSlot })` | `components/chat` | `micSlot` is a node **or** a function receiving `{ begin, apply }`. `begin()` remembers the text already typed; `apply(transcript)` sets the box to typed text plus the transcript and marks the message as voice. The transcript is only put in the box: the student edits it and presses send (SPEC 5.1 [1]). The request goes out with `input_mode: "voice"`; emptying the box, or a send, resets the mode to `text`. |
+| `src/lib/voice/speech.ts` | pure | `speechLangFor(lang)` (the UI language picks the dictation language), `getRecognitionCtor`, `transcriptOf`, `speechErrorKind`, `joinTranscript`. |
+
+`ChatScreen` wires it: `micSlot={(mic) => <MicButton lang={speechLangFor(lang)} onStart={mic.begin} onTranscript={mic.apply} />}`. The dictation language follows the page language (Arabic page, `ar-JO`). A `ToastProvider` now lives in the root layout. Tests: `src/hooks/__tests__/useSpeech.test.tsx` (mocked `webkitSpeechRecognition`), `src/lib/voice/__tests__`, `src/components/chat/__tests__/voice.test.tsx`. Manual: in Chrome press the mic, say the moment-1 sentence, see it in the box, edit, send.
+
+## Staff dashboard `/staff` (P5.10)
+
+- **Route and roles:** `/staff`, staff and admin (the proxy sends students to `/`, signed-out visitors to `/login`; the page re-checks). Staff see only their office, an admin sees every office; **row-level security decides the rows**, the page never filters for access. The `office` argument only narrows an admin's query.
+- **Run it locally:** sign in as `it@demo.local` (staff, office `it`) or `admin@demo.local` with the mock API and the real Supabase project (see "Local dev with the mock API"). Ticket status, confirm/correct and resolve go through the proxy to the API; the mock answers them from fixtures.
+- **Composition:** `app/staff/page.tsx` (server: session, profile, office) renders `StaffScreen` (wires the hooks, not in the barrel). Four tabs (`Tabs`/`TabPanel`): Tickets, Needs review (N), Incidents (N), Flags. Counts are in the tab names.
+
+| Area | Component (`components/staff`) | Data | Notes |
+| --- | --- | --- | --- |
+| Queue | `TicketQueue({ tickets, now, onStatus, onSelect, selectedId, pendingIds, showOffice })`, `TicketRow`, `StatusSelect` | `listTickets(sb, office)` + `listTicketLinks`; Realtime `subscribeTickets`; `POST tickets/{id}/status` | Active tickets by `sla_due_at`, finished last. SLA is a badge in words ("Overdue by 3 h", "Due in 2 d") plus a danger edge when overdue, so colour is never the only cue. Filter: Active / Finished / All. A live ticket gets its Linear link read once. `merged` is shown but cannot be picked. A failed change toasts `staff.error.*`. |
+| Detail | `RequestDetail({ ticket, detail, load, audience, counterfactual, onCounterfactual, onClose })` | `listRequestsByIds` + `listPredictionsForRequest` (hook `useTicketDetail`); `GET explain/{id}/counterfactual` | The request text in its own direction, voice/simulated markers, building and room, the current decision, flags the viewer may see, and the `ExplanationPanel` inside a collapsed `<details>`. Without a readable prediction it says so. |
+| Review | `ReviewQueue({ items, pendingIds, onConfirm, onCorrect })`, `CorrectionForm({ categories, priorities, initial, busy, onSubmit, onCancel })` | `listReviewQueue` + `listPredictionsByIds` + `listRequestsByIds`; `POST feedback` | Each item: text, best guess, why it was unsure (set sizes, or a distress note), collapsed explanation, Confirm and Correct. Correct opens the form (native selects, labels in the page language, values are the exact backend strings, optional note). Success shows `staff.memoryToast` and drops the item. A **distress** item has no Correct button (nothing to classify). `review_queue` is not in the Realtime publication, so a new `predictions` insert flagged `needs_review` or `distress` triggers a debounced re-read. |
+| Incidents | `IncidentsPanel({ incidents, buildings, onResolve })` around `pulse/IncidentList` | `listOpenIncidents` + `subscribeIncidents`; `POST incidents/{id}/resolve` | Resolve opens a confirmation dialog with an optional note to the reporters; the toast says how many were notified. |
+| Flags | `FlagsPanel({ events, audience, now })` | `listFlaggedPredictions(sb, ['injection_attempt','urgency_unsupported','priority_gaming_suspected'])` + `listRequestsByIds` | Reads `predictions.flags`, not the `events` log (flag names are documented, audit action names are not). Gaming is admin only (`isFlagVisible`); an event with no visible flag is hidden. Informational: a flag never changes a label. |
+
+- **States:** every list uses `Loadable` (skeleton while loading, an alert with a Retry button when the read fails, then the content), each list has an `EmptyState`, and a failed action toasts a translated sentence (`session`, `forbidden`, `notFound`, `waking`, `generic`). The global "AI waking up" banner still covers the service.
+- **Logic outside components:** `src/lib/staff/{tickets,review,detail,flags,explanation,service}.ts` and `src/lib/incidents` (pure: sort, SLA state, merge live rows, build views; thin API calls). Hooks: `useTicketQueue(office)`, `useReviewQueue()`, `useIncidents()`, `useFlagEvents()`, `useTicketDetail(requestId)`, `useMapBuildings()`.
+- **Explanation adapter:** the stored `predictions.explanation` is the backend's domain object, not the API's `ExplanationOut` (neighbours say `category` not `label`, the trace is a free dictionary). `explanationFromPrediction(row)` maps it defensively (the trace is rebuilt from the row's `set_*`, `cost_usd`, `latency_ms`, `artifact_version`; `models_agree` is a placeholder `true`) and `evidenceFromPrediction` reads `core.evidence.spans`.
+- **Office names:** `profiles.office`/`tickets.office` are codes (D-005); `useOfficeLabel()` shows `staff.offices.<code>`. `applyTicketOut` keeps the database's `office` and `category` when the API answers a status change, because the API may name an office in words.
+- **Tests:** `src/lib/staff/__tests__`, `src/components/staff/__tests__`, `src/hooks/__tests__/staffHooks.test.tsx`, `src/lib/__tests__/repos-staff.test.ts`; `e2e/staff-basic.spec.ts` (queue for the office only, overdue marker, status change, detail with a collapsed explanation, correct once with the memory toast, resolve an incident, Arabic RTL with no overflow, admin sees every office). The fake Supabase gained fixture rows and a stand-in for office-level RLS on tickets; Realtime is still not faked.
+
+## Pulse `/pulse` (P5.11)
+
+- **Route and roles:** `/pulse`, staff and admin (same guard as `/staff`). Staff see their office's rows, an admin sees all (RLS).
+- **Run it locally:** as for `/staff`; with the simulator (`python scripts/simulate_pulse.py --scenario config/simulation/wifi_m.yaml`, DB stream) dots and a ring appear live.
+- **Composition:** `app/pulse/page.tsx` renders `PulseScreen` (not in the barrel): header (live badge, link back to `/staff`, language switch, sign out), the `CampusMap` with `RequestDot`s and `IncidentRing`s plus `MapLegend`, a card with `IncidentList`, a card with `EventFeed`. Clicking a building toggles a filter on the incident list ("Building M, ... / Show all buildings").
+
+| Piece | Where | Data / behaviour |
+| --- | --- | --- |
+| `usePulse()` | `src/hooks` | One snapshot (`listRequestsWithLocation`, `listOpenIncidents`, `listOutbox({kind:'broadcast', limit: 20})`, then `listLatestPredictions` for the dot labels), then Realtime on `requests` (with a building), `predictions` inserts, `incidents` and `outbox` (broadcast). `resolve(id, note)` calls `POST incidents/{id}/resolve` and applies the answer. |
+| `pulseReducer`, `INITIAL_PULSE` | `src/lib/pulse/state.ts` | Pure. A dot needs the request **and** its labels, in either arrival order. An incident is new (not seen), a bump (higher `report_count`) or resolved (status not open; removed). The feed is deduplicated by event id (`req:`, `inc:<id>:new`, `inc:<id>:bump:<n>`, `inc:<id>:resolved`, `b:`) and capped at 50, newest first. SIMULATED = a simulated request, an outbox row with status `simulated`, or an incident whose building only has simulated requests. |
+| `dotsOf`, `ringsOf`, `openIncidents` | `src/lib/pulse/view.ts` | Dots inside the footprint via `dotPosition`; rings above the building centre, several in one building spread sideways; incidents newest first, optionally one building. |
+| `IncidentList({ incidents, buildings, onResolve, now })` | `components/pulse` | Title, category and priority badges, report count, age, building name; Resolve (when `onResolve` is given) opens a `Dialog` with an optional note and stays open until the promise settles. Used by `/staff` as well. |
+| `EventFeed({ events, now })` | `components/pulse` | A polite `role="log"`. Each line is a sentence in the page language from structured fields (`pulse.event.*`); free text (an incident title) is shown as written. A SIMULATED badge marks demo traffic. `FeedEvent = { id, at, kind: 'request'\|'incident_new'\|'incident_bump'\|'broadcast'\|'resolved', simulated, buildingId, category, priority, count, title }` (structured instead of the plan's single `text`, so the sentence can be translated). |
+
+- **States:** loading skeleton, a retry alert on a failed snapshot, empty states for incidents and the feed. The map stays `dir="ltr"` in Arabic; everything else mirrors.
+- **Tests:** `src/lib/pulse/__tests__` (reducer and view), `src/components/pulse/__tests__`, `src/hooks/__tests__/usePulse.test.tsx` (fake channels: live request, prediction, bump, resolve), `e2e/pulse-basic.spec.ts` (dots, ring, feed, SIMULATED, building filter, resolve, RTL, student blocked). The live half of moment 2 is covered by the reducer and hook tests because the e2e Supabase double does not speak Realtime.
 
 ## Routes
 
@@ -286,4 +343,6 @@ Tests: `src/components/chat/__tests__/flow.test.tsx` runs the real hook against 
 | `/` | any signed-in role | student chat (P5.8) |
 | `/api/ai/[...path]` | session (health is public) | allow-listed proxy to the AI service (P5.6) |
 | `/dev/ui` | dev only | kitchen sink; `notFound()` when `NODE_ENV === "production"` |
-| `/staff`, `/pulse`, `/outbox`, `/lab` | staff/admin, admin | guarded by `src/proxy.ts`; pages arrive in P5.10 to P5.12 |
+| `/staff` | staff, admin | staff dashboard (P5.10) |
+| `/pulse` | staff, admin | live map, incidents and feed (P5.11) |
+| `/outbox`, `/lab` | staff/admin, admin | guarded by `src/proxy.ts`; the pages arrive in P5.12 and later (404 until then) |
