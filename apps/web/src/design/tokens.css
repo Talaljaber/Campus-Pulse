@@ -1,0 +1,198 @@
+/*
+ * CampusPulse design tokens. Every component styles against these variables.
+ * Light is the default; dark applies under prefers-color-scheme unless the user
+ * forced light (data-theme="light"), or when forced dark (data-theme="dark").
+ *
+ * Rules enforced by src/design/__tests__/tokens.test.ts:
+ *  - text tokens reach >= 4.5:1 on every surface
+ *  - category/priority/semantic colours reach >= 3:1 on every surface (graphics)
+ *  - badge text (text-1) reaches >= 4.5:1 on each 16% tint of a tone
+ */
+
+:root {
+  /* surfaces + text + lines */
+  --cp-surface-0: #ffffff;
+  --cp-surface-1: #f5f7fa;
+  --cp-surface-2: #e9edf2;
+  --cp-text-1: #12161d;
+  --cp-text-2: #3a4351;
+  --cp-text-3: #566070;
+  --cp-border: #d2d8e0;
+  --cp-border-strong: #76808f;
+  --cp-focus: #0b5cd5;
+  --cp-on-accent: #ffffff;
+  --cp-accent: #0b5cd5;
+
+  /* categories (Okabe-Ito inspired; the label is always shown next to colour) */
+  --cp-cat-registration: #0066b3;
+  --cp-cat-it: #7a3ea1;
+  --cp-cat-finance: #a84e00;
+  --cp-cat-transport: #00735a;
+  --cp-cat-facilities: #7d6200;
+  --cp-cat-academic: #b0307a;
+
+  /* priority: lightness steps plus an icon in the component, never colour alone */
+  --cp-pri-low: #566a80;
+  --cp-pri-medium: #9a5a00;
+  --cp-pri-high: #c4161c;
+
+  /* semantic */
+  --cp-ok: #17713a;
+  --cp-warn: #8f5900;
+  --cp-danger: #c4161c;
+  --cp-info: #0b5cd5;
+
+  /* spacing (4px scale) */
+  --cp-space-1: 0.25rem;
+  --cp-space-2: 0.5rem;
+  --cp-space-3: 0.75rem;
+  --cp-space-4: 1rem;
+  --cp-space-5: 1.5rem;
+  --cp-space-6: 2rem;
+  --cp-space-7: 3rem;
+  --cp-space-8: 4rem;
+
+  /* radius */
+  --cp-radius-sm: 0.375rem;
+  --cp-radius-md: 0.625rem;
+  --cp-radius-lg: 1rem;
+
+  /* type */
+  --cp-font-sans: var(--font-inter), var(--font-plex-arabic), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --cp-font-mono: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  --cp-text-xs: 0.75rem;
+  --cp-text-sm: 0.875rem;
+  --cp-text-md: 1rem;
+  --cp-text-lg: 1.125rem;
+  --cp-text-xl: 1.375rem;
+  --cp-text-2xl: 1.75rem;
+
+  /* elevation + motion */
+  --cp-shadow-1: 0 1px 2px rgb(18 22 29 / 0.08), 0 1px 1px rgb(18 22 29 / 0.06);
+  --cp-shadow-2: 0 8px 24px rgb(18 22 29 / 0.16), 0 2px 6px rgb(18 22 29 / 0.1);
+  --cp-motion-fast: 120ms;
+  --cp-motion-slow: 280ms;
+  --cp-overlay: rgb(18 22 29 / 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --cp-surface-0: #0e1218;
+    --cp-surface-1: #161b23;
+    --cp-surface-2: #1f2631;
+    --cp-text-1: #eef1f5;
+    --cp-text-2: #c5ccd7;
+    --cp-text-3: #9aa4b3;
+    --cp-border: #2e3744;
+    --cp-border-strong: #7f8a9b;
+    --cp-focus: #86b7ff;
+    --cp-on-accent: #0e1218;
+    --cp-accent: #86b7ff;
+
+    --cp-cat-registration: #5fadff;
+    --cp-cat-it: #c996f2;
+    --cp-cat-finance: #f2a65a;
+    --cp-cat-transport: #3fd1a2;
+    --cp-cat-facilities: #e8cd52;
+    --cp-cat-academic: #f58cbf;
+
+    --cp-pri-low: #9db0c6;
+    --cp-pri-medium: #f0b040;
+    --cp-pri-high: #ff8585;
+
+    --cp-ok: #55d08a;
+    --cp-warn: #f0b040;
+    --cp-danger: #ff8585;
+    --cp-info: #86b7ff;
+
+    --cp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
+    --cp-shadow-2: 0 8px 24px rgb(0 0 0 / 0.6);
+    --cp-overlay: rgb(0 0 0 / 0.65);
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-surface-0: #0e1218;
+  --cp-surface-1: #161b23;
+  --cp-surface-2: #1f2631;
+  --cp-text-1: #eef1f5;
+  --cp-text-2: #c5ccd7;
+  --cp-text-3: #9aa4b3;
+  --cp-border: #2e3744;
+  --cp-border-strong: #7f8a9b;
+  --cp-focus: #86b7ff;
+  --cp-on-accent: #0e1218;
+  --cp-accent: #86b7ff;
+
+  --cp-cat-registration: #5fadff;
+  --cp-cat-it: #c996f2;
+  --cp-cat-finance: #f2a65a;
+  --cp-cat-transport: #3fd1a2;
+  --cp-cat-facilities: #e8cd52;
+  --cp-cat-academic: #f58cbf;
+
+  --cp-pri-low: #9db0c6;
+  --cp-pri-medium: #f0b040;
+  --cp-pri-high: #ff8585;
+
+  --cp-ok: #55d08a;
+  --cp-warn: #f0b040;
+  --cp-danger: #ff8585;
+  --cp-info: #86b7ff;
+
+  --cp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
+  --cp-shadow-2: 0 8px 24px rgb(0 0 0 / 0.6);
+  --cp-overlay: rgb(0 0 0 / 0.65);
+}
+
+/* Tailwind v4 CSS-first mapping (LD-2). `inline` keeps utilities pointing at the
+   live --cp-* variables so theme switches need no rebuild. */
+@theme inline {
+  --color-surface-0: var(--cp-surface-0);
+  --color-surface-1: var(--cp-surface-1);
+  --color-surface-2: var(--cp-surface-2);
+  --color-fg-1: var(--cp-text-1);
+  --color-fg-2: var(--cp-text-2);
+  --color-fg-3: var(--cp-text-3);
+  --color-line: var(--cp-border);
+  --color-line-strong: var(--cp-border-strong);
+  --color-focus: var(--cp-focus);
+  --color-accent: var(--cp-accent);
+  --color-on-accent: var(--cp-on-accent);
+  --color-cat-registration: var(--cp-cat-registration);
+  --color-cat-it: var(--cp-cat-it);
+  --color-cat-finance: var(--cp-cat-finance);
+  --color-cat-transport: var(--cp-cat-transport);
+  --color-cat-facilities: var(--cp-cat-facilities);
+  --color-cat-academic: var(--cp-cat-academic);
+  --color-pri-low: var(--cp-pri-low);
+  --color-pri-medium: var(--cp-pri-medium);
+  --color-pri-high: var(--cp-pri-high);
+  --color-ok: var(--cp-ok);
+  --color-warn: var(--cp-warn);
+  --color-danger: var(--cp-danger);
+  --color-info: var(--cp-info);
+
+  --radius-sm: var(--cp-radius-sm);
+  --radius-md: var(--cp-radius-md);
+  --radius-lg: var(--cp-radius-lg);
+
+  --font-sans: var(--cp-font-sans);
+  --font-mono: var(--cp-font-mono);
+
+  --text-xs: var(--cp-text-xs);
+  --text-sm: var(--cp-text-sm);
+  --text-base: var(--cp-text-md);
+  --text-lg: var(--cp-text-lg);
+  --text-xl: var(--cp-text-xl);
+  --text-2xl: var(--cp-text-2xl);
+
+  --shadow-1: var(--cp-shadow-1);
+  --shadow-2: var(--cp-shadow-2);
+}

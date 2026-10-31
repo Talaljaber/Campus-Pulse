@@ -1,1 +1,36 @@
 @import "tailwindcss";
+@import "../design/tokens.css";
+
+@layer base {
+  html {
+    background: var(--cp-surface-0);
+    color: var(--cp-text-1);
+    font-family: var(--cp-font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    min-height: 100dvh;
+    background: var(--cp-surface-0);
+    color: var(--cp-text-1);
+    font-size: var(--cp-text-md);
+    line-height: 1.55;
+  }
+  /* Arabic needs more leading than Latin for diacritics and tall letterforms. */
+  :lang(ar) body,
+  :lang(ar) {
+    line-height: 1.8;
+  }
+  :focus-visible {
+    outline: 2px solid var(--cp-focus);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

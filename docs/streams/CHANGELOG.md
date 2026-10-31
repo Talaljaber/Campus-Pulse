@@ -28,3 +28,12 @@
 - **Acceptance:** `pnpm --filter web typecheck` and `lint` exit 0; `build` prints `Compiled successfully` and lists `/dev/ui`; pin check prints `pinned`.
 - **Limitations / TODO / known issues:** the plan says npm + `package-lock.json`; the lead's instruction (pnpm 10.17.0, `pnpm-lock.yaml`) was followed, so the Foundation CI job (P0.9) must use pnpm, not `npm ci`. ESLint 10 has unmet-peer warnings from eslint-config-next plugins (lint still passes). Extra devDeps beyond Appendix A: `@types/*`, `@testing-library/{dom,user-event,jest-dom}`, `@vitejs/plugin-react`.
 - **Affects streams:** Foundation (CI must use pnpm; Netlify build command).
+
+### P5.1 — Design tokens, Tailwind v4 theme and fonts  (ui, 2026-10-31, commit see git log)
+- **What now exists:** `apps/web/src/design/tokens.css` with the `--cp-*` variables (surfaces, text, 6 category and 3 priority colours, semantic colours, spacing, radius, type scale, shadow, motion) in light, `prefers-color-scheme: dark` and forced `[data-theme]` variants, mapped into Tailwind 4 through `@theme inline` (no `tailwind.config.ts`). Inter and IBM Plex Sans Arabic load via `next/font/google`. An ESLint rule bans physical `ml-/mr-/pl-/pr-/left-/right-/text-left/text-right` in `src/components/**` and `src/app/**`, and another bans data-layer imports in components.
+- **Public interfaces added or changed:** CSS variables (see [docs/ui/README.md](../ui/README.md#design-tokens)); Tailwind colour utilities `bg-surface-0|1|2`, `text-fg-1|2|3`, `border-line`, `bg-cat-*`, `bg-pri-*`, `text-ok|warn|danger|info`, `bg-accent`.
+- **How to use it:** `<div className="bg-surface-1 text-fg-2 ps-4 rounded-md">`.
+- **Config / env added:** none.
+- **Acceptance:** `vitest run src/design` -> `11 passed` (WCAG contrast for both themes); lint 0 errors; typecheck and build pass.
+- **Limitations / TODO / known issues:** dark-mode polish is P5.17 (cut-flagged); category colours were chosen for colour-blind separation but are always paired with a text label.
+- **Affects streams:** none outside UI.
