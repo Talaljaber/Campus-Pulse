@@ -5,6 +5,8 @@ export { Chip, ChipGroup, type ChipGroupProps, type ChipProps } from "./Chip";
 export { Dialog, type DialogProps } from "./Dialog";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";
 export { Icon, type IconName, type IconProps } from "./Icon";
+export { IconTile, type IconTileProps } from "./IconTile";
+export { InfoGrid, InfoPanel, type InfoGridProps, type InfoPanelProps, type InfoRow } from "./InfoPanel";
 export { LanguageSwitch, type LanguageSwitchProps } from "./LanguageSwitch";
 export { RtlProvider, type RtlProviderProps } from "./RtlProvider";
 export { Select, type SelectOption, type SelectProps } from "./Select";

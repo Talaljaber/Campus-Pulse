@@ -79,10 +79,10 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={onKeyDown}
-        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-lg border border-line bg-surface-0 p-5 shadow-2"
+        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-lg border border-line border-t-4 border-t-orange bg-surface-0 p-5 shadow-2"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
-          <h2 id={titleId} className="text-xl font-semibold text-fg-1">
+          <h2 id={titleId} className="text-xl font-bold text-accent">
             {title}
           </h2>
           <button

@@ -34,7 +34,7 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
         "transition-colors duration-(--cp-motion-fast) disabled:cursor-not-allowed disabled:opacity-55",
         selected
           ? cn("border-(--tone) border-2", tintClass(28))
-          : "border-line-strong bg-surface-0 hover:bg-surface-2",
+          : "border-line-strong bg-surface-0 hover:border-accent hover:bg-surface-1",
         className,
       )}
       {...rest}

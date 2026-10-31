@@ -32,14 +32,14 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   const descId = description ? `${selectId}-desc` : undefined;
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={selectId} className={hideLabel ? "sr-only" : "text-sm font-medium text-fg-1"}>
+      <label htmlFor={selectId} className={hideLabel ? "sr-only" : "text-sm font-semibold text-fg-1"}>
         {label}
       </label>
       <select
         ref={ref}
         id={selectId}
         aria-describedby={descId}
-        className="min-h-11 w-full rounded-md border border-line-strong bg-surface-0 px-3 text-base text-fg-1 disabled:cursor-not-allowed disabled:opacity-55"
+        className="min-h-11 w-full rounded-md border border-line-strong bg-surface-0 px-3 text-base text-fg-1 transition-colors duration-(--cp-motion-fast) hover:border-accent focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-55"
         {...rest}
       >
         {options.map((o) => (

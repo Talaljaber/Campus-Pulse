@@ -63,7 +63,7 @@ export function ThemeSwitch({ className }: ThemeSwitchProps) {
   }
 
   return (
-    <div role="radiogroup" aria-label={t("theme.label")} className={cn("inline-flex rounded-md border border-line-strong p-0.5", className)}>
+    <div role="radiogroup" aria-label={t("theme.label")} className={cn("inline-flex rounded-md border border-accent p-0.5", className)}>
       {CHOICES.map((c) => (
         <button
           key={c}
@@ -72,8 +72,8 @@ export function ThemeSwitch({ className }: ThemeSwitchProps) {
           aria-checked={choice === c}
           onClick={() => pick(c)}
           className={cn(
-            "min-h-9 rounded-sm px-3 text-sm font-medium",
-            choice === c ? "bg-accent text-on-accent" : "text-fg-2 hover:bg-surface-2",
+            "min-h-9 rounded-sm px-3 text-sm font-semibold",
+            choice === c ? "bg-accent text-on-accent" : "text-accent hover:bg-surface-2",
           )}
         >
           {t(`theme.${c}`)}
