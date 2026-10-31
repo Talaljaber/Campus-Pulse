@@ -263,7 +263,7 @@
 <a id="p0-4"></a>
 ## P0.4 — Write the domain layer (labels, values, entities, errors, ports)
 
-- [ ] Done
+- [x] Done
 - **Goal:** every type and port of §1.3–§1.4 exists with real signatures and `...` bodies for the ports. This is the vocabulary that every later task imports.
 - **Depends on:** P0.2
 - **Est / Cut:** 1 h · Cut: no

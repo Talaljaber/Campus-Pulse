@@ -8,6 +8,9 @@ extend-exclude = ["scripts/clean_data.py", "scripts/test_clean.py"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "TID"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["campuspulse_ai"]
+
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "sklearn.model_selection.train_test_split".msg = "random splits are forbidden (SPEC §3); use adapters.training.cv"
 "sklearn.model_selection.KFold".msg = "random splits are forbidden (SPEC §3); use adapters.training.cv"
