@@ -1,12 +1,87 @@
-# Training INPUTS (knobs). Learned OUTPUTS go to models/frozen/vN/config.json, written only by train.py.
+# Training INPUTS (knobs). Learned OUTPUTS go to models/frozen/vN/config.json, written only by train.py
+# (ARCHITECTURE §1.6). Sections marked "copied" are written into config.json unchanged; the rest drive tuning.
 seed: 42
+artifact_version: v1
 
 cv:
   k: 5
+  group_col: cv_group           # the leakage unit (copied)
+  fold_col: cv_fold             # frozen folds, LD-31 (copied)
+  folds_file: data/clean/cv_folds.csv
   # scripts/make_folds.py: seeded randomized search for a category-stratified fold assignment (LD-31).
   search_iterations: 20000      # fixed cap; exit 1 if no feasible assignment is found within it
   min_arabic_groups_per_fold: 2 # every validation fold keeps at least this many groups with Arabic rows
 
-# Copied verbatim into config.json `guards` by train.py.
+# Conformal miscoverage per target (ARCHITECTURE §3.5).
+alpha:
+  category: 0.10
+  priority: 0.10
+alpha_priority_fallback: 0.15   # used if the ASK rate on our test set exceeds ask_rate_max (§6.1 #8)
+ask_rate_max: 0.35
+
+# Stage B grids (tuned on OOF only, §3.4).
+grids:
+  m1_C: [0.5, 1, 2, 4, 8]
+  m2lr_C: [0.5, 1, 2, 4, 8]
+  weight_step: 0.1              # simplex grid step for ensemble weights
+
+tau_ood_percentile: 5           # tau_ood = this percentile of OOF max-similarity of in-distribution rows
+tau_margin: 0.02                # tau_injection / tau_safety = max exemplar similarity over the pool + this (LD-18)
+human_review_min_acc: 0.6       # human_review_maxprob = max-prob below which OOF accuracy < this
+
+mondrian:                       # switch conformal to per-language quantiles only if (§3.5):
+  min_cov_minority: 0.85        #   AR or Arabizi coverage on our test set < this
+  min_cov_en: 0.90              #   while EN coverage >= this
+
+m3:                             # LD-6 gates (M3 is cut by default, LD-32 / UD-4)
+  min_gain: 0.01
+  max_predict_s_per_1000: 60
+  time_box_h: 4
+  max_download_mb: 200
+  max_rss_mb: 400
+
+# ---- copied into config.json (not learned) ----
+encoder:                        # revision is resolved and recorded by export_encoder.py (P1.6)
+  model_id: intfloat/multilingual-e5-small
+  dim: 384
+  max_tokens: 256
+  query_prefix: "query: "       # LD-9
+  runtime: onnx_int8
+  file: encoder/model_int8.onnx
+  pooling: mean
+  normalize: true
+
+ensemble:
+  members: [m1, m2lr, m2knn]    # "m3" only if every LD-6 gate passes
+
+m1:
+  char_ngram: [2, 5]
+  word_ngram: [1, 2]
+
+knn:
+  k: 5
+  memory_weight_cap: 0.6
+  max_memory_neighbors: 2
+  memory_min_sim: 0.80
+
+priority_head:
+  features: [deadline_today, exam_now, safety_risk, stranded, enrollment_blocked, transient_glitch,
+             info_request, fault_report, ambient_fixture, teaching_room]
+  C: 1.0
+
+conformal:
+  method: lac
+  mondrian_by_lang: false
+
 guards:
   max_tokens: 256               # DefaultNormalizer truncates the core to this many whitespace tokens
+  gibberish_min_tokens: 2
+  gibberish_min_letter_ratio: 0.5
+  injection_sentence_strip_ratio: 0.6
+
+llm:
+  w_llm: 0.5
+  prompt_version: v1
+
+explain:
+  max_occlusions: 20
