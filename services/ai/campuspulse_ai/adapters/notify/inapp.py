@@ -21,8 +21,10 @@ PROVIDER_PREFIX = "inapp:"
 class InAppNotifier:
     """`Notifier` for `kind="in_app"`: writes one `notifications` row through the repository.
 
-    The row is `(alias=msg.to_address, kind=notification_kind, payload={ref, subject, body,
-    priority, flags})`; `send` returns `msg` with `status="sent"` and `provider_id="inapp:<ref>"`,
+    The row is `(alias=msg.to_address, kind=notification_kind, payload={ref, message, subject,
+    priority, flags})`; `message` is the text the student chat prints verbatim (docs/api/README.md ›
+    Notifications payload). There is deliberately no `status` key: the chat reads `{status, title}`
+    as a ticket-status update. `send` returns `msg` with `status="sent"` and `provider_id="inapp:<ref>"`,
     where `ref` (a UUID) is also in the payload, because `save_notification` returns no id.
 
     Errors: `NotificationError(retryable=False)` for a non-in-app message or an empty alias;
@@ -43,8 +45,8 @@ class InAppNotifier:
         ref = str(uuid.uuid4())
         payload: dict[str, object] = {
             "ref": ref,
+            "message": msg.body,
             "subject": msg.subject,
-            "body": msg.body,
             "priority": str(msg.priority) if msg.priority else None,
             "flags": sorted(msg.flags),
         }
