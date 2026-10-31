@@ -167,7 +167,7 @@
 <a id="p4-3"></a>
 ## P4.3 — Write SupabaseRepository, seeds, demo users, seed_faq and wire build_online
 
-- [ ] Done
+- [ ] Done — partial: SupabaseRepository, InMemoryRepository, migration 0007, seeds 01–04 applied. Still to do: `seed_demo_users.py` run (needs DEMO_USER_PASSWORD), `seed_faq.py` run (needs P1.6 encoder), `build_online` (lead assigns later).
 - Depends on: P4.2
 - Est: 2 h · Cut: no
 - Files:

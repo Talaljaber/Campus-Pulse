@@ -393,7 +393,7 @@
 <a id="p1-7"></a>
 ## P1.7 — Implement `LocalNumpyVectorStore` (`VectorStore` port, offline)
 
-- [ ] Done
+- [x] Done (DB stream, LD-37)
 - **Goal:** the offline store for the frozen collections `train`, `injection_exemplars` and `safety_exemplars` (§3.18). Its contract test is reused by P4's `PgVectorStore`.
 - **Depends on:** [P0.4](P0_foundations.md#p0-4), P1.4
 - **Est / Cut:** 0.5 h · Cut: no
