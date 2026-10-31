@@ -140,6 +140,7 @@ def load_pool(
     strip_wrappers: bool = True,
     folds_csv: Path = FOLDS_CSV,
     features_csv: Path = FEATURES_CSV,
+    include_unreviewed: bool = False,
 ) -> Pool:
     """Build the training pool from official and augmented CSVs (see the module docstring).
 
@@ -152,6 +153,10 @@ def load_pool(
             `model_text` for EN/AR rows; Arabizi rows keep their normalizer `model_text`.
         folds_csv: frozen `cv_group,cv_fold` table (LD-31).
         features_csv: `train_val_features.csv` for the official `lang_script`.
+        include_unreviewed: True keeps augmented rows still marked `needs_human_check=True`. Only two
+            callers may pass it: `scripts/check_leakage.py` (it must see every candidate row) and the
+            clearly labelled "unreviewed augmentation" ablation arm of `evaluate.py`. `train.py` never
+            does, so a frozen model never trains on an unchecked row.
 
     Raises:
         InvalidInput: a holdout path, an unreadable file, an unknown schema or missing column, a label
@@ -196,7 +201,7 @@ def load_pool(
                     raise InvalidInput(f"{path} {r['request_id']}: needs_human_check must be True/False")
                 if not r["source_scenario_id"].strip():
                     raise InvalidInput(f"{path} {r['request_id']}: source_scenario_id is required")
-                if needs_check:  # not reviewed yet: never trained on
+                if needs_check and not include_unreviewed:  # not reviewed yet: never trained on
                     continue
                 add(r, lang_script=script_lang(r["text"]), source=r["source"],
                     scenario_id=r["source_scenario_id"].strip(), official=False)

@@ -12,6 +12,13 @@ leakage:
   char_cosine: 0.8
   # P2.1 (encoder mode): print cross-group pairs with encoder cosine >= this for a manual merge decision.
   cosine_merge: 0.90
+  # P2.1: which holdout measures FAIL the gate for an augmented row (the others are listed for review).
+  # Measured with the int8 e5 encoder (ML batch 4): different official scenarios reach cosine 0.919
+  # (median 0.804), and true EN<->AR translations of one scenario have a median of 0.845, so an encoder
+  # cosine of 0.90 marks a shared topic, not a duplicate. exact and char (char_cosine) identify real copies.
+  # scripts/draft_augmentation.py is stricter: it drops any LLM draft with encoder cosine >= cosine_merge
+  # (or char >= char_cosine) to any holdout row before writing it.
+  holdout_fail_on: [exact, char]
 
 # ---- scripts/validate_dataset.py (P1.0): one block per --kind ----------------------------------------------
 # Labels are checked against campuspulse_ai.domain.labels (the only place label strings live).
