@@ -56,14 +56,15 @@ Row = dict[str, Any]
 
 # --------------------------------------------------------------------------- live-schema guard (D-011)
 #
-# The domain writes a few things the live Supabase schema does not have yet (DB change request
-# D-011). Until the DB stream ships the migration, SupabaseRepository passes every row through
-# `for_live_schema`, which drops the missing columns and maps the missing enum values, so a write
-# never fails on them. InMemoryRepository keeps the full rows (it models the target schema).
-# When the migration lands, empty these two mappings; nothing else changes.
-PENDING_COLUMNS: Mapping[str, frozenset[str]] = {"tickets": frozenset({"tags"})}
+# When the domain writes something the live Supabase schema does not have yet (a DB change request
+# in flight), SupabaseRepository passes every row through `for_live_schema`, which drops the
+# missing columns and maps the missing enum values, so a write never fails on them.
+# InMemoryRepository keeps the full rows (it models the target schema). D-011 (tickets.tags,
+# outbox status 'deferred') landed in migration 0009, so both mappings are empty; refill them
+# while the next change request is pending.
+PENDING_COLUMNS: Mapping[str, frozenset[str]] = {}
 """table -> columns the codec writes that the live schema lacks (dropped on write, read as default)."""
-PENDING_VALUES: Mapping[tuple[str, str], Mapping[str, str]] = {("outbox", "status"): {"deferred": "queued"}}
+PENDING_VALUES: Mapping[tuple[str, str], Mapping[str, str]] = {}
 """(table, column) -> {value the check constraint rejects: the value written instead}."""
 
 
