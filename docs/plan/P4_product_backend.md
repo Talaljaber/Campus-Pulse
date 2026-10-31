@@ -168,7 +168,7 @@
 <a id="p4-3"></a>
 ## P4.3 — Write SupabaseRepository, seeds, demo users, seed_faq and wire build_online
 
-- [ ] Done — partial: SupabaseRepository, InMemoryRepository, migration 0007, seeds 01–04 applied. Still to do: `seed_demo_users.py` run (needs DEMO_USER_PASSWORD), `seed_faq.py` run (needs P1.6 encoder), `build_online` (lead assigns later).
+- [x] Done (build_online wired 2026-10-31; the API serves the frozen v1 model)
 - Depends on: P4.2
 - Est: 2 h · Cut: no
 - Files:
@@ -458,7 +458,7 @@
 <a id="p4-10"></a>
 ## P4.10 — Pulse: WindowedCentroidDetector, ResolveIncidentUseCase, broadcast and simulate_pulse.py
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.2, P4.8
 - Est: 2 h · Cut: no. Per-building subscriptions are P4.19 (cut).
 - Files:
@@ -565,6 +565,7 @@
 ## P4.13 — Deploy to Render: Docker image, memory and latency budget, SMTP from Render, keep-warm
 
 - [ ] Done
+- Progress (2026-10-31): image builds (308 MB) and runs under 512 MB (RSS ~430 MB, p95 1.7 s at 0.5 CPU, over the 400 MB / 1.5 s budget); the Render deploy is the user's.
 - Depends on: P4.12; the encoder pre-release `models-v1-rcN` on GitHub Releases, published from [P1.19](P1_scored_core.md#p1-19) on ([LD-5](../PLAN.md#ld-5))
 - Est: 1.5 h · Cut: no
 - Files:
