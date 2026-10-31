@@ -1,0 +1,137 @@
+{
+  "centring_heads_passing": {
+    "centring/e5-small/official": 0,
+    "centring/e5-small/translate_train": 0,
+    "centring/e5-small/unreviewed_augmentation": 0,
+    "centring/minilm-l12/official": 1,
+    "centring/minilm-l12/translate_train": 1,
+    "centring/minilm-l12/unreviewed_augmentation": 1
+  },
+  "chosen": "intfloat/multilingual-e5-small",
+  "decision": "keep e5-small: MiniLM fails the int8 parity gate in every quantization variant tried (best 0.969 < 0.98) and passes the D-016 rule for 0 of 3 heads in every data condition; language-mean centring passes for 0 of 3 e5 heads. No encoder change, so the release tarball is not rebuilt.",
+  "e5_base": "not tested (D-016 #5: RSS budget; no dialect gain on ArabicMTEB)",
+  "head_grid_cat_f1": {
+    "e5-small/official/lr/centred": 0.5721,
+    "e5-small/official/lr/raw": 0.5316,
+    "e5-small/official/proto/centred": 0.5786,
+    "e5-small/official/proto/raw": 0.5621,
+    "e5-small/official/ridge/centred": 0.6047,
+    "e5-small/official/ridge/raw": 0.6577,
+    "e5-small/translate_train/lr/centred": 0.6321,
+    "e5-small/translate_train/lr/raw": 0.5735,
+    "e5-small/translate_train/proto/centred": 0.5784,
+    "e5-small/translate_train/proto/raw": 0.5965,
+    "e5-small/translate_train/ridge/centred": 0.5807,
+    "e5-small/translate_train/ridge/raw": 0.6474,
+    "e5-small/unreviewed_augmentation/lr/centred": 0.8402,
+    "e5-small/unreviewed_augmentation/lr/raw": 0.8155,
+    "e5-small/unreviewed_augmentation/proto/centred": 0.8313,
+    "e5-small/unreviewed_augmentation/proto/raw": 0.8069,
+    "e5-small/unreviewed_augmentation/ridge/centred": 0.817,
+    "e5-small/unreviewed_augmentation/ridge/raw": 0.8409,
+    "minilm-l12/official/lr/centred": 0.6148,
+    "minilm-l12/official/lr/raw": 0.648,
+    "minilm-l12/official/proto/centred": 0.5718,
+    "minilm-l12/official/proto/raw": 0.621,
+    "minilm-l12/official/ridge/centred": 0.6549,
+    "minilm-l12/official/ridge/raw": 0.4321,
+    "minilm-l12/translate_train/lr/centred": 0.6024,
+    "minilm-l12/translate_train/lr/raw": 0.6054,
+    "minilm-l12/translate_train/proto/centred": 0.5718,
+    "minilm-l12/translate_train/proto/raw": 0.6219,
+    "minilm-l12/translate_train/ridge/centred": 0.6548,
+    "minilm-l12/translate_train/ridge/raw": 0.4476,
+    "minilm-l12/unreviewed_augmentation/lr/centred": 0.769,
+    "minilm-l12/unreviewed_augmentation/lr/raw": 0.822,
+    "minilm-l12/unreviewed_augmentation/proto/centred": 0.8126,
+    "minilm-l12/unreviewed_augmentation/proto/raw": 0.7412,
+    "minilm-l12/unreviewed_augmentation/ridge/centred": 0.8259,
+    "minilm-l12/unreviewed_augmentation/ridge/raw": 0.8235
+  },
+  "minilm": {
+    "heads_passing_rule": {
+      "minilm_vs_e5/official/centred": 0,
+      "minilm_vs_e5/official/raw": 0,
+      "minilm_vs_e5/translate_train/centred": 0,
+      "minilm_vs_e5/translate_train/raw": 0,
+      "minilm_vs_e5/unreviewed_augmentation/centred": 0,
+      "minilm_vs_e5/unreviewed_augmentation/raw": 0
+    },
+    "int8_parity_trials": {
+      "default": {
+        "min_cos": 0.9622,
+        "ms_per_text_1thread": 10.8,
+        "quantization": {
+          "per_channel": true,
+          "reduce_range": true,
+          "weight_type": "QInt8"
+        },
+        "rss_mb_after_load_1thread": 440.4,
+        "size_mb_int8": 112.8
+      },
+      "matmul": {
+        "min_cos": 0.9693,
+        "ms_per_text_1thread": 19.5,
+        "quantization": {
+          "op_types": [
+            "MatMul"
+          ],
+          "per_channel": true,
+          "reduce_range": true,
+          "weight_type": "QInt8"
+        },
+        "rss_mb_after_load_1thread": 714.2,
+        "size_mb_int8": 388.0
+      },
+      "matmul_norr": {
+        "min_cos": 0.931,
+        "ms_per_text_1thread": 12.0,
+        "quantization": {
+          "op_types": [
+            "MatMul"
+          ],
+          "per_channel": true,
+          "reduce_range": false,
+          "weight_type": "QInt8"
+        },
+        "rss_mb_after_load_1thread": 715.0,
+        "size_mb_int8": 388.0
+      },
+      "nopc": {
+        "min_cos": 0.869,
+        "ms_per_text_1thread": 10.2,
+        "quantization": {
+          "per_channel": false,
+          "reduce_range": true,
+          "weight_type": "QInt8"
+        },
+        "rss_mb_after_load_1thread": 437.5,
+        "size_mb_int8": 112.6
+      },
+      "norr": {
+        "min_cos": 0.9125,
+        "ms_per_text_1thread": 24.0,
+        "quantization": {
+          "per_channel": true,
+          "reduce_range": false,
+          "weight_type": "QInt8"
+        },
+        "rss_mb_after_load_1thread": 440.2,
+        "size_mb_int8": 112.8
+      }
+    },
+    "model_id": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "parity_gate": 0.98,
+    "passes_parity": false,
+    "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42"
+  },
+  "oof_cat_official": 0.7768,
+  "oof_pri_official": 0.9036,
+  "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+  "rule": {
+    "max_slice_drop": 0.03,
+    "min_gain": 0.05,
+    "min_heads": 2
+  },
+  "selection_metric": "category_macro_f1_oof_official (pipeline) + the D-016 rule on the head grid"
+}
