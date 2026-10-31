@@ -49,3 +49,39 @@ def test_offline_composition_never_imports_pgvector() -> None:
         pytest.skip("composition.offline not built yet (P1)")
     loaded = _imported_after("campuspulse_ai.composition.offline")
     assert not {"supabase", "postgrest", *PG_MODULES} & loaded
+
+
+# --- P1.18: the rest of (b) and (d) on the real frozen v1 --------------------------------------------
+
+
+@pytest.mark.artifacts
+def test_offline_store_collections_exact() -> None:
+    from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
+    from campuspulse_ai.composition.offline import build_offline
+    from campuspulse_ai.config.paths import MODELS_FROZEN
+
+    container = build_offline(MODELS_FROZEN)
+    assert isinstance(container.vectors, LocalNumpyVectorStore)
+    assert container.vectors.collections() == {"train", "injection_exemplars", "safety_exemplars"}
+    assert container.vectors.read_only
+
+
+@pytest.mark.artifacts
+def test_predict_succeeds_with_unreachable_supabase_url(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import socket
+
+    from campuspulse_ai.config.paths import DATA_RAW
+    from campuspulse_ai.frameworks.cli.predict import main
+
+    def blocked(*_a: object, **_k: object) -> None:
+        raise OSError("network disabled in test")
+
+    monkeypatch.setenv("SUPABASE_URL", "https://unreachable.invalid")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "not-a-key")
+    monkeypatch.setattr(socket.socket, "connect", blocked)
+    monkeypatch.setattr(socket, "getaddrinfo", blocked)
+    out = tmp_path / "pred.csv"
+    assert main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out)]) == 0
+    assert len(out.read_text(encoding="utf-8").splitlines()) == 63
