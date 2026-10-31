@@ -498,7 +498,8 @@
 <a id="p4-11"></a>
 ## P4.11 — Red team: PerturbationGenerator, RedTeamScorer, RunRedTeamUseCase, route and offline CLI
 
-- [ ] Done
+- [x] Done
+- Note (2026-10-31): seeds come from official training rows (never our_test or robustness), and candidates go to reports/redteam/. First rc1 run: overall 0.83 (label stability 0.88, gaming resistance 0.90, injection resistance 0.95).
 - Depends on: [P3.9](P3_intelligence.md#p3-9); P2 (`data/our_test/`, `evaluate.py`)
 - Est: 1.5 h · Cut: no. The LLM generator is P4.17 (cut #7).
 - Files:
