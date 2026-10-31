@@ -14,7 +14,8 @@ The HTTP contract of the FastAPI AI service. It was frozen at P0.13 and is owned
 | Environment | Base URL | How to run |
 | --- | --- | --- |
 | Local mock (fixtures, no models) | `http://localhost:8000` | `uvicorn campuspulse_ai.frameworks.mock_app:create_mock_app --factory --port 8000` |
-| Local real service (from P3.12) | `http://localhost:8000` | `uvicorn api:app --app-dir services/ai --port 8000` (see [The real app](#real-app) for what is wired today) |
+| Local real service | `http://localhost:8000` | `uvicorn api:app --app-dir services/ai --port 8000` with the env of [Running it locally](#run-local): the real model, Supabase and the sinks (`build_online`) |
+| Local Docker image | `http://localhost:8000` | [Docker](#docker): the same app in the Render image |
 | Render | `https://<render-service>.onrender.com` | Deployed in P0.11 / P4.13. The real hostname is recorded in [docs/ops/README.md](../ops/README.md). |
 
 Every route lives under `/v1`. The only exception is `GET /health`, the root alias of `GET /v1/health` that Render's health check uses. The browser never calls this service directly; it calls the Next.js route handler `/api/ai/...`, which forwards the request server-side (P5.6).
@@ -387,6 +388,57 @@ Free text always goes in `message`; only ticket-status updates carry `status`.
   ≥ `GAMING_CLAIM_RATIO` (0.8) of them claim urgency and ≤ `GAMING_HIGH_RATIO_MAX` (0.2) of those
   claims were really high; or 2 injection attempts. Admin only; no penalty.
 
+<a id="review-reasons"></a>
+### `review_queue.reason` codes
+
+| Reason | Written by | When | Who resolves it |
+| --- | --- | --- | --- |
+| `needs_review` | `DecisionFlow` | the policy ended in `HUMAN_REVIEW` (a set still holds 2+ labels after the question budget, no LLM): the ticket is provisional (`unconfirmed`) | staff or admin, `POST /v1/feedback` (confirm or correct) |
+| `distress` | `DecisionFlow` [4'] | flag `distress`: no label shown, no ticket | **admin only** (DB 0011), `POST /v1/feedback` = acknowledgement |
+
+No other reason is written. The UI no longer needs to derive the reason from sets and flags.
+
+<a id="audit-events"></a>
+### Audit log (`events.action`)
+
+Every row is `(actor, action, entity, payload, at)`. Staff and admin can read `events` (RLS), so no
+payload carries the admin-only flag `priority_gaming_suspected` (it is only on `predictions.flags`).
+
+| `action` | `entity` | Actor | Payload |
+| --- | --- | --- | --- |
+| `triage.decided` | `request:<id>` | alias or `triage` | `prediction_id, status, action, tier, flags` (API flags, e.g. `injection_attempt`, `urgency_unsupported`, `safety`, `needs_review`) |
+| `triage.ask` | `request:<id>` | alias or `triage` | `question_id` |
+| `triage.out_of_scope` | `request:<id>` | alias or `triage` | `flags` |
+| `triage.distress` | `request:<id>` | alias or `triage` | `prediction_id` |
+| `incident.new`, `incident.attach` | `request:<id>` | alias or `triage` | `incident_id` |
+| `incident.merged` | `incident:<id>` | `pulse` | `request_id, kind` |
+| `incident.resolved` | `incident:<id>` | resolver alias or role | `closed, notified` |
+| `act.ticket` | `ticket:<id>` | `act` | `office, tags` |
+| `act.booking`, `act.booking_refused` | `ticket:<id>` | `act` | `slot_id, advisor_id` / `reason` |
+| `act.safety_alert`, `act.transport_alert` | `ticket:<id>` | `act` | `emailed` |
+| `act.finalized` | `ticket:<id>` | `act` | `fired` (action types) |
+| `ticket.status` | `ticket:<id>` | `sync` | the status change (webhook or dashboard) |
+| `sla.escalated` | `ticket:<id>` | `sla` | old/new priority, `sla_due_at` |
+| `outbox.rejected`, `outbox.failed` | `outbox:<id>` | `notifier` | `to_address, kind, reason, retryable` |
+| `feedback.confirmed`, `feedback.corrected` | `prediction:<id>` | reviewer alias or user id | `memory_id, ticket_id` |
+| `feedback.distress_ack` | `prediction:<id>` | admin | `review_id` |
+
+Injection attempts: `triage.decided` (or `triage.ask`/`out_of_scope`) with `injection_attempt` in
+`flags`. Gaming: `urgency_unsupported` is in `flags`; `priority_gaming_suspected` is not logged (admin
+reads `predictions.flags`).
+
+<a id="stored-explanation"></a>
+### Stored explanation (`predictions.explanation`)
+
+Until a read endpoint exists, the stored shape is stable (written by `adapters/store/codec.py`):
+`{top_tokens: [[token, weight]], urgency_reasons: [{feature, span, lang}], neighbors: [{text,
+category, priority, sim, source, created_at}], counterfactual: {drop, category, priority} | null,
+trace: {policy_path: [rule ids], clarified: bool}}`. Differences from `ExplanationOut`: a neighbour
+has `category` where the DTO has `label`; `trace` holds only the policy path and `clarified` (the
+response's `TraceOut` fields are computed per response and not stored). `top_tokens` is `[]` and
+`counterfactual` null until the ML explainer (P3.4) is wired. A `GET /v1/explain/{request_id}` that
+returns `ExplanationOut` is a contract change request to the lead.
+
 <a id="red-team"></a>
 ## Red team (`POST /v1/redteam/run`, P4.11)
 
@@ -625,8 +677,71 @@ llm_generator=None)` behind `POST /v1/redteam/run` (admin) and the offline CLI.
   re-plans from the ticket's labels, clears `unconfirmed` and `deferred:*`, mirrors to the sinks
   (`update_status`), and fires what waited (booking; transport alert; a safety alert only if it did not
   fire already). `[]` for a ticket that is not provisional.
+- `open_ticket(ticket) -> Ticket`: save a ready-made ticket and create it in every sink (used for the
+  incident ticket).
 - Config: `config/act.yaml` (`faq_top_k`, booking department and office hours), `tau_faq`
-  (FrozenConfig), `DEMO_STUDENT_INBOX`, `DEMO_OFFICE_INBOX` (unset → that email is skipped).
+  (`config/hand_tuned.yaml`, read at startup; 0.90), `DEMO_STUDENT_INBOX`, `DEMO_OFFICE_INBOX` (unset →
+  that email is skipped).
+
+<a id="feedback-usecase"></a>
+### `FeedbackUseCase.run(cmd: FeedbackRequest, reviewer) -> FeedbackResponse` — `use_cases/feedback.py` (P3.11)
+
+The live-learning loop behind `POST /v1/feedback` (implements `FeedbackHandler`).
+1. Staff or admin only (`403 forbidden` otherwise; the route checks too). Unknown prediction → 404.
+2. The prediction is updated in place: the final labels (corrections, or the predicted ones for a plain
+   confirmation), `tier: human`, flag `staff_confirmed`, `needs_review` removed. Its open review item is
+   resolved `confirmed` / `corrected` with the reviewer's user id, the corrections and the note.
+3. The request's own ticket: a provisional one is re-labelled, re-routed (office from
+   `config/actions.yaml`) and finalized (`ActUseCase.finalize`: deferred booking or alert fire now, the
+   sinks are updated); a confirmed ticket that was corrected is saved and mirrored. No ticket → `null`.
+4. **Memory:** one `memory_examples` row (pgvector) with the final labels, `text_norm`, the embedding the
+   core computed (re-encoded from `model_text` when the stored prediction lacks it: same vector), the
+   reviewer as author. The next similar request (cosine ≥ `knn.memory_min_sim`) has it as a kNN
+   neighbour with `source: "memory"` and `created_at` ("learned N s ago"); memory holds at most
+   `knn.memory_weight_cap` (0.6) of the kNN vote. `predict.py` never sees it (§3.11).
+5. **Distress acknowledgement** (`review_queue.reason = distress`): admin only (staff → 403). The item is
+   resolved `confirmed` with the note; no label change, no ticket, **no memory write**;
+   `memory.example_id` is `""`.
+6. Audit: `feedback.confirmed` / `feedback.corrected` / `feedback.distress_ack`.
+
+Reads beyond the `Repository` port come from `LifecycleReads` (`use_cases/ports.py`): `get_prediction`,
+`open_review_for`, `tickets_for_requests`, `get_incident`, `list_incidents`; both store adapters
+implement it (`tests/contracts/test_lifecycle_reads_contract.py`).
+
+<a id="pulse"></a>
+### Pulse: `IncidentActions` and `IncidentsUseCase` — `use_cases/incidents.py` (P4.10)
+
+In the triage flow ([13]), a **located** report whose action would be a ticket is checked by
+`WindowedCentroidDetector` (`docs/db/schema.md`, D-007 + D-015: `tau_inc` 0.92 from
+`config/hand_tuned.yaml`; attaching also needs cosine to the incident centroid ≥ `tau_inc`).
+- **New incident** (≥ 3 similar reports of one building and category in `INCIDENT_WINDOW_MIN`): one
+  incident ticket (tag `incident`, title "<category> reports in building X (N reports)") is created
+  in Supabase and Linear; the earlier reports' tickets become `merged` with `incident_id` (their Linear
+  issues move to Duplicate); every reporter gets one in-app message (`incident_merged`).
+- **Attach**: the report's own ticket is saved `merged` in the record only (no new Linear issue); the
+  incident ticket's priority follows the incident's (bumped once at 6 reports); this reporter gets one
+  in-app message.
+- The response: `action.type: incident_merge`, `ticket_id` = the report's own ticket, `external` = the
+  incident ticket's Linear link, `incident_id`.
+- FAQ answers, bookings and safety alerts are never folded into an incident.
+
+`IncidentsUseCase`:
+- `list(open_only, office=None)` (`GET /v1/incidents[?open=1]`): newest first, at most 20; staff see
+  their office's (the incident ticket's office). `ticket_id` is the incident ticket;
+  `member_ticket_ids` the reports' tickets; `simulated` is true when every report was simulator
+  traffic (`requests.simulated`, set by `simulated: true` from the service token or an admin; ignored
+  for anyone else).
+- `resolve(incident_id, actor, note)` (`POST /v1/incidents/{id}/resolve`): staff of the incident
+  ticket's office or admin (else 403). The incident becomes `resolved`; the incident ticket `resolved`
+  (mirrored: the Linear issue moves to Done); the report tickets `closed`; every reporter one in-app
+  message (`incident_resolved` + the note) and, if `DEMO_STUDENT_INBOX` is set and allow-listed, one
+  email. `closed_ticket_ids` lists every ticket of the incident. A second resolve changes nothing and
+  notifies nobody.
+
+**Simulator:** `python scripts/simulate_pulse.py --api <base url>` posts `config/simulation/wifi_m.yaml`
+through `/v1/triage` (service token from `AI_SERVICE_TOKEN`, aliases `sim-0N`, `simulated: true`,
+building M) and prints the open incidents after each post. `--mode direct` is the DB stream's
+Supabase-only mode.
 
 <a id="real-app"></a>
 ## The real app (`frameworks/fastapi_app.py`, P3.12)
@@ -634,33 +749,31 @@ llm_generator=None)` behind `POST /v1/redteam/run` (admin) and the offline CLI.
 `create_app(services=None, settings=None, *, build=None) -> FastAPI`:
 - `services` is `composition.api.ApiServices`, a frozen dataclass of the use cases behind the routes
   (`triage`, `clarify`, `counterfactual`, `feedback`, `tickets`, `sla` + `clock` for the SLA scanner,
-  `batch`, `metrics`, `redteam`, `identity` for `supabase_jwt`, and `health: HealthInfo` for `/health`). Every
+  `incidents`, `batch`, `metrics`, `redteam`, `identity` for `supabase_jwt`, and `health: HealthInfo`
+  for `/health`). Every
   use-case field is optional: a route whose use case is `None` answers **`501 not_implemented`**
   after the auth checks, with `details.component` naming what is missing.
 - `build(settings) -> ApiServices` runs in the startup lifespan when `services` is None.
-  `services/ai/api.py` passes `composition.api.build_api`, which today wires only the Supabase
-  identity verifier (when `AUTH_MODE=supabase_jwt` and the Supabase URL and service-role key are
-  set): `build_online` (P4.3, assigned by the lead) fills the rest of `ApiServices` from the
-  `OnlineContainer`. Until then the deployed app answers `/health` with `status: "degraded"` and the
-  use-case routes with 501.
+  `services/ai/api.py` passes **`composition.online.build_online`** (P4.3, [below](#build-online)).
 - `settings` defaults to `Settings()` from the env (`AI_SERVICE_TOKEN`, `AUTH_MODE`).
 - Every contract route is declared with `api_contract.route_kwargs` and the same parameters as the
   mock app, in `ENDPOINTS` order: `create_app().openapi()` is **byte-identical** to the mock's
   export and to `services/ai/openapi.json` (`tests/contracts/test_openapi_real_app.py`). Routes whose
-  use case belongs to a later task (`frameworks/routes/pending.py`: incidents, insights,
-  admin extras) authenticate and answer 501.
+  use case belongs to a later task (`frameworks/routes/pending.py`: insights, admin extras)
+  authenticate and answer 501.
 
 | Route module | Routes | Use case |
 | --- | --- | --- |
 | `routes/triage.py` | `POST /v1/triage`, `POST /v1/triage/{request_id}/clarify` | `TriageUseCase`, `ClarifyUseCase` |
 | `routes/explain.py` | `GET /v1/explain/{request_id}/counterfactual` | `CounterfactualUseCase` |
-| `routes/feedback.py` | `POST /v1/feedback` | any `FeedbackHandler` (`use_cases/ports.py`; P3.11 `FeedbackUseCase`) |
+| `routes/feedback.py` | `POST /v1/feedback` | `FeedbackUseCase` (P3.11; any `FeedbackHandler`) |
+| `routes/incidents.py` | `GET /v1/incidents`, `POST /v1/incidents/{incident_id}/resolve` | `IncidentsUseCase` (P4.10) |
 | `routes/tickets.py` | `POST /v1/tickets/{ticket_id}/status` | `SyncTicketUseCase.change_status` + `propagate` (background) |
 | `routes/integrations.py` | `POST /v1/integrations/linear/webhook` | `SyncTicketUseCase.apply_inbound` + `propagate` (background) |
 | `routes/lab.py` | `POST /v1/batch`, `GET /v1/metrics` | `BatchCsvUseCase`, `MetricsUseCase` |
 | `routes/redteam.py` | `POST /v1/redteam/run` | `RunRedTeamUseCase.api` (`ApiServices.redteam`) |
 | `routes/health.py` | `GET /health`, `GET /v1/health` | `ApiServices.health` (`status: ok` once triage is wired, else `degraded`) |
-| `routes/pending.py` | the routes of later tasks | none yet (501) |
+| `routes/pending.py` | `GET /v1/insights/recurring` (P4.21), `POST /v1/admin/simulate`, `POST /v1/admin/reindex` | none yet (501) |
 | lifespan (`background.py`) | — | `EscalateSlaUseCase.run` every `SLA_SCAN_MINUTES` |
 
 **Testing over HTTP.**
@@ -674,12 +787,71 @@ client = api_client(build_test(core=FakeCore().add(text, ambiguous_core)))
 r = client.post("/v1/triage", json={"text": text}, headers=auth("student", "demo-17"))
 ```
 
-**Running it locally** (PowerShell, repo root, venv active):
+<a id="build-online"></a>
+**`build_online(settings) -> ApiServices`** (`composition/online.py`, P4.3) wires, at startup:
+
+| Piece | Built from | Condition |
+| --- | --- | --- |
+| model | `build_offline(ARTIFACT_DIR)`: MANIFEST sha256 check, the int8 ONNX encoder, M1 + M2-LR + M2-kNN, head, conformal | always; a missing or tampered artifact **fails startup** with the `scripts/fetch_models.py` command |
+| online core | the same `TriageCore` with `PgVectorMemoryStore` (live memory); the offline container (memory off) serves `/v1/batch` | always |
+| store | `SupabaseRepository` + `PgVectorStore` (startup check `vector_dim() == encoder dim`) | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`, else startup fails (`StoreError`) |
+| sinks | `SupabaseSink`, then `RetryingSink(LinearSink)` (`config/integrations.yaml`, team CDP) | Linear when `ENABLE_SINKS=true` and `LINEAR_API_KEY`; inbound webhooks need `LINEAR_WEBHOOK_SECRET` (empty refuses all) |
+| notifier | `AllowlistedNotifier(ChannelNotifier({in_app: InAppNotifier, email: GmailSmtpNotifier}))` | email only with `GMAIL_SMTP_USER` + `GMAIL_APP_PASSWORD`; every address passes `DEMO_EMAIL_ALLOWLIST` |
+| calendar | `FallbackCalendar([SlotsTableCalendar])` | always |
+| FAQ | `VectorFAQRetriever` over pgvector `faq`, `tau_faq` from `config/hand_tuned.yaml` | always |
+| LLM | tier 1 `OpenRouterOracle` + `LLMUnderstander` (SQLite cache) | only `ENABLE_LLM=true` **and** `OPENROUTER_API_KEY` **and** `OPENROUTER_TIER1_MODEL`; otherwise tier 0 and the rule-based understander, and no OpenRouter call is ever made |
+| Pulse | embedding upsert to `requests`, `WindowedCentroidDetector` (`tau_inc` from `config/hand_tuned.yaml`), `IncidentActions` | always |
+| use cases | triage, clarify, feedback, tickets + SLA scanner, incidents, batch, metrics, red team (memory on), identity | always; the explainer (P3.4, ML) is not wired, so `/v1/explain/.../counterfactual` answers 501 |
+
+`config/hand_tuned.yaml` values (`tau_faq`, `tau_inc`) override the frozen `config.json` ones at startup
+(they are not learned and the scored labels use neither), so a hand-tuned change needs no re-freeze.
+`wire_online(settings, offline, adapters, clock)` is the same wiring over any adapters
+(`tests/unit/test_online.py` drives the real tiny model over `InMemoryRepository` and fakes).
+
+**Live routes** with `build_online`: every route except `GET /v1/explain/{request_id}/counterfactual`
+(explainer not built), `GET /v1/insights/recurring` (P4.21) and the optional `/v1/admin/*` extras (501).
+
+<a id="run-local"></a>
+**Running it locally** (PowerShell, repo root, venv active, `.env` filled from `.env.example`; the
+encoder installed with `python scripts/fetch_models.py`):
+
+```powershell
+uvicorn api:app --app-dir services/ai --env-file .env --port 8000
+curl.exe -s localhost:8000/health
+# a student call: the service token plus the user's Supabase access token
+curl.exe -s -X POST localhost:8000/v1/triage -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: <access_token>" -H "Content-Type: application/json" `
+  -d '{\"text\": \"I cant log in to the registration portal to add my course\"}'
+```
+
+The access token of a demo login comes from Supabase Auth with the anon key:
+`POST {SUPABASE_URL}/auth/v1/token?grant_type=password` with header `apikey: <NEXT_PUBLIC_SUPABASE_ANON_KEY>`
+and body `{"email": "talal@demo.local", "password": "<DEMO_USER_PASSWORD>"}` → `access_token`.
+`AI_SERVICE_TOKEN` must be set (empty = every `/v1` route answers 401). Set `SLA_SCAN_MINUTES=0` to keep
+the SLA scanner from escalating real rows while testing. Without Supabase, tests and the mock app use
+`AUTH_MODE=trusted_headers` (below).
+
+<a id="docker"></a>
+**Docker** (the Render image, `services/ai/Dockerfile`, build context = repo root):
+
+```powershell
+python scripts/fetch_models.py              # once: the encoder is copied into the image if present
+docker build -f services/ai/Dockerfile -t campuspulse-ai .
+docker run --rm -m 512m --cpus 0.5 -p 8000:10000 --env-file .env -e SLA_SCAN_MINUTES=0 campuspulse-ai
+curl.exe -s localhost:8000/health
+```
+
+The image holds `config/`, `reports/model_lab.json`, `data/clean/train_clean.csv` (red-team seeds),
+`models/frozen/v1` and the encoder (`.dockerignore` lets in nothing else of `data/` or `reports/`). A
+build without a local encoder (Render, a clean clone) downloads the GitHub Release asset `MODELS_TAG`
+(`models-v1-rc1`); while the repo is private pass `--secret id=GITHUB_TOKEN,env=GITHUB_TOKEN`. Either
+way `fetch_models.py` checks every file against `MANIFEST.json` and fails the build on a mismatch.
+`ORT_INTRA_OP_THREADS=1`, `TZ=Asia/Amman` and one uvicorn worker are set in the image.
+
+**Tests without Supabase** (`AUTH_MODE=trusted_headers`, identity from `X-CP-*` headers):
 
 ```powershell
 $env:AI_SERVICE_TOKEN = "dev-token"; $env:AUTH_MODE = "trusted_headers"
-uvicorn api:app --app-dir services/ai --port 8000
-curl.exe -s localhost:8000/health
 ```
 
 ## Optional extras

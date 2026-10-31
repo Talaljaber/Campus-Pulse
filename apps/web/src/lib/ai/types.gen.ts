@@ -883,6 +883,12 @@ export interface components {
             opened_at: string;
             /** Resolved At */
             resolved_at: string | null;
+            /**
+             * Simulated
+             * @description True when every member report is `simulate_pulse.py` traffic (P4.10).
+             * @default false
+             */
+            simulated: boolean;
         };
         /**
          * Lang
