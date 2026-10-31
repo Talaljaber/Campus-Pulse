@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@fixtures": fileURLToPath(new URL("../../services/ai/tests/fixtures/api", import.meta.url)),
+      "@db": fileURLToPath(new URL("../../supabase/types", import.meta.url)),
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },

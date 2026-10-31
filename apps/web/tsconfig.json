@@ -16,7 +16,7 @@
     "incremental": true,
     "types": ["vitest/globals", "@testing-library/jest-dom"],
     "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./src/*"], "@fixtures/*": ["../../services/ai/tests/fixtures/api/*"] }
+    "paths": { "@/*": ["./src/*"], "@fixtures/*": ["../../services/ai/tests/fixtures/api/*"], "@db/*": ["../../supabase/types/*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
   "exclude": ["node_modules"]
