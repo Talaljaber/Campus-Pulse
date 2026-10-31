@@ -65,3 +65,9 @@ export async function listReviewQueue(sb: Sb): Promise<ReviewRow[]> {
 export async function listBuildings(sb: Sb): Promise<BuildingRow[]> {
   return unwrap(await sb.from("buildings").select("*").order("code", { ascending: true }));
 }
+
+/** Requests by id (staff and admin; RLS drops the ones the caller may not see). */
+export async function listRequestsByIds(sb: Sb, ids: string[]): Promise<RequestRow[]> {
+  if (ids.length === 0) return [];
+  return unwrap(await sb.from("requests").select("*").in("id", ids));
+}

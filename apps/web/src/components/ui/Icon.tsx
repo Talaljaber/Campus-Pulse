@@ -1,7 +1,7 @@
 import type { SVGProps } from "react";
 
 /** Names of the built-in icons. */
-export type IconName = "check" | "alert" | "info" | "close" | "arrow-down" | "equal" | "chevrons-up" | "spinner" | "dot";
+export type IconName = "mic" | "check" | "alert" | "info" | "close" | "arrow-down" | "equal" | "chevrons-up" | "spinner" | "dot";
 
 const PATHS: Record<IconName, string> = {
   check: "M5 12.5l4.5 4.5L19 7.5",
@@ -13,6 +13,7 @@ const PATHS: Record<IconName, string> = {
   "chevrons-up": "M6 11l6-6 6 6 M6 19l6-6 6 6",
   spinner: "M12 3a9 9 0 019 9",
   dot: "M12 12m-4 0a4 4 0 108 0 4 4 0 10-8 0",
+  mic: "M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z M5 11a7 7 0 0014 0 M12 18v3",
 };
 
 /** Props for {@link Icon}. */

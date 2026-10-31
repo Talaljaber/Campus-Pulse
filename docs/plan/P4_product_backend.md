@@ -715,3 +715,12 @@
 - [ ] Render memory/latency result (X4.6): rss_mb_max, p95_ms; Starter kept or Standard requested ([OQ-8](../PLAN.md#oq-8))
 - [ ] Real-services lifecycle run (X4.2) date and output
 - [ ] Cut-flagged P4.15–P4.20 built or cut
+
+## Follow-ups queued for a later Backend batch (from UI batch 4, 2026-10-31)
+
+Non-blocking; the UI works around each today.
+- [ ] A read endpoint (or a stable stored shape) for a request's explanation in `ExplanationOut` form. Today the UI maps the stored domain JSON (`neighbors[].category`, free-form `trace`) in `apps/web/src/lib/staff/explanation.ts`.
+- [ ] Documented `review_queue.reason` codes (the UI derives the reason from sets and flags).
+- [ ] Documented `events` action names for injection and gaming, if the flags panel should read the audit log.
+- [ ] A distress acknowledgement contract via `/v1/feedback`, admin-only per the DB option A (0011).
+- [ ] A `simulated` marker on incidents (the UI infers it from the building's requests).

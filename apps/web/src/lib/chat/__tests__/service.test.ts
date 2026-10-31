@@ -53,6 +53,9 @@ describe("chatErrorKind", () => {
       "nothingToAnswer",
     );
     expect(chatErrorKind(failFromResponse(404, { error: { code: "not_found", message: "x", details: null } }), "clarify")).toBe("nothingToAnswer");
+    // 422: the chip names a question that is not the pending one (docs/api/README.md).
+    expect(chatErrorKind(failFromResponse(422, { error: { code: "invalid_input", message: "x", details: null } }), "clarify")).toBe("nothingToAnswer");
+    expect(chatErrorKind(failFromResponse(422, { error: { code: "invalid_input", message: "x", details: null } }), "triage")).toBe("generic");
     expect(chatErrorKind(failFromResponse(404, { error: { code: "not_found", message: "x", details: null } }), "triage")).toBe("generic");
     expect(chatErrorKind(failFromResponse(500, { error: { code: "internal_error", message: "x", details: null } }))).toBe("generic");
   });
@@ -65,6 +68,23 @@ describe("noticeFromNotification", () => {
       title: "Wi-Fi in M",
       status: "resolved",
     });
+  });
+  it("follows the documented payloads: message rows, ticket_status with or without a message, incident rows", () => {
+    expect(
+      noticeFromNotification({ kind: "message", payload: { ref: "u", message: "We opened a ticket.", subject: "s", priority: "high", flags: [] } }),
+    ).toEqual({ type: "message", message: "We opened a ticket." });
+    expect(
+      noticeFromNotification({ kind: "ticket_status", payload: { ticket_id: "t", status: "in_progress", title: "Wi-Fi" } }),
+    ).toEqual({ type: "ticket_status", title: "Wi-Fi", status: "in_progress" });
+    expect(
+      noticeFromNotification({ kind: "ticket_status", payload: { ticket_id: "t", status: "resolved", title: "Wi-Fi", message: "Fixed, thanks." } }),
+    ).toEqual({ type: "message", message: "Fixed, thanks." });
+    expect(noticeFromNotification({ kind: "incident", payload: { incident_id: "i", message: "Wi-Fi is back" } })).toEqual({
+      type: "message",
+      message: "Wi-Fi is back",
+    });
+    // The old `body` key is gone: it is not read.
+    expect(noticeFromNotification({ kind: "message", payload: { body: "old" } })).toEqual({ type: "generic" });
   });
   it("falls back to a message, then to generic, and ignores non-object payloads", () => {
     expect(noticeFromNotification({ kind: "incident_broadcast", payload: { message: "Wi-Fi is back" } })).toEqual({
