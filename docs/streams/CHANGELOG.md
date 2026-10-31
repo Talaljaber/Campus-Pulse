@@ -19,3 +19,12 @@
 - **Acceptance:** `pytest services/ai/tests/unit/test_domain_values.py -q` → `7 passed`; `mypy --strict services/ai/campuspulse_ai/domain` → `Success: no issues found in 9 source files`; `ruff check .` → `All checks passed!`.
 - **Limitations:** `policy.DefaultDecisionPolicy` (P3.1), `priority_rules.EVIDENCE_FEATURES` (P1.12), `routing` planner (P3.8/P4.8) are docstring placeholders. **Domain changes go through the lead only** (EXECUTION rule 3).
 - **Affects streams:** all.
+
+### P0.8 — Scaffold the Next.js app (`apps/web`)  (ui, 2026-10-31, commit see git log)
+- **What now exists:** strict-TypeScript Next 16.4.2 app (Tailwind 4 CSS-first, ESLint 10 flat config, vitest 4 + Testing Library + jsdom) with a placeholder `/` and a dev-only `/dev/ui` (`notFound()` in production). Every dependency is an exact pin from Appendix A.
+- **Public interfaces added or changed:** scripts `dev`, `build`, `typecheck`, `lint`, `test` in `apps/web/package.json`; root `pnpm-workspace.yaml` (so `pnpm --filter web <script>` works); `netlify.toml` (`base = apps/web`, `pnpm run build`, `NODE_VERSION=22`).
+- **How to use it:** `pnpm install` (repo root), then `pnpm --filter web dev`.
+- **Config / env added:** none.
+- **Acceptance:** `pnpm --filter web typecheck` and `lint` exit 0; `build` prints `Compiled successfully` and lists `/dev/ui`; pin check prints `pinned`.
+- **Limitations / TODO / known issues:** the plan says npm + `package-lock.json`; the lead's instruction (pnpm 10.17.0, `pnpm-lock.yaml`) was followed, so the Foundation CI job (P0.9) must use pnpm, not `npm ci`. ESLint 10 has unmet-peer warnings from eslint-config-next plugins (lint still passes). Extra devDeps beyond Appendix A: `@types/*`, `@testing-library/{dom,user-event,jest-dom}`, `@vitejs/plugin-react`.
+- **Affects streams:** Foundation (CI must use pnpm; Netlify build command).
