@@ -61,3 +61,36 @@
   - Foundation: P0.6 allow-list, P0.7 health shape, CI `gen_api_docs.py --check`.
   - ML: `/v1/metrics` shapes.
   - DB: the incident, ticket and recurring shapes.
+
+### P3.1 — Deterministic DecisionPolicy  (backend, 2026-10-31, commit 9d9df2f)
+- **What now exists:** `DefaultDecisionPolicy` in `domain/policy.py`. It is the pure, stdlib-only implementation of the `DecisionPolicy` port: SPEC §5.1 [7] and ARCHITECTURE §2.1 [7] rules a→f, first match wins.
+- **Public interfaces added:**
+  - `DefaultDecisionPolicy(tau_ood: float)`:
+    - `.decide(core, budget, llm_allowed) -> Outcome`;
+    - `.decide_with_path(core, budget, llm_allowed, *, after_escalation=False) -> tuple[Outcome, tuple[str, ...]]`;
+    - `.tau_ood`.
+  - Rule-id constants `RULE_GIBBERISH`…`RULE_HUMAN` and `POLICY_RULES` (`a_gibberish`, `b_ood`, `c_accept`, `d_ask`, `e_escalate`, `f_human`).
+- **Rules:**
+  - a: flag `gibberish` → OUT_OF_SCOPE.
+  - b: `ood_score < tau_ood` and |S_cat| ≥ 3 → OUT_OF_SCOPE.
+  - c: both sets are singletons → ACCEPT.
+  - d: a set of size 2 and `budget.remaining > 0` → ASK.
+  - e: `llm_allowed` and any set of size ≥ 2 → ESCALATE.
+  - f: otherwise → HUMAN_REVIEW.
+  - With `after_escalation=True`, only c and f are evaluated.
+  - The path lists the rules evaluated, and its last id is the one that fired. Use cases append that last id to `explanation.trace.policy_path` at each evaluation, e.g. `["d_ask", "c_accept"]` (see [docs/api/README.md](../api/README.md)).
+  - Distress is not handled here (the use case does it first). Unknown flags are ignored.
+- **How to use it:**
+  ```python
+  policy = DefaultDecisionPolicy(tau_ood=config.thresholds.tau_ood)
+  outcome = policy.decide(core, ClarificationBudget(max_questions=1, asked=0), llm_allowed)
+  ```
+- **Config / env added:** none. It reads `thresholds.tau_ood`, passed in by the composition root.
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_policy.py -q` → `14 passed`.
+  - `python -c "import campuspulse_ai.domain.policy as p, sys; assert not [m for m in sys.modules if m.startswith(('numpy','sklearn'))]"` → exit 0.
+  - `mypy --strict services/ai/campuspulse_ai/domain` → no issues.
+- **Limitations / TODO / known issues:**
+  - The P3.1 plan text sketches `ClarificationBudget(asked, max, max_if_unsure)` with `left()` and `after_answer()`. The frozen domain type is `ClarificationBudget(max_questions, asked)` with `.remaining`, and the policy uses that.
+  - The "not sure → a second question" rule therefore belongs in ClarifyUseCase (P3.10), which builds `ClarificationBudget(max_questions=2, asked=1)`. No domain change is needed.
+- **Affects streams:** Backend (P3.9/P3.10 use it); ML (P3 recomputes the true ASK rate with it, LD-24).
