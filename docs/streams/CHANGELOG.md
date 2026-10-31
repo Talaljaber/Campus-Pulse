@@ -1095,3 +1095,33 @@
   - Not done in this part of P2.3: `paraphrases.csv`.
 - **Affects streams:** ML (training pool after review; the `3am` guard note), Lead (review queue for P2.4).
 
+
+### UD-13 (DB part) — advisor links and per-office review routing  (db, 2026-10-31)
+- **What now exists:** migration `0012_advisor_routing`, applied to the linked project (history repaired to `0012`). Reference: [db/schema.md › RLS policies](../db/schema.md#rls-policies-in-plain-words).
+  - New columns: `profiles.advisor_id` → advisors, `advisors.profile_id` → profiles (unique), `review_queue.assignee` → profiles, and `review_queue.office`, with indexes on all three.
+  - Trigger `review_queue_fill_office` fills `office` from the prediction's category (`private.cp_category_office`, the D-005 one-to-one table) unless it is set.
+  - `review_queue_read` narrowed: staff read their own office's non-distress items that are unassigned or assigned to them; admins everything. This removes the 0011 cross-office widening.
+  - Demo login `advisor@demo.local` (staff, `academic`) is linked to the fictional advisor a…0001 (allow-listed `demo_email`), which is now `talal@demo.local`'s advisor.
+- **Public interfaces added or changed:**
+  - The four columns above (generated types updated).
+  - `seed_demo_users.py` now seeds 4 users plus the two links (`ADVISOR_LOGINS`, `STUDENT_ADVISORS`).
+  - The domain `ReviewItem` has no `assignee`/`office` yet. SupabaseRepository writes neither, and the trigger fills `office`. Exposing them in the domain is a change request for Backend's UD-13 batch.
+- **How to use it:**
+  - Backend assigns an academic item: `review_queue.assignee = advisors.profile_id` of the student's `profiles.advisor_id`.
+  - UI: `.from("review_queue").select()` already returns only what the signed-in staff member may see.
+- **Config / env added:** none.
+- **Acceptance:**
+  - Live `rls.sql` → `RLS: 13/13 checks passed`. Check 12: `own_or_queue=2 other_advisor=0`. Check 13: `rows=0`.
+  - Live anon-key sign-in check (rows cleaned up, `0 test rows left`):
+    - the trigger filled `academic` and `it`;
+    - `advisor@demo.local` sees `academic:mine` and `academic:queue`, not an item assigned to someone else;
+    - `it@demo.local` sees only `it:queue`;
+    - `talal@demo.local` sees no review items and reads only their own profile, with `advisor_id` set;
+    - `admin@demo.local` sees all 4.
+  - `seed_demo_users.py` → `created: advisor@demo.local …`, `linked: …`, `4 users ready`.
+  - `pytest -m supabase` → `59 passed, 1 skipped`. One earlier run showed 3 transient errors that did not recur in two reruns.
+  - Advisors: only `unused_index` INFO notes for the three new indexes.
+- **Limitations / TODO / known issues:**
+  - Items whose prediction has no category (null `office`) are admin-only.
+  - Academic staff who are not advisors see only the unassigned academic queue, not advisors' assigned items.
+- **Affects streams:** Backend (assignment and `ReviewItem` fields), UI (advisor view; staff now see only their office's queue), Lead (the X4.4 acceptance text now reads `RLS: 13/13`).
