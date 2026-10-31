@@ -22,6 +22,7 @@ from campuspulse_ai.application.use_cases.act import ActUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentActions
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.ports import Clarifier, SimulationMarks, TriageClassifier
+from campuspulse_ai.application.use_cases.reviews import ReviewAssigner
 from campuspulse_ai.domain.entities import (
     Clarification,
     CoreResult,
@@ -151,6 +152,9 @@ class DecisionFlow:
       explanation (a failure adds `explanation_failed`), the prediction row, a review item and a
       provisional plan for HUMAN_REVIEW, the understanding (UD-10), the actions (`ActUseCase.run`),
       then [12b]/[13] when `pulse` is wired, the request status and one audit event.
+    - The HUMAN_REVIEW item goes through `reviews` (UD-13 `ReviewAssigner`: the student's advisor, the
+      fallback office queue, or the predicted office for urgent requests) when wired; without it the
+      item is queued with no office (the database fills it from the category).
 
     Errors: `StoreError` from the core writes (request, prediction, clarification) propagates (503);
     the explainer, LLM tiers, sinks, notifier, calendar and Pulse degrade and never fail the request.
@@ -170,6 +174,7 @@ class DecisionFlow:
         clock: Clock,
         messages: Messages,
         pulse: Pulse | None = None,
+        reviews: ReviewAssigner | None = None,
     ) -> None:
         self._policy = policy
         self._clarifier = clarifier
@@ -182,6 +187,7 @@ class DecisionFlow:
         self._clock = clock
         self._messages = messages
         self._pulse = pulse
+        self._reviews = reviews
 
     def run(
         self,
@@ -383,9 +389,7 @@ class DecisionFlow:
         flags |= understanding_flags(understanding)
         pred = self._repo.save_prediction(pred)
         if provisional:
-            self._repo.enqueue_review(
-                ReviewItem(id="", prediction_id=pred.id, reason=REVIEW_NEEDS_REVIEW, status="open")
-            )
+            self._enqueue_review(request, pred, plan.office)
 
         decision = self._pulse_step(request, req, pred, plan.kind)
         action = self._merge(decision, request, pred, plan, understanding, provisional)
@@ -451,6 +455,14 @@ class DecisionFlow:
         except Exception as exc:  # degrade boundary: an explanation never fails triage (§2.1 [14])
             log.warning("explainer failed: %s", exc)
             return None
+
+    def _enqueue_review(self, request: Request, pred: Prediction, predicted_office: str) -> None:
+        if self._reviews is not None:
+            self._reviews.enqueue(request, pred, predicted_office)
+            return
+        self._repo.enqueue_review(
+            ReviewItem(id="", prediction_id=pred.id, reason=REVIEW_NEEDS_REVIEW, status="open")
+        )
 
     def _save_question(self, request: Request, question: ClarificationQuestion) -> Clarification:
         return self._repo.save_clarification(

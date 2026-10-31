@@ -91,6 +91,11 @@ class Settings(BaseSettings):
     gaming_claim_ratio: float = 0.8
     gaming_high_ratio_max: float = 0.2
 
+    # Hybrid advisor routing (UD-13)
+    review_fallback_office: str = "academic"  # queue of an unsure request whose student has no advisor
+    review_list_limit: int = 50  # GET /v1/reviews items per call
+    review_email_advisor: bool = True  # also email the advisor's allow-listed demo inbox on assignment
+
     # Background loops
     sla_scan_minutes: int = 5
     incident_window_min: int = 30

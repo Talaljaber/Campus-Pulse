@@ -396,6 +396,8 @@ def review_row(item: ReviewItem) -> Row:
         "corrected_category": str(item.corrected_category) if item.corrected_category else None,
         "corrected_priority": str(item.corrected_priority) if item.corrected_priority else None,
         "note": item.note,
+        "assignee": item.assignee,
+        "office": item.office,
     }
 
 
@@ -409,6 +411,8 @@ def to_review_item(row: Mapping[str, Any]) -> ReviewItem:
         corrected_category=Category(row["corrected_category"]) if row.get("corrected_category") else None,
         corrected_priority=Priority(row["corrected_priority"]) if row.get("corrected_priority") else None,
         note=row.get("note"),
+        assignee=str(row["assignee"]) if row.get("assignee") else None,
+        office=row.get("office"),
     )
 
 

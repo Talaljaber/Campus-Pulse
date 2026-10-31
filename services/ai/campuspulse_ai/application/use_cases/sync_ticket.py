@@ -143,7 +143,7 @@ class SyncTicketUseCase:
         self, ticket_id: str, new_status: TicketStatus, actor: Actor, note: str | None = None
     ) -> StatusChange:
         ticket = self._repo.get_ticket(ticket_id)
-        _check_staff(actor, ticket)
+        check_office_staff(actor, ticket)
         clean_note = (note or "").strip() or None
         if new_status == ticket.status:
             return StatusChange(ticket, ticket.status, DASHBOARD, clean_note)
@@ -240,7 +240,7 @@ def ticket_title(ticket: Ticket) -> str:
     return ticket.title or f"{ticket.category} request"
 
 
-def _check_staff(actor: Actor, ticket: Ticket) -> None:
+def check_office_staff(actor: Actor, ticket: Ticket) -> None:
     """Admins, or staff of the ticket's office (D-005 codes); everyone else is `Unauthorized`."""
     if actor.role == ROLE_ADMIN:
         return

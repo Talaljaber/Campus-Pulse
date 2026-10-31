@@ -13,6 +13,7 @@ from collections.abc import Collection, Sequence
 
 from campuspulse_ai.domain.entities import Ticket
 from campuspulse_ai.domain.errors import SinkError, StoreError
+from campuspulse_ai.domain.labels import Category, Priority
 from campuspulse_ai.domain.ports import Repository, TicketSink
 from campuspulse_ai.domain.values import TicketLink
 
@@ -65,3 +66,28 @@ class TicketMirror:
             self._repo.save_ticket_link(failed)
         except StoreError as exc:
             log.warning("link %s/%s not saved: %s", sink, ticket.id, exc)
+
+
+def relabelled(
+    ticket: Ticket,
+    category: Category,
+    priority: Priority,
+    *,
+    office: str | None = None,
+    tags: tuple[str, ...] | None = None,
+) -> Ticket:
+    """`ticket` with new labels (and a new `office`/`tags` when given). A title that starts with the old
+    labels (the rule-based understander writes `"<category>/<priority>: <gist>"`) is re-prefixed, so a
+    corrected or forwarded ticket never shows its old category in the dashboard or Linear."""
+    old = f"{ticket.category}/{ticket.priority}: "
+    title = ticket.title
+    if title.startswith(old):
+        title = f"{category}/{priority}: {title[len(old) :]}"
+    return dataclasses.replace(
+        ticket,
+        category=category,
+        priority=priority,
+        title=title,
+        office=ticket.office if office is None else office,
+        tags=ticket.tags if tags is None else tags,
+    )

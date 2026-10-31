@@ -20,6 +20,8 @@ They are structural (Protocols), so the real classes satisfy them without import
   by id, a pending review, the tickets of requests, incidents); both store adapters implement it.
 - `Identified` is an `Actor` that also carries its auth user id (`frameworks/auth.Principal`).
 - `SimulationMarks` writes and reads `requests.simulated` (simulator traffic, P4.10).
+- `AdvisorDirectory` finds a student's advisor and a caller's profile (UD-13); `ReviewReads` lists and
+  reads `review_queue` items. Both store adapters implement them.
 """
 
 from __future__ import annotations
@@ -29,7 +31,15 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from campuspulse_ai.application import dto
-from campuspulse_ai.domain.entities import CoreResult, Incident, Prediction, RedTeamItem, ReviewItem, Ticket
+from campuspulse_ai.domain.entities import (
+    CoreResult,
+    Incident,
+    Prediction,
+    RedTeamItem,
+    Request,
+    ReviewItem,
+    Ticket,
+)
 from campuspulse_ai.domain.values import (
     ClarificationConstraint,
     ClarificationQuestion,
@@ -203,3 +213,58 @@ class SimulationMarks(Protocol):
     def mark_simulated(self, request_id: str) -> None: ...
 
     def simulated(self, request_ids: Sequence[str]) -> set[str]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class AdvisorContact:
+    """A student's advisor as UD-13 routing needs it (fictional seed data).
+
+    `advisor_id` is the `advisors` row; `profile_id` the advisor's staff login (`advisors.profile_id`,
+    what `review_queue.assignee` holds); `alias` and `office` come from that profile (the in-app
+    notification address and the queue the item belongs to); `email` is the advisor's allow-listed
+    demo inbox ("" when none).
+    """
+
+    advisor_id: str
+    profile_id: str
+    name: str
+    alias: str | None
+    office: str | None
+    email: str
+
+
+@runtime_checkable
+class AdvisorDirectory(Protocol):
+    """Who advises whom (DB 0012: `profiles.advisor_id`, `advisors.profile_id`).
+
+    - `advisor_of(student_alias)`: the advisor linked to the student with that alias, or None when the
+      alias has no profile, no advisor, or the advisor has no staff login.
+    - `profile_id_of(alias)`: the profile id of a login by its alias, or None (identifies a caller in
+      `AUTH_MODE=trusted_headers`, where no user id is known).
+    Raises `StoreError` when the store is unreachable.
+    """
+
+    def advisor_of(self, student_alias: str) -> AdvisorContact | None: ...
+
+    def profile_id_of(self, alias: str) -> str | None: ...
+
+
+@runtime_checkable
+class ReviewReads(Protocol):
+    """`review_queue` reads for the review routes (UD-13).
+
+    - `get_review(id)`: that item; `NotFound` if absent.
+    - `list_reviews(status=..., office=..., limit=...)`: items newest first (`created_at`, then id),
+      only `status` when given and only `office` when given.
+    - `predictions_by_ids(ids)` / `requests_by_ids(ids)`: those rows (unknown ids are skipped), so a
+      list of items needs two reads, not two per item.
+    Raises `StoreError` when the store is unreachable.
+    """
+
+    def get_review(self, id: str) -> ReviewItem: ...
+
+    def list_reviews(self, *, status: str | None, office: str | None, limit: int) -> list[ReviewItem]: ...
+
+    def predictions_by_ids(self, ids: Sequence[str]) -> list[Prediction]: ...
+
+    def requests_by_ids(self, ids: Sequence[str]) -> list[Request]: ...

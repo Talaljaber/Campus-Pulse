@@ -45,6 +45,7 @@ from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
+from campuspulse_ai.application.use_cases.reviews import ReviewAssigner, ReviewRouter
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.config.frozen import FrozenConfig
@@ -77,6 +78,7 @@ ADVISOR_EMAIL = "advisor@campuspulse.invalid"
 ALLOWLIST = frozenset({STUDENT_INBOX, OFFICE_INBOX, ADVISOR_EMAIL})
 ADVISOR_NAME = "Dr. Test Advisor (fictional)"
 INCIDENT_WINDOW_MIN = 30
+FALLBACK_OFFICE = "academic"  # REVIEW_FALLBACK_OFFICE default (UD-13)
 SLOT_COUNT = 3  # free 30-minute slots seeded from the next office-hours morning
 
 
@@ -162,6 +164,7 @@ def build_test(
     advisor_email: str = ADVISOR_EMAIL,
     pulse: Pulse | None = None,
     pulse_encoder: SentenceEncoder | None = None,
+    advisor_routing: bool = True,
     tau_inc: float = 0.92,
     q_category: float = 0.5,
     q_priority: float = 0.5,
@@ -171,7 +174,8 @@ def build_test(
     `oracle` defaults to an empty `ScriptedOracle`; the LLM tier is enabled when the oracle has a
     script (or `llm_enabled=True`). `record_sink=True` puts `SupabaseSink(repo)` first, as production
     does (it writes to this container's repository). `q_*` are the FakeLAC quantiles used when an LLM
-    answer is merged.
+    answer is merged. `advisor_routing` wires the UD-13 `ReviewAssigner` over the repository (no
+    student is linked to an advisor until a test calls `link_student_advisor`).
     """
     clock = FrozenClock()
     repo = InMemoryRepository(clock)
@@ -224,6 +228,11 @@ def build_test(
         pulse = Pulse(vectors=vectors, encoder=pulse_encoder, incidents=detector, actions=actions)
         incidents = IncidentsUseCase(repo, repo, chosen, notifier, clock, msgs, marks=repo,
                                      student_inbox=acfg.student_inbox)  # fmt: skip
+    assigner = (
+        ReviewAssigner(ReviewRouter(repo, FALLBACK_OFFICE), repo, notifier, clock, msgs, email_advisor=True)
+        if advisor_routing
+        else None
+    )
     flow = DecisionFlow(
         policy=DefaultDecisionPolicy(config.thresholds.tau_ood),
         clarifier=InfoGainStrategy(QuestionBank.load(CONFIG_DIR / "clarify_questions.yaml")),
@@ -236,6 +245,7 @@ def build_test(
         clock=clock,
         messages=msgs,
         pulse=pulse,
+        reviews=assigner,
     )
     return BackendTestContainer(
         repo=repo,
@@ -272,3 +282,14 @@ def _seed_slots(repo: InMemoryRepository, advisor: Advisor, now: datetime, cfg: 
     for i in range(SLOT_COUNT):
         begins = start + timedelta(minutes=30 * i)
         repo.add_slot(advisor.id, begins, begins + timedelta(minutes=30))
+
+
+def link_student_advisor(
+    c: BackendTestContainer, student_alias: str = "demo-17", advisor_alias: str = "advisor"
+) -> str:
+    """UD-13 seed: a staff login (office `academic`) for the container's advisor, and a student
+    profile with that advisor (`seed_demo_users.py` does this online). Returns the advisor's profile id."""
+    profile_id = c.repo.add_profile(advisor_alias, "staff", FALLBACK_OFFICE)
+    c.repo.tables["advisors"][c.advisor.id]["profile_id"] = profile_id
+    c.repo.add_profile(student_alias, "student", advisor_id=c.advisor.id)
+    return profile_id

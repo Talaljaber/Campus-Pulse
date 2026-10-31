@@ -10,23 +10,27 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import uuid
 from dataclasses import dataclass
+from datetime import timedelta
 
 from campuspulse_ai.application import dto
 from campuspulse_ai.application.use_cases import responses as out
 from campuspulse_ai.application.use_cases.act import ActUseCase
 from campuspulse_ai.application.use_cases.mirror import INCIDENT_TAG, RECORD_SINK, TicketMirror
+from campuspulse_ai.application.use_cases.mirror import relabelled as relabel
 from campuspulse_ai.application.use_cases.ports import (
     ROLE_ADMIN,
     ROLE_STAFF,
     Actor,
-    Identified,
+    AdvisorDirectory,
     LifecycleReads,
 )
+from campuspulse_ai.application.use_cases.review_access import caller_profile_id, check_reviewer, user_id_of
 from campuspulse_ai.domain.entities import MemoryExample, Prediction, Request, ReviewItem, Ticket
 from campuspulse_ai.domain.errors import CampusPulseError, Unauthorized
 from campuspulse_ai.domain.ports import Clock, MemoryStore, Repository, SentenceEncoder, TicketSink
-from campuspulse_ai.domain.values import Tier
+from campuspulse_ai.domain.values import TicketStatus, Tier
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +59,9 @@ class FeedbackUseCase:
     """`run(cmd, reviewer) -> FeedbackResponse` (ARCHITECTURE §2.3 steps 1-5).
 
     1. The reviewer must be staff or admin (`Unauthorized` -> 403; the route checks it too). A
-       `distress` review item is admin-only (DB migration 0011): staff get `Unauthorized`.
+       `distress` review item is admin-only (DB migration 0011): staff get `Unauthorized`. An open
+       review item may be resolved only by someone who can see it (UD-13, `review_access`): staff of
+       its office, and for an item assigned to an advisor only that advisor (admins always).
     2. The prediction (`LifecycleReads.get_prediction`, `NotFound` -> 404) and its request. The final
        labels are the corrections, or the predicted ones for a plain confirmation.
     3. The prediction row is updated in place: the final labels, tier `human`, flag `staff_confirmed`
@@ -64,7 +70,9 @@ class FeedbackUseCase:
     4. The request's own ticket (not an incident ticket): a provisional one is re-labelled (office
        re-routed from `config/actions.yaml`) and finalized by `ActUseCase.finalize` (deferred booking
        or alert fire now, the sinks are updated); a confirmed one that was corrected is saved and
-       mirrored. No ticket (e.g. an FAQ answer) -> `ticket: null`.
+       mirrored. No ticket (e.g. an FAQ answer) -> `ticket: null`, unless `apply(...,
+       ensure_ticket=True)` (a review forwarded to an office, UD-13): then a ticket is opened for
+       the final office.
     5. `MemoryStore.add` with the final labels, the request's `text_norm` and the embedding the core
        computed (`CoreResult.embedding`, D-012; re-encoded from `model_text` only when the stored
        prediction does not carry it, which gives the same vector), author = the reviewer's user id.
@@ -86,6 +94,8 @@ class FeedbackUseCase:
         encoder: SentenceEncoder,
         clock: Clock,
         sinks: tuple[TicketSink, ...],
+        *,
+        directory: AdvisorDirectory | None = None,
     ) -> None:
         self._reads = reads
         self._repo = repo
@@ -94,14 +104,23 @@ class FeedbackUseCase:
         self._encoder = encoder
         self._clock = clock
         self._mirror = TicketMirror(sinks, repo)
+        self._directory = directory
 
     def run(self, cmd: dto.FeedbackRequest, reviewer: Actor) -> dto.FeedbackResponse:
+        return self.apply(cmd, reviewer)
+
+    def apply(
+        self, cmd: dto.FeedbackRequest, reviewer: Actor, *, ensure_ticket: bool = False
+    ) -> dto.FeedbackResponse:
+        """`run` with `ensure_ticket`: open a ticket for the final office when the request has none."""
         if reviewer.role not in REVIEWER_ROLES:
             raise Unauthorized(f"role {reviewer.role!r} may not review predictions")
         pred = self._reads.get_prediction(cmd.prediction_id)
         review = self._reads.open_review_for(pred.id)
         if review is not None and review.reason == REASON_DISTRESS:
             return self._acknowledge_distress(pred, review, cmd, reviewer)
+        if review is not None:
+            check_reviewer(reviewer, review, caller_profile_id(reviewer, self._directory))
         category = cmd.corrected_category or pred.category
         priority = cmd.corrected_priority or pred.priority
         decision = _Decision(
@@ -120,6 +139,8 @@ class FeedbackUseCase:
         self._repo.save_prediction(final)
         self._resolve(decision, cmd, reviewer)
         ticket, actions = self._update_ticket(decision, final)
+        if ticket is None and ensure_ticket:
+            ticket = self._open_ticket(decision.request, final)
         memory = self._learn(decision.request, final, reviewer)
         self._audit(reviewer, "feedback.corrected" if decision.corrected else "feedback.confirmed", final,
                     {"memory_id": memory.example_id, "ticket_id": ticket.id if ticket else None})  # fmt: skip
@@ -182,9 +203,7 @@ class FeedbackUseCase:
             return None, []
         ticket = own[-1]
         office = self._act.plan_for(final, provisional=False).office
-        relabelled = dataclasses.replace(
-            ticket, category=final.category, priority=final.priority, office=office
-        )
+        relabelled = relabel(ticket, final.category, final.priority, office=office)
         if ticket.provisional:
             actions = self._act.finalize(relabelled)
             return self._fresh(ticket.id, relabelled), actions
@@ -193,6 +212,26 @@ class FeedbackUseCase:
         saved = self._repo.save_ticket(relabelled)
         self._mirror.push(saved, skip=(RECORD_SINK,))
         return saved, []
+
+    def _open_ticket(self, request: Request, final: Prediction) -> Ticket:
+        """A confirmed ticket for the final labels' office (the request had none, e.g. an FAQ
+        answer that a reviewer forwarded to an office)."""
+        plan = self._act.plan_for(final, provisional=False)
+        ticket = Ticket(
+            id=str(uuid.uuid4()),
+            request_id=request.id,
+            incident_id=None,
+            office=plan.office,
+            category=final.category,
+            priority=final.priority,
+            status=TicketStatus.OPEN,
+            provisional=False,
+            sla_due_at=self._clock.now() + timedelta(hours=plan.sla_hours),
+            title="",
+            body=request.raw_text,
+            tags=plan.tags,
+        )
+        return self._act.open_ticket(ticket)
 
     def _fresh(self, ticket_id: str, fallback: Ticket) -> Ticket:
         try:
@@ -229,4 +268,4 @@ class FeedbackUseCase:
 
 
 def _user_id(actor: Actor) -> str | None:
-    return actor.user_id if isinstance(actor, Identified) else None
+    return user_id_of(actor)
