@@ -167,14 +167,11 @@ export const ar: Dict = {
       dueIn: "باقي {span}",
       finished: "منتهية",
       linear: "افتح {id} في Linear",
-      updating: "عم يتحدّث",
     },
     detail: {
       title: "تفاصيل الطلب",
       empty: "اختار تذكرة عشان تشوف الطلب اللي وراها.",
       close: "إغلاق التفاصيل",
-      loading: "عم نحمّل الطلب",
-      failed: "ما قدرنا نحمّل هالطلب.",
       request: "شو كتب الطالب",
       simulated: "محاكى",
       voice: "بالصوت",
@@ -183,7 +180,6 @@ export const ar: Dict = {
       decision: "القرار الحالي",
       noDecision: "قرار هالطلب مش متاح لمكتبك.",
       explanation: "ليش هالنتيجة",
-      ticket: "التذكرة",
     },
     review: {
       title: "مراجعة الموظف",
@@ -199,7 +195,6 @@ export const ar: Dict = {
       reasonGeneric: "انبعت لقرار الموظف.",
       reasonDistress: "إشارة ضيق: لازم شخص يطلع عليها. ما انفتحت تذكرة.",
       explanation: "ليش هالتخمين",
-      itemLabel: "عنصر مراجعة: {text}",
     },
     correction: {
       title: "صحّح التصنيف",
@@ -226,7 +221,6 @@ export const ar: Dict = {
       notFound: "هاد العنصر ما عاد موجود. حدّث القائمة.",
     },
     toast: {
-      confirmed: "تم التأكيد.",
       statusChanged: "تغيرت الحالة إلى {status}.",
       incidentResolved: "انحلّت الحادثة. تم إبلاغ {count} من المبلّغين.",
     },
@@ -264,6 +258,7 @@ export const ar: Dict = {
       broadcast: "انبعتت رسالة: {title}",
       resolved: "انحلّت الحادثة: {title}",
       where: " بالمبنى {code}",
+      ago: "قبل {span}",
     },
     error: {
       generic: "صار خطأ. جرّب مرة ثانية.",

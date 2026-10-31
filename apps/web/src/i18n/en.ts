@@ -173,14 +173,11 @@ export const en = {
       dueIn: "Due in {span}",
       finished: "Finished",
       linear: "Open {id} in Linear",
-      updating: "Updating",
     },
     detail: {
       title: "Request details",
       empty: "Choose a ticket to see the request behind it.",
       close: "Close details",
-      loading: "Loading the request",
-      failed: "Could not load this request.",
       request: "What the student wrote",
       simulated: "Simulated",
       voice: "Dictated by voice",
@@ -189,7 +186,6 @@ export const en = {
       decision: "Current decision",
       noDecision: "The decision for this request is not available to your office.",
       explanation: "Why this result",
-      ticket: "Ticket",
     },
     review: {
       title: "Human review",
@@ -205,7 +201,6 @@ export const en = {
       reasonGeneric: "Sent for a staff decision.",
       reasonDistress: "Distress signal: a person needs to look at this. No ticket was opened.",
       explanation: "Why this guess",
-      itemLabel: "Review item: {text}",
     },
     correction: {
       title: "Correct the classification",
@@ -232,7 +227,6 @@ export const en = {
       notFound: "That item no longer exists. Refresh the list.",
     },
     toast: {
-      confirmed: "Confirmed.",
       statusChanged: "Status changed to {status}.",
       incidentResolved: "Incident resolved. {count} reporters notified.",
     },
@@ -270,6 +264,7 @@ export const en = {
       broadcast: "Message sent: {title}",
       resolved: "Incident resolved: {title}",
       where: " in building {code}",
+      ago: "{span} ago",
     },
     error: {
       generic: "Something went wrong. Please try again.",

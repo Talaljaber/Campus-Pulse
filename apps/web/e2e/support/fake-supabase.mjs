@@ -51,16 +51,18 @@ const TABLES = {
   ],
   ticket_links: [{ ticket_id: "t-1", sink: "linear", external_id: "CP-47", external_url: "https://linear.app/campuspulse-demo/issue/CP-47", created_at: ago(5), last_error: null, last_synced_at: null }],
   requests: [
+    { id: "r-5", alias: "sim-01", raw_text: "the projector in A 101 is broken", lang: "en", input_mode: "text", building_id: "A", room: "A 101", simulated: true, status: "decided", created_at: ago(0.5), truncated: false },
     { id: "r-1", alias: "talal", raw_text: "the wifi in building M is down again", lang: "en", input_mode: "voice", building_id: "M", room: "M 214", simulated: false, status: "decided", created_at: ago(5), truncated: false },
     { id: "r-2", alias: "talal", raw_text: "my account is on hold after paying fees", lang: "en", input_mode: "text", building_id: null, room: null, simulated: false, status: "human_review", created_at: ago(1), truncated: false },
   ],
   predictions: [
+    { id: "p-5", request_id: "r-5", category: "Facilities", priority: "medium", flags: [], set_cat: ["Facilities"], set_pri: ["medium"], tier: "tier0", cost_usd: 0, latency_ms: 40, artifact_version: "v1", explanation, core: { evidence: { spans: [] } }, created_at: ago(0.5) },
     { id: "p-1", request_id: "r-1", category: "IT Support", priority: "high", flags: [], set_cat: ["IT Support"], set_pri: ["high"], tier: "tier0", cost_usd: 0, latency_ms: 40, artifact_version: "v1", explanation, core: { evidence: { spans: [] } }, created_at: ago(5) },
     { id: "p-2", request_id: "r-2", category: "Finance", priority: "medium", flags: ["needs_review"], set_cat: ["Finance", "Registration"], set_pri: ["medium"], tier: "tier0", cost_usd: 0, latency_ms: 40, artifact_version: "v1", explanation, core: { evidence: { spans: [] } }, created_at: ago(1) },
   ],
   review_queue: [{ id: "rv-1", prediction_id: "p-2", reason: "ambiguous", status: "open", created_at: ago(1), corrected_category: null, corrected_priority: null, note: null, resolved_at: null, reviewer_id: null }],
-  incidents: [{ id: "i-1", building_id: "M", category: "IT Support", office: "it", title: "Wi-Fi outage in building M", priority: "high", report_count: 4, status: "open", opened_at: ago(0.4), resolved_at: null, created_at: ago(0.4) }],
-  outbox: [],
+  incidents: [{ id: "e4f2a6c8-1b3d-4f5e-8a7c-9b0d1e2f0001", building_id: "M", category: "IT Support", office: "it", title: "Wi-Fi outage in building M", priority: "high", report_count: 4, status: "open", opened_at: ago(0.4), resolved_at: null, created_at: ago(0.4) }],
+  outbox: [{ id: "o-1", kind: "broadcast", channel: "in_app", alias: null, request_id: null, to_address: "", subject: "Wi-Fi in building M: we are on it", body: "", status: "simulated", priority: "high", flags: [], error: null, provider_id: null, created_at: ago(0.2) }],
 };
 
 /** Applies PostgREST-style `col=eq.value` and `col=in.(a,b)` filters; everything else (select, order, limit) is ignored. */
