@@ -331,3 +331,35 @@
 - **Acceptance:** `pytest services/ai/tests/unit/test_frozen_config.py services/ai/tests/unit/test_manifest.py -q` → `7 passed`. Extra: `test_config_and_artifacts_edges.py` → `13 passed`. `mypy --strict services/ai/campuspulse_ai/config/ services/ai/campuspulse_ai/adapters/artifacts/ services/ai/campuspulse_ai/adapters/preprocess/` → `Success: no issues found in 11 source files`.
 - **Limitations / TODO / known issues:** no `config.json` exists yet (P1.16). `encoder.runtime` also allows `hashing` for the `tiny_model_dir` fixture (`HashingEncoder`). Thresholds `tau_injection`/`tau_safety` have no upper bound (max similarity + margin may exceed 1, LD-18). The manifest's `artifact_version` falls back to the directory name when there is no `config.json`.
 - **Affects streams:** ML (every later component reads `FrozenConfig`; `train.py`/`predict.py` use `FileArtifactStore`); Backend (`/health` reports `Manifest.sha`; `build_test()` fixtures can use `valid_config_dict`); Foundation (`fetch_models.py` verification).
+
+### P3.7 / P1.15 (moved to DB) — InMemoryMemoryStore and NullMemoryStore  (DB, 2026-10-31, commit a27fc43)
+- **What now exists:** `adapters/memory/inmemory.py` (dict-backed `MemoryStore` for tests and the offline red team) and `adapters/memory/null.py` (the offline store `build_offline` wires, §3.11).
+- **Public interfaces added or changed:** `InMemoryMemoryStore()`, `NullMemoryStore()`. See [schema.md › Memory stores](../db/schema.md#memory-stores-adaptersmemory).
+- **How to use it:** `memory = InMemoryMemoryStore(); memory.add(MemoryExample(id="", ...)); memory.neighbors(emb, k=5, min_sim=0.8)`.
+- **Config / env added:** none.
+- **Acceptance:** `pytest services/ai/tests/contracts/test_memory_store_contract.py services/ai/tests/unit/test_null_memory.py -q` → `15 passed`. The 7 inmemory cases (previously skipped), the 7 live pgvector cases and the null test all pass.
+- **Limitations / TODO / known issues:** the memory-aware kNN merge (P3.7) stays with ML/Backend.
+- **Affects streams:** ML (`build_offline` uses `NullMemoryStore`), Backend (`build_test()` uses `InMemoryMemoryStore`).
+
+### P4.10 (partial) — WindowedCentroidDetector and the Pulse simulator  (DB, 2026-10-31, commits f3796ec, 1f2cf3e)
+- **What now exists:**
+  - `adapters/pulse/incident_detector.py`
+  - `scripts/simulate_pulse.py` (direct mode)
+  - `config/simulation/wifi_m.yaml` (8 fictional EN/AR/Arabizi reports, building M)
+  - `tests/unit/test_incident_detector.py`
+- **Public interfaces added or changed:** `WindowedCentroidDetector(repo, vectors, clock, tau_inc, window_min, min_reports=3, bump_at=6).detect(req, pred, embedding) -> IncidentDecision`. The detector saves the incident; `members` = member request ids with `req` last. See [schema.md › Incident detection](../db/schema.md#incident-detection-pulse).
+- **How to use it:** in `TriageUseCase`, after `vectors.upsert("requests", ...)` ([12b]): `decision = detector.detect(req, pred, embedding)`, then (P4.8) merge member tickets, open the one incident ticket, and broadcast.
+- **Config / env added:** `tau_inc` is a constructor argument (default 0.80 in the simulator) until `hand_tuned.yaml` exists (LD-11); `INCIDENT_WINDOW_MIN` (30) comes from Settings.
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_incident_detector.py -q` → `7 passed` local (InMemoryRepository + LocalNumpyVectorStore) and `7 passed` with `-m supabase`. Cases: 2 → none, 3 → new, 4 → attach; priority max, bumped once at 6; other building/category separate; outside the window → none; no location or a dissimilar report → none; thresholds from config.
+  - Live simulator, `python scripts/simulate_pulse.py --interval 0 --reset`, with synthetic embeddings: `[3/8] … incident created: 759ea121-… building=M category=IT Support reports=3 priority=medium` → `[6/8] … reports=6 priority=high` + `priority bumped -> high` → `[8/8] … reports=8`. The simulated rows were deleted afterwards.
+  - Full suites: default `169 passed, 1 skipped`; `-m supabase` `44 passed, 1 skipped`.
+- **Limitations / TODO / known issues:**
+  - **Not built (waits for Backend P4.8):** `ResolveIncidentUseCase`, the broadcast, the incidents route, and the simulator's `--mode api` (P4.14).
+  - **Attach window:** an incident is only attached to when it was opened inside the window; after 30 minutes a new one opens.
+  - **`tau_inc` on the real encoder:** with synthetic embeddings the clustering is trivially tight. Measuring `tau_inc` on the real encoder (X4.3 note) waits for P1.6.
+- **Affects streams:** Backend (the detector call in TriageUseCase/Act and the merge/broadcast), UI (Pulse page: `incidents` rows plus Realtime; run the simulator for live data).
+
+### P4.3 follow-up — seed contacts  (DB, 2026-10-31)
+- **Acceptance:** `python scripts/check_seed_contacts.py` → `seed contacts OK: 6 addresses in 4 files, all allow-listed`. The user added two personal Gmail inboxes to the local `DEMO_EMAIL_ALLOWLIST`; a GJU address they offered was left out (CLAUDE.md non-negotiable).
+- **Pending:** `seed_demo_users.py` waits for `DEMO_USER_PASSWORD` in the worktree `.env`.
