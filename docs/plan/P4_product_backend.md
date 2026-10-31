@@ -424,7 +424,7 @@
 <a id="p4-9"></a>
 ## P4.9 — Ticket lifecycle: SyncTicketUseCase, webhook route, `/tickets/{id}/status` and SLA scanner
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.6, P4.8
 - Est: 1.5 h · Cut: no
 - Files:
@@ -533,7 +533,7 @@
 <a id="p4-12"></a>
 ## P4.12 — Remaining routes and auth hardening: `/batch`, `/metrics`, Supabase JWT role verification
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.3, P4.11
 - Est: 1 h · Cut: no
 - Files:

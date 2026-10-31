@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 
 from campuspulse_ai.application import dto
 from campuspulse_ai.application.use_cases.messages import Messages, StudentMessages
+from campuspulse_ai.application.use_cases.mirror import FAILED_LINK_PREFIX, RECORD_SINK, TicketMirror
 from campuspulse_ai.domain.entities import Case, CoreResult, OutboxMessage, Prediction, Request, Ticket
 from campuspulse_ai.domain.errors import (
     CalendarUnavailable,
@@ -56,11 +57,6 @@ log = logging.getLogger(__name__)
 
 TRANSPORT_ALERT_TAG = "transport-alert"
 """`config/actions.yaml` Transportation x high: the ticket also alerts the transport office."""
-RECORD_SINK = "supabase"
-"""The system-of-record sink (`adapters/integrations/supabase_sink.SINK_NAME`): its link is the ticket
-row itself, so it is not stored in `ticket_links` nor shown in `action.external`."""
-FAILED_LINK_PREFIX = "error:"
-"""`external_id` of a link that records a failed push (`ticket_links.external_id` is not null)."""
 ACTOR = "act"
 _ACT_KEYS = frozenset({"version", "faq_top_k", "booking"})
 _BOOKING_KEYS = frozenset({"department", "office_hours"})
@@ -191,6 +187,7 @@ class ActUseCase:
         self._planner = planner
         self._faq = faq
         self._sinks = tuple(sinks)
+        self._mirror = TicketMirror(self._sinks, repo)
         self._calendar = calendar
         self._notifier = notifier
         self._recipients = recipients
@@ -249,7 +246,7 @@ class ActUseCase:
             ticket, provisional=False, tags=tuple(dict.fromkeys((*plan.tags, *kept)))
         )
         self._save_record(confirmed)
-        self._mirror(confirmed)
+        self._mirror.push(confirmed)
         ctx = _Ctx(
             request=request,
             lang=normalized.lang if normalized else Lang.EN,
@@ -374,23 +371,6 @@ class ActUseCase:
             self._save_link(link)
         self._event("act.ticket", ticket, {"office": ticket.office, "tags": list(ticket.tags)})
         return ticket
-
-    def _mirror(self, ticket: Ticket) -> None:
-        """Push a changed ticket to every sink; a failure is kept on that sink's link."""
-        for sink in self._sinks:
-            try:
-                sink.update_status(ticket)
-            except SinkError as exc:
-                log.warning("sink %s update failed for ticket %s: %s", sink.name, ticket.id, exc)
-                if sink.name == RECORD_SINK:
-                    continue
-                current = next((x for x in ticket.links if x.sink == sink.name), None)
-                failed = (
-                    dataclasses.replace(current, error=str(exc))
-                    if current
-                    else TicketLink(ticket.id, sink.name, f"{FAILED_LINK_PREFIX}{ticket.id}", None, str(exc))
-                )
-                self._save_link(failed)
 
     def _book(self, plan: ActionPlan, ticket: Ticket, ctx: _Ctx) -> tuple[Booking, Advisor] | None:
         """The booking and its advisor, or None (no advisor, no slot, a calendar or allow-list refusal)."""

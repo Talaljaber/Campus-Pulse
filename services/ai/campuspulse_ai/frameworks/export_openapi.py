@@ -1,13 +1,14 @@
 """Export the OpenAPI document of the `/v1` contract.
 
 Usage (from the repo root, inside the venv):
-    python -m campuspulse_ai.frameworks.export_openapi --mock > services/ai/openapi.json
-    python -m campuspulse_ai.frameworks.export_openapi --mock --out services/ai/openapi.json  # PowerShell
+    python -m campuspulse_ai.frameworks.export_openapi --out services/ai/openapi.json         # real app
+    python -m campuspulse_ai.frameworks.export_openapi --mock --out services/ai/openapi.json  # mock app
 
-The output is deterministic, ASCII-only JSON (indent 2, LF line endings, trailing newline), so the same
-contract always gives the same bytes and CI can diff it. `--out` avoids PowerShell 5.1's `>` re-encoding.
+Both apps declare the same routes (`api_contract.route_kwargs`), so both exports are byte-identical
+(`tests/contracts/test_openapi_real_app.py`). The output is deterministic, ASCII-only JSON (indent 2,
+LF line endings, trailing newline), so CI can diff it. `--out` avoids PowerShell 5.1's `>` re-encoding.
 
-Exit codes: 0 written; 2 the requested app does not exist yet (the real app arrives in P3.12).
+Exit codes: 0 written; 2 the requested app could not be imported.
 """
 
 from __future__ import annotations

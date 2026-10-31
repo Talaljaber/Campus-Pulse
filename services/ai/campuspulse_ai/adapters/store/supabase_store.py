@@ -365,7 +365,7 @@ class SupabaseRepository:
         return rows[0]
 
     def _upsert(self, table: str, row: Row, on_conflict: str = "id") -> None:
-        # D-011: drop columns / map values the live schema does not have yet (codec.PENDING_*).
+        # Drop columns / map values the live schema does not have yet (codec.PENDING_*; empty since 0009).
         live = codec.for_live_schema(table, row)
         clean = {k: v for k, v in live.items() if not (k == "created_at" and v is None)}
         store_call(
