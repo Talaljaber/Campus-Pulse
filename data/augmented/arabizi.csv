@@ -1,0 +1,31 @@
+request_id,text,lang,source,source_scenario_id,cv_group,needs_human_check,author_method,category,priority
+AUG-AZ-0001,7esabi el jam3i tsakkar w 3indi emte7an online elyom,arabizi,arabizi_rule,TR-S01,TR-S01,True,rule,IT Support,high
+AUG-AZ-0002,7esabi el jam3ee tsakar w 3ndi imti7an online elyoum,arabizi,arabizi_rule,TR-S01,TR-S01,True,rule,IT Support,high
+AUG-AZ-0003,3alamti ghalat w akher yom e3tirad elyom,arabizi,arabizi_rule,TR-S05,TR-S05,True,rule,Academic Support,high
+AUG-AZ-0004,3alamti 3'alat w a5er youm e3tirad elyoum,arabizi,arabizi_rule,TR-S05,TR-S05,True,rule,Academic Support,high
+AUG-AZ-0005,wein bala2i mawa3eed el sa7b w el edafe,arabizi,arabizi_rule,TR-S08,TR-S08,True,rule,Registration,low
+AUG-AZ-0006,wen bala2i mawa3eed el sa7b w el idafe,arabizi,arabizi_rule,TR-S08,TR-S08,True,rule,Registration,low
+AUG-AZ-0007,keef bghayyer kelmet el sir,arabizi,arabizi_rule,TR-S10,TR-S10,True,rule,IT Support,low
+AUG-AZ-0008,kif bghayyer kalmet el sir,arabizi,arabizi_rule,TR-S10,TR-S10,True,rule,IT Support,low
+AUG-AZ-0009,wein jadwal el baasat,arabizi,arabizi_rule,TR-S15,TR-S15,True,rule,Transportation,low
+AUG-AZ-0010,wen jadwal el basat,arabizi,arabizi_rule,TR-S15,TR-S15,True,rule,Transportation,low
+AUG-AZ-0011,mesh 2ader asajjel mawad w el nedam bi3teeni 56a,arabizi,arabizi_rule,TR-S25,TR-S21,True,rule,Registration,high
+AUG-AZ-0012,msh qader asajel mawad w el nizam bya3teeni khta,arabizi,arabizi_rule,TR-S25,TR-S21,True,rule,Registration,high
+AUG-AZ-0013,dafa3t el 2est wlsa mesh dhaher bel daf3 w el tasjeel bisakker elyom,arabizi,arabizi_rule,TR-S26,TR-S07,True,rule,Finance,high
+AUG-AZ-0014,dfa3t el qest wlse msh daher bel daf3 w el tasjil bsakker elyoum,arabizi,arabizi_rule,TR-S26,TR-S07,True,rule,Finance,high
+AUG-AZ-0015,fe mayy bitsarreb jamb kahraba el mokhtabar,arabizi,arabizi_rule,TR-S29,TR-S19,True,rule,Facilities,high
+AUG-AZ-0016,fi mayye bitsarreb jamb kahraba el mo5tabar,arabizi,arabizi_rule,TR-S29,TR-S19,True,rule,Facilities,high
+AUG-AZ-0017,saf7a el tasjeel m3all2a 3indi,arabizi,arabizi_rule,TR-S30,TR-S30,True,rule,Registration,medium
+AUG-AZ-0018,saf7et el tasjil m3alla2a 3ndi,arabizi,arabizi_rule,TR-S30,TR-S30,True,rule,Registration,medium
+AUG-AZ-0019,el bus el akheer anlghi wdloa tullab bdon mwaslat,arabizi,arabizi_rule,TR-S31,TR-S31,True,rule,Transportation,high
+AUG-AZ-0020,el baas el a5eer anl3'ee wdlua tolab bdun mwaslat,arabizi,arabizi_rule,TR-S31,TR-S31,True,rule,Transportation,high
+AUG-AZ-0021,el daw bel mamarr kharban,arabizi,arabizi_rule,TR-S33,TR-S27,True,rule,Facilities,low
+AUG-AZ-0022,el dow bel mamarr 5arban,arabizi,arabizi_rule,TR-S33,TR-S27,True,rule,Facilities,low
+AUG-AZ-0023,3indi emte7anen b nafs el wa2t,arabizi,arabizi_rule,TR-S34,TR-S24,True,rule,Academic Support,medium
+AUG-AZ-0024,3ndi emte7anen b nafs el wa2t,arabizi,arabizi_rule,TR-S34,TR-S24,True,rule,Academic Support,medium
+AUG-AZ-0025,el mblgh el dhaher 3la 7esabi mesh 97i7,arabizi,arabizi_rule,TR-S35,TR-S35,True,rule,Finance,medium
+AUG-AZ-0026,el mbl3' el daher 3ala 7esabi msh s7ee7,arabizi,arabizi_rule,TR-S35,TR-S35,True,rule,Finance,medium
+AUG-AZ-0027,bus el jam3a ata5r 3an mo3da,arabizi,arabizi_rule,VA-S03,TR-S14,True,rule,Transportation,medium
+AUG-AZ-0028,baas el jame3a atakhr 3an mu3de,arabizi,arabizi_rule,VA-S03,TR-S14,True,rule,Transportation,medium
+AUG-AZ-0029,el projector bel ghorfe mesh shaghal,arabizi,arabizi_rule,VA-S04,VA-S04,True,rule,Facilities,medium
+AUG-AZ-0030,el projector bel ghurfe msh sha3'al,arabizi,arabizi_rule,VA-S04,VA-S04,True,rule,Facilities,medium
