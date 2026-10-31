@@ -16,8 +16,9 @@ artifacts and every online adapter:
 5. Calendar: `FallbackCalendar([SlotsTableCalendar])`. FAQ: `VectorFAQRetriever` over pgvector.
 6. LLM tier 1 and the LLM understander only when `ENABLE_LLM`, `OPENROUTER_API_KEY` and
    `OPENROUTER_TIER1_MODEL` are all set; otherwise tier 0 and the rule-based understander.
-7. The use cases: triage, clarify, the ticket lifecycle and SLA scanner, Pulse (embedding upsert and
-   incident detection), batch, metrics, the red team (live memory on) and the identity verifier.
+7. The use cases: triage, clarify, feedback (live learning), the ticket lifecycle and SLA scanner,
+   Pulse (embedding upsert and incident detection), batch, metrics, the red team (live memory on)
+   and the identity verifier.
 
 `wire_online(settings, offline, adapters, clock)` does steps 6-7 over any adapters, so tests run the
 same wiring over `InMemoryRepository`, `LocalNumpyVectorStore` and fakes (`tests/unit/test_online.py`).
@@ -60,9 +61,10 @@ from campuspulse_ai.application.use_cases.act import ActConfig, ActUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
+from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
-from campuspulse_ai.application.use_cases.ports import IdentityVerifier
+from campuspulse_ai.application.use_cases.ports import IdentityVerifier, LifecycleReads
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.composition.api import ApiServices, HealthInfo, build_identity
@@ -107,6 +109,7 @@ UNDERSTAND_PROMPT_VERSION = "v1"
 class OnlineAdapters:
     """The I/O adapters `wire_online` composes (Supabase and integrations in production, fakes in tests).
 
+    - `reads`: the extra reads of feedback and Pulse (the repository itself in production).
     - `vectors` holds the live collections (`requests`, `faq`; `memory` behind `memory`).
     - `sinks`: the record sink first, then the mirrors (Linear), in push order.
     - `channels`: notifier per outbox kind (`in_app` always; `email` only when SMTP is configured).
@@ -115,6 +118,7 @@ class OnlineAdapters:
     """
 
     repo: Repository
+    reads: LifecycleReads
     vectors: VectorStore
     memory: MemoryStore
     sinks: tuple[TicketSink, ...]
@@ -193,6 +197,7 @@ def supabase_adapters(
     policy = RecipientPolicy(settings.demo_email_allowlist)
     return OnlineAdapters(
         repo=repo,
+        reads=repo,
         vectors=vectors,
         memory=PgVectorMemoryStore(vectors, client),
         sinks=(SupabaseSink(repo), *mirror_sinks(settings, clock)),
@@ -394,6 +399,7 @@ def wire_online(
     return ApiServices(
         triage=TriageUseCase(core, flow, repo, clock),
         clarify=ClarifyUseCase(core, flow, repo, clock),
+        feedback=FeedbackUseCase(adapters.reads, repo, adapters.memory, act, offline.encoder, clock, sinks),
         tickets=SyncTicketUseCase(
             sinks, repo, notifier, clock, messages, student_inbox=act_config.student_inbox
         ),

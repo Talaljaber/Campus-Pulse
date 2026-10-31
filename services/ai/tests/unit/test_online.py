@@ -61,6 +61,7 @@ def wire(offline: OfflineContainer, **settings: Any) -> Wired:
     cfg = api_settings(demo_email_allowlist=frozenset({INBOX}), **settings)
     adapters = online.OnlineAdapters(
         repo=repo,
+        reads=repo,
         vectors=vectors,
         memory=memory,
         sinks=(SupabaseSink(repo), linear),
@@ -75,7 +76,8 @@ def wire(offline: OfflineContainer, **settings: Any) -> Wired:
 def test_every_route_use_case_is_wired_and_health_is_ok(offline: OfflineContainer) -> None:
     w = wire(offline)
     s = w.services
-    assert None not in (s.triage, s.clarify, s.tickets, s.sla, s.clock, s.batch, s.metrics, s.redteam)
+    wired = (s.triage, s.clarify, s.feedback, s.tickets, s.sla, s.clock, s.batch, s.metrics, s.redteam)
+    assert None not in wired
     body = w.client.get("/health").json()
     assert body["status"] == "ok" and body["artifact"] == offline.manifest.artifact_version
     assert body["sha"] == offline.manifest.sha and body["encoder_loaded"] is True
@@ -138,8 +140,12 @@ def test_llm_is_off_by_default_and_without_a_key(offline: OfflineContainer) -> N
 
 
 def test_llm_tier_is_wired_when_enabled_and_configured(offline: OfflineContainer, tmp_path: Path) -> None:
-    cfg = api_settings(enable_llm=True, openrouter_api_key=SecretStr("k"),
-                       openrouter_tier1_model="pinned/model", llm_cache_path=tmp_path / "llm.sqlite")  # fmt: skip
+    cfg = api_settings(
+        enable_llm=True,
+        openrouter_api_key=SecretStr("k"),
+        openrouter_tier1_model="pinned/model",
+        llm_cache_path=tmp_path / "llm.sqlite",
+    )
     wiring = online.llm_wiring(cfg, offline, FrozenClock())
     assert len(wiring.oracles) == 1 and wiring.understander is not None and wiring.tiers == ("tier1",)
 
@@ -167,3 +173,24 @@ def test_email_channel_only_with_smtp_credentials() -> None:
     assert set(online.notifier_channels(api_settings(), repo, policy, clock)) == {"in_app"}
     cfg = api_settings(gmail_smtp_user="sender@campuspulse.invalid", gmail_app_password=SecretStr("p"))
     assert set(online.notifier_channels(cfg, repo, policy, clock)) == {"in_app", "email"}
+
+
+def test_a_staff_correction_is_a_memory_neighbour_of_the_next_request(offline: OfflineContainer) -> None:
+    """The live-learning loop over HTTP with the real core: triage -> feedback -> triage again."""
+    w = wire(offline)
+    text = "I need a copy of my payment receipt Please respond when possible."
+    first = w.client.post("/v1/triage", json={"text": text}, headers=auth("service")).json()
+    assert all(n["source"] != "memory" for n in first["explanation"]["neighbors"])
+    rows = w.repo.tables["predictions"].values()
+    pid = next(r["id"] for r in rows if r["request_id"] == first["request_id"])
+    fb = w.client.post("/v1/feedback", json={"prediction_id": pid, "corrected_category": "Registration"},
+                       headers=auth("staff", office="finance"))  # fmt: skip
+    assert fb.status_code == 200, fb.text
+    assert fb.json()["memory"]["active_examples"] == 1 and fb.json()["category"] == "Registration"
+    again = w.client.post("/v1/triage", json={"text": text}, headers=auth("service")).json()
+    # the correction moved the decision: Registration is now in the conformal set (here: a question)
+    assert "Registration" in again["category"]["set"] and "Registration" not in first["category"]["set"]
+    assert w.services.triage is not None
+    _, core = w.services.triage._core.classify(text)  # noqa: SLF001 - inspect the neighbours
+    memory = [n for n in core.neighbors if n.source == "memory"]
+    assert memory and memory[0].category == "Registration" and memory[0].sim > 0.99

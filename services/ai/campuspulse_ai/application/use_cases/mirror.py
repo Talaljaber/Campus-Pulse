@@ -21,6 +21,9 @@ log = logging.getLogger(__name__)
 RECORD_SINK = "supabase"
 """The system-of-record sink (`adapters/integrations/supabase_sink.SINK_NAME`): its link is the ticket
 row itself, so it is not stored in `ticket_links` nor shown in `action.external`."""
+INCIDENT_TAG = "incident"
+"""Tag of the one ticket that tracks a Pulse incident (P4.10); its `request_id` is the report that
+opened the incident, so lookups of a request's own ticket skip it."""
 FAILED_LINK_PREFIX = "error:"
 """`external_id` of a link that records a failed push (`ticket_links.external_id` is not null)."""
 
