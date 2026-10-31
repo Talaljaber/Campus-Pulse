@@ -19,3 +19,12 @@
 - **Acceptance:** `pytest services/ai/tests/unit/test_domain_values.py -q` → `7 passed`; `mypy --strict services/ai/campuspulse_ai/domain` → `Success: no issues found in 9 source files`; `ruff check .` → `All checks passed!`.
 - **Limitations:** `policy.DefaultDecisionPolicy` (P3.1), `priority_rules.EVIDENCE_FEATURES` (P1.12), `routing` planner (P3.8/P4.8) are docstring placeholders. **Domain changes go through the lead only** (EXECUTION rule 3).
 - **Affects streams:** all.
+
+### P0.3 — Wire in the data pipeline, add `config.paths` and the holdout folders  (ML, 2026-10-31)
+- **What now exists:** `campuspulse_ai.config.paths` (the one place for data/config/model paths, plus the holdout guard), the holdout READMEs `data/our_test/` and `data/robustness/` ("never trained on"), the augmentation schema in `data/augmented/README.md`, the repo-root `config/` directory (`datasets.yaml`), and pytest coverage of the legacy cleaning pipeline.
+- **Public interfaces added:** `REPO_ROOT, DATA_RAW, DATA_CLEAN, DATA_AUGMENTED, OUR_TEST, ROBUSTNESS, CONFIG_DIR, LEXICONS, MODELS_FROZEN, REPORTS, HOLDOUT_MARKERS`, `find_repo_root(start=None) -> Path`, `is_holdout(path) -> bool` ([docs/ml/models.md §1](../ml/models.md#1-paths-campuspulse_aiconfigpaths)).
+- **How to use it:** `from campuspulse_ai.config.paths import DATA_CLEAN, is_holdout; assert is_holdout(Path("data/our_test/our_test.csv"))`
+- **Config / env added:** env `CAMPUSPULSE_ROOT` (optional root override; Foundation should add it to `.env.example` in P0.5). `config/datasets.yaml` (header only; keys arrive in P0.3d/e).
+- **Acceptance:** `pytest services/ai/tests/unit/test_clean_pipeline.py -q` → `2 passed`; `python scripts/test_clean.py` → `ALL TESTS PASSED`; `pytest services/ai/tests/unit/test_paths.py -q` → `9 passed`.
+- **Limitations / TODO / known issues:** `is_holdout` is a substring match (strict on purpose). **Parity issue for the lead:** with the pinned `pandas==3.0.6`, `clean_data.py` regenerates `cleaning_report.md` with tied `value_counts` rows in another order (md5 `ee82727f…` vs committed `eb2430a1…`, made with pandas 2.2.3); the 4 CSVs are identical. CI's `git diff --exit-code -- data/clean` will fail on the report until the lead decides (see the ML hand-back). On Windows the regenerated files are CRLF, so `git status` shows them modified although `git diff` is empty for the CSVs.
+- **Affects streams:** all (paths); Foundation (CI `git diff` gate on `data/clean`, `CAMPUSPULSE_ROOT` in `.env.example`).
