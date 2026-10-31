@@ -213,7 +213,7 @@
 <a id="p4-4"></a>
 ## P4.4 — Notifications: RecipientPolicy, AllowlistedNotifier, GmailSmtpNotifier, InAppNotifier and outbox
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.3
 - Est: 1.5 h · Cut: no
 - Files:
@@ -301,7 +301,7 @@
 <a id="p4-6"></a>
 ## P4.6 — Ticket sinks: SupabaseSink, RetryingSink, LinearSink and docs/integrations.md
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.0 (Linear IDs), P4.3
 - Est: 2.5 h · Cut: no
 - Files:
@@ -354,7 +354,7 @@
 <a id="p4-7"></a>
 ## P4.7 — Calendar: SlotsTableCalendar and FallbackCalendar
 
-- [ ] Done
+- [x] Done
 - Depends on: P4.3
 - Est: 1 h · Cut: no. GoogleCalendarProvider is P4.16, cut #5.
 - Files:

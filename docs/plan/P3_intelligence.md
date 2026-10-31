@@ -345,7 +345,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-6"></a>
 ## P3.6 — Add the anti-gaming signals (GamingDetector)
 
-- [ ] Done
+- [x] Done
 - Depends on: P3.8 (`InMemoryRepository.bump_student_signals`)
 - Est: 0.75 h · Cut: no
 - Files:
@@ -405,6 +405,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 ## P3.8 — Write the DTOs, test fakes, `build_test()`, InMemoryRepository and ActionPlanner v0
 
 - [ ] Done
+- Progress (2026-10-31): `TableActionPlanner` + `config/actions.yaml` merged (e921144); DTOs done in P0.13; InMemoryRepository moved to DB (D-002). Left: `FakeCore`, `HashingEncoder`, `build_test()`.
 - Depends on: P3.1–P3.7 (types only)
 - Est: 2 h · Cut: no
 - Files:
