@@ -331,7 +331,7 @@ Decided by the lead on 2026-10-31 and applied throughout the phase files and [AR
 
 Each has a recommended default. The plan proceeds on the default unless the user says otherwise.
 
-- <a id="oq-1"></a>**OQ-1 Solo eligibility.** The rules say teams of 2–3 students. **Default:** email the organizer today, before the Tue 3 Nov lock. This blocks everything ([P0.1](plan/P0_foundations.md#p0-1)).
+- <a id="oq-1"></a>**OQ-1 Solo eligibility.** The rules say teams of 2–3 students. **Default:** email the organizer today, before the Tue 3 Nov lock. This blocks everything ([P0.1](plan/P0_foundations.md#p0-1)). **Resolved 2026-10-31:** the organizer confirmed a solo entry is allowed (D-009).
 - <a id="oq-2"></a>**OQ-2 Pre-approve cuts so those tasks never start.** **Resolved → [UD-3](#ud-3), [UD-4](#ud-4), [UD-7](#ud-7).**
   - **Recommended pre-approved cuts** (≈ 20 h saved):
 
@@ -371,3 +371,4 @@ Global log for decisions that change scope, a threshold, a model, a library or a
 | D-006 | 2026-10-31 | P4.3 | No OutboxMessage contract change: students receive updates through `notifications` (save_notification), not outbox rows; `gaming_suspected` is computed by the GamingDetector from the stored counters | keeps the domain contract frozen | — |
 | D-007 | 2026-10-31 | P4.10 | A new report attaches to any **open** incident with the same building and category, whatever its age. `INCIDENT_WINDOW_MIN` only limits which recent requests count toward opening a new incident. | avoids duplicate incidents for one ongoing outage | DB-stream draft (window-bounded attach) |
 | D-008 | 2026-10-31 | P4.3 | Demo logins are `talal@demo.local` (student), `it@demo.local` (staff, office `it`) and `admin@demo.local`, sharing `DEMO_USER_PASSWORD`. | renamed by the user; ids and profiles are unchanged | ARCHITECTURE §1.7 names |
+| D-009 | 2026-10-31 | OQ-1 | Solo entry confirmed by the organizer. | the rules say teams of 2–3; the organizer answered yes by email | — |
