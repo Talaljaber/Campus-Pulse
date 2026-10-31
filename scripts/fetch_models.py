@@ -12,6 +12,12 @@ when present) into `models/frozen/.cache/`; (3) check the tarball's sha256; (4) 
 `tarfile` `filter="data"` (no absolute paths, `..` or links), only under `encoder/`; (5) verify every file
 in MANIFEST.json. Success: `verified <n> files against MANIFEST.json (v1 sha=<12 hex>)`.
 
+Private repository (UD-8): with `GITHUB_TOKEN` in the environment, `--source github` downloads the release
+assets through the GitHub API (`releases/tags/<tag>` -> the asset's API URL, `Accept:
+application/octet-stream`); the token is sent to api.github.com only, never to the storage host the asset
+redirects to, and never printed. Docker builds pass it as a BuildKit secret, never a build arg:
+`docker build --secret id=gh_token,env=GITHUB_TOKEN ...` (Render: a secret file named `gh_token`).
+
 Exit codes: 0 ok · 2 checksum or manifest mismatch (expected and actual sha printed) · 3 network error (the
 manual URL and the `--from-file` hint are printed). Stdlib only, so it runs straight after
 `pip install -r services/ai/requirements.txt`.
@@ -27,6 +33,7 @@ import shutil
 import sys
 import tarfile
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
@@ -36,7 +43,11 @@ DEFAULT_MODEL_DIR = REPO_ROOT / "models" / "frozen" / "v1"
 DEFAULT_TAG = "models-v1-rc1"
 ASSET = "campuspulse-models-v1.tar.gz"
 SUMS = "SHA256SUMS"
-GITHUB_URL = "https://github.com/Talaljaber/Ai-Quest/releases/download/{tag}/{name}"
+GITHUB_REPO = "Talaljaber/Ai-Quest"
+GITHUB_URL = f"https://github.com/{GITHUB_REPO}/releases/download/{{tag}}/{{name}}"
+GITHUB_API_RELEASE = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{{tag}}"
+TOKEN_ENV = "GITHUB_TOKEN"
+API_HOST = "api.github.com"
 HF_REPO_ENV = "CAMPUSPULSE_HF_REPO"  # e.g. <user>/campuspulse-models (the backup mirror, ARCHITECTURE §3.12)
 HF_URL = "https://huggingface.co/{repo}/resolve/{tag}/{name}"
 EXTRACT_PREFIX = "encoder/"
@@ -87,9 +98,22 @@ def verify(model_dir: Path, files: dict[str, str]) -> list[str]:
     return problems
 
 
-def _download(url: str, dest: Path) -> None:
+class _DropAuthOnRedirect(urllib.request.HTTPRedirectHandler):
+    """Follow redirects, but never forward the token beyond api.github.com (the asset redirects to a
+    signed storage URL that rejects a second credential)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[no-untyped-def]
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and urllib.parse.urlsplit(newurl).hostname != API_HOST:
+            new.remove_header("Authorization")
+        return new
+
+
+def _download(url: str, dest: Path, headers: dict[str, str] | None = None) -> None:
+    request = urllib.request.Request(url, headers=headers or {})  # noqa: S310
+    opener = urllib.request.build_opener(_DropAuthOnRedirect)
     try:
-        with urllib.request.urlopen(url, timeout=TIMEOUT_S) as resp, dest.open("wb") as fh:  # noqa: S310
+        with opener.open(request, timeout=TIMEOUT_S) as resp, dest.open("wb") as fh:
             shutil.copyfileobj(resp, fh, CHUNK)
     except (urllib.error.URLError, OSError) as exc:
         raise FetchError(
@@ -97,6 +121,29 @@ def _download(url: str, dest: Path) -> None:
             f"python scripts/fetch_models.py --from-file <path to {ASSET}>",
             EXIT_NETWORK,
         ) from exc
+
+
+def _github_asset_urls(tag: str, token: str) -> dict[str, str]:
+    """Release asset name -> its API download URL, for a private repository (needs the token)."""
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    request = urllib.request.Request(GITHUB_API_RELEASE.format(tag=tag), headers=headers)  # noqa: S310
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_S) as resp:  # noqa: S310
+            release = json.load(resp)
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        raise FetchError(f"release {tag} not readable through the GitHub API: {exc}", EXIT_NETWORK) from exc
+    return {str(a["name"]): str(a["url"]) for a in release.get("assets", [])}
+
+
+def _download_private(tag: str, token: str, cache: Path) -> tuple[Path, Path]:
+    assets = _github_asset_urls(tag, token)
+    missing = [n for n in (SUMS, ASSET) if n not in assets]
+    if missing:
+        raise FetchError(f"release {tag} has no asset {missing}", EXIT_NETWORK)
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/octet-stream"}
+    _download(assets[SUMS], cache / SUMS, headers)
+    _download(assets[ASSET], cache / ASSET, headers)
+    return cache / ASSET, cache / SUMS
 
 
 def _expected_sum(sums_file: Path, name: str) -> str | None:
@@ -143,8 +190,12 @@ def fetch(args: argparse.Namespace) -> str:
         else:
             url = GITHUB_URL.format(tag=args.tag, name="{name}")
         tar_path, sums_path = cache / ASSET, cache / SUMS
-        _download(url.format(name=SUMS), sums_path)
-        _download(url.format(name=ASSET), tar_path)
+        token = os.environ.get(TOKEN_ENV, "").strip()
+        if args.source == "github" and token:
+            tar_path, sums_path = _download_private(args.tag, token, cache)
+        else:
+            _download(url.format(name=SUMS), sums_path)
+            _download(url.format(name=ASSET), tar_path)
     expected = _expected_sum(sums_path, ASSET)
     actual = sha256_file(tar_path)
     if expected is None and not args.from_file:
