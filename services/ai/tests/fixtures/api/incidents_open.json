@@ -1,0 +1,36 @@
+{
+  "name": "incidents_open",
+  "description": "Open incidents (`?open=1`): one Wi-Fi outage in building M with 4 reports.",
+  "method": "GET",
+  "path": "/v1/incidents",
+  "path_params": {},
+  "query": {
+    "open": "1"
+  },
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Office": "IT"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": [
+    {
+      "id": "e4f2a6c8-1b3d-4f5e-8a7c-9b0d1e2f0001",
+      "building": "M",
+      "category": "IT Support",
+      "title": "Wi-Fi outage in building M",
+      "priority": "high",
+      "report_count": 4,
+      "status": "open",
+      "member_ticket_ids": [
+        "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0011",
+        "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0012",
+        "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0013",
+        "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0014"
+      ],
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0015",
+      "opened_at": "2026-11-05T11:42:30+03:00",
+      "resolved_at": null
+    }
+  ]
+}

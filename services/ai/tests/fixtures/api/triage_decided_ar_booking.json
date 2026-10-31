@@ -1,0 +1,164 @@
+{
+  "name": "triage_decided_ar_booking",
+  "description": "Academic Support x high: the earliest fictional advisor slot is booked (UD-1), an email goes to the allow-listed demo inbox, and a ticket is opened.",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "text": "عندي امتحان نهائي بكرا الصبح بمادة MATH 102 وما فهمت إشي، بدي أحكي مع مرشد أكاديمي اليوم ضروري",
+    "student_alias": "demo-17"
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0009",
+    "status": "decided",
+    "lang": "ar",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "Academic Support",
+      "prob": 0.88,
+      "set": [
+        "Academic Support"
+      ]
+    },
+    "priority": {
+      "label": "high",
+      "prob": 0.81,
+      "set": [
+        "high"
+      ],
+      "evidence": [
+        {
+          "type": "deadline_today",
+          "span": "اليوم ضروري"
+        },
+        {
+          "type": "exam_now",
+          "span": "امتحان نهائي بكرا"
+        }
+      ]
+    },
+    "tier": "tier0",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "مرشد",
+          0.33
+        ],
+        [
+          "امتحان",
+          0.22
+        ],
+        [
+          "اليوم",
+          0.18
+        ],
+        [
+          "فهمت",
+          0.1
+        ],
+        [
+          "MATH",
+          0.04
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "بدي موعد مع المرشد الأكاديمي قبل الامتحان",
+          "label": "Academic Support",
+          "priority": "high",
+          "sim": 0.8,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "I need to talk to my advisor today about failing the midterm",
+          "label": "Academic Support",
+          "priority": "high",
+          "sim": 0.76,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "كيف بحجز ساعات مكتبية مع الدكتور؟",
+          "label": "Academic Support",
+          "priority": "low",
+          "sim": 0.7,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": {
+        "drop": "اليوم",
+        "category": "Academic Support",
+        "priority": "medium"
+      },
+      "trace": {
+        "sets": {
+          "cat": 1,
+          "pri": 1
+        },
+        "models_agree": true,
+        "cost_usd": 0.0,
+        "latency_ms": 142,
+        "policy_path": [
+          "c_accept"
+        ],
+        "clarified": false,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [],
+    "action": {
+      "type": "booking",
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0009",
+      "external": [
+        {
+          "sink": "linear",
+          "external_id": "CP-46",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-46"
+        }
+      ],
+      "sla_due_at": "2026-11-06T08:41:00+03:00",
+      "message": "حجزنا لك موعد مع مرشدة أكاديمية اليوم الساعة 1:00 بغرفة C 108، وبعتنالك إيميل بالتفاصيل.",
+      "provisional": false,
+      "tags": [],
+      "booking": {
+        "advisor_name": "Dr. Rana Saleh (fictional)",
+        "starts_at": "2026-11-05T13:00:00+03:00",
+        "ends_at": "2026-11-05T13:30:00+03:00",
+        "room": "C 108"
+      },
+      "faq": null,
+      "incident_id": null
+    },
+    "message": null,
+    "understanding": {
+      "summary_en": "Student has a MATH 102 final exam tomorrow morning, does not understand the material and wants to see an academic advisor today.",
+      "summary_ar": "الطالب عنده امتحان نهائي بمادة MATH 102 بكرا الصبح ومش فاهم المادة وبده يحكي مع مرشد أكاديمي اليوم.",
+      "entities": {
+        "building": null,
+        "room": null,
+        "course_code": "MATH 102",
+        "deadline": "2026-11-06",
+        "system": null
+      },
+      "student_reply": "حجزنا لك موعد اليوم مع مرشدة أكاديمية، والتفاصيل وصلتك عالإيميل. بالتوفيق بالامتحان!",
+      "ticket_title": "Urgent advising before MATH 102 final exam",
+      "ticket_body": "Reported by demo-17: MATH 102 final tomorrow morning, student needs academic advising today. Advisor slot booked for 13:00.",
+      "source": "llm",
+      "prompt_version": "v1"
+    }
+  },
+  "match": [
+    "text"
+  ]
+}

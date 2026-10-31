@@ -1,0 +1,38 @@
+{
+  "name": "triage_error_empty_text",
+  "description": "Empty text is rejected with the standard error body (422 invalid_input).",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "text": "",
+    "student_alias": "demo-17"
+  },
+  "status_code": 422,
+  "response": {
+    "error": {
+      "code": "invalid_input",
+      "message": "Request validation failed.",
+      "details": {
+        "errors": [
+          {
+            "loc": [
+              "body",
+              "text"
+            ],
+            "msg": "String should have at least 1 character",
+            "type": "string_too_short"
+          }
+        ]
+      }
+    }
+  },
+  "match": [
+    "text"
+  ]
+}

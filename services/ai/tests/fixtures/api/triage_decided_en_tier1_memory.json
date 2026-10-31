@@ -1,0 +1,156 @@
+{
+  "name": "triage_decided_en_tier1_memory",
+  "description": "Escalated to tier 1 (set-constrained, cached and costed); the nearest neighbour is a staff correction from live memory.",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "text": "The Moodle quiz page keeps freezing when I click submit",
+    "student_alias": "demo-17"
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0010",
+    "status": "decided",
+    "lang": "en",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "IT Support",
+      "prob": 0.78,
+      "set": [
+        "IT Support"
+      ]
+    },
+    "priority": {
+      "label": "medium",
+      "prob": 0.73,
+      "set": [
+        "medium"
+      ],
+      "evidence": [
+        {
+          "type": "transient_glitch",
+          "span": "keeps freezing"
+        }
+      ]
+    },
+    "tier": "tier1",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "freezing",
+          0.31
+        ],
+        [
+          "quiz",
+          0.2
+        ],
+        [
+          "submit",
+          0.16
+        ],
+        [
+          "Moodle",
+          0.14
+        ],
+        [
+          "page",
+          0.04
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "The e-learning quiz page hangs when I press submit",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.88,
+          "source": "memory",
+          "created_at": "2026-11-05T10:58:12+03:00"
+        },
+        {
+          "text": "المنصة بتعلق لما أسلم الواجب",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.79,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "I can't see my quiz grade on Moodle",
+          "label": "Academic Support",
+          "priority": "low",
+          "sim": 0.71,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": {
+        "drop": "freezing",
+        "category": "Academic Support",
+        "priority": "low"
+      },
+      "trace": {
+        "sets": {
+          "cat": 1,
+          "pri": 1
+        },
+        "models_agree": false,
+        "cost_usd": 0.00021,
+        "latency_ms": 980,
+        "policy_path": [
+          "e_escalate",
+          "c_accept"
+        ],
+        "clarified": false,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [],
+    "action": {
+      "type": "ticket",
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0010",
+      "external": [
+        {
+          "sink": "linear",
+          "external_id": "CP-47",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-47"
+        }
+      ],
+      "sla_due_at": "2026-11-08T11:00:00+03:00",
+      "message": "Helpdesk ticket opened. IT Support will get back to you within 72 hours.",
+      "provisional": false,
+      "tags": [],
+      "booking": null,
+      "faq": null,
+      "incident_id": null
+    },
+    "message": null,
+    "understanding": {
+      "summary_en": "The Moodle quiz page freezes whenever the student clicks submit.",
+      "summary_ar": "صفحة الكويز على مودل بتعلق كل ما الطالب يكبس تسليم.",
+      "entities": {
+        "building": null,
+        "room": null,
+        "course_code": null,
+        "deadline": null,
+        "system": "e-learning"
+      },
+      "student_reply": "Thanks, we've opened a helpdesk ticket. If the quiz has a deadline, take a screenshot of the error to share with your instructor.",
+      "ticket_title": "Moodle quiz page freezes on submit",
+      "ticket_body": "Reported by demo-17: the Moodle quiz page freezes when clicking submit.",
+      "source": "llm",
+      "prompt_version": "v1"
+    }
+  },
+  "match": [
+    "text"
+  ]
+}

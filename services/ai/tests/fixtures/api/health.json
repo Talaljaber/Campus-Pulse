@@ -1,0 +1,31 @@
+{
+  "name": "health",
+  "description": "Liveness and wiring of the deployed service.",
+  "method": "GET",
+  "path": "/v1/health",
+  "path_params": {},
+  "query": {},
+  "headers": {},
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "status": "ok",
+    "version": "0.1.0",
+    "artifact": "v1",
+    "sha": "3f9a2c71b0d4",
+    "rss_mb": 318.4,
+    "encoder_loaded": true,
+    "sinks": [
+      "supabase",
+      "linear"
+    ],
+    "llm_tiers": [
+      "tier1"
+    ],
+    "vector_store": "pgvector"
+  },
+  "omit_auth": true,
+  "alias_paths": [
+    "/health"
+  ]
+}

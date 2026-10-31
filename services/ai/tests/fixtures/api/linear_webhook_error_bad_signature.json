@@ -1,0 +1,25 @@
+{
+  "name": "linear_webhook_error_bad_signature",
+  "description": "Missing or wrong `Linear-Signature`: 401, nothing is written.",
+  "method": "POST",
+  "path": "/v1/integrations/linear/webhook",
+  "path_params": {},
+  "query": {},
+  "headers": {},
+  "request": {
+    "action": "update",
+    "type": "Issue",
+    "data": {
+      "id": "lin-issue-43"
+    }
+  },
+  "status_code": 401,
+  "response": {
+    "error": {
+      "code": "unauthenticated",
+      "message": "Invalid webhook signature.",
+      "details": null
+    }
+  },
+  "omit_auth": true
+}

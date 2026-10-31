@@ -1,0 +1,31 @@
+{
+  "name": "linear_webhook_status_sync",
+  "description": "Linear moved CP-43 to Done: the linked ticket becomes resolved.",
+  "method": "POST",
+  "path": "/v1/integrations/linear/webhook",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "Linear-Signature": "<hex hmac-sha256 of the raw body>"
+  },
+  "request": {
+    "action": "update",
+    "type": "Issue",
+    "data": {
+      "id": "lin-issue-43",
+      "identifier": "CP-43",
+      "state": {
+        "name": "Done",
+        "type": "completed"
+      }
+    },
+    "webhookTimestamp": 1793858400000
+  },
+  "status_code": 200,
+  "response": {
+    "accepted": true,
+    "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003",
+    "status": "resolved"
+  },
+  "omit_auth": true
+}

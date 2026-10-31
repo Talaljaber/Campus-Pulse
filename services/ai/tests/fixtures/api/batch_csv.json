@@ -1,0 +1,24 @@
+{
+  "name": "batch_csv",
+  "description": "Three rows through the tier-0 batch path (same bytes as predict.py).",
+  "method": "POST",
+  "path": "/v1/batch",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "admin"
+  },
+  "request": {
+    "form": {
+      "use_llm": "false"
+    },
+    "files": {
+      "file": {
+        "filename": "requests.csv",
+        "content": "request_id,text\nr-001,where is the bus timetable?\nr-002,مش قادر أسجل مادة واليوم آخر يوم\nr-003,the printer in the lab is not working\n"
+      }
+    }
+  },
+  "status_code": 200,
+  "response": "request_id,category,priority\nr-001,Transportation,low\nr-002,Registration,high\nr-003,IT Support,medium\n"
+}

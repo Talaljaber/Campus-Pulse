@@ -1,0 +1,161 @@
+{
+  "name": "triage_decided_arabizi_exam",
+  "description": "Arabizi input: transliterated for the models and echoed in `understood_as`; exam-now evidence makes it high and tags the helpdesk ticket `exam-in-progress`.",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "text": "el wifi msh shaghal bil library w 3andi exam online hala2",
+    "student_alias": "demo-17"
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0007",
+    "status": "decided",
+    "lang": "arabizi",
+    "is_arabizi": true,
+    "understood_as": "الواي فاي مش شغال بالمكتبة وعندي امتحان اونلاين هلأ",
+    "category": {
+      "label": "IT Support",
+      "prob": 0.91,
+      "set": [
+        "IT Support"
+      ]
+    },
+    "priority": {
+      "label": "high",
+      "prob": 0.84,
+      "set": [
+        "high"
+      ],
+      "evidence": [
+        {
+          "type": "exam_now",
+          "span": "3andi exam online hala2"
+        },
+        {
+          "type": "fault_report",
+          "span": "msh shaghal"
+        }
+      ]
+    },
+    "tier": "tier0",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "wifi",
+          0.38
+        ],
+        [
+          "exam",
+          0.24
+        ],
+        [
+          "hala2",
+          0.17
+        ],
+        [
+          "shaghal",
+          0.09
+        ],
+        [
+          "library",
+          0.05
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "The Wi-Fi keeps disconnecting during my online exam",
+          "label": "IT Support",
+          "priority": "high",
+          "sim": 0.82,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "النت فاصل بالمكتبة",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.78,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "Eduroam is not working in the library",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.75,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": {
+        "drop": "hala2",
+        "category": "IT Support",
+        "priority": "medium"
+      },
+      "trace": {
+        "sets": {
+          "cat": 1,
+          "pri": 1
+        },
+        "models_agree": true,
+        "cost_usd": 0.0,
+        "latency_ms": 154,
+        "policy_path": [
+          "c_accept"
+        ],
+        "clarified": false,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [],
+    "action": {
+      "type": "ticket",
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0007",
+      "external": [
+        {
+          "sink": "linear",
+          "external_id": "CP-45",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-45"
+        }
+      ],
+      "sla_due_at": "2026-11-06T11:20:00+03:00",
+      "message": "Urgent helpdesk ticket opened and tagged exam-in-progress. IT has been notified.",
+      "provisional": false,
+      "tags": [
+        "exam-in-progress"
+      ],
+      "booking": null,
+      "faq": null,
+      "incident_id": null
+    },
+    "message": null,
+    "understanding": {
+      "summary_en": "Wi-Fi is down in the library while the student has an online exam right now.",
+      "summary_ar": "الواي فاي مقطوع بالمكتبة والطالب عنده امتحان أونلاين هلأ.",
+      "entities": {
+        "building": "Library",
+        "room": null,
+        "course_code": null,
+        "deadline": null,
+        "system": "wifi"
+      },
+      "student_reply": "fata7na ticket mesta3jal lal IT, w 7atena enno 3andak exam hala2. jarreb el hotspot law momken.",
+      "ticket_title": "Library Wi-Fi down during an online exam",
+      "ticket_body": "Reported by demo-17 (Arabizi): Wi-Fi not working in the library; student is sitting an online exam now.",
+      "source": "llm",
+      "prompt_version": "v1"
+    }
+  },
+  "match": [
+    "text"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "triage_error_no_token",
+  "description": "No `Authorization: Bearer` service token (the browser called FastAPI directly instead of the Next.js proxy): 401 unauthenticated.",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {},
+  "request": {
+    "text": "where is the bus timetable for the Madaba route?",
+    "student_alias": "demo-17"
+  },
+  "status_code": 401,
+  "response": {
+    "error": {
+      "code": "unauthenticated",
+      "message": "Missing or invalid service token.",
+      "details": null
+    }
+  },
+  "omit_auth": true
+}

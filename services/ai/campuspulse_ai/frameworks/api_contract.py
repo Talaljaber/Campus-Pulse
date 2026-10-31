@@ -47,7 +47,11 @@ SERVICE_TOKEN_SCHEME = HTTPBearer(
 Method = Literal["GET", "POST"]
 Auth = Literal["service_token", "hmac", "none"]
 
-_COMMON_ERRORS: tuple[ErrorCode, ...] = (ErrorCode.UNAUTHENTICATED, ErrorCode.INTERNAL_ERROR)
+_COMMON_ERRORS: tuple[ErrorCode, ...] = (
+    ErrorCode.INVALID_INPUT,
+    ErrorCode.UNAUTHENTICATED,
+    ErrorCode.INTERNAL_ERROR,
+)
 
 _ERROR_DESCRIPTIONS: dict[ErrorCode, str] = {
     ErrorCode.INVALID_INPUT: "Body, query or path failed validation, or the use case raised InvalidInput.",

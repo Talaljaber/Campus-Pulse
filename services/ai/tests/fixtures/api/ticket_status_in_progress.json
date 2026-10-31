@@ -1,0 +1,40 @@
+{
+  "name": "ticket_status_in_progress",
+  "description": "Staff move the safety ticket to in_progress from the dashboard.",
+  "method": "POST",
+  "path": "/v1/tickets/{ticket_id}/status",
+  "path_params": {
+    "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003"
+  },
+  "query": {},
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Office": "Maintenance"
+  },
+  "request": {
+    "status": "in_progress",
+    "note": "Technician on the way."
+  },
+  "status_code": 200,
+  "response": {
+    "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003",
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0003",
+    "incident_id": null,
+    "office": "Maintenance",
+    "category": "Facilities",
+    "priority": "high",
+    "status": "in_progress",
+    "provisional": false,
+    "sla_due_at": "2026-11-06T09:14:00+03:00",
+    "escalated_at": null,
+    "resolved_at": null,
+    "title": "Water leak next to power sockets in M 214",
+    "links": [
+      {
+        "sink": "linear",
+        "external_id": "CP-43",
+        "url": "https://linear.app/campuspulse-demo/issue/CP-43"
+      }
+    ]
+  }
+}

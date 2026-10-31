@@ -1,0 +1,163 @@
+{
+  "name": "triage_decided_en_safety",
+  "description": "Physical danger: the safety floor forces high, the action is a safety alert plus a maintenance ticket.",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-24"
+  },
+  "request": {
+    "text": "There's water leaking from the ceiling right next to the power sockets in M 214, it's getting worse",
+    "student_alias": "demo-24",
+    "location": {
+      "building": "M",
+      "room": "M 214"
+    }
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0003",
+    "status": "decided",
+    "lang": "en",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "Facilities",
+      "prob": 0.97,
+      "set": [
+        "Facilities"
+      ]
+    },
+    "priority": {
+      "label": "high",
+      "prob": 1.0,
+      "set": [
+        "high"
+      ],
+      "evidence": [
+        {
+          "type": "safety_risk",
+          "span": "leaking from the ceiling right next to the power sockets"
+        }
+      ]
+    },
+    "tier": "tier0",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "leaking",
+          0.36
+        ],
+        [
+          "sockets",
+          0.27
+        ],
+        [
+          "ceiling",
+          0.15
+        ],
+        [
+          "water",
+          0.12
+        ],
+        [
+          "power",
+          0.08
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "Water is dripping near the electrical panel in the H building corridor",
+          "label": "Facilities",
+          "priority": "high",
+          "sim": 0.81,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "في مي نازلة من السقف جنب الكهربا بالمختبر",
+          "label": "Facilities",
+          "priority": "high",
+          "sim": 0.77,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "The AC in the lecture hall is leaking onto the floor",
+          "label": "Facilities",
+          "priority": "medium",
+          "sim": 0.71,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": {
+        "drop": "sockets",
+        "category": "Facilities",
+        "priority": "medium"
+      },
+      "trace": {
+        "sets": {
+          "cat": 1,
+          "pri": 1
+        },
+        "models_agree": true,
+        "cost_usd": 0.0,
+        "latency_ms": 131,
+        "policy_path": [
+          "c_accept"
+        ],
+        "clarified": false,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [
+      "safety"
+    ],
+    "action": {
+      "type": "safety_alert",
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003",
+      "external": [
+        {
+          "sink": "linear",
+          "external_id": "CP-43",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-43"
+        }
+      ],
+      "sla_due_at": "2026-11-06T09:14:00+03:00",
+      "message": "Safety alert sent: please stay away from the sockets and call campus security now (demo number). A maintenance ticket is open.",
+      "provisional": false,
+      "tags": [
+        "safety"
+      ],
+      "booking": null,
+      "faq": null,
+      "incident_id": null
+    },
+    "message": null,
+    "understanding": {
+      "summary_en": "Water is leaking from the ceiling next to power sockets in room M 214 and getting worse.",
+      "summary_ar": "في مي نازلة من السقف جنب أفياش الكهربا بغرفة M 214 وعم تزيد.",
+      "entities": {
+        "building": "M",
+        "room": "M 214",
+        "course_code": null,
+        "deadline": null,
+        "system": null
+      },
+      "student_reply": "Thanks for reporting this. Please keep away from the sockets; campus security and maintenance have been alerted.",
+      "ticket_title": "Water leak next to power sockets in M 214",
+      "ticket_body": "Reported by demo-24: water leaking from the ceiling right next to the power sockets in M 214, getting worse. Safety alert fired.",
+      "source": "llm",
+      "prompt_version": "v1"
+    }
+  },
+  "match": [
+    "text"
+  ]
+}

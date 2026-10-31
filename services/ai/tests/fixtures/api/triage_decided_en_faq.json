@@ -1,0 +1,152 @@
+{
+  "name": "triage_decided_en_faq",
+  "description": "English information request answered from the FAQ (Transportation x low). Default triage fixture.",
+  "method": "POST",
+  "path": "/v1/triage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "text": "where is the bus timetable for the Madaba route?",
+    "student_alias": "demo-17"
+  },
+  "status_code": 200,
+  "response": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0002",
+    "status": "decided",
+    "lang": "en",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "Transportation",
+      "prob": 0.94,
+      "set": [
+        "Transportation"
+      ]
+    },
+    "priority": {
+      "label": "low",
+      "prob": 0.88,
+      "set": [
+        "low"
+      ],
+      "evidence": [
+        {
+          "type": "info_request",
+          "span": "where is"
+        }
+      ]
+    },
+    "tier": "tier0",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "bus",
+          0.34
+        ],
+        [
+          "timetable",
+          0.29
+        ],
+        [
+          "route",
+          0.11
+        ],
+        [
+          "where",
+          0.07
+        ],
+        [
+          "Madaba",
+          0.03
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "When does the first bus to Amman leave in the morning?",
+          "label": "Transportation",
+          "priority": "low",
+          "sim": 0.83,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "وين بلاقي مواعيد الباص؟",
+          "label": "Transportation",
+          "priority": "low",
+          "sim": 0.79,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "Is there a shuttle schedule for the weekend?",
+          "label": "Transportation",
+          "priority": "low",
+          "sim": 0.74,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": null,
+      "trace": {
+        "sets": {
+          "cat": 1,
+          "pri": 1
+        },
+        "models_agree": true,
+        "cost_usd": 0.0,
+        "latency_ms": 96,
+        "policy_path": [
+          "c_accept"
+        ],
+        "clarified": false,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [],
+    "action": {
+      "type": "faq_answer",
+      "ticket_id": null,
+      "external": [],
+      "sla_due_at": null,
+      "message": "Bus timetables for every route are on the Transport page and at the main bus stop. [demo] Source: https://campuspulse.example.com/faq/transport/bus-timetable",
+      "provisional": false,
+      "tags": [],
+      "booking": null,
+      "faq": {
+        "question": "Where can I find the bus timetable?",
+        "answer": "Bus timetables for every route are on the Transport page and at the main bus stop. [demo]",
+        "source_url": "https://campuspulse.example.com/faq/transport/bus-timetable",
+        "is_demo": true,
+        "score": 0.86
+      },
+      "incident_id": null
+    },
+    "message": null,
+    "understanding": {
+      "summary_en": "Student asks where to find the bus timetable for the Madaba route.",
+      "summary_ar": "الطالب بسأل وين يلاقي جدول باصات خط مادبا.",
+      "entities": {
+        "building": null,
+        "room": null,
+        "course_code": null,
+        "deadline": null,
+        "system": "bus timetable"
+      },
+      "student_reply": "You can find the Madaba route timetable on the Transport page; the link is below.",
+      "ticket_title": "Bus timetable request (Madaba route)",
+      "ticket_body": "Information request answered from the FAQ; no ticket opened.",
+      "source": "rules",
+      "prompt_version": null
+    }
+  },
+  "match": [
+    "text"
+  ],
+  "default": true
+}
