@@ -84,17 +84,19 @@ def make_core(
 def make_request(
     text: str,
     *,
+    core: str | None = None,
     lang: Lang = Lang.EN,
     is_arabizi: bool = False,
     model_text: str | None = None,
     location: Location | None = None,
 ) -> NormalizedRequest:
-    """A NormalizedRequest whose core/text_norm/model_text are `text` (or `model_text`)."""
+    """A NormalizedRequest with raw `text`; core/text_norm default to `text`, model_text to the core."""
+    stripped = text if core is None else core
     return NormalizedRequest(
         raw=text,
-        core=text,
-        text_norm=text,
-        model_text=model_text or text,
+        core=stripped,
+        text_norm=stripped,
+        model_text=model_text or stripped,
         lang=lang,
         is_arabizi=is_arabizi,
         stated_urgency=False,
