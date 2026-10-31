@@ -86,10 +86,15 @@ augmented:                      # data/augmented/*.csv (ARCHITECTURE §4.2 schem
     id_prefix: AUG-TR-
   precheck:                     # D-014: an independent LLM labels every drafted row to focus the review
     model: anthropic/claude-haiku-5.5   # the tier-1 pin: a different model from the drafter
-    rows_per_call: 20
+    rows_per_call: 10
+    # extra pinned request parameters: with reasoning on, the first run spent the token budget thinking and
+    # returned empty or truncated JSON for 32 of 43 calls
+    request_extra:
+      reasoning: {enabled: false}
+      max_tokens: 3000
     sample_agreements: 0.2      # share of agreeing rows (seeded) the developer still reads in full
     seed: 42
-    sheet: data/augmented/review_sheet.csv
+    sheet: data/augmented/review/review_sheet.csv  # subfolder: the pool loader globs data/augmented/*.csv
 
 probes:                         # data/robustness/probes.csv (P2.5)
   columns: [request_id, text, lang, style, base_request_id, intended_category, intended_priority,

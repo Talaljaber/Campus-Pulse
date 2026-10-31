@@ -641,7 +641,7 @@ def precheck_sheet(drafter: Drafter, prompt: Prompt, files: Sequence[Path], cfg:
     drafted: list[tuple[str, dict[str, str]]] = []
     for path in files:
         for r in _read_csv(path):
-            if r["author_method"].startswith("llm"):
+            if r["needs_human_check"].strip().lower() == "true":  # every unchecked draft, rule rows too
                 drafted.append((path.name, r))
     labels: dict[str, Mapping[str, Any]] = {}
     skipped: list[str] = []
@@ -805,7 +805,8 @@ def run_llm(args: argparse.Namespace, *, client_factory: Callable[[str], Any] | 
         items = f"{len(scenarios)} scenarios"
     elif args.cmd == "precheck":
         prompt = Prompt.load(prompts / "precheck.md")
-        n_rows = sum(1 for p in args.csvs for r in _read_csv(p) if r["author_method"].startswith("llm"))
+        n_rows = sum(1 for p in args.csvs for r in _read_csv(p)
+                     if r["needs_human_check"].strip().lower() == "true")
         step = int(aug["precheck"]["rows_per_call"])
         planned = [(prompt.system, "x" * 120 * step)] * -(-n_rows // step)
         items = f"{n_rows} drafted rows"
@@ -837,7 +838,10 @@ def run_llm(args: argparse.Namespace, *, client_factory: Callable[[str], Any] | 
 
     cache = DraftCache(ROOT / settings.llm_cache_path if not settings.llm_cache_path.is_absolute()
                        else settings.llm_cache_path, str(drafting["cache_table"]))
-    params = {k: drafting["request"][k] for k in ("temperature", "top_p", "seed", "max_tokens")}
+    keys = ("temperature", "top_p", "seed", "max_tokens")
+    params: dict[str, Any] = {k: drafting["request"][k] for k in keys}
+    if args.cmd == "precheck":
+        params.update(aug["precheck"].get("request_extra", {}))
     drafter = Drafter(model=model, params=params, cache=cache,
                       budget_usd=float(settings.llm_daily_budget_usd), spent_today=spent_today(log_path),
                       log_path=log_path, retries=int(drafting["retries_on_invalid_json"]),
@@ -891,9 +895,11 @@ def main(argv: list[str] | None = None) -> int:
     rule.add_argument("--force", action="store_true", help="overwrite even if reviewed rows exist")
     for name, default_out, help_text in (
         ("paraphrase", "data/augmented/paraphrases.csv", "LLM paraphrases of every official scenario (P2.2)"),
-        ("new-scenarios", "data/augmented/new_scenarios.csv", "LLM-drafted new scenarios per cell (P2.2)"),
+        # not run in batch 4: new scenarios come from a separate writer (data/augmented/new_scenarios.csv);
+        # the default output never overwrites that file
+        ("new-scenarios", "data/augmented/new_scenarios_drafted.csv", "LLM new scenarios per cell (P2.2)"),
         ("translate", "data/augmented/translations.csv", "LLM EN<->AR translations + Arabizi (D-014)"),
-        ("precheck", "data/augmented/review_sheet.csv", "independent LLM labels for the review (D-014)"),
+        ("precheck", "data/augmented/review/review_sheet.csv", "independent LLM labels for the review"),
     ):
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--model", default=None, help="pinned model id (default: augmented.drafting.model)")
@@ -912,7 +918,7 @@ def main(argv: list[str] | None = None) -> int:
     pr.add_argument("--report", type=Path, default=ROOT / "reports" / "leakage.json")
     pr.add_argument("csvs", type=Path, nargs="+")
     ap = sub.add_parser("apply-review", help="apply the developer's verdicts from the review sheet")
-    ap.add_argument("--sheet", type=Path, default=ROOT / "data" / "augmented" / "review_sheet.csv")
+    ap.add_argument("--sheet", type=Path, default=ROOT / "data" / "augmented" / "review" / "review_sheet.csv")
     ap.add_argument("--accept-unsampled-agreements", action="store_true",
                     help="also accept agreeing rows that were not sampled (only if the sample passed)")
     ap.add_argument("csvs", type=Path, nargs="+")
