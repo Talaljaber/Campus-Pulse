@@ -81,7 +81,8 @@ python scripts/add_derived_columns.py   # -> wrote data/clean/train_val_features
 
 ### 2.3 Holdout and augmentation folders
 
-- `data/our_test/` (P1.0, hand-written by the developer) and `data/robustness/` (P2.5) are **never trained on**;
+- `data/our_test/` (P1.0, three sets per D-010: set1 by the developer, sets 2–3 by Claude; combined into
+  `our_test.csv` by `scripts/build_our_test.py`) and `data/robustness/` (P2.5) are **never trained on**;
   only `evaluate.py` reads them. Their READMEs state the schema.
 - `data/augmented/README.md` holds the augmentation schema (ARCHITECTURE §4.2):
   `request_id,text,lang,source,source_scenario_id,cv_group,needs_human_check,author_method,category,priority`.
@@ -627,3 +628,43 @@ Checks on the 30 drafts: 0 injection regex hits; `danger` only on the four TR-S2
 spellings, set `needs_human_check=False` per row, then
 `pytest services/ai/tests/unit/test_langid.py -q` (5 passed once reviewed rows exist; ≥ 95 % detection,
 `augmented.arabizi_min_detection`). Until then `load_pool` drops all 30 rows and the test skips.
+
+## 11. Evidence features (`adapters/models/evidence.py`, `domain/priority_rules.py`, P1.12)
+
+```python
+from campuspulse_ai.adapters.models.evidence import LexiconEvidenceExtractor
+from campuspulse_ai.domain.priority_rules import EVIDENCE_FEATURES, evidence_row
+ext = LexiconEvidenceExtractor.from_yaml(lexicon_dir / "urgency.yaml")   # features = EVIDENCE_FEATURES
+ev = ext.extract(normalizer.normalize("My exam grade is wrong and the appeal deadline is today"))
+ev.flags        # {"deadline_today": True, ..., "fault_report": True, ...}  (keys in EVIDENCE_FEATURES order)
+ev.spans        # (Evidence("deadline_today", "today", Lang.EN), Evidence("fault_report", "wrong", Lang.EN), ...)
+evidence_row(ev.flags)   # (1.0, 0.0, ..., 1.0, 0.0, 0.0) -> the head's 10 evidence inputs
+```
+
+`EVIDENCE_FEATURES` (domain, stdlib only) is the contract; it equals `config/train.yaml priority_head.features`
+(tested). The extractor reads only `req.model_text`, so `stated_urgency` can never be a feature: an `URGENT:`
+wrapper is stripped before `model_text` exists, an `عاجل!!!` marker is skipped before the `info_request`
+start patterns (`start_skip`), and `FrozenConfig`, `evidence_row` and the extractor all reject a
+`stated_urgency` feature. Patterns: `config/lexicons/urgency.yaml` (per feature `en`/`ar`/`arabizi` lists;
+`info_request` also has `start` + `start_skip`). `info_request` is set only when `fault_report` is not.
+
+| # | feature | fires on (examples; EN / AR / Arabizi) | official scenarios where it fires |
+| --- | --- | --- | --- |
+| 1 | `deadline_today` | `today`, `tonight`, `closes in one hour`, `last day` / `اليوم`, `آخر يوم`, `خلال ساعة` / `elyom`, `a5er yom` | TR-S01, S05, S07, S26, S32, VA-S05 (all high) |
+| 2 | `exam_now` | `online exam/quiz`, `during the quiz`, `exam is now` / `امتحان اونلاين`, `بنص الامتحان` / `emte7an online`, `b nos el emte7an` | TR-S01, S11, S32 (high) |
+| 3 | `safety_risk` | water/leak near electricity, `a fire`, `smoke coming`, `gas leak`, `sparks`, `unsafe` / `بتسرب … كهربا`, `دخان`, `خطر` / `kahraba` + `mai`, `7ari2`, `do5an` | TR-S19, S29 (high) |
+| 4 | `stranded` | `stranded`, `cannot leave`, `trapped`, `no way home`, `missed the last bus` / `ضلوا طلاب`, `بدون مواصلات`, `عالقين` / `dallo el tolab`, `bdoon mwasalat` | TR-S03, S31 (high) |
+| 5 | `enrollment_blocked` | `removed my registered course`, `cannot add/register`, `rejects my request`, `banned from the final` / `مش قادر اسجل`, `شالوا`, `بينسحب تسجيلي` / `mesh 2ader asajjel`, `shalooni` | TR-S04, S21, S25 (high) |
+| 6 | `transient_glitch` | `keeps crashing`, `disconnects`, `slow`, `shows an error`, `every few minutes` / `معلقة`, `بطيء`, `بيفصل`, `خطأ` / `m3alla2a`, `bati2`, `bifsel` | TR-S12, S16, S30 (medium), S25 (high) |
+| 7 | `info_request` | starts with `where/how/when/can I …`, `I need a copy/advice`; `a copy of` / starts with `وين/كيف/متى/شو`, `بدي اعرف`, `نسخة عن` / `wein`, `kif`, `bade a3ref` — and no fault | all lows except the hallway light (TR-S02, S08, S09, S10, S15, S17, S28, S36, VA-S01, VA-S06) |
+| 8 | `fault_report` | `broken`, `not working`, `stopped working`, `missing`, `wrong`, `late`, `error`, `cannot access`, `same time` / `خربان`, `مش شغال`, `غلط`, `اتأخر`, `مش صحيح` / `5arban`, `msh shaghal`, `ghalat` | every medium except TR-S06, every high, and the hallway light (low) |
+| 9 | `ambient_fixture` | `hallway`, `corridor`, `lobby`, `light`, `lamp` / `بالممر`, `الضو`, `لمبة` / `mamar`, `daw`, `lamba` | TR-S27, S33 (low) |
+| 10 | `teaching_room` | `lecture room/hall`, `classroom`, `lab`, `projector` / `بالغرفة`, `القاعة`, `المختبر`, `البروجكتور` / `bel 2a3a`, `mo5tabar` | TR-S20, VA-S04 (medium), S03, S19, S29 (high) |
+
+On the 42 official scenarios (`tests/unit/test_evidence_official.py`): flags are identical across all
+wrapper variants of a scenario; a scenario is high **iff** one of features 1–5 fires; every low has
+`info_request` or `ambient_fixture`; no medium has `info_request`. TR-S06 (prerequisite rule, soft target
+medium 0.75) fires nothing: its label rests on the model. The separation is the labeller's rule written down,
+and it is also the shortcut risk (LD-34): P2.5 probes break "today → high", and P2.9 masks the deadline
+lexicon. Fixtures: `tests/fixtures/evidence_fixtures.yaml` (one EN and one AR positive per feature, new
+sentences) and 8 Arabizi positives in `test_evidence_official.py`.

@@ -1,0 +1,205 @@
+# Priority evidence features (P1.12, ARCHITECTURE §3.8). Read by
+# campuspulse_ai.adapters.models.evidence.LexiconEvidenceExtractor.from_yaml. train.py snapshots this file into
+# models/frozen/vN/lexicons/ (LD-12).
+#
+# One block per feature in domain/priority_rules.py EVIDENCE_FEATURES (same names; the order there is the
+# contract). Each block lists regexes per language (en / ar / arabizi; the split is for readability, all of a
+# feature's patterns run on the whole text). `info_request` also has `start` patterns that must match at the
+# start of the text (or of either half of an Arabizi "translit | original" model_text), and it is only set when
+# `fault_report` is NOT set.
+#
+# Patterns run on NormalizedRequest.model_text: English lower-cased; Arabic normalized (أ/إ/آ→ا, ى→ي, ة→ه, no
+# diacritics). Write natural Arabic; the loader normalizes each pattern the same way. Case-insensitive.
+# Arabic has no reliable \b next to attached proclitics (و/ب/ال), so Arabic patterns use (?<!\w) / (?!\w) where
+# a substring would be ambiguous.
+#
+# These are FEATURES for the priority head, not rules: the head learns their weights on OOF data. They never
+# read `stated_urgency` (an URGENT: wrapper), and tone never raises priority (SPEC §5.1[9]).
+# Known shortcut (LD-34): every official row with today/اليوم is high and no other row is; P2.5 probes and the
+# P2.9 masked-deadline ablation measure how much the head relies on `deadline_today`.
+
+features:
+  deadline_today:
+    en:
+      - '\btoday\b'
+      - '\btonight\b'
+      - '\b(closes?|closing|ends?|ending|due|expires?)\s+(today|tonight|at\s+midnight|in\s+(an?|one|two|three|a\s+few|\d+)\s+(hours?|minutes?|mins?))\b'
+      - '\b(deadline|last\s+day)\s+(is\s+)?(today|tonight)\b'
+      - '\blast\s+day\b'
+      - '\bby\s+(midnight|the\s+end\s+of\s+(the\s+)?day|end\s+of\s+day)\b'
+      - '\b(within|in)\s+(an?|one|two|three|\d+)\s+(hours?|minutes?|mins?)\b'
+    ar:
+      - '(?<!\w)(و|ل|ف)?اليوم(?!\w)'
+      - '(?<!\w)(و|ل)?الليلة(?!\w)'
+      - 'آخر\s+(يوم|موعد)'
+      - '(خلال|بعد|كمان)\s+(ساعة|ساعتين|ساعات|نص\s+ساعة)'
+    arabizi:
+      - '\b(elyom|elyoum|elyoom|alyom|alyoum|ilyom|lyom|lyoum|el\s+yom|el\s+youm|il\s+yom)\b'
+      - '\b(ellela|elleila|el\s*leile|el\s*lele|ellele)\b'
+      - '\b(a5er|akher|aa5er|a7er)\s+(yom|youm|maw3ed|maw3id)\b'
+      - '\b(5lal|khilal|ba3d|kaman)\s+(sa3a|sa3teen|nos\s+sa3a)\b'
+
+  exam_now:
+    en:
+      - '\b(online|live)\s+(exam|quiz|test|midterm|final)\b'
+      - '\b(during|in\s+the\s+middle\s+of|while\s+(taking|doing|writing|in))\s+(an?\s+|the\s+|my\s+)?(online\s+)?(exam|quiz|test|midterm|final)'
+      - '\b(exam|quiz|test|midterm|final)\s+(is\s+)?(now|right\s+now|in\s+progress|ongoing|has\s+started|started|is\s+running)\b'
+      - '\b(exam|quiz|test|midterm|final)\s+(starts|begins)\s+(in|at)\b'
+    ar:
+      - 'امتحان\s+(اونلاين|أونلاين|الكتروني|إلكتروني)'
+      - '(كويز|اختبار)\s+(اونلاين|أونلاين|الكتروني|إلكتروني)'
+      - '(أثناء|خلال|بنص|بوسط|وانا\s+بقدم|وانا\s+بحل)\s+(ال)?(امتحان|كويز|اختبار)'
+      - '(ال)?(امتحان|كويز|اختبار)\s+(هلا|هلأ|هسا|هسه|هلق|الحين|بلش|بدأ|شغال)'
+    arabizi:
+      - '\b(emte7an|imti7an|emt7an|e5tebar|exam|quiz)\s+(online|onlain)\b'
+      - '\b(b?nos|f\s*nos|b?wust)\s+(el\s*)?(emte7an|imti7an|emt7an|quiz|exam)\b'
+      - '\b(el\s*)?(emte7an|imti7an|emt7an|quiz|exam)\s+(halla2|hala2|hala|hasa|hassa|bal4|balash|balsh)\b'
+
+  safety_risk:
+    en:
+      - '\b(water|leak\w*|flood\w*|spill\w*|dripping|wet)\b[^.!?|]{0,40}\b(electric\w*|socket|outlet|wir(e|es|ing)|cables?|power\s+strip|plugs?)\b'
+      - '\b(electric\w*|socket|outlet|wir(e|es|ing)|cables?)\b[^.!?|]{0,40}\b(water|leak\w*|flood\w*|wet|dripping)\b'
+      - '\b(on\s+fire|caught\s+fire|a\s+fire\b|smoke\s+(is\s+)?(coming|from|filling)|burning\s+smell|smell\w*\s+(of\s+)?(gas|smoke|burning))'
+      - '\b(gas\s+(leak|smell)\w*|sparks?|sparking|electric(al)?\s+shock|electrocut\w*|exposed\s+(live\s+)?wir\w*|short\s+circuit)\b'
+      - '\b(dangerous|danger|unsafe|hazard\w*|injur\w*|bleeding|fainted|collaps\w*)\b'
+    ar:
+      - '(تسرب|بتسرب|تسريب|بنقط|بتنقط|بيدلف|رشح)[^.؟!|]{0,30}(كهربا|كهرباء|فيش|بريز|أسلاك|سلك)'
+      - '(?:^|\s)(?:و|ف)?(?:في\s+)?(?:مي|مية|مياه|ماء|مويه)(?:\s|$)[^.؟!|]{0,30}(كهربا|كهرباء|فيش|بريز|أسلاك|سلك)'
+      - 'حريق|دخان|(ريحة|رائحة)\s+(غاز|دخان|حريق)|شرار|ماس\s+كهرب|كهربني|انكهرب|(سلك|أسلاك)\s+مكشوف'
+      - '(?<!\w)(خطر|خطير|خطيرة|انصاب|نزيف|مغمى)(?!\w)'
+    arabizi:
+      - '\b(tasarrob|tasarub|btesarreb|bitsarreb|bitsarrab|btsarrab|btna22at|mai|mayy|mayye|mayeh|maya)\b[^.!?|]{0,30}\b(kahraba|kahrba|kahraba2|keherba)\b'
+      - '\b(7ari2|7aree2|do5an|dokhan|du5an|dukhan|shrar)\b'
+      - '\b(ri7et|ri7it|rihet|re7et)\s+(gaz|ghaz|do5an)\b'
+      - '\b(5atar|5a6ar|khatar|5ateer|5a6eer|khateer)\b'
+
+  stranded:
+    en:
+      - '\bstranded\b'
+      - '\b(can(no|'')?t|unable\s+to|could\s*n''?t|are\s+not\s+able\s+to)\s+(leave|get\s+out|exit|get\s+home|go\s+home|get\s+back)\b'
+      - '\btrapped\b'
+      - '\b(stuck|locked)\s+(in|inside|at|outside)\s+(the\s+|a\s+|an\s+)?(lab|room|building|campus|elevator|lift|bus|station|gate|hall)\b'
+      - '\b(no|without\s+an?y?)\s+(way|transport\w*|ride|bus)\s+(home|back)\b'
+      - '\bwithout\s+(any\s+)?(transport\w*|a\s+ride|a\s+bus)\b'
+      - '\b(left|stuck)\s+(behind|without)\b'
+      - '\b(last|final)\s+bus\b[^.!?|]{0,30}\b(cancel+ed|did\s*n.?t\s+come|never\s+came|left\s+early|skipped)\b'
+      - '\bmissed\s+the\s+last\s+bus\b'
+    ar:
+      - '(ضلوا|ظلوا|علقوا|ضلينا|ظلينا|علقنا|انحبسوا|انحبسنا)\s'
+      - '(?<!\w)(عالق|عالقين|عالقة|محبوس|محبوسين|محصورين)(?!\w)'
+      - '(بدون|بلا|من\s+غير)\s+مواصلات'
+      - '(ما\s+في|مافي)\s+(مواصلات|باص|باصات)'
+      - '(مش|مو|ما)\s+(قادرين|قادر|بنقدر|بقدر|بيقدروا|بقدروا)\s+(نطلع|يطلعوا|اطلع|نروح|اروح|يروحوا|نخرج)'
+      - '(ال)?باص\s+(ال)?(أخير|اخير)[^.؟!|]{0,20}(انلغى|انلغي|ما\s+اجا|راح|فات)'
+    arabizi:
+      - '\b(dallo|dallu|9allo|thallo|dallena|3el2o|3l2o|3li2na|3al2een|3al2aneen|3al2an|ma7boseen|m7boseen|ma7boos)\b'
+      - '\b(bdoon|bdun|bedun|bidoon|bedoon|bala)\s+(mwasalat|mowasalat|mawaslat|mwaslat|mowaslat)\b'
+      - '\b(mesh|msh|mish|ma)\s+(2adreen|qadreen|adreen|2ader|bn2dar|b2dar)\s+(netla3|nitla3|atla3|nrou7|nru7|aru7|yetla3o)\b'
+      - '\b(a5er|akher)\s+(bus|baas|bas)\b[^.!?|]{0,20}\b(enlagha|enla3''a|ma\s+eja|ma\s+ija|ra7|fat)\b'
+
+  enrollment_blocked:
+    en:
+      - '\b(removed|dropped|deleted|withdrew|withdrawn|kicked)\s+(me\s+)?(out\s+)?(from\s+)?(my\s+|a\s+|the\s+)?(registered\s+|required\s+)?(courses?|class(es)?|sections?|enrol+ment|registration)\b'
+      - '\b(can(no|'')?t|unable\s+to|could\s*n''?t|not\s+able\s+to)\s+(add|register|enrol+|sign\s+up\s+for)\b'
+      - '\b(rejects?|rejected|refuses?|refused|blocks?|blocked)\s+(my\s+)?(request|registration|enrol+ment|courses?|application)\b'
+      - '\b(registration|enrol+ment)\s+(hold|block|is\s+blocked|was\s+(cancel+ed|rejected))\b'
+      - '\bhold\s+on\s+my\s+(account|registration|file)\b'
+      - '\b(lost|losing|lose)\s+my\s+(seat|place|spot)\b'
+      - '\bbanned\s+from\s+(the\s+)?(final|exam|course)\b'
+    ar:
+      - '(مش|مو|ما)\s+(قادر|قادرة|بقدر|عم\s+بقدر)\s+(اسجل|أسجل|سجل|اضيف|أضيف|انزل)'
+      - '(شالوا|انشالت|انحذفت|حذفوا|حذفولي|شالولي|طيروا|طاروا)'
+      - '(النظام|البوابة|الموقع)\s+(رافض|برفض|يرفض|مش\s+راضي)'
+      - '(رفض|رفضوا|انرفض|انرفضت)\s+(ال)?(تسجيل|طلب)'
+      - '(ينسحب|بينسحب|بنسحب|راح\s+ينسحب)\s+تسجيلي'
+      - '(حرمان|محروم|حرموني)'
+    arabizi:
+      - '\b(mesh|msh|mish|mush|ma)\s+(2ader|qader|ader|2adra|b2dar|ba2dar|bagdar)\s+(asajjel|asajel|asajjil|asajil|sajjel|adeef|a7ot)\b'
+      - '\b(shalo|shaloo|shalooni|shalouni|shaloni|7azafo|7athafo|tayaro)\b'
+      - '\b(rafed|rafid|birfod|byerfod|rafado)\b'
+      - '\b(byensa7ab|bensa7ab|binsa7ab|yensi7eb)\s+(tasjeel|tasjil)\w*'
+      - '\b(7erman|m7room|ma7room)\b'
+
+  transient_glitch:
+    en:
+      - '\b(keeps?|kept)\s+(crashing|freezing|loading|disconnecting|logging\s+me\s+out|dropping|failing|timing\s+out|restarting|buffering)\b'
+      - '\bdisconnects?\b'
+      - '\b(slow|lagging|laggy|freez\w*|frozen|hangs|hanging|stuck\s+(on|at)\s+loading|not\s+loading|won.?t\s+load|timed?\s*out)\b'
+      - '\b(shows?|showing|gives?|giving|throws?|got)\s+(me\s+)?(an?\s+)?error\b'
+      - '\berror\s+(message|when|while|code|page)\b'
+      - '\b(intermittent\w*|on\s+and\s+off|every\s+(few\s+)?(minutes?|seconds?))\b'
+    ar:
+      - '(?<!\w)(معلق|معلقة|بعلق|بيعلق|علقت|مهنج|بهنج)(?!\w)'
+      - '(?<!\w)(بطيء|بطيئ|بطيئة|بطيه|بطيء\s+كثير)(?!\w)'
+      - '(?<!\w)(بفصل|بيفصل|بقطع|بيقطع|بيطفي)(?!\w)'
+      - '(?<!\w)(خطأ|ايرور|إيرور)(?!\w)'
+      - 'مش\s+راضي\s+(يفتح|يحمل|يحمّل|يشتغل)|كل\s+شوي|كل\s+(كم|كام)\s+دقيقة'
+    arabizi:
+      - '\b(m3alla2a|m3all2a|m3allaga|m3ala2|bi3alle2|b3alle2|bi3la2|bihanneg|mhanneg)\b'
+      - '\b(bati2|batee2|baty2)\b'
+      - '\b(bifsel|bfasel|byfsel|bi2ta3|b2ta3|byi2ta3)\b'
+      - '\b(error|eror)\b'
+      - '\bkol\s+(shway|shwai|shwy|shwaye|5|khams)\b'
+
+  info_request:
+    # Words skipped before the `start` patterns are tried, so an urgency marker or a courtesy word that is
+    # not a stripped wrapper ("عاجل!!! وين جدول الباصات") cannot hide an information request: stated urgency
+    # must never change a feature.
+    start_skip: ['عاجل', 'عاجل\s+جدا', 'ضروري', 'urgent', 'asap', 'please', 'plz', 'pls', 'لو\s+سمحت', 'بليز',
+                 'law\s+sama7t', 'plz', 'hi', 'hello', 'مرحبا', 'marhaba']
+    start:
+      en:
+        - '^(where|how|when|what|which|who|is\s+there|are\s+there|can\s+i|could\s+i|may\s+i|do\s+i|should\s+i)\b'
+        - '^i\s+(need|want|would\s+like)\s+(to\s+know|information|info|a\s+copy|advice|a\s+letter)\b'
+      ar:
+        - '^(وين|كيف|متى|امتى|إمتى|ايمتى|وقتيش|شو|ايش|إيش|قديش|هل|مين|من\s+وين)(?!\w)'
+        - '^(بدي|بدّي|حابب|ممكن)\s+(اعرف|أعرف|استفسر|نسخة|نصيحة|أسأل|اسأل)'
+      arabizi:
+        - '^(wein|wen|ween|wain|kif|keef|kaif|kef|emta|ematta|imta|mata|shu|sho|eish|esh|2adesh|addesh|2deh|hal|meen|min\s+wein)\b'
+        - '^(bade|bdi|badi|baddi|7abeb|mumken|momken)\s+(a3ref|a3rf|e3ref|nos5a|nuskha|nasee7a|nas7a|as2al)\b'
+    en:
+      - '\b(a\s+copy\s+of|information\s+(about|on)|where\s+can\s+i|how\s+(can|do)\s+i|when\s+(is|does|do|will)\s+the|i\s+would\s+like\s+to\s+know|advice\s+(on|about|choosing))\b'
+    ar:
+      - '(بدي|حابب)\s+(اعرف|أعرف)|استفسار|نسخة\s+(عن|من)|(?<!\w)نصيحة(?!\w)|معلومات\s+عن'
+    arabizi:
+      - '\b(bade|bdi|badi|baddi)\s+(a3ref|a3rf|e3ref)\b'
+      - '\b(nos5a|nuskha)\s+(3an|min|mn)\b'
+      - '\b(estefsar|nasee7a)\b'
+
+  fault_report:
+    en:
+      - '\b(broken|broke\s+down|not\s+working|stopped\s+working|does\s*n.?t\s+work|does\s+not\s+work|is\s*n.?t\s+working|won.?t\s+work|out\s+of\s+order|malfunction\w*)\b'
+      - '\b(leak\w*|disconnects?|crash\w*|error|unavailable|not\s+reflected|missing|wrong|incorrect\w*|late|delayed|cancel+ed|changed\s+without|stuck|locked|jammed|cracked|damaged|faulty|failed|fails|flicker\w*|removed|rejects?|rejected|expired)\b'
+      - '\b(not\s+showing|does\s*n.?t\s+show|not\s+(turning|switching)\s+on|charged\s+twice|double\s+charged|same\s+time|clash\w*|no\s+signal)\b'
+      - '\b(can(no|'')?t|unable\s+to|could\s*n''?t)\s+(add|register|log\s*in|login|access|submit|pay|upload|open|connect|print)\b'
+    ar:
+      - 'خربان|خربانة|(?<!\w)خرب(?!\w)|خربت|مش\s+شغال|مش\s+شغالة|مو\s+شغال|ما\s+بشتغل|بطل\s+يشتغل|عطلان|معطل|تعطل'
+      - '(?<!\w)(تسكر|تسكّر|مسكر|مقفل|غلط|مكسور|مكسورة|متأخر|اتأخر|تأخر|انلغى|انلغي)(?!\w)'
+      - 'مش\s+صحيح|مش\s+ظاهر|ما\s+ظهر|مش\s+منزل|مش\s+منزلة|بتسرب|بنقط|بتنقط|معلقة|(?<!\w)خطأ(?!\w)|بفصل|بيفصل|بقطع'
+      - 'انخصم|مرتين|بنفس\s+الوقت|مش\s+قادر|ما\s+بقدر|رافض|انحذف|شالوا|ما\s+وقف|ما\s+اجا'
+    arabizi:
+      - '\b(5arban|kharban|5arbane|5irib|3atlan|m3attal|msakkar|tsakkar|ghalat|3''alat|bitsarreb|m3alla2a|m3all2a|bifsel|bi2ta3|et2a5ar|ta2a5ar|mt2a5er|mit2a5er|maksoor|marteen|enlagha|enla3''a)\b'
+      - '\b(mesh|msh|mish|mush)\s+(shaghal|sha3''al|sha8al|sa7ee7|s7ee7|dhaher|daher|2ader|qader)\b'
+      - '\bbnafs\s+el\s+wa2t\b'
+
+  ambient_fixture:
+    en:
+      - '\b(hallway|corridor|lobby|staircase|stairwell|stairs|entrance|walkway|courtyard)\b'
+      - '\b(light|lights|lamp|lamps|bulb|bulbs|lighting)\b'
+    ar:
+      - '(?<!\w)(ال|بال|في\s+ال)?(ممر|كوريدور|درج|مدخل|ساحة)(?!\w)'
+      - '(?<!\w)(ال|بال)?(ضو|ضوء|لمبة|لمبات|إنارة|انارة|أضواء)(?!\w)'
+    arabizi:
+      - '\b(mamar|mamarr|korridor|koridor|madkhal|sa7a|daraj)\b'
+      - '\b(daw|do2|dow|lamba|lambe|enara)\b'
+
+  teaching_room:
+    en:
+      - '\b(lecture\s+(room|hall|theat(er|re))|class\s*rooms?|seminar\s+room|computer\s+lab|labs?|laborator(y|ies)|auditorium|studio)\b'
+      - '\b(projector|smart\s*board|whiteboard|data\s*show|microphone)\b'
+    ar:
+      - '(?<!\w)(ال|بال|في\s+ال|ب)?(غرفة|قاعة|صف|مختبر|مدرج|محاضرة|مرسم)(?!\w)'
+      - '(?<!\w)(ال|بال)?(بروجكتور|بروجيكتور|داتا\s*شو|سبورة|مايك)(?!\w)'
+    arabizi:
+      - '\b(ghorfe|ghurfe|ghorfa|ghurfa|2a3a|qa3a|mo5tabar|mokhtabar|mukhtabar|mudarraj|madraj|marsam)\b'
+      - '\b(projector|brojektor|data\s*show|datashow|mike)\b'
