@@ -61,9 +61,11 @@ _LINEAR_KEYS = frozenset(
     }
 )  # fmt: skip
 
+# Page sizes stay small: Linear rejects teams(first: 100) x states(first: 100) as "Query too complex"
+# (verified live by scripts/smoke_linear.py, 2026-10-31). The demo workspace has 2 teams, 6 states each.
 _TEAMS = (
-    "query CampusPulseTeams { teams(first: 100) { nodes { id key name "
-    "states(first: 100) { nodes { id name type position } } } } }"
+    "query CampusPulseTeams { teams(first: 20) { nodes { id key name "
+    "states(first: 50) { nodes { id name type position } } } } }"
 )
 _LABELS = "query CampusPulseLabels { issueLabels(first: 250) { nodes { id name } } }"
 _ISSUE = "query CampusPulseIssue($id: String!) { issue(id: $id) { id identifier url } }"

@@ -71,16 +71,20 @@ used. Smoke issue CDP-1 belongs to the lead; leave it alone.
 a personal API key, **no `Bearer` prefix** (verified). The key is a `SecretStr`, read only for the
 header, never logged, and masked in `repr`.
 
-**GraphQL operations.** "Verified" = checked with a real call on the CampusPulse workspace.
+**GraphQL operations.** "Verified" = checked with a real call on the CampusPulse workspace. Run log
+(2026-10-31, `scripts/smoke_linear.py`): `viewer` admin=True (the developer can create the webhook
+later); team CDP state types backlog, canceled, completed, duplicate, started, unstarted; issue CDP-2
+created with the ticket UUID as its id, moved to In Progress and Done, then archived. Still
+UNVERIFIED: the inbound webhook payload (no webhook exists until Render is deployed).
 
 | Operation | Document | Status |
 | --- | --- | --- |
 | `issueCreate` | `mutation CampusPulseIssueCreate($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { id identifier url } } }` with `input {teamId, title, description, priority, dueDate: "YYYY-MM-DD", labelIds}` | **verified** (lead, 2026-10-31: returned CDP-1 and its url) |
-| `issueCreate` input `id` | the CampusPulse ticket UUID, so a retried create can never make a second issue | UNVERIFIED |
-| `teams` | `teams(first: 100) { nodes { id key name states(first: 100) { nodes { id name type position } } } }`, once per process | UNVERIFIED (same query as the P4.0 smoke) |
-| `issueLabels` | `issueLabels(first: 250) { nodes { id name } }`, once per process | UNVERIFIED |
-| `issueUpdate` | `issueUpdate(id: $id, input: {stateId?, priority}) { success issue { id identifier url } }` | UNVERIFIED |
-| `issue` | `issue(id: $id) { id identifier url }`, to recover after a failed or repeated create | UNVERIFIED |
+| `issueCreate` input `id` | the CampusPulse ticket UUID, so a retried create can never make a second issue | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived): the returned issue id equals the ticket UUID |
+| `teams` | `teams(first: 20) { nodes { id key name states(first: 50) { nodes { id name type position } } } }`, once per process | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived). The first version (`first: 100` x `first: 100`) was rejected live with **HTTP 400 "Query too complex"**; fixed |
+| `issueLabels` | `issueLabels(first: 250) { nodes { id name } }`, once per process | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived): 6/6 category labels found |
+| `issueUpdate` | `issueUpdate(id: $id, input: {stateId?, priority}) { success issue { id identifier url } }` | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived): in_progress -> `started`, closed -> `completed`, priority kept, each read back |
+| `issue` | `issue(id: $id) { id identifier url }`, to recover after a failed or repeated create | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived): found by the ticket UUID |
 
 **Field mapping (ticket → issue).**
 
@@ -217,4 +221,4 @@ Receivers should reject timestamps older than 5 minutes and dedupe on `event_id`
 | Check | Command | Expected |
 | --- | --- | --- |
 | Email, once | `python scripts/smoke_email.py --to <allow-listed inbox> --yes` | `SMTP OK port=587 message_id=<…@gmail.com> outbox=sent`. Refuses (exit 2, nothing sent) without `--yes` or for an address not on `DEMO_EMAIL_ALLOWLIST`. |
-| Linear | `scripts/smoke_linear.py` (P4.0, not written yet) | should exercise `teams`, `issueLabels`, `issueCreate` with `id`, `issueUpdate` and `issue`, then archive its demo-labelled issue |
+| Linear | `python scripts/smoke_linear.py --env-file <path to .env> --yes` (in a worktree set `PYTHONPATH=services/ai`) | `Linear OK team=CDP checks=9/9 archived=1 webhook=not-created`: `viewer` (admin), `teams`, `issueLabels`, `issueCreate` with `id`, `issue`, `issueUpdate` (twice, read back), then `issueArchive` of every issue it created (also after a failure). Refuses (exit 2) without `--yes` or a key. Never creates a webhook. |
