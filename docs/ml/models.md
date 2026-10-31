@@ -3,8 +3,10 @@
 Owner: ML stream. This file describes **what exists now** (ARCHITECTURE.md is the design). It is updated at
 every ML task, so another agent or a judge can use the ML pieces without opening the code.
 
-Status: P0.3 to P1.4 (data pipeline, preprocessing, config and artifact plumbing). There is no trained model,
-`models/frozen/v1/`, metrics table or `predict.py` yet (P1.5+).
+Status: P0.3 to P1.4 (data pipeline, preprocessing, config and artifact plumbing), plus P1.0 (validator),
+P1.5 (guards), P1.6 (int8 encoder), P1.8 (pool, soft targets, folds), P1.9 (Arabizi drafts, review pending),
+P1.12 (evidence features) and P1.14 (conformal). There is no trained model, `config.json`, metrics table or
+`predict.py` yet (P1.10–P1.17). The exported encoder exists locally in `models/frozen/v1/encoder/` (gitignored).
 
 ## 1. Paths (`campuspulse_ai.config.paths`)
 
