@@ -19,3 +19,45 @@
 - **Acceptance:** `pytest services/ai/tests/unit/test_domain_values.py -q` → `7 passed`; `mypy --strict services/ai/campuspulse_ai/domain` → `Success: no issues found in 9 source files`; `ruff check .` → `All checks passed!`.
 - **Limitations:** `policy.DefaultDecisionPolicy` (P3.1), `priority_rules.EVIDENCE_FEATURES` (P1.12), `routing` planner (P3.8/P4.8) are docstring placeholders. **Domain changes go through the lead only** (EXECUTION rule 3).
 - **Affects streams:** all.
+
+### P0.13 — API contract stub  (backend, 2026-10-31, commits a650caa..ad2d418)
+- **What now exists:**
+  - The frozen `/v1` HTTP contract as Pydantic v2 DTOs.
+  - A fixture-backed mock FastAPI app serving every endpoint.
+  - The exported `services/ai/openapi.json`: 16 operations, OpenAPI 3.1.
+  - 31 EN / Jordanian-Arabic / Arabizi fixtures.
+  - Generated per-endpoint docs.
+- **Public interfaces added:**
+  - `application/dto.py`:
+    - request/response models for every SPEC §7 route;
+    - the LD-25 additions (`understood_as`, top-level `message`, flag `explanation_failed`, `GET /v1/incidents?open=1`, `POST /v1/tickets/{id}/status`, and the optional `/v1/admin/{simulate,reindex}`);
+    - `understanding` (UD-10) and `GET /v1/insights/recurring` (UD-6);
+    - `ErrorResponse` / `ErrorCode` / `ERROR_HTTP_STATUS` / `error_code_for(exc)`;
+    - `to_student_view()` and `PrincipalHeaders`.
+  - `frameworks/api_contract.py`: `ENDPOINTS` and `route_kwargs(op_id)`. Per-route metadata (roles, auth, error codes, side effects) that the real app must reuse so its OpenAPI document matches.
+  - `frameworks/mock_app.py` (`app`, `create_mock_app()`).
+  - `frameworks/export_openapi.py`.
+  - `scripts/gen_api_docs.py [--check]`.
+  - Docs: [docs/api/README.md](../api/README.md), [docs/api/endpoints.md](../api/endpoints.md).
+- **How to use it:**
+  - Run the mock: `uvicorn campuspulse_ai.frameworks.mock_app:app --port 8000`.
+  - Call it: `curl.exe -s -X POST localhost:8000/v1/triage -H "Authorization: Bearer x" -H "Content-Type: application/json" --data-binary "@request.json"`.
+  - Pick a specific example with `X-Mock-Fixture: triage_distress_ar`, or by sending a fixture's `text`.
+  - Regenerate the contract: `python -m campuspulse_ai.frameworks.export_openapi --mock --out services/ai/openapi.json`, then `python scripts/gen_api_docs.py`.
+- **Config / env added:** `MOCK_FIXTURES_DIR` (default: `services/ai/tests/fixtures/api`) and `MOCK_SERVICE_TOKEN` (unset = any Bearer token accepted). Both are mock only.
+- **Acceptance:**
+  - `pytest services/ai/tests/contracts/test_dto_contract.py -q` → `77 passed`.
+  - `python -m campuspulse_ai.frameworks.export_openapi --mock > services/ai/openapi.json` → exit 0, with 16 operations (15 `/v1` + `/health`).
+  - `python scripts/gen_api_docs.py --check` → `docs/api/endpoints.md is up to date`.
+  - `mypy --strict` on `dto.py` and `frameworks/` → no issues.
+- **Limitations / TODO / known issues:**
+  - `apps/web/src/lib/ai/types.gen.ts` is not generated here: the UI stream generates it from `services/ai/openapi.json`.
+  - `dto.py` imports pydantic, which contradicts P3.8's "stdlib dataclasses, no pydantic in application/" line and P0.6's `test_application_domain_numpy_only`. P0.6 must allow `pydantic` in `application/dto.py`, and the P3.8 acceptance line must be dropped (lead to confirm).
+  - The `/v1/metrics` sub-shapes (benchmark, coverage, calibration, fairness, ablations, confusions) are a proposal: `evaluate.py` reports (P2.8) must map onto them, or the ML stream files a change request.
+  - `HealthResponse` has more keys than P0.7's `{status, artifact, rss_mb}` test expects: P0.7's route should adopt `dto.HealthResponse`.
+- **Affects streams:**
+  - UI: types, mocks, auth headers and the status/flags tables.
+  - Backend: P3.8 and P3.12 implement this contract and reuse `route_kwargs`.
+  - Foundation: P0.6 allow-list, P0.7 health shape, CI `gen_api_docs.py --check`.
+  - ML: `/v1/metrics` shapes.
+  - DB: the incident, ticket and recurring shapes.
