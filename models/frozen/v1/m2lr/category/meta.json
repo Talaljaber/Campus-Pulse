@@ -1,5 +1,5 @@
 {
-  "C": 2.0,
+  "C": 0.5,
   "dim": 384,
   "kind": "embed_lr",
   "labels": [

@@ -37,7 +37,7 @@
 <a id="p2-1"></a>
 ## P2.1 — Extend `check_leakage.py` to augmentation and holdouts
 
-- [ ] Done
+- [x] Done (ML batch 4): `pytest services/ai/tests/unit/test_check_leakage.py -q` → `5 passed` (2 new + 3 P0.3e); `python scripts/check_leakage.py` → `exact cross-group duplicates: 0; near pairs >=0.90: 1793 (listed); holdout near-duplicates: 136 (listed; augmented 0 failing + 444 encoder-only for review, official 48)`, exit 0. Encoder-only holdout hits are listed, not failed (`leakage.holdout_fail_on: [exact, char]`; e5 0.90 = shared topic). See models.md §18.
 - **Goal:** guarantee that augmentation cannot leak across CV groups, and that our holdouts are not near-duplicates of training text (§3.2).
 - **Depends on:** [P0.3e](P0_foundations.md#p0-3e) (official mode exists), [P1.8](P1_scored_core.md#p1-8), [P1.6](P1_scored_core.md#p1-6)
 - **Est / Cut:** 0.75 h · Cut: no
@@ -67,7 +67,7 @@
 <a id="p2-2"></a>
 ## P2.2 — Add the LLM drafting modes to `draft_augmentation.py` (paraphrases, new scenarios, Arabizi)
 
-- [ ] Done
+- [x] Done (ML batch 4): `pytest services/ai/tests/unit/test_draft_augmentation.py -q` → `6 passed`. Pinned drafter `anthropic/claude-sonnet-5.5`, checker `anthropic/claude-haiku-5.5` (D-014 pre-check), plus `translate` (D-014), `precheck`, `prune`, `apply-review`. models.md §19.
 - **Goal:** LLM-drafted candidates, each with `needs_human_check=True`. The model ID is pinned, temperature is 0, responses are cached, and cost is logged (CLAUDE.md).
 - **Depends on:** [P1.9](P1_scored_core.md#p1-9); an OpenRouter account and key ([Appendix D](appendix_D_accounts.md))
 - **Est / Cut:** 1.25 h · Cut: no
@@ -117,7 +117,7 @@
 <a id="p2-3"></a>
 ## P2.3 — Run the drafts
 
-- [ ] Done
+- [x] Done (ML batch 4), paraphrases and translations only (new scenarios came from a separate writer, `new_scenarios.csv`): `OK augmented: 64 rows; 0 reviewed; … cells covered 18/18`; translations `17 rows; 0 reviewed; … 12/18`; 93 of 174 drafts pruned as holdout neighbours. Spend: `0.3467` USD in `draft_log.jsonl` (drafts 0.266, pre-check 0.081).
 - **Goal:** candidate rows exist in all three augmented files.
 - **Depends on:** P2.2
 - **Est / Cut:** 0.5 h (wall time is mostly API latency) · Cut: no
@@ -138,7 +138,7 @@
 <a id="p2-4"></a>
 ## P2.4 — Human-check the augmentation and resolve leakage
 
-- [ ] Done
+- [ ] Done — **human task, prepared**: `data/augmented/REVIEW.md` (≈ 75–90 min; 187 rows to read in full of 501, review sheet `data/augmented/review/review_sheet.csv`).
 - **Goal:** every row that trains has been read, corrected and labelled by the developer. That covers Arabic dialect naturalness, Arabizi spelling and labels per the labeller rules. Leakage is resolved.
 - **Depends on:** P2.1, P2.3
 - **Est / Cut:** 3.5 h (human) · Cut: no. The volume may shrink to the §6.2 flag-3 minimums: ≥ 2 paraphrases per scenario, ≥ 40 new scenarios.
@@ -167,7 +167,7 @@
 <a id="p2-5"></a>
 ## P2.5 — Author the robustness probes
 
-- [ ] Done
+- [ ] Done — **human task, prepared**: instructions and column list in `data/augmented/REVIEW.md` part 2.
 - **Goal:** ≥ 40 human-verified probes across the red-team styles. They are never trained on, and P2.8 scores them. They also seed P4's red-team scorer.
 - **Depends on:** [P1.0](P1_scored_core.md#p1-0)
 - **Est / Cut:** 1.5 h (human) · Cut: no
@@ -193,7 +193,7 @@
 <a id="p2-6"></a>
 ## P2.6 — Decide the encoder (e5-small vs MiniLM) and check int8-vs-fp32 OOF parity
 
-- [ ] Done
+- [x] Done (ML batch 4, D-016 bake-off): `encoder_choice.json` → `intfloat/multilingual-e5-small 0.7768`; the parity check prints **False** (int8 0.777 vs fp32 0.746 category: |Δ| 0.031 > 0.01, in int8's favour, within the noise of 30 groups). MiniLM out (int8 parity ≤ 0.969 in every variant; 0/3 heads pass the rule). No §3.17 fallback; dimension stays 384.
 - **Goal:** the final encoder for v1, chosen **on OOF only**. The ONNX int8 export is confirmed not to cost more than 0.01 OOF macro-F1 (§3.17 proof). §3.17 fallback (2) is triggered here if RSS demands it, which must happen before P4's vector migration (§6.1 #18).
 - **Depends on:** P2.4, [P1.6](P1_scored_core.md#p1-6)
 - **Est / Cut:** 1.25 h · Cut: no
@@ -225,7 +225,7 @@
 <a id="p2-7"></a>
 ## P2.7 — Complete `train.py` stage B (weights, C grids, conformal, thresholds) + `--retune`
 
-- [ ] Done
+- [x] Done (ML batch 4) in the D-016 form (fixed pre-declared weights; the tuned search is a reported variant): `pytest services/ai/tests/unit/test_tuning.py -q` → `17 passed` (incl. the 5 named); `python services/ai/train.py --out models/frozen/v1 --report reports/cv_p2.json` → `froze v1: members=m1,m2lr,m2knn,m2proto weights_cat={m1:0.0,m2lr:0.5,m2knn:0.0,m2proto:0.5} cat_macroF1_oof_official=0.806 pri_macroF1_oof_official=0.904 nested_cat=0.806 nested_pri=0.904 q_cat=0.78 q_pri=0.57 sha=809f6c8a913e` (then `--retune` for P2.10 → sha 9a379d97c0cd).
 - **Goal:** every tunable value is learned from OOF, then frozen (§3.4). `--retune` re-runs stage B from the cached `oof.npz` so the config-only decisions of P2.10 need no full retrain.
 - **Depends on:** [P1.16](P1_scored_core.md#p1-16); final run after P2.6
 - **Est / Cut:** 2 h · Cut: no
@@ -270,7 +270,7 @@
 <a id="p2-8"></a>
 ## P2.8 — Build `evaluate.py`: benchmark, coverage/calibration, fairness, confusions, robustness, errors, EDA
 
-- [ ] Done
+- [x] Done (ML batch 4): `python services/ai/evaluate.py --all` → `wrote reports/{metrics.json,benchmark.md,coverage.json,fairness.json,ablations.json,errors.json,eda.json,confusions/} (artifact v1 sha=9a379d97c0cd)`; `pytest services/ai/tests/e2e/test_reports_schema.py -q` → `9 passed` (the 8 + model_lab).
 - **Goal:** one offline command that produces every number of SPEC §6.2 under one protocol. The protocol is OOF over the frozen `cv_fold` folds (from `oof.npz`) plus frozen-model predictions on `our_test` and `probes`.
 - **Depends on:** P2.7, P2.5, [P1.0](P1_scored_core.md#p1-0)
 - **Est / Cut:** 3 h · Cut: no (P2-evaluation is never cut)
@@ -325,7 +325,7 @@
 <a id="p2-9"></a>
 ## P2.9 — Add ablations to `evaluate.py`
 
-- [ ] Done
+- [x] Done (ML batch 4): 16 arms incl. D-014/D-016 arms and the labelled unreviewed-augmentation arm, each with a paired group bootstrap; `-arabizi_translit` cut as planned.
 - **Goal:** the SPEC §6.2 ablations, every arm scored on the **same** rows (OOF on official rows plus `our_test`).
 - **Depends on:** P2.8
 - **Est / Cut:** 1.5 h · Cut: no. Only the extra `−Arabizi transliteration` arm is cut: yes (not SPEC-required).
@@ -364,7 +364,7 @@
 <a id="p2-10"></a>
 ## P2.10 — Apply the conformal and fairness follow-up rules (ASK rate, Mondrian switch)
 
-- [ ] Done
+- [x] Done (ML batch 4): `0.0588 0.1 True` (ASK proxy with Mondrian; it was 0.319 ≤ 0.35 with global quantiles, so alpha_priority stays 0.10; Mondrian fired for category: AR 0.813 / Arabizi 0.719 < 0.85, EN 0.949). `MondrianByLang` built; `pytest services/ai/tests/unit/test_conformal.py -q` → `5 passed`.
 - **Goal:** apply the two config-only rules the brief prescribes, logged as decisions:
   - `alpha_priority`: 0.10 → 0.15 if the ASK-proxy rate on `our_test` is above 35 % (§6.1 #8)
   - `mondrian_by_lang` on if AR or Arabizi coverage is below 0.85 while EN is at least 0.90 (§3.5)
@@ -441,7 +441,7 @@
 <a id="p2-12"></a>
 ## P2.12 — Write notebooks 01–05 (thin) and `run_notebooks.py`
 
-- [ ] Done
+- [x] Done (ML batch 4): `python scripts/run_notebooks.py` → `5/5 executed`; `--check-reads-only` → `OK: notebooks read only reports/` (18 cells).
 - **Goal:** the five notebooks the SPEC checklist requires. They are thin loaders of `reports/*` (≤ 30 cells in total, §6.2 flag 10) and never go stale.
 - **Depends on:** P2.8, P2.9, P2.10
 - **Est / Cut:** 1.5 h · Cut: no
@@ -471,7 +471,7 @@
 <a id="p2-13"></a>
 ## P2.13 — Freeze `v1-rc2` and run the P2 exit gate
 
-- [ ] Done
+- [ ] Done — **partly (ML batch 4)**: v1-rc2 frozen locally (sha 9a379d97c0cd), `evaluate.py --all`, notebooks, `predict.py` offline → `wrote 62 rows`, `reports/predictions_val_check.csv` written. Not done by design: the `models-v1-rc2` GitHub pre-release (the encoder did not change, so the asset is the rc1 tarball) and the CI check (no push).
 - **Goal:** the scored core is complete (SPEC §12: "The scored core is complete after Phase 2"). The final pool, encoder, weights, conformal and M3 decision are frozen, released and evaluated with one command.
 - **Depends on:** P2.4, P2.6, P2.7, P2.9, P2.10, P2.11 (or its cut), P2.12
 - **Est / Cut:** 1 h · Cut: no
@@ -513,15 +513,15 @@ Tied to SPEC §12 and §4.8. M3 is cut-order #4. P2-evaluation is never cut, so 
 | P2 overruns (19 h + 4 h box vs 2 d) | H / squeezes P3 | M3 box first (cut #4), then the `-arabizi_translit` arm, then the `MondrianByLang` build. Notebook polish is minimal by design. Exit criteria are never cut. |
 
 ## P2 decisions logged during this phase
-- [ ] Augmentation volumes after review (paraphrases / new scenarios / Arabizi rows; rows dropped); drafting model ID and total LLM cost
-- [ ] Leakage resolutions (groups merged; holdout near-duplicates rewritten)
-- [ ] Probe count per style
-- [ ] Final encoder (ID, revision, int8 sha); OOF int8-vs-fp32 delta; §3.17 fallback (2) used? (dimension stays 384?)
-- [ ] Ensemble weights (category / priority); M1/M2-LR `C`; conformal `q`s; `tau_ood`, `tau_injection`, `tau_safety`, `human_review_maxprob`
-- [ ] ASK-proxy rate → `alpha_priority` (0.10 or 0.15)
-- [ ] Per-language coverage → `mondrian_by_lang` on or off
-- [ ] **M3 decision** (include/cut, ΔOOF, predict time, download MB, RSS) — this is required by §4.3
-- [ ] Headline numbers: OOF-official and `our_test` macro-F1 (category, priority), coverage, fairness gap
-- [ ] `models-v1-rc2` published (sha)
-- [ ] Folds appended for new groups (`make_folds.py --include-augmented`); official assignment unchanged
-- [ ] "today" shortcut: `mask_deadline` priority F1 and `deadline_shortcut` probe accuracy
+- [x] Augmentation volumes after review: **review pending** (P2.4). Drafts: 64 paraphrases + 17 translations (claude-sonnet-5.5, 0.266 USD), 30 rule Arabizi, 390 new-scenario rows (separate writer); pre-check claude-haiku-5.5 (0.081 USD); 93 of 174 own drafts pruned as holdout neighbours
+- [x] Leakage resolutions: 0 exact cross-group duplicates; LLM drafts near a holdout dropped; 65 of 78 new situations have encoder-only neighbours in our_test (listed for the reviewer)
+- [ ] Probe count per style: P2.5 pending (human)
+- [x] Final encoder: e5-small, revision 614241f6…, pruned int8 unchanged; OOF int8 0.777 vs fp32 0.746 (category); no fallback; dim 384 (D-016 bake-off)
+- [x] Ensemble weights (D-016 fixed): category m2lr 0.5 + m2proto 0.5; priority m1/m2lr/m2knn 1/3; m1 C 2.0, m2lr C 0.5; prototype T 0.005; head T 1.0; q_category 0.779 (group rule; per language ar 0.938, en 0.668), q_priority 0.574; tau_ood 0.836, tau_injection 0.910, tau_safety 0.920, human_review_maxprob 0.534; knn.memory_min_sim 0.91
+- [x] ASK-proxy rate → alpha_priority: 0.319 with global quantiles ≤ 0.35 → 0.10
+- [x] Per-language coverage → mondrian_by_lang **on** for category (AR 0.813, Arabizi 0.719 < 0.85; EN 0.949)
+- [x] **M3 decision:** not built (UD-4)
+- [x] Headline: OOF official category 0.806 (rc1 0.490), priority 0.904; our_test pooled category 0.789 (rc1 0.710), priority 0.847; set2 category 0.674 (below rc1 0.746); our_test category EN 0.814 / AR 0.758 / Arabizi 0.530
+- [ ] `models-v1-rc2` published: not in this batch (local freeze only; encoder unchanged)
+- [ ] Folds appended for new groups: only into a temp file for the unreviewed arm; `data/clean/cv_folds.csv` is appended after the P2.4 review
+- [x] "today" shortcut: mask_deadline priority on our_test 0.847 → 0.787; deadline_shortcut probes pending (P2.5)

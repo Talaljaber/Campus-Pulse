@@ -20,6 +20,10 @@ danger:
   - '\b(trapped|stranded)\b'
   - '\b(locked|stuck|shut)\s+(in|inside)\s+(the\s+|a\s+|an\s+|our\s+)?(lab|laboratory|room|elevator|lift|building|class\w*|hall|toilet|bathroom|library|lecture\s+\w+)\b'
   - '\bstudents?\s+(are\s+|were\s+|got\s+|have\s+been\s+)?(left|stuck|stranded)\s+(behind|without|at|on|in|outside)\b'
+  # people trapped in a stuck lift (live API run on rc1: "The elevator in building C is stuck between floors with
+  # people inside" came out medium). People must be mentioned: a stuck lift on its own is a fault, not a danger.
+  - '\b(elevator|lift)\b[^.!?|]{0,40}\bstuck\b[^.!?|]{0,40}\b(people|students?|someone|somebody|staff|passengers|kids)\b'
+  - '\b(people|students?|someone|somebody|staff|passengers)\s+(are\s+|is\s+|were\s+)?(stuck|locked)\s+(inside|in\s+(it|there|the\s+(elevator|lift)))\b'
   - '\b(no|without\s+an?y?)\s+(way|transport\w*|ride|bus)\s+(home|back)\b'
   # --- EN: water near electricity, fire, gas, shock, collapse, injury --------------------------------
   - '\b(water|leak\w*|flood\w*|spill\w*|dripping)\b[^.!?|]{0,40}\b(electric\w*|socket|outlet|wir(e|es|ing)|cables?|power\s+strip|plugs?)\b'
@@ -35,6 +39,8 @@ danger:
   # --- AR ---------------------------------------------------------------------------------------------
   - '(ضلوا|ظلوا|علقوا|ضلينا|ظلينا|انحبسوا|انحبسنا)\s+(ال)?طلاب'
   - '(ال)?طلاب\s+(عالقين|محبوسين|محصورين|محشورين)'
+  - '(ناس|حدا|اشخاص|أشخاص|طالب|طالبة|موظف|موظفين)\s+(عالق|عالقين|عالقة|محبوس|محبوسين|محبوسة|محصورين)'
+  - '(المصعد|الاسانسير|الأسانسير|المصاعد)[^.؟!|]{0,40}(علق|عالق|معلق|معلّق|واقف|وقف)[^.؟!|]{0,40}(ناس|طلاب|حدا|اشخاص|أشخاص|فيه\s+ناس|جواه)'
   - '(بدون|بلا|من\s+غير)\s+مواصلات'
   - '(ما\s+في|مافي|ما\s+فيه)\s+مواصلات'
   - '(محبوس|محبوسين|انحبس|انحبسنا|انحبسوا|عالق|عالقين|عالقة)\s+(في|ب|جوا|داخل)'

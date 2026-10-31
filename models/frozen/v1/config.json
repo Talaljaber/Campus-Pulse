@@ -3,18 +3,24 @@
   "conformal": {
     "alpha_category": 0.1,
     "alpha_priority": 0.1,
+    "calibration": "group",
     "method": "lac",
-    "mondrian_by_lang": false,
+    "mondrian_by_lang": true,
     "n_calib": 432,
-    "q_category": 0.8568117755684683,
-    "q_priority": 0.39416523059119746
+    "q_category": 0.7790927690988252,
+    "q_category_by_lang": {
+      "ar": 0.938463701970837,
+      "en": 0.6680956599023797
+    },
+    "q_priority": 0.573965738999578,
+    "q_priority_by_lang": {}
   },
   "cv": {
     "fold_col": "cv_fold",
     "folds_file": "data/clean/cv_folds.csv",
     "group_col": "cv_group",
     "k": 5,
-    "oof_macro_f1_category": 0.49014434141669216,
+    "oof_macro_f1_category": 0.8064124766324584,
     "oof_macro_f1_priority": 0.9035605549726888
   },
   "encoder": {
@@ -32,17 +38,20 @@
     "members": [
       "m1",
       "m2lr",
-      "m2knn"
+      "m2knn",
+      "m2proto"
     ],
     "weights_category": {
-      "m1": 0.3333333333333333,
-      "m2knn": 0.3333333333333333,
-      "m2lr": 0.3333333333333333
+      "m1": 0.0,
+      "m2knn": 0.0,
+      "m2lr": 0.5,
+      "m2proto": 0.5
     },
     "weights_priority": {
       "m1": 0.3333333333333333,
-      "m2knn": 0.3333333333333333,
-      "m2lr": 0.3333333333333333
+      "m2knn": 0.3333333333333334,
+      "m2lr": 0.3333333333333333,
+      "m2proto": 0.0
     }
   },
   "explain": {
@@ -58,7 +67,7 @@
     "k": 5,
     "laplace_mass": 1.0,
     "max_memory_neighbors": 2,
-    "memory_min_sim": 0.8,
+    "memory_min_sim": 0.91,
     "memory_weight_cap": 0.6
   },
   "llm": {
@@ -77,7 +86,7 @@
     ]
   },
   "m2lr": {
-    "C": 2.0
+    "C": 0.5
   },
   "priority_head": {
     "C": 1.0,
@@ -92,7 +101,8 @@
       "fault_report",
       "ambient_fixture",
       "teaching_room"
-    ]
+    ],
+    "temperature": 1.0
   },
   "priors": {
     "category": {
@@ -109,15 +119,23 @@
       "medium": 0.38425925925925924
     }
   },
+  "prototype": {
+    "mix": 0.5,
+    "parts": [
+      "learned",
+      "office"
+    ],
+    "temperature": 0.005
+  },
   "schema_version": 1,
   "seed": 42,
   "thresholds": {
-    "human_review_maxprob": 0.5184823610541043,
-    "tau_faq": 0.75,
-    "tau_inc": 0.8,
+    "human_review_maxprob": 0.5343080708227717,
+    "tau_faq": 0.9,
+    "tau_inc": 0.92,
     "tau_injection": 0.910022387031824,
     "tau_ood": 0.8362285315990448,
     "tau_safety": 0.9197773647907549
   },
-  "trained_at": "2026-10-31T16:32:02+00:00"
+  "trained_at": "2026-10-31T19:54:52+00:00"
 }

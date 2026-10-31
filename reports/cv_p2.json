@@ -1,0 +1,301 @@
+{
+  "artifact_version": "v1",
+  "by_lang_script_official": {
+    "ar": {
+      "category": {
+        "accuracy": 0.4667,
+        "macro_f1": 0.3333
+      },
+      "counts": {
+        "distinct_texts": 15,
+        "groups": 15,
+        "rows": 135
+      },
+      "joint_accuracy": 0.4,
+      "priority": {
+        "accuracy": 0.9333,
+        "macro_f1": 0.9221
+      }
+    },
+    "en": {
+      "category": {
+        "accuracy": 0.963,
+        "macro_f1": 0.9663
+      },
+      "counts": {
+        "distinct_texts": 27,
+        "groups": 27,
+        "rows": 297
+      },
+      "joint_accuracy": 0.8519,
+      "priority": {
+        "accuracy": 0.8889,
+        "macro_f1": 0.8926
+      }
+    }
+  },
+  "category": {
+    "accuracy_oof_official": 0.8079,
+    "macro_f1_oof_all": 0.8064,
+    "macro_f1_oof_official": 0.8064,
+    "per_member": {
+      "ensemble": {
+        "accuracy": 0.8079,
+        "macro_f1": 0.8064
+      },
+      "m1": {
+        "accuracy": 0.2153,
+        "macro_f1": 0.2053
+      },
+      "m2knn": {
+        "accuracy": 0.3935,
+        "macro_f1": 0.3979
+      },
+      "m2lr": {
+        "accuracy": 0.5833,
+        "macro_f1": 0.5611
+      },
+      "m2proto": {
+        "accuracy": 0.8287,
+        "macro_f1": 0.8276
+      }
+    }
+  },
+  "choices": {
+    "conformal_calibration": "group",
+    "head_temperature": 1.0,
+    "m1_C": 2.0,
+    "m2lr_C": 0.5,
+    "proto_temperature": 0.005,
+    "weights_category": {
+      "m1": 0.0,
+      "m2knn": 0.0,
+      "m2lr": 0.5,
+      "m2proto": 0.5
+    },
+    "weights_priority": {
+      "m1": 0.3333333333333333,
+      "m2knn": 0.3333333333333334,
+      "m2lr": 0.3333333333333333,
+      "m2proto": 0.0
+    }
+  },
+  "conformal_oof": {
+    "ask_proxy_rate": 0.2569,
+    "calibration": "group",
+    "category": {
+      "coverage": 0.9167,
+      "mean_size": 1.2986,
+      "n": 432,
+      "q": 0.779093
+    },
+    "n_groups": 30,
+    "note": "quantile calibrated on these same OOF scores (in-sample for q); see nested for the leave-one-fold-out coverage. Approximate: effective n ~ groups",
+    "priority": {
+      "coverage": 0.9282,
+      "mean_size": 1.0255,
+      "n": 432,
+      "q": 0.573966
+    }
+  },
+  "counts": {
+    "all": {
+      "distinct_texts": 42,
+      "groups": 30,
+      "rows": 432
+    },
+    "official": {
+      "distinct_texts": 42,
+      "groups": 30,
+      "rows": 432
+    }
+  },
+  "encoder": {
+    "model_id": "intfloat/multilingual-e5-small",
+    "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+    "runtime": "onnx_int8"
+  },
+  "joint_accuracy_oof_official": 0.7106,
+  "k": 5,
+  "members": [
+    "m1",
+    "m2lr",
+    "m2knn",
+    "m2proto"
+  ],
+  "nested": {
+    "category_macro_f1_oof_official": 0.8064,
+    "coverage_official": {
+      "category": 0.9167,
+      "priority": 0.9028
+    },
+    "mean_set_size_official": {
+      "category": 1.8218,
+      "priority": 1.0671
+    },
+    "note": "selection repeated on 4 folds and applied to the 5th: the honest estimate of the tuned system",
+    "per_fold": [
+      {
+        "fold": 0,
+        "head_temperature": 1.0,
+        "m1_C": 2.0,
+        "m2lr_C": 0.5,
+        "proto_temperature": 0.005,
+        "weights_category": {
+          "m1": 0.0,
+          "m2knn": 0.0,
+          "m2lr": 0.5,
+          "m2proto": 0.5
+        },
+        "weights_priority": {
+          "m1": 0.3333333333333333,
+          "m2knn": 0.3333333333333334,
+          "m2lr": 0.3333333333333333,
+          "m2proto": 0.0
+        }
+      },
+      {
+        "fold": 1,
+        "head_temperature": 1.0,
+        "m1_C": 2.0,
+        "m2lr_C": 0.5,
+        "proto_temperature": 0.005,
+        "weights_category": {
+          "m1": 0.0,
+          "m2knn": 0.0,
+          "m2lr": 0.5,
+          "m2proto": 0.5
+        },
+        "weights_priority": {
+          "m1": 0.3333333333333333,
+          "m2knn": 0.3333333333333334,
+          "m2lr": 0.3333333333333333,
+          "m2proto": 0.0
+        }
+      },
+      {
+        "fold": 2,
+        "head_temperature": 0.75,
+        "m1_C": 2.0,
+        "m2lr_C": 0.5,
+        "proto_temperature": 0.005,
+        "weights_category": {
+          "m1": 0.0,
+          "m2knn": 0.0,
+          "m2lr": 0.5,
+          "m2proto": 0.5
+        },
+        "weights_priority": {
+          "m1": 0.3333333333333333,
+          "m2knn": 0.3333333333333334,
+          "m2lr": 0.3333333333333333,
+          "m2proto": 0.0
+        }
+      },
+      {
+        "fold": 3,
+        "head_temperature": 1.0,
+        "m1_C": 2.0,
+        "m2lr_C": 0.5,
+        "proto_temperature": 0.004,
+        "weights_category": {
+          "m1": 0.0,
+          "m2knn": 0.0,
+          "m2lr": 0.5,
+          "m2proto": 0.5
+        },
+        "weights_priority": {
+          "m1": 0.3333333333333333,
+          "m2knn": 0.3333333333333334,
+          "m2lr": 0.3333333333333333,
+          "m2proto": 0.0
+        }
+      },
+      {
+        "fold": 4,
+        "head_temperature": 1.0,
+        "m1_C": 2.0,
+        "m2lr_C": 0.5,
+        "proto_temperature": 0.004,
+        "weights_category": {
+          "m1": 0.0,
+          "m2knn": 0.0,
+          "m2lr": 0.5,
+          "m2proto": 0.5
+        },
+        "weights_priority": {
+          "m1": 0.3333333333333333,
+          "m2knn": 0.3333333333333334,
+          "m2lr": 0.3333333333333333,
+          "m2proto": 0.0
+        }
+      }
+    ],
+    "priority_macro_f1_oof_official": 0.9036
+  },
+  "priority": {
+    "accuracy_oof_official": 0.9028,
+    "macro_f1_head_oof_official": 0.8604,
+    "macro_f1_model_oof_official": 0.5063,
+    "macro_f1_oof_all": 0.9036,
+    "macro_f1_oof_official": 0.9036,
+    "per_member": {
+      "ensemble": {
+        "accuracy": 0.4907,
+        "macro_f1": 0.5063
+      },
+      "final": {
+        "accuracy": 0.9028,
+        "macro_f1": 0.9036
+      },
+      "head": {
+        "accuracy": 0.8565,
+        "macro_f1": 0.8604
+      },
+      "m1": {
+        "accuracy": 0.537,
+        "macro_f1": 0.5423
+      },
+      "m2knn": {
+        "accuracy": 0.3681,
+        "macro_f1": 0.3367
+      },
+      "m2lr": {
+        "accuracy": 0.6088,
+        "macro_f1": 0.6145
+      }
+    }
+  },
+  "protocol": "scenario-held-out OOF over the frozen cv_fold folds (LD-31); metrics on official hard labels",
+  "safety_floor_rows": 40,
+  "selection": {
+    "head_temperature_nll": {
+      "0.75": 0.3739,
+      "1.0": 0.3432,
+      "1.5": 0.3723,
+      "2.0": 0.4325,
+      "3.0": 0.5444,
+      "4.0": 0.6261,
+      "6.0": 0.728
+    },
+    "mode": "fixed",
+    "proto_temperature_nll": {
+      "0.002": 0.7896,
+      "0.003": 0.6363,
+      "0.004": 0.5898,
+      "0.005": 0.5852,
+      "0.0075": 0.6417,
+      "0.01": 0.7272,
+      "0.02": 1.0342,
+      "0.03": 1.2235,
+      "0.05": 1.419
+    }
+  },
+  "stage_b": "tuned on official OOF rows only (P2.7); nested = leave-one-fold-out selection",
+  "thresholds": {
+    "human_review_maxprob": 0.534308,
+    "tau_injection": 0.910022,
+    "tau_ood": 0.836229,
+    "tau_safety": 0.919777
+  }
+}

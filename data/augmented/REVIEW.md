@@ -11,10 +11,10 @@ P2.4 and **1.5 h** for P2.5.
 | file | rows | made by | read in full | why those rows |
 | --- | ---: | --- | ---: | --- |
 | `arabizi.csv` | 30 | rule-based transliteration (P1.9) | 25 (read all 30) | spelling quality is the risk, not labels |
-| `new_scenarios.csv` | 390 (78 situations × 5 forms) | LLM writer agent (NEW-C01…C78) | 129 | 61 checker disagreements + 68 sampled agreements |
-| `paraphrases.csv` | 65 | claude-sonnet-5.5 (P2.3) | 19 | 13 disagreements + 6 sampled agreements |
-| `translations.csv` | 17 | claude-sonnet-5.5 (D-014) | 9 | 5 disagreements + 4 sampled agreements |
-| **total** | **502** | | **182** (+5 Arabizi) | |
+| `new_scenarios.csv` | 390 (78 situations × 5 forms) | LLM writer agent (NEW-C01…C78) | 136 | 70 checker disagreements + 66 sampled agreements |
+| `paraphrases.csv` | 64 | claude-sonnet-5.5 (P2.3) | 18 | 12 disagreements + 6 sampled agreements |
+| `translations.csv` | 17 | claude-sonnet-5.5 (D-014) | 8 | 3 disagreements + 5 sampled agreements |
+| **total** | **501** | | **187** (+5 Arabizi) | |
 
 An independent checker model (`anthropic/claude-haiku-5.5`, a different model from the drafter) labelled
 every draft without seeing the draft's labels. `data/augmented/review/review_sheet.csv` has one line per draft:
@@ -27,22 +27,22 @@ What the checker flagged most (treat these as questions, not answers):
 - **priority medium vs high (44 rows)**: mostly new situations with a time word ("today", "tonight", "in two
   hours") that the writer labelled medium on purpose, so the model does not learn "today = high" (LD-34). Keep
   medium only when nothing is lost the same day; if a deadline really expires today, it is high.
-- **category Academic Support or Finance vs Registration (17 rows)**: the "topic beats channel" rule. A grade,
+- **category disagreements (32 rows)**, mostly Academic Support or Finance vs Registration: the "topic beats channel" rule. A grade,
   a fee or an advisor problem stays in its topic even when it shows up in the registration portal.
-- **17 rows marked unnatural** with agreeing labels: dialect wording or Arabizi spelling to fix.
+- **28 rows marked unnatural**: dialect wording or Arabizi spelling to fix.
 
 ### Order (do it in this order; each step is independent, so you can stop between steps)
 
 1. **`arabizi.csv` (15 min, all 30 rows).** Fix spellings a Jordanian student would not write (`56a` → `ghalat`,
    `wdloa` → `dallo`, `el mblgh` → `el mablagh`, `97i7` → `sa7ee7`). The labels are copied from the source
    scenario; do not change them.
-2. **`new_scenarios.csv` (45–55 min, 129 rows).** Open `data/augmented/new_scenarios_notes.md` beside the sheet:
+2. **`new_scenarios.csv` (45–55 min, 136 rows).** Open `data/augmented/new_scenarios_notes.md` beside the sheet:
    one line per situation with the rule that decided its priority and the borderline calls. A label change applies
    to **all 5 rows** of that situation (same `NEW-Cxx` group); the validator rejects a situation whose rows
    disagree.
-3. **`paraphrases.csv` (10 min, 19 rows).** A paraphrase must keep every fact that decides the label. If it does
+3. **`paraphrases.csv` (10 min, 18 rows).** A paraphrase must keep every fact that decides the label. If it does
    not, `drop` it (do not relabel: its labels must equal the source scenario's).
-4. **`translations.csv` (5 min, 9 rows).** Same rule: faithful or `drop`.
+4. **`translations.csv` (5 min, 8 rows).** Same rule: faithful or `drop`.
 
 ### How to fill the sheet
 
@@ -87,7 +87,10 @@ python services/ai/evaluate.py --all
 
 `check_leakage.py` also lists **encoder-only** neighbours between augmented rows and our own test set
 (`augmented-review` lines). They are listed, not failed: with this encoder a cosine of 0.90 means a shared topic,
-not a copy. Skim them; if a row is really a rewording of a test request, `drop` it.
+not a copy. My own drafts near a test row were already removed (93 of 174). **65 of the 78 new situations** have
+at least one form at cosine >= 0.90 to an our_test row (max 0.947): both were written by LLMs, so topics overlap.
+Skim `reports/leakage.json` (`review_augmented_ids`); `drop` any row that is really a rewording of a test request,
+otherwise our_test scores after training on them will be optimistic.
 
 ## Part 2: P2.5 robustness probes (about 1.5 h, ≥ 40 rows)
 

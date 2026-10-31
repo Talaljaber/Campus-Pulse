@@ -30,7 +30,6 @@ AUG-PA-0057,fi may 3am tenzel janb el fisheh el kahraba b el mukhtabar,arabizi,l
 AUG-PA-0058,The AC in our lecture hall has stopped working and the room is getting hot.,en,llm_paraphrase,TR-S20,TR-S20,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
 AUG-PA-0060,el mukayyef fi qa3et el muhadarat kharban w ma 3ad byeshteghel,arabizi,llm_arabizi,TR-S20,TR-S20,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
 AUG-PA-0062,بوابة التسجيل بترفض طلب إضافة المواد تبعي وما عم أقدر أسجل مواد أبداً,ar,llm_paraphrase,TR-S21,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
-AUG-PA-0063,bawabet el tasjeel bterfod talab idafet el mawad taba3i w ma 3am ba2dar asajjel ay madde,arabizi,llm_arabizi,TR-S21,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
 AUG-PA-0064,"The pass I use for the bus isn't getting accepted anymore, it quit working earlier today",en,llm_paraphrase,TR-S22,TR-S22,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
 AUG-PA-0067,"Nobody told us they rerouted the bus, and now it goes a different way than before",en,llm_paraphrase,TR-S23,TR-S23,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
 AUG-PA-0068,غيروا خط الباص وما حدا أعلمنا، صار يمشي من طريق ثاني,ar,llm_paraphrase,TR-S23,TR-S23,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium

@@ -18,5 +18,6 @@
     "medium",
     "high"
   ],
-  "seed": 42
+  "seed": 42,
+  "temperature": 1.0
 }
