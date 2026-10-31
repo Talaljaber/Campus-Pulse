@@ -2,8 +2,8 @@
 
 import { CATEGORY_VALUES, PRIORITY_VALUES, labelOf, useLang, useT } from "@/i18n";
 import { cn } from "../../ui/cn";
-import { CATEGORY_TONE, toneColor } from "../../ui/tone";
 import { DOT_RADIUS } from "./campus";
+import { CategoryMarker } from "./glyphs";
 
 /** Props for {@link MapLegend}. */
 export interface MapLegendProps {
@@ -24,7 +24,7 @@ export function MapLegend({ className }: MapLegendProps) {
         <ul className="flex flex-wrap gap-x-4 gap-y-1">
           {CATEGORY_VALUES.map((c) => (
             <li key={c} className="flex items-center gap-1.5">
-              <span aria-hidden className="size-3 rounded-full" style={{ background: toneColor(CATEGORY_TONE[c] ?? "neutral") }} />
+              <CategoryMarker category={c} />
               {labelOf("category", c, lang)}
             </li>
           ))}

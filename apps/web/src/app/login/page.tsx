@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/auth/LoginForm";
-import { LanguageSwitch } from "@/components/ui";
+import { AppShell } from "@/components/shell/AppShell";
 import { LoginHeading } from "@/components/auth/LoginHeading";
 import { safeNext } from "@/lib/auth/routing";
 
@@ -9,12 +9,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const raw = Array.isArray(next) ? next[0] : next;
   const safe = safeNext(raw, "");
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-6 p-6">
-      <div className="flex justify-end">
-        <LanguageSwitch />
-      </div>
+    <AppShell role={null} width="narrow">
       <LoginHeading />
       <LoginForm next={safe || null} />
-    </main>
+    </AppShell>
   );
 }
