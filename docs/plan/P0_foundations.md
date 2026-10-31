@@ -32,7 +32,7 @@
 <a id="p0-1"></a>
 ## P0.1 — Verify the flattened repo, add `.gitattributes`, push, and send the eligibility email
 
-- [ ] Done
+- [x] Done
 - **Goal:** start from one clean git root and a GitHub remote, and get the solo-entry question to the organizer before the track lock.
   - **Decided 2026-10-31:** the repo is flattened, so the git root `C:/Users/hp/.m2/Ai-Quest` is the project root. A separate cleanup already handles the leftover files, so this task does not check for them ([LD-26](../PLAN.md#ld-26)).
 - **Depends on:** the flatten and cleanup (done by the user/lead). **Blocks** every commit in P0.2–P0.12; P0.2–P0.8 may be drafted before it.
@@ -44,7 +44,7 @@
 - **Steps:**
   1. Add `.gitattributes` and run `git add --renormalize .`.
   2. Extend `.gitignore` as listed. Keep the existing `*hidden_test*` and `JUDGE_GUIDE.md` lines.
-  3. Commit. Create the **public** GitHub repo `campuspulse` ([OQ-7](../PLAN.md#oq-7)) and push. Public means Render's Docker build and `scripts/fetch_models.py` read the Release assets without a token, and the judges can clone.
+  3. Commit and push to the existing **private** repo `Talaljaber/Ai-Quest` ([UD-8](../PLAN.md#ud-8)). It goes public at submission.
   4. **User action, today:** email the organizer about the solo entry vs. "teams of 2–3" ([OQ-1](../PLAN.md#oq-1)). It must go before the Tue 3 Nov track lock.
 - **Acceptance:**
   - `git rev-parse --show-toplevel` → `C:/Users/hp/.m2/Ai-Quest`
@@ -52,7 +52,7 @@
   - `git check-ignore -v data/raw/hidden_test.csv` → `.gitignore:<n>:*hidden_test*	data/raw/hidden_test.csv`. This tests the rule only; nothing is listed or opened.
   - `git ls-files --eol docs/SPEC.md` → starts with `i/lf`
   - `python scripts/test_clean.py` → `ALL TESTS PASSED`, then `git status --porcelain -- data/clean` → empty
-  - `git remote -v` → `origin  https://github.com/<user>/campuspulse.git (push)`
+  - `git remote -v` → `origin  https://github.com/Talaljaber/Ai-Quest.git (push)`
 - **Hands off:** a git root that is the project root, with a public remote.
 - **Notes:**
   - Non-negotiable: never `ls` or glob for `hidden_test*` or `JUDGE_GUIDE*`; rely on the ignore rule.
@@ -61,7 +61,7 @@
 <a id="p0-2"></a>
 ## P0.2 — Create the Python package skeleton with exact pins
 
-- [ ] Done
+- [x] Done
 - **Goal:** `campuspulse_ai` installs in editable mode. Four requirement sets with exact pins separate inference (no torch) from API, dev and train.
 - **Depends on:** P0.1
 - **Est / Cut:** 0.75 h · Cut: no

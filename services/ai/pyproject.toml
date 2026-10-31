@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "campuspulse-ai"
+version = "0.1.0"
+description = "CampusPulse AI service: triage core, adapters and CLIs"
+requires-python = ">=3.11,<3.14"
+
+[tool.setuptools.packages.find]
+include = ["campuspulse_ai*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "train: needs torch (requirements-train.txt)",
+    "artifacts: needs a complete models/frozen/v1, including the fetched encoder",
+    "supabase: needs SUPABASE_TEST_URL",
+    "slow: takes more than 30 s",
+    "offline: runs with sockets disabled",
+]
+addopts = "--strict-markers"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true

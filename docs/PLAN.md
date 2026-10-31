@@ -35,7 +35,11 @@ These override any lead decision or default below that conflicts with them.
   - "Core green" means [P5.13](plan/P5_frontend.md#p5-13) passes: the three video moments work.
   - In P6, the report, video and `predict.py` checks come first.
   - Default order: P4.21 + P5.20 (Recurring problems) → P5.16 (Model-lab sandbox: shows each trained model's vote) → P5.15 → P5.19 → P4.18 → P4.19 → P5.14 → P5.18 → P4.20 → P3.13 → P5.17. These add about 11.5 h.
-- <a id="ud-8"></a>**UD-8 Public GitHub repo now.** Model artifacts ship as GitHub Release assets ([LD-5](#ld-5) unchanged). Resolves [OQ-7](#oq-7).
+- <a id="ud-8"></a>**UD-8 Repo: `Talaljaber/Ai-Quest`, private until submission.**
+  - The user makes it public at P6, before the email.
+  - Until then, Render deploys through its GitHub app, and `scripts/fetch_models.py` reads `GITHUB_TOKEN` when it is set, to download the private Release assets.
+  - After the switch to public, it works with no token ([LD-5](#ld-5)). The [P6.4](plan/P6_ship.md#p6-4) clean-clone check runs **after** the switch.
+  - Resolves [OQ-7](#oq-7). This changed the earlier "public now" on 2026-10-31.
 - <a id="ud-10"></a>**UD-10 Structured NLP understanding (core).** A `RequestUnderstander` turns each live request into schema-validated JSON:
   - a summary in EN and AR
   - entities: building, room, course, deadline, system
@@ -339,7 +343,7 @@ Each has a recommended default. The plan proceeds on the default unless the user
   - Also add a deadline word to the moment-1 sentence ("…واليوم آخر يوم") so high is reachable and the counterfactual means something.
 - <a id="oq-5"></a>**OQ-5 SMTP from Render.** If Render blocks SMTP even on Starter (L-26), **default fallback:** the Gmail API over HTTPS (OAuth refresh token), with `InAppNotifier` meanwhile.
 - <a id="oq-6"></a>**OQ-6 Student inbox.** Gmail may not show self-sent mail in the inbox (L-27). **Default:** the user supplies a second inbox they own, which appears in the allow-list and in the video as the "student inbox".
-- <a id="oq-7"></a>**OQ-7 Public repo.** The repo must be public before the P0 deploys, for the Render build, the release fetch and judge clones. (L-19) **Resolved → [UD-8](#ud-8): public now.**
+- <a id="oq-7"></a>**OQ-7 Public repo.** The repo must be public before the P0 deploys, for the Render build, the release fetch and judge clones. (L-19) **Resolved → [UD-8](#ud-8): private until submission.**
 - <a id="oq-8"></a>**OQ-8 Render Standard.** **Default:** escalate to Render Standard (2 GB, ~$25/mo) only if the X4.6 memory test fails on Starter after the [LD-30](#ld-30) ladder. **Resolved → [UD-9](#ud-9): ask before upgrading.**
 
 ## Decision log
