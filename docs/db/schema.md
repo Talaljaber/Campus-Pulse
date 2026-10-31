@@ -15,10 +15,24 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 | 0005 | `0005_vectors.sql` | `faq`, `memory_examples`, `request_embeddings` (vector(384), HNSW), `match_vectors`, `vector_dim`, `faq_v`, `memory_examples_v` |
 | 0006 | `0006_private_helpers.sql` | moves the `cp_*` helpers into schema `private` so PostgREST does not expose them as `/rpc/cp_*` |
 | 0007 | `0007_repository.sql` | `requests.model_text/truncated/location_source`, `predictions.core jsonb`; RPC `bump_student_signals`; trigger that copies a ticket's `office` onto its incident |
+| 0008 | `0008_fk_indexes.sql` | one index per foreign key the performance advisor flagged (cases ×4, llm_calls, memory_examples, outbox, requests.building_id, review_queue ×2) |
 
 **Applying a migration.** Commit the file first. Then apply the same SQL with the Supabase MCP `apply_migration`, or with `supabase db push` on a linked CLI.
 - **MCP version repair.** MCP records a timestamp version. Afterwards, set the row in `supabase_migrations.schema_migrations` to the file's version and name (`0001`/`init`, …). This is what `supabase migration repair` does. It keeps the remote history identical to the file names, so a later `db push` does not re-apply anything.
 - **Rebuilding from scratch** (P6): `supabase db reset` locally, or `supabase db push` to an empty project.
+
+## TypeScript types
+
+`supabase/types/database.types.ts` holds the generated `Database` type for `@supabase/supabase-js` (tables, views, RPC args/returns). It is DB-owned; the web app imports it from there and never edits it. Embedding columns appear as `string` (pgvector text form), but clients cannot select them anyway.
+
+**Regenerate after every migration**, in the same commit as the migration's docs:
+1. Supabase MCP `generate_typescript_types` (what produced the current file), or `npx supabase@2.121.0 gen types typescript --project-id efsanbaklpiakhsndhph > supabase/types/database.types.ts` (needs `supabase login`).
+2. Keep the two-line `// GENERATED` header and update the migration number in it.
+3. Check it: `npx -p typescript@5.9.3 tsc --noEmit --strict supabase/types/database.types.ts`.
+
+**Advisors:** run MCP `get_advisors` (security and performance) after each migration. As of 0008:
+- **Security:** only expected items. `request_embeddings` has RLS with no policy (intentional: service role only), and `public.rls_auto_enable()` is Supabase-managed, left alone by decision.
+- **Performance:** only `unused_index` INFO notes, expected on a near-empty database.
 
 ## Labels and enums (checked by constraints)
 
