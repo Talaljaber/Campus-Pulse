@@ -62,7 +62,7 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `GMAIL_SMTP_USER` | local, Render | no | ai | the campuspulse support Gmail address |
 | `GMAIL_APP_PASSWORD` | local, Render | yes | ai | needs 2-Step Verification |
 | `SMTP_HOST` | local, Render | no | ai | `smtp.gmail.com` |
-| `SMTP_PORT` | local, Render | no | ai | `587` (STARTTLS). Render Free blocks 587; Starter is believed open, verify on day one |
+| `SMTP_PORT` | local, Render | no | ai | `465` (implicit TLS). Verified 2026-10-31: the dev network times out on 587 and 25, 465 works (`smoke_email.py` → `SMTP OK port=465`). Render Free blocks SMTP; use Starter |
 | `SMTP_TIMEOUT_S` | local, Render | no | ai | default `10` (seconds per SMTP connection) |
 | `SMTP_MAX_RETRIES` | local, Render | no | ai | default `2`; 4xx replies, disconnects, timeouts and a blocked port only |
 | `SMTP_BACKOFF_S` | local, Render | no | ai | default `1.0`; exponential (`backoff * 2**attempt`) |
@@ -89,6 +89,8 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `NEXT_PUBLIC_SUPABASE_URL` | local, Netlify | no | web | |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | local, Netlify | no (public by design) | web | SPEC's `SUPABASE_ANON_KEY`, renamed for Next.js |
 | `AI_SERVICE_URL` | local, Netlify | no | web | the Render URL |
+| `NEXT_PUBLIC_DEMO_LOGIN_HINT` | local, Netlify | no | web | optional hint line on `/login`; never the password |
+| `PW_PYTHON`, `PW_API_PORT` (8765), `PW_SUPABASE_PORT` (54399), `E2E_PASSWORD` | dev machine, CI | no | Playwright e2e | test-only; see docs/ui/README.md |
 | `NODE_VERSION` | Netlify | no | Netlify build | `22` (P0.8) |
 | `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` | dev machine | DB password: yes | supabase CLI | |
 | `SUPABASE_TEST_URL` (and `_SERVICE_ROLE_KEY`) | dev machine | key: yes | DB tests | |

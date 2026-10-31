@@ -193,7 +193,7 @@
 <a id="p5-6"></a>
 ## P5.6 — Data layer: Supabase clients, generated types, repos, server-only AI client, proxy route and leak check
 
-- [ ] Done
+- [x] Done
 - Depends on: [P4.1](P4_product_backend.md#p4-1)–[P4.3](P4_product_backend.md#p4-3) (schema live), [P4.12](P4_product_backend.md#p4-12) (`openapi.json` final)
 - Est: 2 h · Cut: no
 - Files:
@@ -243,7 +243,7 @@
 <a id="p5-7"></a>
 ## P5.7 — Auth, role routing, the demo login and the "AI waking up" banner
 
-- [ ] Done
+- [x] Done
 - Depends on: P5.6; [P4.3](P4_product_backend.md#p4-3) (demo users)
 - Est: 1 h · Cut: no
 - Files:
@@ -268,7 +268,7 @@
 <a id="p5-8"></a>
 ## P5.8 — Student chat page `/`
 
-- [ ] Done
+- [x] Done
 - Depends on: P5.4, P5.6, P5.7
 - Est: 2.5 h · Cut: no. Voice is P5.9 (cut #1).
 - Files:

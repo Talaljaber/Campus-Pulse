@@ -13,7 +13,7 @@ The HTTP contract of the FastAPI AI service. It was frozen at P0.13 and is owned
 
 | Environment | Base URL | How to run |
 | --- | --- | --- |
-| Local mock (fixtures, no models) | `http://localhost:8000` | `uvicorn campuspulse_ai.frameworks.mock_app:app --port 8000` |
+| Local mock (fixtures, no models) | `http://localhost:8000` | `uvicorn campuspulse_ai.frameworks.mock_app:create_mock_app --factory --port 8000` |
 | Local real service (from P3.12) | `http://localhost:8000` | `uvicorn api:app --app-dir services/ai --port 8000` |
 | Render | `https://<render-service>.onrender.com` | Deployed in P0.11 / P4.13. The real hostname is recorded in [docs/ops/README.md](../ops/README.md). |
 

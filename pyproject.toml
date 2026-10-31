@@ -17,3 +17,15 @@ known-first-party = ["campuspulse_ai"]
 "sklearn.model_selection.StratifiedKFold".msg = "random splits are forbidden (SPEC §3); use adapters.training.cv"
 "sklearn.model_selection.ShuffleSplit".msg = "random splits are forbidden (SPEC §3); use adapters.training.cv"
 "sklearn.model_selection.StratifiedShuffleSplit".msg = "random splits are forbidden (SPEC §3); use adapters.training.cv"
+
+# mypy runs from the repo root (CI and EXECUTION.md). Training-only libraries (requirements-train.txt)
+# are absent from the dev/CI install; only the encoder export CLI imports them.
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*", "sentence_transformers", "sentence_transformers.*", "onnx", "onnx.*",
+          "transformers", "transformers.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "campuspulse_ai.frameworks.cli.export_encoder"
+disallow_subclassing_any = false  # torch.nn.Module is Any without the training install
+warn_unused_ignores = false       # its ignores are needed only when torch is installed

@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest",
+    "check:secrets": "node scripts/check-bundle-secrets.mjs",
+    "e2e": "playwright test",
     "gen:types": "openapi-typescript ../../services/ai/openapi.json -o src/lib/ai/types.gen.ts"
   },
   "dependencies": {

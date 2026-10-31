@@ -35,7 +35,7 @@
 <a id="p1-0"></a>
 ## P1.0 — Hand-write our own test set before any model exists
 
-- [ ] Done
+- [x] Done
 - **Goal:** an honest holdout of new scenarios, hand-written by the developer (no LLM, which is a different method from the LLM-drafted augmentation) and committed before `train.py` exists (§6.1 #2, SPEC §6.1).
 - **Changed by [D-010](../PLAN.md#decision-log) (user decision):** the holdout is three sets in the official two-file layout (`data/our_test/set{1,2,3}_{text,labels}.csv`): set 1 hand-written by the developer, sets 2–3 written by Claude (`author_method=claude`, disclosed). `scripts/build_our_test.py` builds `our_test.csv` with the extra columns `test_set` and `scenario_family` and keeps the original ids (`HT-`, `T2-`, `T3-`), so the validator accepts `^[A-Z0-9]+-\d{4}$` ids and `author_method ∈ {hand, claude}`. See `data/our_test/README.md`.
 - **Depends on:** [P0.12](P0_foundations.md#p0-12)
@@ -287,7 +287,7 @@
 <a id="p1-5"></a>
 ## P1.5 — Build the offline guards: gibberish, injection (regex strip) and safety (danger + distress)
 
-- [ ] Done
+- [x] Done
 - **Goal:** the guards `predict.py` needs.
   - Injection strips manipulative spans, with zero false positives on official data.
   - Danger sets `safety=True`, and the finalizer then floors priority to high.
@@ -338,7 +338,8 @@
 <a id="p1-6"></a>
 ## P1.6 — Export the encoder to ONNX int8 and implement `OnnxEncoder` (training machine)
 
-- [ ] Done
+- [x] Done
+- Note (2026-10-31): RSS after load is 440 MB (> 400 MB Render budget); vocabulary pruning is assigned to ML batch 3.
 - **Goal:** the single frozen encoder artifact (§3.6, §3.17) that `train.py`, `predict.py` and Render all use, with a parity report and the first local RSS number (§6.2 flag 12).
 - **Depends on:** [P0.2](P0_foundations.md#p0-2) (`requirements-train.txt` installed), P1.4
 - **Est / Cut:** 1.5 h · Cut: no
@@ -435,7 +436,7 @@
 <a id="p1-8"></a>
 ## P1.8 — Build the training pool, soft targets and the frozen-fold splitter
 
-- [ ] Done
+- [x] Done
 - **Goal:** one function builds the training pool. It refuses holdout paths, drops unreviewed augmentation, and expands `label_flags.csv` into weighted rows. Folds come from the frozen `cv_fold` column (`data/clean/cv_folds.csv`, [P0.3a](P0_foundations.md#p0-3a)), and `cv_group` stays the leakage unit ([LD-31](../PLAN.md#ld-31)).
 - **Depends on:** [P0.3](P0_foundations.md#p0-3), P1.3
 - **Est / Cut:** 1 h · Cut: no
@@ -484,6 +485,7 @@
 ## P1.9 — Generate rule-based Arabizi augmentation rows (human-checked)
 
 - [ ] Done
+- Progress (2026-10-31): 30 rule-based Arabizi rows drafted in data/augmented/arabizi.csv; waiting on the user's review (needs_human_check).
 - **Goal:** P1's only augmentation (§4.2): every Arabic core reverse-transliterated into Arabizi and checked by the developer, so Arabizi exists in training and the CSV schema is fixed.
 - **Depends on:** P1.2, P1.8
 - **Est / Cut:** 0.75 h (about 20 min of it is human checking) · Cut: no
@@ -585,7 +587,7 @@
 <a id="p1-12"></a>
 ## P1.12 — Write the evidence features (`urgency.yaml`) and the `LexiconEvidenceExtractor`
 
-- [ ] Done
+- [x] Done
 - **Goal:** the ten labeller-rule features of §1.6/§3.8 in EN/AR/Arabizi. `stated_urgency` is excluded by construction.
 - **Depends on:** P1.3
 - **Est / Cut:** 1 h · Cut: no
@@ -665,7 +667,7 @@
 <a id="p1-14"></a>
 ## P1.14 — Implement `LACConformal`
 
-- [ ] Done
+- [x] Done
 - **Goal:** the hand-rolled conformal predictor (§3.5), complete in P1. P2 only recalibrates it.
 - **Depends on:** [P0.4](P0_foundations.md#p0-4), P1.4
 - **Est / Cut:** 0.5 h · Cut: no
