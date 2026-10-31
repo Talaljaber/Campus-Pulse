@@ -999,6 +999,31 @@
 - **Acceptance:** committed size `0.3`; fresh-tree fetch and offline predict as above; P1 exit checks in the batch report.
 - **Limitations / TODO / known issues:** GitHub pre-release `models-v1-rc1` and the CI `artifacts` job are left to the lead.
 - **Affects streams:** Foundation (CI job, Docker fetch), Lead (release).
+### P4.9 — office notifications, Realtime for reviews and links, admin-only distress items  (db, 2026-10-31, commits a03e57c, c226c3d and the docs follow-up)
+- **What now exists:** migrations `0010_office_notifications` and `0011_distress_reviews_admin_only`, applied to the linked project (history repaired to `0010` and `0011`).
+  - `notifications_read` is altered in place: staff also read alias `office:<their profiles.office>` (escalation notes); students keep their own alias and admins everything.
+  - `review_queue` and `ticket_links` are in `supabase_realtime`.
+  - `review_queue_read` is altered: staff never read `reason = 'distress'` items; admins do.
+  - Reference: [db/schema.md › RLS policies](../db/schema.md#rls-policies-in-plain-words).
+- **Public interfaces added or changed:** what the two policies return (above) and two more Realtime tables. No column, grant or type changes; the types header now says 0011.
+- **How to use it:**
+  - Staff dashboard: `.from("notifications").select()` returns the office's notes.
+  - Subscribe with `postgres_changes` on `review_queue` / `ticket_links` instead of polling.
+  - Distress items appear only in the admin view.
+- **Config / env added:** none.
+- **Acceptance:**
+  - Live `supabase/tests/rls.sql` (via MCP, rolled back) → `RLS: 11/11 checks passed`. New check 10: `office_it=1 others=0`. New check 11: `staff=0 admin=1`.
+  - Live sign-in with the anon key (one-off script, rows cleaned up, `0 test rows left`):
+    - `it@demo.local` reads `office:it`, not `office:finance` or a student's note, and gets the `low_confidence` review item but not the `distress` one.
+    - `talal@demo.local` reads only their own note and no review items.
+    - `admin@demo.local` reads all of them.
+  - `pytest services/ai/tests -q -m supabase` → `59 passed, 1 skipped`.
+  - Advisors: no new lint.
+- **Limitations / TODO / known issues:**
+  - Known widening: staff read every non-distress review item from every office. The rows hold ids and a reason only; kept for the demo's cross-office queue.
+  - The policies are altered in place (`alter policy`): a `drop policy` migration was refused by the MCP apply.
+  - `scripts/test_rls.py` still needs the local Docker stack.
+- **Affects streams:** Backend (escalation notes now reach staff), UI (Realtime subscriptions; distress items in the admin view only), Lead (the X4.4 acceptance text now reads `RLS: 11/11`).
 
 ### D-013 — `Scorecard.created_at/n/seed`, `RedTeamItem.base_text/base_id`, `TicketStatus.rank`  (backend, 2026-10-31, commit 454453f)
 - **What now exists:** additive domain fields (lead-approved for `Scorecard`; `RedTeamItem` and the `TicketStatus.rank` move ride on the same decision, see [PLAN.md D-013](../PLAN.md#decision-log)). `Scorecard(run_id, by_style, by_lang, overall, failures, *, created_at, n, seed)` (the new fields are keyword-only). `RedTeamItem.base_text: str | None = None`, `RedTeamItem.base_id: str | None = None`. `TicketStatus.rank` + `values.TICKET_STATUS_RANK` replace `use_cases/sync_ticket.STATUS_RANK`.

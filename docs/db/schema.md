@@ -17,6 +17,8 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 | 0007 | `0007_repository.sql` | `requests.model_text/truncated/location_source`, `predictions.core jsonb`; RPC `bump_student_signals`; trigger that copies a ticket's `office` onto its incident |
 | 0008 | `0008_fk_indexes.sql` | one index per foreign key the performance advisor flagged (cases ×4, llm_calls, memory_examples, outbox, requests.building_id, review_queue ×2) |
 | 0009 | `0009_ticket_tags_outbox_deferred.sql` | D-011: `tickets.tags text[] not null default '{}'`; `outbox_status_check` re-created with `deferred` added |
+| 0010 | `0010_office_notifications.sql` | `notifications_read` altered: staff also read alias `office:<their office>`; `review_queue` and `ticket_links` added to Realtime |
+| 0011 | `0011_distress_reviews_admin_only.sql` | `review_queue_read` altered: staff no longer read `distress` items; admin only |
 
 **Applying a migration.** Commit the file first. Then apply the same SQL with the Supabase MCP `apply_migration`, or with `supabase db push` on a linked CLI.
 - **MCP version repair.** MCP records a timestamp version. Afterwards, set the row in `supabase_migrations.schema_migrations` to the file's version and name (`0001`/`init`, …). This is what `supabase migration repair` does. It keeps the remote history identical to the file names, so a later `db push` does not re-apply anything.
@@ -31,7 +33,7 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 2. Keep the two-line `// GENERATED` header and update the migration number in it.
 3. Check it: `npx -p typescript@5.9.3 tsc --noEmit --strict supabase/types/database.types.ts`.
 
-**Advisors:** run MCP `get_advisors` (security and performance) after each migration. As of 0009:
+**Advisors:** run MCP `get_advisors` (security and performance) after each migration. As of 0011:
 - **Security:** only expected items. `request_embeddings` has RLS with no policy (intentional: service role only), and `public.rls_auto_enable()` is Supabase-managed, left alone by decision. Auth also warns that leaked-password protection is off; that is a dashboard setting (Auth › Passwords), not a migration.
 - **Performance:** only `unused_index` INFO notes, expected on a near-empty database.
 
@@ -100,8 +102,9 @@ Helpers live in schema `private` (not exposed by the API). All are `security def
 | `ticket_links` | whoever can see the ticket; admin |
 | `incidents` | staff of the incident's `office`; admin |
 | `outbox` | the student it was sent for (alias); staff and admin |
-| `notifications` | the recipient (alias); admin |
-| `review_queue`, `llm_calls`, `redteam_runs`, `events`, `advisor_slots`, `cases`, `memory_examples_v` (and `memory_examples` without `embedding`) | staff and admin |
+| `notifications` | the recipient (alias); staff, for alias `office:<their profiles.office>` (escalation notes, 0010); admin |
+| `review_queue` | admin; staff for every item except `reason = 'distress'` (0011) |
+| `llm_calls`, `redteam_runs`, `events`, `advisor_slots`, `cases`, `memory_examples_v` (and `memory_examples` without `embedding`) | staff and admin |
 | `student_signals` | admin only |
 | `request_embeddings` | **nobody** (no grant, no policy; service role only) |
 
@@ -109,7 +112,11 @@ Helpers live in schema `private` (not exposed by the API). All are `security def
 - No client role has any `INSERT`/`UPDATE`/`DELETE` policy or privilege. Write privileges are revoked from `authenticated` on all tables, now and by default for future tables.
 - `anon` has no table privileges at all.
 
-**Proof:** [`supabase/tests/rls.sql`](../../supabase/tests/rls.sql) checks 9 cases inside a rolled-back transaction:
+**Distress and the review queue (0011):** a distress request has no ticket and no routed office, so staff cannot read its text, and staff saw an empty review item. Distress items are therefore admin-only; admins already read every request. Showing the text to the office guessed from the predicted category was rejected: it would copy the routing table into SQL and show sensitive text to an office with no part in it.
+
+**Known widening:** staff read every non-distress `review_queue` item from every office (and receive them over Realtime). The rows carry ids and a reason, never request text; the cross-office human-review queue needs this for the demo. Scope it by office if that changes.
+
+**Proof:** [`supabase/tests/rls.sql`](../../supabase/tests/rls.sql) checks 11 cases inside a rolled-back transaction:
 - student A ≠ student B
 - IT staff ≠ Finance tickets
 - authenticated insert fails
@@ -119,6 +126,8 @@ Helpers live in schema `private` (not exposed by the API). All are `security def
 - admin sees all
 - staff see `review_queue`
 - no gaming flags for students
+- IT staff read `office:it` notifications only
+- staff never read distress review items; admin does
 
 Run it with `python scripts/test_rls.py`: local stack (Docker) via psql, or `--db-url`. Or paste it into the SQL editor or the MCP `execute_sql`.
 
@@ -256,7 +265,7 @@ The action engine (P4.8) owns the rest: marking member tickets `merged` with `in
 
 ## Realtime
 
-Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, `outbox`, `notifications` and `requests` (`requests` is for the Pulse dots, LD-25). Supabase applies RLS to `postgres_changes`, so each subscriber receives only rows its SELECT policy allows. Students subscribe to `notifications` only.
+Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, `outbox`, `notifications`, `requests` (for the Pulse dots, LD-25), and since 0010 `review_queue` and `ticket_links` (staff dashboard). Supabase applies RLS to `postgres_changes`, so each subscriber receives only rows its SELECT policy allows. Students subscribe to `notifications` only; staff also get their office's `office:<office>` notifications.
 
 ## Repository mapping (`adapters/store/`)
 
