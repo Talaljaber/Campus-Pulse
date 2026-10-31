@@ -46,3 +46,12 @@
 - **Acceptance:** `python -c "import pandas as pd; d=pd.read_csv('data/clean/train_val_features.csv'); print(d.is_arabizi.sum(), d.stated_urgency.sum())"` → `0 27`.
 - **Limitations / TODO / known issues:** `stated_urgency` here is the case-sensitive `URGENT` marker; the package `WrapperStripper` (P1.1) also flags lowercase/variant forms on new text, and agrees with this column on all 432 rows.
 - **Affects streams:** ML (P1.8 pool, P2.8 fairness slices).
+
+### P0.3c — Make `clean_data.py` safe on a cp1252 console  (ML, 2026-10-31)
+- **What now exists:** `scripts/clean_data.py` reconfigures stdout to UTF-8 just before its final `print` of the Arabic report (the one permitted edit, LD-35). It no longer crashes with `UnicodeEncodeError` on a cp1252 console; every output file is still written by `run()` before the print.
+- **Public interfaces added or changed:** none.
+- **How to use it:** `python scripts/clean_data.py > $null; $LASTEXITCODE` → `0` (Windows PowerShell).
+- **Config / env added:** none.
+- **Acceptance:** before the edit, `$env:PYTHONIOENCODING='cp1252'; python scripts/clean_data.py > $null` → `exit=1` (`UnicodeEncodeError`); after it → `exit=0` (cp1252 and default env). Hash parity (md5, CRLF-normalised) with the edited script under pandas 2.2.3: `train_clean 174582df…, val_clean c3af332d…, train_val_combined d0f17ae8…, scenarios 65074205…, cleaning_report eb2430a1…`, all equal to the committed files. Under the pinned pandas 3.0.6 the four CSVs are equal and `cleaning_report.md` is `ee82727f…` (tie order only; pre-existing, independent of this edit).
+- **Limitations / TODO / known issues:** the pandas-version difference in `cleaning_report.md` is escalated to the lead (P0.3 entry). `scripts/test_data_audit.py` (P0.3d) holds the standing parity check.
+- **Affects streams:** Foundation (the CI Windows leg can run the script).
