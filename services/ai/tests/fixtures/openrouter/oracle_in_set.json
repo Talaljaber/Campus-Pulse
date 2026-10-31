@@ -1,0 +1,24 @@
+{
+  "id": "gen-fixture-0001",
+  "provider": "Anthropic",
+  "model": "anthropic/claude-haiku-5.5",
+  "object": "chat.completion",
+  "created": 1793520000,
+  "choices": [
+    {
+      "index": 0,
+      "finish_reason": "stop",
+      "native_finish_reason": "end_turn",
+      "message": {
+        "role": "assistant",
+        "content": "{\"category\": \"Registration\", \"priority\": \"high\", \"reason\": \"The registration system blocks adding CS 201 and today is the last day to register.\"}"
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 412,
+    "completion_tokens": 31,
+    "total_tokens": 443,
+    "cost": 0.0000567
+  }
+}

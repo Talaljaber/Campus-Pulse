@@ -363,3 +363,133 @@
 ### P4.3 follow-up — seed contacts  (DB, 2026-10-31)
 - **Acceptance:** `python scripts/check_seed_contacts.py` → `seed contacts OK: 6 addresses in 4 files, all allow-listed`. The user added two personal Gmail inboxes to the local `DEMO_EMAIL_ALLOWLIST`; a GJU address they offered was left out (CLAUDE.md non-negotiable).
 - **Pending:** `seed_demo_users.py` waits for `DEMO_USER_PASSWORD` in the worktree `.env`.
+
+### P3.2 — Question bank and expected-information-gain clarifier  (backend, 2026-10-31, commits 4c61049, 5f806a3)
+- **What now exists:**
+  - `config/clarify_questions.yaml`: 7 EN / Jordanian-Arabic questions (the SPEC §5.1 [8] six plus `cat:Facilities|IT Support`), each with option effects and a `not_sure` chip.
+  - The out_of_scope `topic` chip list (LD-36) in the same file.
+  - `InfoGainStrategy`, which implements the `ClarificationStrategy` port.
+- **Public interfaces added:** see [docs/api/README.md › Clarification](../api/README.md#clarification-llm-understanding).
+  - `adapters/clarify/bank.py`:
+    - `QuestionBank.load(path, *, features=None)`, `.questions` (7), `.topic`, `.applicable(set_cat, set_pri, *, top_category=None)` and `.get(question_id)` (NotFound);
+    - `BankQuestion` (bilingual entry; `.render(lang) -> domain ClarificationQuestion`), `QuestionOption`, `TOPIC_QUESTION_ID = "topic"`.
+  - `adapters/clarify/info_gain.py`:
+    - `InfoGainStrategy(bank, rephraser=None)` with `.select(core, lang, asked)`, `.apply(core, question_id, option_id)` and `.topic_question(lang)`;
+    - `expected_set_size(core, question)`, `QuestionRephraser` (protocol) and `NullRephraser`.
+- **How to use it:**
+  ```python
+  strategy = InfoGainStrategy(QuestionBank.load("config/clarify_questions.yaml", features=config.priority_head.features))
+  q = strategy.select(core, req.lang, asked=[c.question_id for c in repo.clarifications_for(request_id)])  # None = no question
+  _, constraints = strategy.apply(core, q.id, "registration")   # then TriageCore.classify(raw, loc, constraints) (LD-29)
+  chips = strategy.topic_question(req.lang)                     # for status out_of_scope
+  ```
+- **Config / env added:** none. The bank path is passed in; a `Settings.config_dir` does not exist yet (see the change requests in the hand-back).
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_clarify.py -q` → `19 passed`.
+  - `python -c "from campuspulse_ai.adapters.clarify.bank import QuestionBank as B; print(len(B.load('config/clarify_questions.yaml').questions))"` → `7`.
+- **Limitations / TODO / known issues:**
+  - The plan sketch names the bank entry `ClarificationQuestion`. That name is the frozen domain value (one language), so the bilingual entry is `BankQuestion` and `select` returns the rendered domain value. `expected_info_gain` holds the expected number of labels removed (|S| − E[size]).
+  - Scoring: for a split smaller than the set, uncovered mass counts as "the set stays as it is" (a remainder term); for an exact split this is the SPEC formula. Every full split scores 1, so for pairs the category-first rule and the bank order decide.
+  - New optional field `when_category` keeps the safety question for Facilities/Transportation and the deadline question for the other categories.
+  - `{low, high}` has no question: `select` returns None, and P3.9 must then continue the policy as if the budget were spent.
+  - Arabizi requests get the Arabic text. **The Arabic wording is a draft and needs a native-speaker check.**
+  - Feature names are checked only when `features=` is passed; P3.9 should pass `FrozenConfig.priority_head.features`.
+  - The LLM rephraser is cut (B-list); `NullRephraser` is the default.
+  - Test fakes live in `tests/fixtures/backend_fakes.py` (`make_core`, `make_request`, `FakeLAC`, `FrozenClock`, `ScriptedOracle`, `fake_call`), separate from ML's `fakes.py`.
+- **Affects streams:**
+  - Backend: P3.9 ASK and out_of_scope, P3.10 apply and second question.
+  - UI: the question ids and option ids above are the real ones; the fixtures already use `cat:Registration|IT Support` with `registration`/`it`/`not_sure`.
+  - ML: feature effects use the evidence names `deadline_today` and `safety_risk`, which the priority head must accept as constraints.
+
+### P3.3 — Tier-1 LLM oracle, caches, cost logging and merge  (backend, 2026-10-31, commits 35603b5, dd2e8e1, bdb827f, 25b4ed9)
+- **What now exists:** the set-constrained tier-1 tie-breaker over OpenRouter (plain httpx), its response caches and cost logger, and the `LLMMerger`. Tier 2 is not wired (UD-3).
+- **Public interfaces added:** see [docs/api/README.md › LLM tier](../api/README.md#clarification-llm-understanding).
+  - `adapters/llm/openrouter.py`:
+    - `OpenRouterClient(api_key, *, timeout_s, base_url=..., max_retries=2, retry_backoff_s=0.5, sleep=time.sleep, transport=None)` with `.chat(model_id, messages, *, params, response_format=None) -> ChatResult` (`LLMUnavailable`);
+    - `OpenRouterOracle(tier, model_id, http, cache, cost, *, prompt, max_input_tokens, daily_budget_usd)` implements `LabelOracle` (`LLMUnavailable`, `LLMOutputOutOfSet`);
+    - `make_call(...)` builds the `LLMCall` records.
+  - `adapters/llm/set_constrained.py`: `build_messages`, `answer_schema`, `response_format`, `cache_key`, `parse_answer(raw, allowed_cat, allowed_pri, *, max_reason_words)`, `load_json_object` and `truncate_tokens`.
+  - `adapters/llm/prompt.py`: `PromptTemplate.load(path)`, `.render(**values)` and `.limit(name)`; `load_prompt(dir, name, version)`. Prompts are Markdown with YAML front matter (pinned request parameters and output limits) and `# system` / `# user` sections.
+  - Ports:
+    - `adapters/llm/null.py`: `NullOracle` (`LabelOracle`, always `LLMUnavailable`);
+    - `adapters/llm/cache_sqlite.py`: `SqliteCache(path)`;
+    - `adapters/llm/cache_dict.py`: `DictCache`;
+    - `adapters/llm/cost.py`: `InMemoryCostLogger(clock=None)` (per-day totals when given a clock), `estimate_cost` and `PRICES_PER_MTOK`.
+  - `application/services/llm_merge.py`: `LLMMerger.merge(core, answer, w_llm, conf_cat, conf_pri) -> CoreResult` and `merge_vector`.
+  - `config/prompts/oracle_v1.md`.
+- **How to use it:**
+  ```python
+  http = OpenRouterClient(settings.openrouter_api_key.get_secret_value(), timeout_s=20)
+  oracle = OpenRouterOracle(Tier.TIER1, settings.openrouter_tier1_model, http, SqliteCache(".cache/llm.sqlite"),
+                            InMemoryCostLogger(SystemClock()), prompt=load_prompt("config/prompts", "oracle", config.llm.prompt_version),
+                            max_input_tokens=config.guards.max_tokens, daily_budget_usd=settings.llm_daily_budget_usd)
+  answer = oracle.choose(req, core.set_cat, core.set_pri, OracleContext(req.lang, core.neighbors, "v1"))
+  core = LLMMerger().merge(core, answer, config.llm.w_llm, conformal_cat, conformal_pri)
+  ```
+- **Config / env added:** none new. It reads `OPENROUTER_API_KEY`, `OPENROUTER_TIER1_MODEL` and `LLM_DAILY_BUDGET_USD` (existing Settings). The timeout and cache path are constructor arguments until Settings has `LLM_TIMEOUT_S` / `LLM_CACHE_PATH` (change request). The request parameters (`temperature 0`, `top_p 1`, `seed 42`, `max_tokens 80`) and `max_reason_words 20` are in the prompt front matter.
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_oracle.py services/ai/tests/unit/test_llm_merge.py services/ai/tests/unit/test_cost.py -q` → `26 passed`.
+  - `pytest services/ai/tests/test_architecture.py -q` → `5 passed`.
+  - `python -c "import sys, campuspulse_ai.adapters.llm.openrouter, campuspulse_ai.adapters.llm.null, campuspulse_ai.adapters.understand.llm_understander; print('httpx' in sys.modules)"` → `False`; the same check is a unit test.
+  - The manual run with a key was **not done**: there is no OpenRouter key on this machine.
+- **Limitations / TODO / known issues:**
+  - Deviations from the plan sketch:
+    - `OpenRouterOracle` takes a shared `OpenRouterClient` (as P3.3a's understander does) and a loaded `PromptTemplate` instead of `api_key`/`timeout_s`/`base_url`/`prompt_version`;
+    - it takes no `clock`: the daily budget is per Amman day inside `InMemoryCostLogger(clock)`;
+    - it takes `max_input_tokens` (`guards.max_tokens`).
+  - The response format is a strict JSON schema whose enums are the allowed sets (stronger than `json_object`), and the reply is still validated locally.
+  - `require_parameters` is **not** sent, because `seed` is not supported by every provider. Unsupported parameters are ignored and the local validation still applies.
+  - The text sent is `req.core` (wrapper-stripped), so a stripped "URGENT:" never reaches the model.
+  - Out-of-set and invalid replies are costed but not cached.
+  - The `tests/fixtures/openrouter/*.json` replies are hand-written in OpenRouter's response shape. Replace them with real recordings once a key exists.
+  - Unknown model ids are costed at the highest pinned price.
+  - `NullOracle` lives in `adapters/llm/null.py` (Backend-owned): the P1.15 task must not re-create it.
+  - `composition/offline.py` does not exist yet, so the plan's "`import composition.offline` has no httpx" check is covered by the module-level check above.
+- **Affects streams:**
+  - Backend: P3.9 ESCALATE loop, `build_online` wiring.
+  - ML: P1.15 `build_offline(use_llm=True)` builds `OpenRouterOracle` + `SqliteCache`; the P2 "ensemble+router" benchmark row. `LLMMerger` needs the real `LACConformal` predictors.
+  - Foundation: Settings change request.
+
+### P3.3a — RequestUnderstander: LLM and rule-based understanding  (backend, 2026-10-31, commits 0fa1dab, 4fed015, f53d031)
+- **What now exists:** structured understanding of a request (UD-10): EN and AR summaries, entities, a student reply, and the ticket title and body.
+  - It comes from the tier-1 model, schema-validated, at temperature 0, cached and costed.
+  - It falls back to rules when there is no key, on an error or a rejected reply, and for injection-flagged requests.
+  - It never changes the labels.
+- **Public interfaces added:** see [docs/api/README.md › Understanding](../api/README.md#clarification-llm-understanding).
+  - `adapters/understand/llm_understander.py`: `LLMUnderstander(http, model_id, prompt, cache, cost, fallback, *, clock, max_input_tokens, daily_budget_usd, tier=TIER1)` implements `RequestUnderstander`. It never raises.
+  - `adapters/understand/rule_understander.py`: `RuleBasedUnderstander(templates, clock, limits)`, `ReplyTemplates.load(dir)` and `clip`.
+  - `adapters/understand/schema.py`:
+    - `UnderstandLimits.from_prompt(prompt)`, `decided_labels(core)` (a singleton set's label, else the argmax);
+    - `understanding_schema`, `response_format`, and `parse_understanding(raw, req, category, priority, limits, prompt_version)` (`LLMOutputOutOfSet`).
+  - `adapters/understand/entities.py`: `extract_entities(req, today)`, `grounded(value, req)` and text helpers.
+  - `application/services/understanding.py`: `understanding_flags(u)` → `{"understanding_fallback"}` when `u.source == "rules"`.
+  - Config: `config/prompts/understand_v1.md` and `config/templates/replies.{en,ar}.yaml`.
+- **How to use it:**
+  ```python
+  prompt = load_prompt("config/prompts", "understand", "v1")
+  rules = RuleBasedUnderstander(ReplyTemplates.load("config/templates"), clock, UnderstandLimits.from_prompt(prompt))
+  understander = LLMUnderstander(http, settings.openrouter_tier1_model, prompt, cache, cost, rules, clock=clock,
+                                 max_input_tokens=config.guards.max_tokens, daily_budget_usd=settings.llm_daily_budget_usd) \
+      if llm_on else rules
+  u = understander.understand(req, decided_core, plan.kind)
+  flags |= understanding_flags(u)
+  ```
+- **Config / env added:** none in Settings. `understand.model_id` is `OPENROUTER_TIER1_MODEL`. `prompt_version` (`v1`) and the limits (`max_title_chars 80`, `max_reply_chars 400`, `max_summary_chars 300`, `max_body_chars 1200`, `max_entity_chars 60`) are in the prompt front matter. The timeout is the shared client's. `understand.enabled` = the composition choosing `LLMUnderstander` or `RuleBasedUnderstander`.
+- **Acceptance:** `pytest services/ai/tests/test_understander.py -q` → `7 passed`. The manual `curl.exe` check with a key was **not done** (no key, and no real `/v1/triage` until P3.12).
+- **Limitations / TODO / known issues:**
+  - Grounding:
+    - The model must echo the decided labels (single-value enums), and a different label is rejected.
+    - Course codes, rooms and buildings must occur in the request.
+    - The reply must be in the request language (Arabic script for `ar`/`arabizi`).
+    - Free-text claims inside the reply (e.g. an invented fee) are not machine-checked beyond the prompt rules; the P4.11 red team should cover them.
+  - The schema sent to the model carries length limits as descriptions, not `maxLength`, because strict modes reject them. The limits are enforced locally.
+  - The cache key adds the model id, action, location and date to the spec's (prompt version, text, labels), so "today" resolves per day.
+  - The understander also honours the shared `LLM_DAILY_BUDGET_USD`.
+  - The rule-based summaries quote the request text and do not translate it.
+  - **The Arabic templates and prompt examples are drafts and need a native-speaker check.**
+  - Files added beyond the plan: `entities.py`, `application/services/understanding.py`, and an empty `adapters/understand/__init__.py`.
+  - Not wired into `build_online` yet (LD-37: assigned later). P3.9 adds `understanding` to the response.
+- **Affects streams:**
+  - Backend: P3.9 `understanding` and the fallback flag, P4.8 Linear title/body and the outbox reply, P4.11 red-team reply attacks.
+  - DB: P4.21 can use `entities`.
+  - UI: `understanding.source` and `understanding_fallback`.

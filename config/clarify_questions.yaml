@@ -1,0 +1,192 @@
+# Clarification question bank (SPEC §5.1 [8], task P3.2). Owner: Backend stream.
+#
+# Loaded by campuspulse_ai.adapters.clarify.bank.QuestionBank. InfoGainStrategy asks at most one of
+# these when a conformal set has two labels (two when the first answer is `not_sure`).
+#
+# Each question:
+#   id          stable id, returned to the client as `clarification.question_id`
+#   target      category | priority: the conformal set the question splits
+#   split       the labels it separates; it applies when split ⊆ that set
+#   when_category  optional: only ask when the top category is one of these
+#   text_en / text_ar   English and Jordanian-Arabic text (Arabizi requests get the Arabic text)
+#   options     answer chips: id, text_en, text_ar and an effect
+#     effect: {kind: category|priority, value: <label>}  restricts the set to that label
+#             {kind: feature, value: <evidence feature>, implies: <label>}  sets an evidence flag; the
+#                 priority head re-runs (LD-29). `implies` is the label used to score the question.
+#             null  = "not sure" (no constraint; the use case may ask a second question)
+#
+# `topic` is not part of `questions`: it is the chip list returned with status out_of_scope
+# (LD-36, question_id "topic", option ids = category labels). The ClarifyUseCase accepts it.
+#
+# The Arabic text is a draft in Jordanian register and needs a native-speaker check.
+
+version: 1
+
+questions:
+  - id: "cat:Registration|IT Support"
+    target: category
+    split: [Registration, IT Support]
+    text_en: "Is the problem enrolling in the course itself, or logging in / the website not working?"
+    text_ar: "المشكلة بتسجيل المادة نفسها، ولا بالدخول أو الموقع مش شغال؟"
+    options:
+      - id: registration
+        text_en: "Enrolling in the course"
+        text_ar: "بتسجيل المادة"
+        effect: {kind: category, value: Registration}
+      - id: it
+        text_en: "Logging in / the website"
+        text_ar: "بالدخول أو الموقع"
+        effect: {kind: category, value: IT Support}
+      - id: not_sure
+        text_en: "Not sure"
+        text_ar: "مش متأكد"
+        effect: null
+
+  - id: "cat:Academic Support|IT Support"
+    target: category
+    split: [Academic Support, IT Support]
+    text_en: "Is it about the content (grades, feedback, the course material), or can't you open the platform at all?"
+    text_ar: "الموضوع بخص المحتوى (العلامات أو الملاحظات أو المادة)، ولا المنصة نفسها مش راضية تفتح؟"
+    options:
+      - id: content
+        text_en: "The content"
+        text_ar: "المحتوى"
+        effect: {kind: category, value: Academic Support}
+      - id: platform
+        text_en: "The platform won't open"
+        text_ar: "المنصة مش راضية تفتح"
+        effect: {kind: category, value: IT Support}
+      - id: not_sure
+        text_en: "Not sure"
+        text_ar: "مش متأكد"
+        effect: null
+
+  - id: "cat:Finance|Registration"
+    target: category
+    split: [Finance, Registration]
+    text_en: "Is it about a payment or a fee, or about the course registration itself?"
+    text_ar: "الموضوع بخص دفعة أو رسوم، ولا تسجيل المواد نفسه؟"
+    options:
+      - id: payment
+        text_en: "A payment or fee"
+        text_ar: "دفعة أو رسوم"
+        effect: {kind: category, value: Finance}
+      - id: registration
+        text_en: "Course registration"
+        text_ar: "تسجيل المواد"
+        effect: {kind: category, value: Registration}
+      - id: not_sure
+        text_en: "Not sure"
+        text_ar: "مش متأكد"
+        effect: null
+
+  # The classroom-projector confusion: equipment in a room is Facilities, accounts and networks are IT.
+  - id: "cat:Facilities|IT Support"
+    target: category
+    split: [Facilities, IT Support]
+    text_en: "Is it equipment in the room (projector, screen, lights, air conditioning), or a computer, network or account problem?"
+    text_ar: "المشكلة بأجهزة الغرفة (البروجكتور، الشاشة، الضو، المكيف)، ولا بالكمبيوتر أو الشبكة أو الحساب؟"
+    options:
+      - id: room_equipment
+        text_en: "Equipment in the room"
+        text_ar: "أجهزة الغرفة"
+        effect: {kind: category, value: Facilities}
+      - id: computer_network
+        text_en: "Computer, network or account"
+        text_ar: "الكمبيوتر أو الشبكة أو الحساب"
+        effect: {kind: category, value: IT Support}
+      - id: not_sure
+        text_en: "Not sure"
+        text_ar: "مش متأكد"
+        effect: null
+
+  - id: "pri:deadline"
+    target: priority
+    split: [medium, high]
+    when_category: [Registration, IT Support, Finance, Academic Support]
+    text_en: "Is there a deadline today, or is an exam happening right now?"
+    text_ar: "في موعد نهائي اليوم، أو امتحان هلأ؟"
+    options:
+      - id: yes_today
+        text_en: "Yes, today / right now"
+        text_ar: "آه، اليوم أو هلأ"
+        effect: {kind: feature, value: deadline_today, implies: high}
+      - id: no_deadline
+        text_en: "No"
+        text_ar: "لا"
+        effect: {kind: priority, value: medium}
+      - id: not_sure
+        text_en: "Not sure"
+        text_ar: "مش متأكد"
+        effect: null
+
+  - id: "pri:safety"
+    target: priority
+    split: [medium, high]
+    when_category: [Facilities, Transportation]
+    text_en: "Is anyone in danger, or unable to leave or get home?"
+    text_ar: "في حدا بخطر، أو مش قادر يطلع أو يروّح؟"
+    options:
+      - id: yes_danger
+        text_en: "Yes"
+        text_ar: "آه"
+        effect: {kind: feature, value: safety_risk, implies: high}
+      - id: no_danger
+        text_en: "No"
+        text_ar: "لا"
+        effect: {kind: priority, value: medium}
+      - id: not_sure
+        text_en: "Not sure"
+        text_ar: "مش متأكد"
+        effect: null
+
+  - id: "pri:low|medium"
+    target: priority
+    split: [low, medium]
+    text_en: "Is something broken right now, or are you asking for information?"
+    text_ar: "في إشي خربان هلأ، ولا بدك تستفسر عن معلومة؟"
+    options:
+      - id: broken_now
+        text_en: "Something is broken"
+        text_ar: "في إشي خربان"
+        effect: {kind: priority, value: medium}
+      - id: information
+        text_en: "Asking for information"
+        text_ar: "بدي أستفسر"
+        effect: {kind: priority, value: low}
+      - id: not_sure
+        text_en: "Not sure"
+        text_ar: "مش متأكد"
+        effect: null
+
+topic:
+  id: topic
+  target: category
+  split: [Registration, IT Support, Finance, Transportation, Facilities, Academic Support]
+  text_en: "Which of these topics is closest?"
+  text_ar: "أي موضوع من هدول أقرب لطلبك؟"
+  options:
+    - id: Registration
+      text_en: "Registration"
+      text_ar: "التسجيل"
+      effect: {kind: category, value: Registration}
+    - id: IT Support
+      text_en: "IT Support"
+      text_ar: "الدعم التقني"
+      effect: {kind: category, value: IT Support}
+    - id: Finance
+      text_en: "Finance"
+      text_ar: "المالية"
+      effect: {kind: category, value: Finance}
+    - id: Transportation
+      text_en: "Transportation"
+      text_ar: "المواصلات"
+      effect: {kind: category, value: Transportation}
+    - id: Facilities
+      text_en: "Facilities"
+      text_ar: "المرافق والصيانة"
+      effect: {kind: category, value: Facilities}
+    - id: Academic Support
+      text_en: "Academic Support"
+      text_ar: "الدعم الأكاديمي"
+      effect: {kind: category, value: Academic Support}

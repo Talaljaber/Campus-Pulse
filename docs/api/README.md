@@ -137,6 +137,79 @@ These errors are degraded inside the use cases and never reach the client:
 - `NotificationError` and `RecipientNotAllowed`: recorded as outbox `failed` / `rejected`.
 - `CalendarUnavailable`: falls back to the slots table.
 
+<a id="clarification-llm-understanding"></a>
+## Clarification, LLM tier and understanding
+
+These three pieces decide what the student sees after the model has labelled a request (P3.2, P3.3, P3.3a). The trained ensemble always labels first (UD-5): the clarifier and the LLM tier only narrow its conformal sets, and the understander only describes the decided labels. The use cases that wire them into `/v1/triage` are P3.9 and P3.10.
+
+### Clarifying question (`status: needs_clarification`)
+
+When a set holds two labels and no question has been used, the response carries one question from `config/clarify_questions.yaml`.
+
+- **Language.** `en` requests get English text; `ar` and `arabizi` requests get Jordanian Arabic in Arabic script.
+- **Choice.** The question with the smallest expected set size after the answer wins. Category questions go before priority questions, ties follow the bank order, and a question is never asked twice. If no bank question splits the set (for example `{low, high}`), no question is asked and the policy moves on.
+- **Answer.** `POST /v1/triage/{request_id}/clarify` with `option_id` (or `free_text`, which is appended to the request and re-classified). The answer becomes a constraint and the core is re-run with it (LD-29).
+- **`not_sure`.** It applies nothing and allows one more question (at most two in total).
+- **Errors.** An unknown `question_id` or `option_id` is `404 not_found`.
+
+| `question_id` | Splits | Asked when | Options (`id` → effect) |
+| --- | --- | --- | --- |
+| `cat:Registration\|IT Support` | category | the category set contains both | `registration` → Registration, `it` → IT Support, `not_sure` |
+| `cat:Academic Support\|IT Support` | category | the category set contains both | `content` → Academic Support, `platform` → IT Support, `not_sure` |
+| `cat:Finance\|Registration` | category | the category set contains both | `payment` → Finance, `registration` → Registration, `not_sure` |
+| `cat:Facilities\|IT Support` | category | the category set contains both | `room_equipment` → Facilities, `computer_network` → IT Support, `not_sure` |
+| `pri:deadline` | priority | `{medium, high}`; top category Registration, IT Support, Finance or Academic Support | `yes_today` → evidence `deadline_today`, `no_deadline` → medium, `not_sure` |
+| `pri:safety` | priority | `{medium, high}`; top category Facilities or Transportation | `yes_danger` → evidence `safety_risk`, `no_danger` → medium, `not_sure` |
+| `pri:low\|medium` | priority | `{low, medium}` | `broken_now` → medium, `information` → low, `not_sure` |
+
+A category or priority effect fixes that set to one label. An evidence effect sets the feature and lets the priority head decide. The safety floor still wins over any answer (ARCHITECTURE §2.1 [9]).
+
+### Topic chips (`status: out_of_scope`)
+
+Off-topic or gibberish requests get `clarification.question_id: "topic"` with six chips whose ids are the category labels ("Which of these topics is closest?" / "أي موضوع من هدول أقرب لطلبك؟"). Answering one through the clarify route fixes the category to that label.
+
+### LLM tier (`tier: tier1`)
+
+- **When.** Only when the policy escalates: a set still has two or more labels after the question budget, `ENABLE_LLM=true`, `OPENROUTER_API_KEY` and `OPENROUTER_TIER1_MODEL` are set, and the request has no `injection_attempt` flag. Tier 2 is not wired (UD-3).
+- **What it can do.** The model sees only the allowed labels, and the response schema's enums are exactly the current sets. An answer outside them is discarded and the flag `llm_out_of_set` is added. A valid answer is merged as one more ensemble member, `p' = (1 − w_llm)·p_S + w_llm·onehot` with `w_llm = 0.5`, and the sets are recomputed and never grow. The coverage guarantee holds for tier 0 only.
+- **What the student sees.** `tier` becomes `tier1`. With `?debug=members` (admin), `explanation.trace.per_model` also holds `tier1.category` and `tier1.priority`.
+- **Failures.** No key, a timeout, 5xx after two retries, 402/429 or a spent daily budget all leave the request at tier 0, then `human_review`. They never return an error to the client.
+- **Pinned calls.** `temperature 0`, `top_p 1`, `seed 42`, `max_tokens 80`, prompt `config/prompts/oracle_v1.md`. The request text sent is the wrapper-stripped original plus the normalized text, cut at `guards.max_tokens`.
+
+### Understanding (`understanding`)
+
+Filled for `decided` and `human_review` responses (UD-10).
+
+| Field | Content |
+| --- | --- |
+| `summary_en`, `summary_ar` | one sentence each, in English and in Jordanian Arabic |
+| `entities` | `building`, `room`, `course_code`, `deadline` (ISO date: "today"/"اليوم" is today in Asia/Amman, "tomorrow"/"بكرا" the day after), `system` (e.g. `registration portal`, `e-learning`, `wifi`) |
+| `student_reply` | in the request language (Arabic script for Arabic and Arabizi); it says only what the planned action really does |
+| `ticket_title`, `ticket_body` | English text for staff (at most 80 and 1,200 characters) |
+| `source` | `llm` (tier-1 model, `prompt_version: "v1"`) or `rules` (templates, `prompt_version: null`) |
+
+- **It never changes the labels.** The model must echo the decided category and priority, and a reply with other labels is rejected.
+- **Grounding.** A reply is rejected, and the rules are used instead, when it breaks the schema or a limit, replies in the wrong language, or names a course code, room or building that is not in the request.
+- **`understanding_fallback`.** Set whenever `source` is `rules`: no key, an LLM error, a rejected reply, a spent budget, or an `injection_attempt` request (those never reach the model).
+- **Pinned calls.** `temperature 0`, prompt `config/prompts/understand_v1.md`, cached per text, labels, action, location and date.
+
+### Cost logging
+
+Every LLM call (oracle and understander) is logged through the `CostLogger` port as an `LLMCall`.
+
+| Field | Value |
+| --- | --- |
+| `tier`, `model` | `tier1` and the pinned model id from `OPENROUTER_TIER1_MODEL` |
+| `prompt_hash` | the cache key: sha256 of the model id, prompt version, text and allowed sets (oracle) or decided labels (understander) |
+| `tokens_in`, `tokens_out` | from OpenRouter `usage`; `0` on a failure |
+| `cost.usd` | OpenRouter `usage.cost` when reported, else the pinned price table (`adapters/llm/cost.py`, Appendix B); `0` for cache hits and failures |
+| `cached` | `true` for a cache hit (no HTTP call) |
+
+- **Budget.** Before each network call, the day's total (Asia/Amman) is compared with `LLM_DAILY_BUDGET_USD` (default 5). At or above it, no call is made.
+- **Failures are logged too**, with zero tokens and cost.
+- **Where it shows.** `explanation.trace.cost_usd`, and `router` in `/v1/metrics`. Online, `SupabaseCostLogger` writes the `llm_calls` rows (P4); offline and in tests it is `InMemoryCostLogger`.
+- **Caches.** `SqliteCache` (offline `--use-llm`) or `SupabaseCache` (online, P4) keep the raw validated reply under the same key. A second identical request makes no call.
+
 ## Optional extras
 
 `POST /v1/admin/simulate` (P5.19) and `POST /v1/admin/reindex` (P4.20) are B-list extras.
