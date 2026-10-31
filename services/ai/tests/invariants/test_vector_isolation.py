@@ -1,7 +1,8 @@
 """Offline isolation (ARCHITECTURE §3.18): the offline path never imports pgvector or supabase.
 
-Covers part (a) of the §3.18 proof. Parts (b)-(d) need build_offline / BatchPredictUseCase and
-belong with those tasks; the build_offline check here activates once composition.offline exists.
+Covers part (a) of the §3.18 proof and the store-level half of (b): a loaded index exposes
+exactly its frozen collections, read-only. The rest of (b) and (c)-(d) need build_offline /
+BatchPredictUseCase; the build_offline check here activates once composition.offline exists.
 """
 
 from __future__ import annotations
@@ -9,6 +10,7 @@ from __future__ import annotations
 import importlib.util
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -25,6 +27,21 @@ def _imported_after(module: str) -> set[str]:
 def test_pgvector_adapters_do_not_import_the_sdk(module: str) -> None:
     loaded = _imported_after(module)
     assert not {"supabase", "postgrest"} & loaded
+
+
+def test_local_store_imports_nothing_online() -> None:
+    loaded = _imported_after("campuspulse_ai.adapters.vectors.local_numpy")
+    assert not {"supabase", "postgrest", "httpx", *PG_MODULES} & loaded
+
+
+def test_loaded_index_holds_only_its_own_collections(tmp_path: Path) -> None:
+    from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
+
+    frozen = ("train", "injection_exemplars", "safety_exemplars")
+    LocalNumpyVectorStore(8, collections=frozen).save(tmp_path)
+    store = LocalNumpyVectorStore.load(tmp_path, expected_dim=8)
+    assert store.collections() == frozenset(frozen)
+    assert store.read_only
 
 
 def test_offline_composition_never_imports_pgvector() -> None:
