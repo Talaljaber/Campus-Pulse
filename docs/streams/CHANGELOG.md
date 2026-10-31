@@ -839,6 +839,50 @@
 - **Limitations / TODO / known issues:** there is no index on `tags`; add a GIN index if staff filter large queues by tag. The security advisor reports Auth leaked-password protection as off; that is a dashboard setting, not a migration.
 - **Affects streams:** Backend (D-011 writes now persist), UI (`tickets.tags` for badges and filters; the `deferred` outbox status).
 
+### P5.9 — Voice input with Web Speech (`ar-JO` / `en-US`)  (ui, 2026-10-31, commit 3510c97)
+- **What now exists:** a mic button in the student composer that dictates in Jordanian Arabic or English (the page language picks which). The transcript only fills the text box; the student edits it and sends, and the request goes out with `input_mode: "voice"`. Where the browser has no Web Speech API (Firefox) the button is not rendered.
+- **Public interfaces added or changed:** `useSpeech(lang)` (`src/hooks/useSpeech.ts`), `MicButton` (`components/chat`), `Composer.micSlot` now accepts a node or a function of `{ begin, apply }` (`ComposerMicApi`), `src/lib/voice/speech.ts`, an `Icon` named `mic`, and a `ToastProvider` in the root layout. See [docs/ui/README.md > Voice input](../ui/README.md#voice-input-p59).
+- **How to use it:** `<Composer micSlot={(mic) => <MicButton lang="en-US" onStart={mic.begin} onTranscript={mic.apply} />} ... />`; in Chrome press the mic and speak.
+- **Config / env added:** none.
+- **Acceptance:** `vitest run src/hooks/__tests__/useSpeech.test.tsx src/lib/voice src/components/chat/__tests__/voice.test.tsx` -> all passed (mocked `webkitSpeechRecognition`: unsupported, start language, interim results, stop, errors, abort on unmount, voice mode on send, reset on empty).
+- **Limitations / TODO / known issues:** the dictation language follows the page language, not a separate choice, so an Arabic page cannot dictate English. Not tried in a real browser here (no microphone in the automated run). New Arabic strings `chat.voice.*` need a native speaker's review.
+- **Affects streams:** Backend (`input_mode: "voice"` now reaches `/v1/triage`), Lead (demo moment 1 can use voice).
+
+### P5.10 — Staff dashboard `/staff`  (ui, 2026-10-31, commit fc6ca08)
+- **What now exists:** the staff page with four tabs: the office's ticket queue (SLA order, overdue marked, status change, Linear link, request details with a collapsed explanation), the human-review queue (confirm or correct with the memory toast), open incidents (confirmed resolve) and a flags panel. An admin sees every office. Rows are limited by RLS, not by the page.
+- **Public interfaces added or changed:** `components/staff/*` (`TicketQueue`, `TicketRow`, `StatusSelect`, `ReviewQueue`, `CorrectionForm`, `IncidentsPanel`, `FlagsPanel`, `RequestDetail`, `StaffScreen`), hooks `useTicketQueue`, `useReviewQueue`, `useIncidents`, `useFlagEvents`, `useTicketDetail`, `useMapBuildings`; `src/lib/staff/*`, `src/lib/incidents`; repos `listTickets`, `subscribeTickets(sb, office | null, ...)`, `listRequestsByIds`, and the new `repos/predictions.ts`; UI primitives `Select` and `Loadable`. See [docs/ui/README.md > Staff dashboard](../ui/README.md#staff-dashboard-staff-p510).
+- **How to use it:** sign in as `it@demo.local` and open `/staff`; Playwright: `PW_PYTHON=<venv python> pnpm exec playwright test e2e/staff-basic.spec.ts`.
+- **Config / env added:** none.
+- **Acceptance:** `vitest run src/lib/staff src/components/staff src/hooks/__tests__/staffHooks.test.tsx src/lib/__tests__/repos-staff.test.ts` -> passed; `playwright test e2e/staff-basic.spec.ts` -> `3 passed`.
+- **Limitations / TODO / known issues:**
+  - The flags panel reads `predictions.flags`, not the `events` log (the audit action names are undocumented).
+  - A staff member only sees requests and predictions of tickets in their office, so a distress item (no ticket) shows no text or explanation; it can only be acknowledged.
+  - `tickets.tags` (D-011) are not shown yet (backend codes, not translated).
+  - Live ticket updates and the review re-read depend on Realtime, which the e2e double does not fake.
+  - New Arabic strings under `staff.*` need a native speaker's review.
+- **Affects streams:** DB (the page reads `predictions`, `requests`, `review_queue`, `ticket_links`, `incidents`), Backend (`POST /v1/feedback`, `POST /v1/tickets/{id}/status`, `POST /v1/incidents/{id}/resolve`).
+
+### P5.11 — Pulse page `/pulse`  (ui, 2026-10-31, commit 0e0f5a4)
+- **What now exists:** the live campus map (a dot per located request, a pulsing ring per open incident), the incident list with a confirmed resolve, and a live feed with a SIMULATED badge for demo traffic. Choosing a building filters the incident list.
+- **Public interfaces added or changed:** `PulseScreen`, `IncidentList`, `EventFeed` (`components/pulse`), `usePulse`, `src/lib/pulse/{state,view}.ts` (a pure reducer), `listLatestPredictions`/`subscribePredictions`. See [docs/ui/README.md > Pulse](../ui/README.md#pulse-pulse-p511).
+- **How to use it:** sign in as `it@demo.local` or the admin and open `/pulse`; run `python scripts/simulate_pulse.py --scenario config/simulation/wifi_m.yaml` to see dots and a ring appear.
+- **Config / env added:** none.
+- **Acceptance:** `vitest run src/lib/pulse src/components/pulse src/hooks/__tests__/usePulse.test.tsx` -> passed; `playwright test e2e/pulse-basic.spec.ts` -> `3 passed`.
+- **Limitations / TODO / known issues:** a dot needs both the request and its prediction (the page also subscribes to `predictions` inserts for that), so a request without a prediction is not drawn. No timeline scrubber (cut-flagged). `PulseLegend` was not built: the existing `MapLegend` is used. New Arabic strings under `pulse.*` need a native speaker's review.
+- **Affects streams:** DB (Realtime on `requests`, `predictions`, `incidents`, `outbox`), Backend (`POST /v1/incidents/{id}/resolve`).
+
+### Notifications and clarify errors follow the backend contract  (ui, 2026-10-31)
+- **What now exists:** `noticeFromNotification` shows `message` when a notification has one (kinds `message`, `incident`, and `ticket_status` with a sentence), otherwise "Your ticket <title> is now <status>" from `status` and `title`; the old `body` key is not read. A clarify answer that fails with 409, 422 or 404 shows "that question is no longer open".
+- **Public interfaces added or changed:** `noticeFromNotification`, `chatErrorKind` in `src/lib/chat/service.ts` (docs/api/README.md > Notifications payload).
+- **Acceptance:** `vitest run src/lib/chat` -> passed.
+- **Affects streams:** Backend (the payload keys are now read as documented).
+
+### e2e config: one worker, longer timeouts  (ui, 2026-10-31)
+- **What now exists:** `apps/web/playwright.config.ts` runs with `workers: 1`, a 150 s test timeout and a 60 s expect timeout. Two workers made the first sign-in of a spec hang; the new specs (`staff-basic`, `pulse-basic`) made that visible.
+- **How to use it:** `PW_PYTHON=<venv python> pnpm exec playwright test`; set `PW_PORT`, `PW_API_PORT`, `PW_SUPABASE_PORT` when another checkout holds the default ports (the config reuses servers it finds).
+- **Acceptance:** `playwright test` -> `8 passed`.
+- **Affects streams:** Foundation (CI e2e job, if one is added).
+
 ### P3.12 — The real FastAPI app: P3 routes, auth, error mapping, OpenAPI  (backend, 2026-10-31, commit c999ea9)
 - **What now exists:** `create_app()` serves the whole `/v1` contract with the mock app's declarations, so the real export is byte-identical to the mock export and to `services/ai/openapi.json` (no schema change). Triage, clarify, counterfactual, feedback and health are real routes; routes of later tasks authenticate and answer `501 not_implemented`. Service-token auth (fail closed), trusted-header identity, per-route roles, one error mapping.
 - **Public interfaces added or changed:** `frameworks.fastapi_app.create_app(services=None, settings=None, *, build=None)`; `composition.api.ApiServices` / `HealthInfo` / `build_api`; `frameworks.auth.Principal`, `authorize(op_id)`; `frameworks.errors.ApiError`; `CounterfactualUseCase` (`use_cases/explain.py`); `ClarifyUseCase.run(..., caller_alias=None)`; `use_cases/ports.Actor`, `FeedbackHandler`; `/health` now returns `dto.HealthResponse` (`status: degraded` until triage is wired). See [docs/api/README.md › The real app](../api/README.md#real-app) and [Auth](../api/README.md#auth).

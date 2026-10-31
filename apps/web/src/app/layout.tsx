@@ -3,6 +3,7 @@ import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
 import { cookies, headers } from "next/headers";
 import { ServiceStatus } from "@/components/shell/ServiceStatus";
 import { RtlProvider } from "@/components/ui/RtlProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 import { LANG_COOKIE, dirOf, resolveLang } from "@/i18n";
 import "./globals.css";
 
@@ -26,8 +27,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={lang} dir={dirOf(lang)} className={`${inter.variable} ${plexArabic.variable}`}>
       <body>
         <RtlProvider lang={lang}>
-          <ServiceStatus />
-          {children}
+          <ToastProvider>
+            <ServiceStatus />
+            {children}
+          </ToastProvider>
         </RtlProvider>
       </body>
     </html>
