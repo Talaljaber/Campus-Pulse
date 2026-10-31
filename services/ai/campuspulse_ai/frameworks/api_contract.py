@@ -37,6 +37,13 @@ from campuspulse_ai.application.dto import (
     WebhookAck,
 )
 
+API_TITLE = "CampusPulse AI API"
+API_DESCRIPTION = (
+    "Bilingual (EN / Jordanian Arabic / Arabizi) campus-request triage. Called only by the Next.js "
+    "server with the service token; see docs/api/README.md."
+)
+"""OpenAPI `info` of both apps (the version is `campuspulse_ai.__version__`)."""
+
 SERVICE_TOKEN_SCHEME = HTTPBearer(
     auto_error=False,
     scheme_name="ServiceToken",

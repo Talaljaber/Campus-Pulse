@@ -14,7 +14,7 @@ The HTTP contract of the FastAPI AI service. It was frozen at P0.13 and is owned
 | Environment | Base URL | How to run |
 | --- | --- | --- |
 | Local mock (fixtures, no models) | `http://localhost:8000` | `uvicorn campuspulse_ai.frameworks.mock_app:create_mock_app --factory --port 8000` |
-| Local real service (from P3.12) | `http://localhost:8000` | `uvicorn api:app --app-dir services/ai --port 8000` |
+| Local real service (from P3.12) | `http://localhost:8000` | `uvicorn api:app --app-dir services/ai --port 8000` (see [The real app](#real-app) for what is wired today) |
 | Render | `https://<render-service>.onrender.com` | Deployed in P0.11 / P4.13. The real hostname is recorded in [docs/ops/README.md](../ops/README.md). |
 
 Every route lives under `/v1`. The only exception is `GET /health`, the root alias of `GET /v1/health` that Render's health check uses. The browser never calls this service directly; it calls the Next.js route handler `/api/ai/...`, which forwards the request server-side (P5.6).
@@ -25,7 +25,11 @@ Every route lives under `/v1`. The only exception is `GET /health`, the root ali
 **Service token.**
 - Every route except `/health`, `/v1/health` and the Linear webhook requires `Authorization: Bearer <AI_SERVICE_TOKEN>`.
 - Only the Next.js server holds the token: Netlify runtime env, never in the browser bundle (LD-25).
-- A missing or wrong token gets `401 unauthenticated`.
+- A missing or wrong token gets `401 unauthenticated`. The comparison is constant-time
+  (`hmac.compare_digest`). If `AI_SERVICE_TOKEN` is not set on the server, **every** such route
+  answers 401 (fail closed).
+- The token is checked before anything else: a request without it never reaches validation, the role
+  check or a use case.
 
 **User identity and roles.**
 - The Next.js server forwards the signed-in user's Supabase access token in `X-CP-User-JWT`.
@@ -43,7 +47,18 @@ Every route lives under `/v1`. The only exception is `GET /health`, the root ali
 
 **Trusted headers (tests, local dev and the mock only).**
 - With `AUTH_MODE=trusted_headers`, the caller identity comes from `X-CP-Role`, `X-CP-Alias` and `X-CP-Office`.
+  No `X-CP-Role` means the `service` role.
 - These headers are ignored in production.
+
+**What the identity changes** (`frameworks/auth.py`, `frameworks/routes/*`):
+
+| Rule | Where |
+| --- | --- |
+| A caller with an alias (a student, or any user whose profile has one) triages under **their** alias; `student_alias` in the body is used only for the bare service token (scripts). | `POST /v1/triage` |
+| A student may answer the questions of, and ask counterfactuals about, **their own** requests only (`403 forbidden` otherwise). Staff and admin may ask counterfactuals about any request. | `/clarify`, `/explain/.../counterfactual` |
+| `?debug=members` is admin-only (`403` for anyone else). | `POST /v1/triage` |
+| The reviewer of `/v1/feedback` is the caller; no body field names the reviewer. | `POST /v1/feedback` |
+| Flags per role: students get `to_student_view` (no `urgency_unsupported`, no `priority_gaming_suspected`); staff get everything except `priority_gaming_suspected`; admin and the service token get every flag. | `/triage`, `/clarify` |
 
 **Linear webhook.** `POST /v1/integrations/linear/webhook` carries no service token.
 - The raw body is verified with HMAC-SHA256 (`LINEAR_WEBHOOK_SECRET`) against the `Linear-Signature` header.
@@ -125,11 +140,15 @@ Every non-2xx response has the same body:
 | 409 | `clarification_budget_exceeded` | domain `ClarificationBudgetExceeded`: no question pending for this request (also a third answer) |
 | 422 | `invalid_input` | body, query or path validation; domain `InvalidInput` (e.g. blank text, bad CSV columns, a clarify `question_id` that is not the pending question, blank `free_text`) |
 | 500 | `internal_error` | anything unexpected |
-| 501 | `not_implemented` | an optional extra (`/v1/admin/*`) that is not built in this deployment |
+| 501 | `not_implemented` | an optional extra (`/v1/admin/*`) that is not built in this deployment, or a route whose use case is not wired into this process yet (`details.component` names it; see [The real app](#real-app)) |
 | 503 | `artifact_unavailable` | domain `ArtifactError`: the model artifact is missing or failed its checksum |
 | 503 | `store_unavailable` | domain `StoreError`: Supabase or pgvector is unreachable |
 
-The mapping lives in `dto.DOMAIN_ERROR_CODES` and `dto.error_code_for(exc)`, and the HTTP status per code in `dto.ERROR_HTTP_STATUS`.
+The mapping lives in `dto.DOMAIN_ERROR_CODES` and `dto.error_code_for(exc)`, and the HTTP status per code in `dto.ERROR_HTTP_STATUS`. The handlers are in `frameworks/errors.py`:
+- 4xx domain errors return the domain message (it names the request, option or question).
+- 503 and 500 return a **fixed** message, because the underlying error may carry SQL, URLs or file
+  paths. `details.request_id` is a reference that appears in the server log line with the real error.
+- Unknown paths are `404 not_found`, a wrong method is `405 invalid_input`, both in the same shape.
 
 These errors are degraded inside the use cases and never reach the client:
 - `LLMUnavailable`: falls back to tier 0.
@@ -152,7 +171,9 @@ When a set holds two labels and no question has been used, the response carries 
 - **Choice.** The question with the smallest expected set size after the answer wins. Category questions go before priority questions, ties follow the bank order, and a question is never asked twice. If no bank question splits the set (for example `{low, high}`), no question is asked and the policy moves on.
 - **Answer.** `POST /v1/triage/{request_id}/clarify` with `option_id` (or `free_text`, which is appended to the request and re-classified). The answer becomes a constraint and the core is re-run with it (LD-29).
 - **`not_sure`.** It applies nothing and allows one more question (at most two in total).
-- **Errors.** An unknown `question_id` or `option_id` is `404 not_found`.
+- **Errors.** An unknown request or `option_id` is `404 not_found`; a `question_id` that is not the
+  pending question is `422 invalid_input`; no pending question (e.g. a third answer) is
+  `409 clarification_budget_exceeded`; another student's request is `403 forbidden`.
 
 | `question_id` | Splits | Asked when | Options (`id` → effect) |
 | --- | --- | --- | --- |
@@ -341,9 +362,19 @@ merged the tests use `FakeCore`.
   continues from [7] with `clarified: true`.
 - Budget: one question, two when the first answer is `not_sure`; every answer counts, so afterwards the
   policy never asks again. A topic chip answer drops `gibberish` (the student named the topic).
-- Errors: unknown request or option → `NotFound` (404); no pending question (e.g. a third answer) →
-  `ClarificationBudgetExceeded` (409); a `question_id` that is not the pending one, or blank free text →
-  `InvalidInput` (422).
+- `caller_alias` (the route passes the alias of a student caller): it must equal the request's alias.
+- Errors: unknown request or option → `NotFound` (404); another student's request → `Unauthorized`
+  (403); no pending question (e.g. a third answer) → `ClarificationBudgetExceeded` (409); a
+  `question_id` that is not the pending one, or blank free text → `InvalidInput` (422).
+
+### `CounterfactualUseCase.run(request_id, drop, *, caller_alias=None) -> CounterfactualResponse` — `use_cases/explain.py`
+
+- Loads the request (a student caller only for their own), checks that `drop` occurs in the request
+  text (case-insensitive; raw, normalized or model text), reads the decided labels from the latest
+  prediction and calls `Explainer.counterfactual(normalized request, drop)` (ML P3.4).
+- `flipped` is true when either label changes. Read-only: nothing is written.
+- Errors: unknown request or no decision yet → 404; another student's request → 403; a blank token or
+  one not in the text → 422; `ArtifactError` → 503.
 
 ### `ActUseCase` — `use_cases/act.py`
 
@@ -358,6 +389,51 @@ merged the tests use `FakeCore`.
   fire already). `[]` for a ticket that is not provisional.
 - Config: `config/act.yaml` (`faq_top_k`, booking department and office hours), `tau_faq`
   (FrozenConfig), `DEMO_STUDENT_INBOX`, `DEMO_OFFICE_INBOX` (unset → that email is skipped).
+
+<a id="real-app"></a>
+## The real app (`frameworks/fastapi_app.py`, P3.12)
+
+`create_app(services=None, settings=None, *, build=None) -> FastAPI`:
+- `services` is `composition.api.ApiServices`, a frozen dataclass of the use cases behind the routes
+  (`triage`, `clarify`, `counterfactual`, `feedback`, and `health: HealthInfo` for `/health`). Every
+  use-case field is optional: a route whose use case is `None` answers **`501 not_implemented`**
+  after the auth checks, with `details.component` naming what is missing.
+- `build(settings) -> ApiServices` runs in the startup lifespan when `services` is None.
+  `services/ai/api.py` passes `composition.api.build_api`, which today wires nothing model- or
+  database-backed: `build_online` (P4.3, assigned by the lead) fills `ApiServices` from the
+  `OnlineContainer`. Until then the deployed app answers `/health` with `status: "degraded"` and the
+  use-case routes with 501.
+- `settings` defaults to `Settings()` from the env (`AI_SERVICE_TOKEN`, `AUTH_MODE`).
+- Every contract route is declared with `api_contract.route_kwargs` and the same parameters as the
+  mock app, in `ENDPOINTS` order: `create_app().openapi()` is **byte-identical** to the mock's
+  export and to `services/ai/openapi.json` (`tests/contracts/test_openapi_real_app.py`). Routes whose
+  use case belongs to a later task (`frameworks/routes/pending.py`: incidents, insights, red team,
+  admin extras) authenticate and answer 501.
+
+| Route module | Routes | Use case |
+| --- | --- | --- |
+| `routes/triage.py` | `POST /v1/triage`, `POST /v1/triage/{request_id}/clarify` | `TriageUseCase`, `ClarifyUseCase` |
+| `routes/explain.py` | `GET /v1/explain/{request_id}/counterfactual` | `CounterfactualUseCase` |
+| `routes/feedback.py` | `POST /v1/feedback` | any `FeedbackHandler` (`use_cases/ports.py`; P3.11 `FeedbackUseCase`) |
+| `routes/health.py` | `GET /health`, `GET /v1/health` | `ApiServices.health` (`status: ok` once triage is wired, else `degraded`) |
+| `routes/pending.py` | the routes of later tasks | none yet (501) |
+
+**Testing over HTTP.** `services/ai/tests/fixtures/api.py`: `api_client(build_test(...), **fields)`
+returns a `TestClient` over the real app with `AUTH_MODE=trusted_headers` and a test token, and
+`auth(role, alias, office)` builds the headers. Example:
+
+```python
+client = api_client(build_test(core=FakeCore().add(text, ambiguous_core)))
+r = client.post("/v1/triage", json={"text": text}, headers=auth("student", "demo-17"))
+```
+
+**Running it locally** (PowerShell, repo root, venv active):
+
+```powershell
+$env:AI_SERVICE_TOKEN = "dev-token"; $env:AUTH_MODE = "trusted_headers"
+uvicorn api:app --app-dir services/ai --port 8000
+curl.exe -s localhost:8000/health
+```
 
 ## Optional extras
 
@@ -393,7 +469,9 @@ Fixture format: one file per example, `{name, description, method, path, path_pa
 - **Additive changes** are allowed in `v1` with lead approval (EXECUTION rule 3): a new endpoint, a new response key, a new enum value. Clients must ignore keys they do not know.
 - **`info.version`** in `openapi.json` is the `campuspulse_ai` package version.
 - **After any DTO or route change:**
-  1. `python -m campuspulse_ai.frameworks.export_openapi --mock --out services/ai/openapi.json` (from P3.12, the real app is exported without `--mock`, and both must produce the same document).
+  1. `python -m campuspulse_ai.frameworks.export_openapi --out services/ai/openapi.json` (the real
+     app; `--mock` exports the mock app, and both must produce the same bytes:
+     `tests/contracts/test_openapi_real_app.py`).
   2. `python scripts/gen_api_docs.py`.
   3. `pytest services/ai/tests/contracts/test_dto_contract.py -q`.
 

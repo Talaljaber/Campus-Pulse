@@ -11,7 +11,7 @@ count as unset, so copying ``.env.example`` to ``.env`` works unchanged.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -44,8 +44,10 @@ class Settings(BaseSettings):
     supabase_url: str | None = None
     supabase_service_role_key: SecretStr | None = None
 
-    # Auth between Netlify route handlers and this service
+    # Auth between Netlify route handlers and this service. Unset token = every /v1 route answers 401.
     ai_service_token: SecretStr | None = None
+    # Who the caller is: X-CP-* headers (tests, local dev) or the Supabase user JWT (P4.12).
+    auth_mode: Literal["trusted_headers", "supabase_jwt"] = "trusted_headers"
 
     # Email: Gmail SMTP with an app password (LD-3)
     gmail_smtp_user: str | None = None
