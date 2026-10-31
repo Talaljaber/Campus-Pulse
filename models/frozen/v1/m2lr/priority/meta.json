@@ -1,0 +1,13 @@
+{
+  "C": 2.0,
+  "dim": 384,
+  "kind": "embed_lr",
+  "labels": [
+    "low",
+    "medium",
+    "high"
+  ],
+  "name": "m2lr",
+  "seed": 42,
+  "target": "priority"
+}

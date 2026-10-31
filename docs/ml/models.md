@@ -3,10 +3,11 @@
 Owner: ML stream. This file describes **what exists now** (ARCHITECTURE.md is the design). It is updated at
 every ML task, so another agent or a judge can use the ML pieces without opening the code.
 
-Status: P0.3 to P1.4 (data pipeline, preprocessing, config and artifact plumbing), plus P1.0 (validator),
-P1.5 (guards), P1.6 (int8 encoder), P1.8 (pool, soft targets, folds), P1.9 (Arabizi drafts, review pending),
-P1.12 (evidence features) and P1.14 (conformal). There is no trained model, `config.json`, metrics table or
-`predict.py` yet (P1.10–P1.17). The exported encoder exists locally in `models/frozen/v1/encoder/` (gitignored).
+Status (ML batch 3, 2026-10-31): P1 is built end to end. P1.0–P1.19 code exists: preprocessing, guards, the
+pruned int8 encoder, the members, ensemble, head and finalizer (§13), `TriageCore` and `build_offline` (§14),
+`train.py` (§15), `predict.py` and its tools (§16), the invariants, and a frozen `models/frozen/v1` (rc1,
+committed small files plus the fetched encoder). The first results are in §17 and `reports/results_v1.md`.
+Still provisional: stage B (equal weights, mid-grid C; P2.7), no augmentation (P1.9 rows await review).
 
 ## 1. Paths (`campuspulse_ai.config.paths`)
 
@@ -320,8 +321,8 @@ FrozenConfig.from_dict(mapping)                                   # validate an 
 Strict pydantic: unknown or missing keys, wrong types and out-of-range values raise
 `ArtifactVersionMismatch` on load (thresholds ≤ 0 → "thresholds not trained"). The object is immutable.
 `train.py` (P1.16) is the only writer. It assembles the file from `config/train.yaml` (copied sections and
-knobs), `config/hand_tuned.yaml` and the values it learns. There is **no `config.json` yet** (no training has
-run), so "value" below is the input default and "source" says where the frozen value will come from.
+knobs), `config/hand_tuned.yaml` and the values it learns. The frozen v1 values are in §15.3; "value" below is
+the input default and "source" says how the frozen value is produced.
 
 | key | value / default | source (how tuned) |
 | --- | --- | --- |
@@ -334,7 +335,7 @@ run), so "value" below is the input default and "source" says where the frozen v
 | `ensemble.weights_category`, `weights_priority` | a distribution over exactly `members` | simplex grid (step `grids.weight_step` 0.1) maximizing OOF macro-F1 (P2) |
 | `m1.char_ngram`, `m1.word_ngram` | [2,5], [1,2] | copied |
 | `m1.C`, `m2lr.C` | from grid `[0.5,1,2,4,8]` | OOF macro-F1 (`grids.m1_C`, `grids.m2lr_C`) |
-| `knn.{k, memory_weight_cap, max_memory_neighbors, memory_min_sim}` | 5, 0.6, 2, 0.80 | copied (memory is online-only) |
+| `knn.{k, memory_weight_cap, max_memory_neighbors, memory_min_sim, laplace_mass}` | 5, 0.6, 2, 0.80, 1.0 | copied (memory is online-only; `laplace_mass` added in P1.11) |
 | `priority_head.features` | the 10 evidence flags (`deadline_today` … `teaching_room`) | copied; `stated_urgency` is rejected by the schema (§3.8) |
 | `priority_head.C` | 1.0 | copied |
 | `conformal.method`, `mondrian_by_lang` | `lac`, false | copied; Mondrian only per `train.yaml mondrian` rule (P2) |
@@ -500,6 +501,37 @@ changelog entry). Measured option: pruning the vocabulary to Latin + Arabic + di
 126,920 of 250,002 pieces, and that tokenizer loads in ≈ 94 MB (−156 MB); the embedding table would shrink
 by ≈ 47 MB too. Tokenization of EN/AR/Arabizi text is unchanged by construction (removed pieces contain
 other scripts), but it is a model change, so it belongs to the P2.6 / §3.17 decision.
+
+### 8.1 Vocabulary pruning (batch 3, task 9): the shipped encoder
+
+`python -m campuspulse_ai.frameworks.cli.prune_encoder --src models/frozen/v1/encoder --out .tmp/enc_pruned
+--report reports/encoder_prune.json --install` (training machine; imports `onnx`). It keeps a piece when every
+letter/mark in it is LATIN or ARABIC (digits of any script, punctuation, symbols, emoji and `▁` are always kept)
+plus the specials, in the original order (ids 0–3 unchanged; `<mask>` renumbered), and slices the same rows out
+of the int8 word-embedding table. The table is quantized per tensor (scalar scale and zero point), so the
+slice is exact. The backup of the unpruned files goes to `.tmp/encoder.unpruned/` (never committed).
+
+**Gate** (exit 1 and no install if it fails): over 981 texts (official train + validation, `data/augmented`,
+`our_test.csv` read only as tokenizer input, the parity fixture, the injection/distress/danger exemplars; each
+raw and as `model_text`, with the `query: ` prefix) the pruned tokenizer gives identical tokens and mapped ids,
+and the pruned encoder gives cosine ≥ 0.9999 to the unpruned one. **Result: 0 token mismatches, min cosine
+1.000000, max abs difference 0.0** (bit-identical embeddings). A retrain on the pruned encoder reproduced
+`reports/cv_p1.json` byte for byte, and `predict.py` output on validation is identical.
+
+| (`reports/encoder_prune.json`, i7-10510U, fresh process per row) | unpruned | **pruned (shipped)** |
+| --- | ---: | ---: |
+| pieces / embedding rows | 250,002 / 250,037 | **130,021 / 130,021** |
+| `model_int8.onnx`, `tokenizer.json` | 112.8 MB, 16.3 MB | **68.8 MB, 4.7 MB** |
+| release tarball (`campuspulse-models-v1.tar.gz`) | ≈ 120 MB | **50.3 MB** |
+| RSS after load, 1 thread / 4 threads | 438.1 / 438.9 MB | **242.2 / 244.5 MB** |
+| peak RSS, 1 thread | 524.1 MB | **282.3 MB** |
+| ms per text (median), 1 thread / 4 threads | 20.9 / 14.4 | 22.6 / 7.4 |
+| load time, 1 thread | 2.65 s | 1.27 s |
+
+Latency is unchanged in substance (the transformer is the same; the medians move ±40 % between runs on this
+laptop). `encoder_meta.json` gains a `vocab_pruning` block (rule, counts, the source sha256s); `model_id` and
+`revision` stay the pinned e5-small. **Residual risk:** a letter of another script (CJK, Cyrillic, Greek, ...)
+now becomes `<unk>` where it had a piece; EN/AR/Arabizi text is unaffected by construction.
 
 ```python
 from campuspulse_ai.adapters.models.encoder import OnnxEncoder, CachingEncoder
@@ -709,3 +741,202 @@ lac.save(model_dir / "conformal" / "category"); LACConformal.load(model_dir / "c
   rows (+ reviewed augmentation), which are 42 unique texts in 30 groups. The scores cluster by scenario,
   so the effective n is about 30 and the 1 − α guarantee is approximate. `n_groups` is stored so the report
   can state it.
+
+## 13. Members, ensemble, priority head and floors (P1.10, P1.11, P1.13)
+
+Every member returns `ProbVector`s in the fixed label order (`CATEGORY_LABELS` / `PRIORITY_LABELS`); a class
+absent from training gets 0. Shared helpers are in `adapters/models/probs.py`: `balanced_sample_weight` (sklearn's
+"balanced" rule on **weighted** counts, so a weight of 2 equals a duplicated row; soft targets rely on it),
+`save_estimator`/`load_estimator` (`model.joblib` zlib-3 + `meta.json` with a `kind` check), and `row_proba`
+(LogisticRegression probabilities computed row by row in float64, so a text's vector never depends on the other
+rows of its batch).
+
+```python
+from campuspulse_ai.adapters.models.tfidf_lr import TfidfLR
+from campuspulse_ai.adapters.models.embed_lr import EmbedLR
+from campuspulse_ai.adapters.models.knn import ExampleIndex, IndexEntry, KnnClassifier
+from campuspulse_ai.adapters.models.ood import ood_score
+from campuspulse_ai.adapters.models.ensemble import WeightedEnsemble
+from campuspulse_ai.adapters.models.priority_head import LogisticPriorityHead
+from campuspulse_ai.application.services.priority_finalizer import PriorityFinalizer
+
+m1 = TfidfLR("category", (2, 5), (1, 2), C=2.0, seed=42); m1.fit(texts, labels, sample_weight)
+m1.predict_proba(["the projector is broken"]); m1.token_contributions("the projector is broken")
+m2 = EmbedLR("category", encoder, C=2.0, seed=42); m2.fit_embeddings(emb, labels, w); m2.predict_proba_from_embeddings(emb)
+index = ExampleIndex(LocalNumpyVectorStore(384)); index.add([IndexEntry(id, text, emb, cat, pri, lang, source, scen, group)])
+knn = KnnClassifier("category", index, encoder, k=5, memory_weight_cap=0.6, max_memory_neighbors=2,
+                    memory_min_sim=0.8, laplace_mass=1.0)
+p, neighbors = knn.predict_from_embedding(vec, memory=None)       # memory only online (P3)
+ood_score(index, vec)                                             # max cosine to the frozen index
+```
+
+| component | file | what it does |
+| --- | --- | --- |
+| `TfidfLR` (`m1`) | `tfidf_lr.py` | `FeatureUnion(char_wb 2–5, word 1–2)` TF-IDF fitted on the **distinct** texts (wrapper variants do not change the IDF) → LR (lbfgs, `max_iter` 2000, balanced weights). `token_contributions(text)`: coef × tf-idf for the argmax class, assigned to the whitespace words each feature comes from, largest first (for the P3 explainer). |
+| `EmbedLR` (`m2lr`) | `embed_lr.py` | LR over the frozen encoder's 384-d vector. `fit_embeddings`/`predict_proba_from_embeddings` take precomputed vectors; `load(dir, encoder)`. Scored with `row_proba` (batch-independent). |
+| `ExampleIndex` | `knn.py` | wraps the `train` collection: one item per **distinct** `model_text` with both labels, source, scenario and group in `meta`. `query(vec, k)` → `Neighbor`s (sim desc, ties by id); `max_similarity(vec)`; `StoreError` on an empty index. |
+| `KnnClassifier` (`m2knn`) | `knn.py` | similarity-weighted vote of the k nearest items, smoothed: p(l) = (votes(l) + `laplace_mass`/L) / (Σ votes + `laplace_mass`). Memory neighbours (online) are capped at `max_memory_neighbors` and scaled so memory holds ≤ `memory_weight_cap` of the vote. No parameters: `fit` raises (the index is the model). |
+| `ood_score` | `ood.py` | max cosine to the frozen index; never sees memory. |
+| `WeightedEnsemble` | `ensemble.py` | encodes a batch once; per text: every member's vectors (`per_model["<member>.<target>"]`), the weighted averages (`p_cat`, `p_pri_model`), `ood_score`, the kNN neighbours, the embedding. Weights must match the members and sum to 1 (`ArtifactVersionMismatch`); removing a member from config needs no code change. |
+| `LogisticPriorityHead` | `priority_head.py` | LR over `[p_low, p_medium, p_high ‖ 10 evidence flags]` (width 13), balanced; a `feature` clarification constraint sets its flag first; `coefficients()` for the report. Trained on OOF ensemble vectors (stacking). |
+| `PriorityFinalizer` | `application/services/priority_finalizer.py` | safety → one-hot high, floor `safety` (beats everything); a `priority` clarification answer → one-hot on it, floor `clarification_constraint`; injection changes nothing (the head already saw the stripped text). No rule lowers a priority. |
+
+## 14. The core: `TriageCore`, `BatchPredictUseCase`, `build_offline` (P1.15)
+
+```python
+from campuspulse_ai.composition.offline import build_offline, BatchRow
+c = build_offline(Path("models/frozen"))          # resolves CURRENT; verifies MANIFEST.json sha256 first
+req, core = c.core.classify("URGENT: The bus is late", memory=False)
+core.p_cat.argmax(), core.p_pri.argmax(), core.set_cat.labels, core.flags, core.embedding[:3]
+c.batch.run([BatchRow("R1", "the projector is broken")])          # -> [BatchPrediction(request_id, category, priority, debug)]
+c.labeler.label([("R1", "the projector is broken")], use_llm=False)  # the /v1/batch BatchLabeler port
+# tests: build_offline(tiny_model_dir, encoder_override=HashingEncoder())
+```
+
+- **`TriageCore.classify(raw, picked_location=None, constraints=(), memory=True) -> (NormalizedRequest, CoreResult)`**
+  runs ARCHITECTURE §2.0: normalize (raises `InvalidInput` on empty text) → guards Gibberish, Injection, Safety
+  (flags `gibberish`, `injection_attempt`, `distress`, `safety`; injection replaces `model_text` by the stripped
+  text before Safety runs) → ensemble → evidence → head → finalizer → LAC sets (`empty_set` flag on fallback;
+  a category answer makes `p_cat` one-hot and `S_cat = {answer}`; a floor makes `S_pri = {floor}`) → `tier0`.
+  `truncated` is flagged. `CoreResult.embedding` (D-012) is the request's encoder vector. It satisfies the
+  backend's `TriageClassifier` protocol (tested).
+- **Whole request was an injection** (`stripped_text == ""`): no model sees it. `p_cat`/`p_pri` are the frozen
+  priors, `ood_score` 0.0, `embedding` (), `per_model` {}, flag `injection_attempt`.
+- **`classify_many(raws, memory=False)`**: the same results for a batch, with one ensemble call over the
+  **distinct** `model_text`s (exact, because every member scores rows independently and the encoder runs one
+  text at a time). An empty row yields its `InvalidInput` in place. Equivalence with `classify` is tested.
+- **`BatchPredictUseCase.run(rows, use_llm=False, batch_size=64)`**: chunks → `classify_many` → argmax of `p_cat`
+  and of the final `p_pri`. Empty text → the priors' argmax + debug flag `empty_input` (LD-17). With `use_llm`,
+  rows whose sets are not both singletons ask the oracle (never `injection_attempt` rows); `LLMUnavailable` /
+  `LLMOutputOutOfSet` keep tier 0. Never applies the policy, never `out_of_scope`.
+- **`build_offline(model_dir, *, use_llm=False, settings=None, encoder_override=None) -> OfflineContainer`**
+  (`core, oracle, config, manifest, batch, vectors, encoder`, property `labeler`): manifest → config → encoder
+  (ONNX; `model_id`/`revision`/`dim` must match `config.json`; a `hashing`-trained dir needs `encoder_override`)
+  → `LocalNumpyVectorStore` with exactly `train`, `injection_exemplars`, `safety_exemplars` → members per
+  `ensemble.members` (`m3` → `ArtifactVersionMismatch`) → guards from the model dir's `lexicons/` (offline:
+  injection `strip_regex_only` with the Arabizi transliterator, safety lexicon-only) → `NullMemoryStore`,
+  `NullOracle`, `SystemClock`. `use_llm=True` raises `LLMUnavailable` until P3. Imports no Supabase, httpx,
+  torch or online adapter (runtime-tested). It also re-exports `read_batch_csv` / `write_predictions_csv`.
+- `adapters/clock.py::SystemClock` (Asia/Amman, fixed UTC+3 if the tz database is missing).
+
+## 15. `train.py`: stages, outputs, artifact layout (P1.16)
+
+```bash
+python services/ai/train.py                                   # stage A + B + C into models/frozen/v1, report reports/cv_p1.json
+# -> froze v1: members=m1,m2lr,m2knn cat_macroF1_oof_official=0.490 pri_macroF1_oof_official=0.904 sha=8fb011621fb6
+python services/ai/train.py --cv-only --report .tmp/cv.json   # stages A + B only, nothing frozen
+python services/ai/train.py --encoder hashing --data services/ai/tests/fixtures/tiny_train.csv --out <tmp>/v1   # test fixture
+```
+
+Flags: `--out` (default `models/frozen/v1`), `--report` (`reports/cv_p1.json`), `--cv-only`, `--fast` and
+`--retune` (accepted; no grid exists in P1), `--encoder {onnx,hashing}`, `--data CSV...`, `--folds CSV`.
+Exit 2 when the encoder is missing or differs from `train.yaml` (message has the export/fetch command), 4 on
+invalid input (e.g. a holdout path). Takes about 25 s on the laptop (42 distinct official texts).
+Code: `composition/training.py::run_training(TrainOptions)`; `adapters/training/{train_config,oof,stages,tuning,metrics}.py`.
+
+1. **Stage A** (`oof.py::run_cv`, frozen `cv_fold` folds, LD-31): per fold, M1 and M2-LR per target on the
+   fold-train rows with soft-target weights (§9), a kNN index of fold-train rows only, held-out probabilities and
+   max-similarity; then the equal-weight ensemble; then per outer fold the head fitted on the other folds' OOF
+   ensemble priority vectors + evidence; then the safety floor from the danger lexicon. (`run_cv` lives in
+   `oof.py`, not `cv.py`, so the splitter module stays model-free.)
+2. **Stage B, provisional** (`stages.py::stage_b`): equal weights; `C` = grid midpoint (2.0); `q_category` from
+   the OOF ensemble, `q_priority` from the OOF head + safety floor (the vectors the core turns into sets);
+   `tau_ood` = 5th percentile of OOF max-similarity; `tau_injection`/`tau_safety` = max pool similarity to the
+   injection / distress exemplars + 0.02 (LD-18); `human_review_maxprob` = the largest max-prob below which OOF
+   category accuracy < 0.6 (`tuning.py`); priors = pool label frequencies; `tau_faq`/`tau_inc` copied.
+3. **Stage C** (`stages.py::freeze`): M1 and M2-LR refit on 100 % of the pool; the head refit on all OOF
+   ensemble vectors; the `train` index from every distinct pool text; exemplar collections from the lexicons
+   (LD-20); lexicon snapshot (LD-12); `config.json`, `oof.npz`, `MANIFEST.json` (every file, encoder included);
+   `<out>/../CURRENT`.
+
+### 15.1 Artifact layout (`models/frozen/`)
+
+```
+CURRENT                                  "v1"                                        committed
+v1/config.json, MANIFEST.json            FrozenConfig; sha256 of every file below     committed
+v1/m1/{category,priority}/{model.joblib,meta.json}     TF-IDF + LR                     committed
+v1/m2lr/{category,priority}/{model.joblib,meta.json}   LR heads on the embedding       committed
+v1/head/{model.joblib,meta.json}         priority head                                committed
+v1/conformal/{category,priority}/conformal.json        LAC quantiles                  committed
+v1/index/{train,injection_exemplars,safety_exemplars}/{embeddings.npy,items.jsonl}     committed
+v1/lexicons/*.yaml                       snapshot of config/lexicons (LD-12)          committed
+v1/oof.npz                               OOF arrays: <member>__<target>, ensemble__*, head__priority, final__priority, max_sim, fold, safety, labels, ids
+v1/encoder/{model_int8.onnx,tokenizer.json,encoder_meta.json}   pruned int8 e5-small  FETCHED (gitignored)
+```
+
+Committed total 0.3 MB (no file over 1 MB). Every text file is written with LF (the manifest hashes bytes and
+git stores LF; `LocalNumpyVectorStore.save` was fixed for this in batch 3).
+
+### 15.2 Reports
+
+`reports/cv_p1.json`: `category.{macro_f1_oof_official, macro_f1_oof_all, accuracy_oof_official, per_member}`,
+`priority.{macro_f1_model_oof_official, macro_f1_head_oof_official, macro_f1_oof_official, macro_f1_oof_all,
+accuracy_oof_official, per_member}`, `joint_accuracy_oof_official`, `by_lang_script_official`, `counts`,
+`conformal_oof` (q, coverage, mean size, ask proxy), `thresholds`, `encoder`. No timestamps (deterministic).
+
+### 15.3 Frozen v1 values (`models/frozen/v1/config.json`, sha 8fb011621fb6)
+
+| key | value |
+| --- | --- |
+| `ensemble.weights_*` | m1, m2lr, m2knn = 1/3 each (provisional) |
+| `m1.C`, `m2lr.C` | 2.0, 2.0 (grid midpoint) |
+| `conformal.q_category`, `q_priority`, `n_calib` | 0.8568, 0.3942, 432 (30 groups) |
+| `thresholds.tau_ood` | 0.8362 |
+| `thresholds.tau_injection`, `tau_safety` | 0.9100, 0.9198 |
+| `thresholds.human_review_maxprob` | 0.5185 |
+| `thresholds.tau_faq`, `tau_inc` | 0.75, 0.80 (hand-tuned) |
+| `priors.priority` | low 0.287, medium 0.384, high 0.329 (argmax medium) |
+| `cv.oof_macro_f1_category`, `oof_macro_f1_priority` | 0.4901, 0.9036 |
+
+## 16. `predict.py` and its tools (P1.17)
+
+```bash
+python scripts/fetch_models.py                       # once: encoder from the release (default tag models-v1-rc1)
+python scripts/fetch_models.py --from-file dist/campuspulse-models-v1.tar.gz    # offline install of the asset
+python services/ai/predict.py --input hidden_test.csv --output predictions.csv  # judges' command
+python scripts/no_network.py services/ai/predict.py --input data/raw/validation.csv --output .tmp/pred_val.csv
+# -> wrote 62 rows → .tmp/pred_val.csv (artifact v1 sha=8fb011621fb6, tier0=62, llm=0, 3.0 s)
+python scripts/validate_predictions.py --input data/raw/validation.csv --pred .tmp/pred_val.csv
+# -> OK: 62 rows; header request_id,category,priority; labels valid; order preserved; utf-8 no BOM; LF
+```
+
+- `predict.py --input --output [--use-llm] [--model-dir models/frozen] [--debug] [--batch-size 64]`. Input: the
+  hidden-test layout (`request_id,text`; BOM accepted; other columns ignored), read with the shared
+  `read_batch_csv`. Output: `request_id,category,priority`, input order, UTF-8 without BOM, LF, written with the
+  shared `write_predictions_csv`, so it is byte-identical to `POST /v1/batch` (tested). `--debug` adds
+  `p_category, p_priority, set_cat, set_pri, tier, flags, ood_score, lang, artifact_version` and `peak_rss_mb`.
+  Sets `HF_HUB_OFFLINE`, `TRANSFORMERS_OFFLINE`, `TOKENIZERS_PARALLELISM=false`. Exit codes 0 / 2 (artifacts;
+  prints the fetch command) / 3 (`--use-llm` before P3) / 4 (input). Needs only `requirements.txt`.
+- Speed: 1,000 **distinct** texts in < 60 s on the laptop (`test_predict_speed_1000_rows`, about 25–45 s
+  depending on load; ≈ 25 ms/text of which the encoder is most). Wrapper variants of one text cost nothing extra.
+- `scripts/fetch_models.py [--tag] [--source {github,hf}] [--from-file] [--model-dir] [--force]`: stdlib only;
+  downloads `campuspulse-models-v1.tar.gz` + `SHA256SUMS` from `github.com/Talaljaber/Ai-Quest/releases/download/<tag>/`
+  (or `--source hf` with `CAMPUSPULSE_HF_REPO`), checks the tarball sha, extracts only `encoder/` with
+  `filter="data"`, verifies every MANIFEST file. `up to date` when nothing is missing. Exit 2 checksum, 3 network.
+- `scripts/no_network.py <script> [args]`: blocks `socket.connect`, `create_connection`, `getaddrinfo`,
+  `gethostbyname`, then runs the script as `__main__`.
+- `scripts/validate_predictions.py --input --pred [--score]`: the output contract; `--score` is a wiring check
+  only (validation rows are training rows).
+
+## 17. Results (first, provisional; `reports/results_v1.md`, generated by `python scripts/results_v1.py`)
+
+Protocol: scenario-held-out OOF over the frozen folds, and the frozen v1 on `data/our_test/our_test.csv` (read
+only to score). Never a random split. Artifact v1 sha 8fb011621fb6.
+
+| slice | rows | groups | cat macro-F1 | cat acc | pri macro-F1 | pri acc | joint acc |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| OOF, official rows | 432 | 30 | 0.490 | 0.512 | 0.904 | 0.903 | 0.440 |
+| our_test set1 (cross-lingual restatements) | 60 | 6 | 0.592 | 0.700 | 1.000 | 1.000 | 0.700 |
+| our_test set2 (unseen, official style, LLM-written) | 72 | 16 | 0.746 | 0.750 | 0.782 | 0.778 | 0.611 |
+| our_test set3 (unseen, free style, LLM-written) | 72 | 16 | 0.663 | 0.653 | 0.783 | 0.778 | 0.542 |
+| our_test pooled | 204 | 38 | 0.710 | 0.701 | 0.847 | 0.843 | 0.613 |
+
+Conformal on our_test pooled: category coverage 0.971 (mean set size 3.02), priority coverage 0.843 (size
+1.00, below the 0.90 target), ASK proxy 0.211. Per member (OOF category macro-F1): M1 0.205, M2-LR 0.594,
+M2-kNN 0.398, equal-weight ensemble 0.490. `reports/model_lab.json` feeds `/v1/metrics`.
+
+**Known weaknesses:** category generalization to unseen scenarios (about 4 training scenarios per category per
+fold); Arabic category (OOF 0.270 vs en 0.573); Registration absorbs errors (Academic Support → Registration,
+Finance → Registration); priority conformal sets never widen (an over-confident head, so 0 of 32 priority
+errors are covered); Arabizi priority (no Arabizi trained yet); the "today" shortcut (LD-34); the priority
+lexicons were seeded from all official rows, so OOF priority is optimistic. All caveats are in the report.
