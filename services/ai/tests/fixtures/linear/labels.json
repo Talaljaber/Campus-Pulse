@@ -1,0 +1,11 @@
+{
+  "data": {
+    "issueLabels": {
+      "nodes": [
+        {"id": "lb-registration", "name": "Registration"},
+        {"id": "lb-it", "name": "IT-Support"},
+        {"id": "lb-bug", "name": "Bug"}
+      ]
+    }
+  }
+}
