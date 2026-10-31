@@ -363,3 +363,21 @@
 ### P4.3 follow-up — seed contacts  (DB, 2026-10-31)
 - **Acceptance:** `python scripts/check_seed_contacts.py` → `seed contacts OK: 6 addresses in 4 files, all allow-listed`. The user added two personal Gmail inboxes to the local `DEMO_EMAIL_ALLOWLIST`; a GJU address they offered was left out (CLAUDE.md non-negotiable).
 - **Pending:** `seed_demo_users.py` waits for `DEMO_USER_PASSWORD` in the worktree `.env`.
+
+### P4.10 — attach rule D-007  (DB, 2026-10-31, commit bc9235f)
+- **What changed:** a report attaches to the oldest **open** incident for its building and category whatever the incident's age. `INCIDENT_WINDOW_MIN` only bounds which recent requests count toward **opening** one. On attach the detector skips the vector search and returns `members = [req.id]`.
+- **Acceptance:** `pytest services/ai/tests/unit/test_incident_detector.py -q` → `16 passed` (8 local + 8 live). The new case `test_open_incident_takes_reports_whatever_its_age` has a report at 3× the window attaching to the same incident (reports=4), while another building gets none.
+- **Affects streams:** Backend (attach decisions can arrive for long-running incidents), UI (one incident per ongoing outage).
+
+### P4.5 — VectorFAQRetriever and the tau_faq tuning script  (DB, 2026-10-31, commits 6133684, ebc57d1)
+- **What now exists:** `adapters/faq/retriever.py`, `tests/unit/test_faq.py`, `scripts/tune_faq.py`, `config/faq_tuning.yaml` (30 hand-written probes).
+- **Public interfaces added or changed:** `VectorFAQRetriever(vectors, encoder, collection="faq").search(text, lang, k) -> list[FAQHit]`. See [schema.md › FAQ retrieval](../db/schema.md#faq-retrieval).
+- **How to use it:** `hits = VectorFAQRetriever(pg_store, encoder).search(text, req.lang, k=1)`, then `if hits and hits[0].score >= config.thresholds.tau_faq:` answer with `hits[0].answer`, `hits[0].source_url` and the `[demo]` marker when `is_demo`.
+- **Config / env added:** `tau_faq` stays 0.75 in `config/hand_tuned.yaml` until the tuning runs.
+- **Acceptance:**
+  - `pytest services/ai/tests/unit/test_faq.py -q` → `9 passed` (5 local with LocalNumpyVectorStore + a signed bag-of-words hashing encoder, 4 live on pgvector). Covered: best match first with source/demo fields, language filter (Arabizi → AR), k, empty store → [], missing collection → StoreError.
+  - `tune_faq.py`: the sweep/choice logic was checked on a toy set (picks the lowest τ with precision 1.00); its in-place `tau_faq` rewrite keeps the comments; with no frozen model it exits 2 with a clear message and `hand_tuned.yaml` stays unchanged.
+- **Limitations / TODO / known issues:**
+  - **Not run yet:** the real tuning and `seed_faq.py` wait for the ML encoder (P1.6). The lead will signal when it merges, and the `OnnxEncoder(model_dir / "encoder")` constructor will be confirmed then.
+  - **Test encoder:** the tests use their own hashing encoder because the shared `HashingEncoder` fake does not exist yet.
+- **Affects streams:** Backend (FAQ answer-first in Act P4.8), ML (encoder needed for tuning).

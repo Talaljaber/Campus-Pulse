@@ -199,6 +199,17 @@ All three implement the same `MemoryStore` contract:
 - `stats.by_category` counts active examples only.
 - `last_added_at` is the newest `created_at`.
 
+## FAQ retrieval
+
+`adapters/faq/retriever.py`: **`VectorFAQRetriever(vectors, encoder, collection="faq")`** implements `FAQRetriever`.
+- **Query:** `search(text, lang, k)` embeds the question with the shared encoder (the encoder adds the e5 `query: ` prefix, LD-9).
+- **Language:** it searches only the request language. `arabizi` maps to the `ar` entries, because the FAQ has no Arabizi rows.
+- **Results:** up to `k` `FAQHit`s, score descending, each with `answer`, `source_url` (`""` when none) and `is_demo`.
+- **Errors:** `StoreError` propagates (Act falls back to a ticket).
+- **Threshold:** it does **not** apply `tau_faq`; the action engine does. The answer text is always the retrieved text plus its source, with `[demo]` marking placeholders.
+
+**Tuning:** `python scripts/tune_faq.py [--dry-run]` runs `config/faq_tuning.yaml` (15 answerable paraphrases, 15 uncovered questions; EN/AR/Arabizi) through encoder → retriever → pgvector. It sweeps τ over 0.50–0.95 and writes the lowest τ with precision 1.00 to `config/hand_tuned.yaml` `tau_faq` (current default 0.75). It needs the frozen encoder and embedded FAQ rows (`seed_faq.py` first).
+
 ## Incident detection (Pulse)
 
 `adapters/pulse/incident_detector.py`: **`WindowedCentroidDetector(repo, vectors, clock, tau_inc, window_min, min_reports=3, bump_at=6)`** implements `IncidentDetector`.
