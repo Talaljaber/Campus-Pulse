@@ -102,17 +102,17 @@ Totals: train 370 rows / 36 scenarios; val 62 rows / 6 scenarios.
 | prefix | rows |
 |---|---|
 | (none) | 72 |
-| Please help: | 23 |
-| University helpdesk: | 23 |
-| Could you assist? | 23 |
-| This is my issue: | 23 |
 | Hi team, | 23 |
-| I need assistance. | 23 |
-| URGENT: | 23 |
-| Hello, | 23 |
 | Student request: | 23 |
-| ارجو المساعدة، | 13 |
+| Hello, | 23 |
+| URGENT: | 23 |
+| Please help: | 23 |
+| I need assistance. | 23 |
+| This is my issue: | 23 |
+| Could you assist? | 23 |
+| University helpdesk: | 23 |
 | مرحبا يا جماعة | 13 |
+| ارجو المساعدة، | 13 |
 | لو سمحت | 13 |
 | سؤال: | 13 |
 | عندي مشكلة: | 13 |
@@ -129,21 +129,21 @@ Totals: train 370 rows / 36 scenarios; val 62 rows / 6 scenarios.
 | prefix | rows |
 |---|---|
 | (none) | 12 |
+| University helpdesk: | 4 |
 | URGENT: | 4 |
 | I need assistance. | 4 |
 | Hi team, | 4 |
 | Please help: | 4 |
 | This is my issue: | 4 |
-| University helpdesk: | 4 |
 | Could you assist? | 4 |
 | Student request: | 4 |
 | Hello, | 4 |
-| مرحبا يا جماعة | 2 |
-| ممكن تساعدوني؟ | 2 |
-| سؤال: | 2 |
+| عندي مشكلة: | 2 |
 | ارجو المساعدة، | 2 |
 | مرحبا، | 2 |
-| عندي مشكلة: | 2 |
+| مرحبا يا جماعة | 2 |
+| سؤال: | 2 |
+| ممكن تساعدوني؟ | 2 |
 | لو سمحت | 2 |
 
 ### Suffixes (val)
