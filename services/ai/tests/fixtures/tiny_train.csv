@@ -1,0 +1,61 @@
+request_id,text,scenario_id,cv_group,category,priority,cv_fold
+TR-0001,حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم,TR-S01,TR-S01,IT Support,high,2
+TR-0002,"Hi team, I need a copy of my payment receipt",TR-S02,TR-S02,Finance,low,2
+TR-0003,I need a copy of my payment receipt Please respond when possible.,TR-S02,TR-S02,Finance,low,2
+TR-0004,Student request: A laboratory door is stuck and students cannot leave,TR-S03,TR-S03,Facilities,high,1
+TR-0005,"Hello, The system removed my registered course without warning",TR-S04,TR-S04,Registration,high,1
+TR-0006,مرحبا يا جماعة علامتي غلط وآخر يوم اعتراض اليوم,TR-S05,TR-S05,Academic Support,high,3
+TR-0007,"Hi team, I need help understanding the prerequisite rule",TR-S06,TR-S06,Registration,medium,2
+TR-0008,"Hi team, My tuition payment is not reflected and registration closes today",TR-S07,TR-S07,Finance,high,0
+TR-0009,وين بلاقي مواعيد السحب والاضافة؟ وشكرا,TR-S08,TR-S08,Registration,low,4
+TR-0010,URGENT: Where can I meet my academic advisor?,TR-S09,TR-S09,Academic Support,low,1
+TR-0011,كيف بغير كلمة السر؟ وشكرا,TR-S10,TR-S10,IT Support,low,3
+TR-0012,The learning platform is unavailable during an online quiz,TR-S11,TR-S11,IT Support,high,1
+TR-0013,"Hello, Where can I meet my academic advisor?",TR-S09,TR-S09,Academic Support,low,1
+TR-0014,ارجو المساعدة، علامتي غلط وآخر يوم اعتراض اليوم,TR-S05,TR-S05,Academic Support,high,3
+TR-0015,Please help: The student portal shows an error when I upload a file,TR-S12,TR-S12,IT Support,medium,0
+TR-0016,I need assistance. My scholarship discount is missing from the invoice,TR-S13,TR-S13,Finance,medium,4
+TR-0017,Please help: The university bus is running twenty minutes late,TR-S14,TR-S14,Transportation,medium,3
+TR-0018,مرحبا يا جماعة وين جدول الباصات؟,TR-S15,TR-S15,Transportation,low,1
+TR-0020,Could you assist? I need help understanding the prerequisite rule,TR-S06,TR-S06,Registration,medium,2
+TR-0021,URGENT: The campus Wi-Fi disconnects every few minutes,TR-S16,TR-S16,IT Support,medium,4
+TR-0022,Where do I check the tuition installment dates? Please respond when possible.,TR-S17,TR-S17,Finance,low,3
+TR-0023,Student request: I cannot access the feedback on my assignment,TR-S18,TR-S18,Academic Support,medium,2
+TR-0024,Could you assist? Water is leaking near an electrical socket in the lab,TR-S19,TR-S19,Facilities,high,4
+TR-0026,This is my issue: An air conditioner stopped working in the lecture room,TR-S20,TR-S20,Facilities,medium,0
+TR-0027,I cannot add my courses because the registration portal rejects my request,TR-S21,TR-S21,Registration,high,0
+TR-0028,I need assistance. The learning platform is unavailable during an online quiz,TR-S11,TR-S11,IT Support,high,1
+TR-0029,Please help: My bus pass stopped working this morning,TR-S22,TR-S22,Transportation,medium,2
+TR-0030,I need assistance. The bus route changed without an announcement,TR-S23,TR-S23,Transportation,medium,0
+TR-0031,The student portal shows an error when I upload a file,TR-S12,TR-S12,IT Support,medium,0
+TR-0032,The exam schedule has two tests at the same time,TR-S24,TR-S24,Academic Support,medium,4
+TR-0033,URGENT: Water is leaking near an electrical socket in the lab,TR-S19,TR-S19,Facilities,high,4
+TR-0034,لو سمحت مش قادر اسجل مواد والنظام بعطيني خطأ,TR-S25,TR-S21,Registration,high,0
+TR-0035,سؤال: دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم,TR-S26,TR-S07,Finance,high,0
+TR-0037,Student request: The exam schedule has two tests at the same time,TR-S24,TR-S24,Academic Support,medium,4
+TR-0038,A hallway light is broken Please respond when possible.,TR-S27,TR-S27,Facilities,low,2
+TR-0039,ارجو المساعدة، كيف بغير كلمة السر؟,TR-S10,TR-S10,IT Support,low,3
+TR-0040,My scholarship discount is missing from the invoice,TR-S13,TR-S13,Finance,medium,4
+TR-0041,"Hi team, I need advice choosing an elective course",TR-S28,TR-S28,Academic Support,low,0
+TR-0042,عندي مشكلة: وين بلاقي مواعيد السحب والاضافة؟,TR-S08,TR-S08,Registration,low,4
+TR-0043,The campus Wi-Fi disconnects every few minutes,TR-S16,TR-S16,IT Support,medium,4
+TR-0044,"Hello, A hallway light is broken",TR-S27,TR-S27,Facilities,low,2
+TR-0047,لو سمحت صفحة التسجيل معلقة عندي,TR-S30,TR-S30,Registration,medium,3
+TR-0048,سؤال: الباص الاخير انلغى وضلوا طلاب بدون مواصلات,TR-S31,TR-S31,Transportation,high,4
+TR-0049,An air conditioner stopped working in the lecture room,TR-S20,TR-S20,Facilities,medium,0
+TR-0050,URGENT: My university account is locked and I have an online exam today,TR-S32,TR-S01,IT Support,high,2
+TR-0051,My bus pass stopped working this morning,TR-S22,TR-S22,Transportation,medium,2
+TR-0053,صفحة التسجيل معلقة عندي,TR-S30,TR-S30,Registration,medium,3
+TR-0062,This is my issue: I need advice choosing an elective course,TR-S28,TR-S28,Academic Support,low,0
+TR-0069,Please help: Where do I check the tuition installment dates?,TR-S17,TR-S17,Finance,low,3
+TR-0070,الباص الاخير انلغى وضلوا طلاب بدون مواصلات,TR-S31,TR-S31,Transportation,high,4
+TR-0072,The system removed my registered course without warning Please respond when possible.,TR-S04,TR-S04,Registration,high,1
+TR-0073,المبلغ الظاهر على حسابي مش صحيح وشكرا,TR-S35,TR-S35,Finance,medium,1
+TR-0076,Please help: A laboratory door is stuck and students cannot leave,TR-S03,TR-S03,Facilities,high,1
+TR-0095,لو سمحت وين جدول الباصات؟,TR-S15,TR-S15,Transportation,low,1
+TR-0096,المبلغ الظاهر على حسابي مش صحيح,TR-S35,TR-S35,Finance,medium,1
+TR-0106,This is my issue: The bus route changed without an announcement,TR-S23,TR-S23,Transportation,medium,0
+TR-0113,"Hello, I cannot access the feedback on my assignment",TR-S18,TR-S18,Academic Support,medium,2
+TR-0133,The university bus is running twenty minutes late Please respond when possible.,TR-S14,TR-S14,Transportation,medium,3
+VA-0008,البروجكتور بالغرفة مش شغال,VA-S04,VA-S04,Facilities,medium,3
+VA-0011,ارجو المساعدة، البروجكتور بالغرفة مش شغال,VA-S04,VA-S04,Facilities,medium,3

@@ -1,0 +1,143 @@
+{
+  "artifact_version": "v1",
+  "by_lang_script_official": {
+    "ar": {
+      "category": {
+        "accuracy": 0.3333,
+        "macro_f1": 0.2698
+      },
+      "counts": {
+        "distinct_texts": 15,
+        "groups": 15,
+        "rows": 135
+      },
+      "joint_accuracy": 0.2667,
+      "priority": {
+        "accuracy": 0.9333,
+        "macro_f1": 0.9221
+      }
+    },
+    "en": {
+      "category": {
+        "accuracy": 0.5926,
+        "macro_f1": 0.5727
+      },
+      "counts": {
+        "distinct_texts": 27,
+        "groups": 27,
+        "rows": 297
+      },
+      "joint_accuracy": 0.5185,
+      "priority": {
+        "accuracy": 0.8889,
+        "macro_f1": 0.8926
+      }
+    }
+  },
+  "category": {
+    "accuracy_oof_official": 0.5116,
+    "macro_f1_oof_all": 0.4901,
+    "macro_f1_oof_official": 0.4901,
+    "per_member": {
+      "ensemble": {
+        "accuracy": 0.5116,
+        "macro_f1": 0.4901
+      },
+      "m1": {
+        "accuracy": 0.2153,
+        "macro_f1": 0.2053
+      },
+      "m2knn": {
+        "accuracy": 0.3935,
+        "macro_f1": 0.3979
+      },
+      "m2lr": {
+        "accuracy": 0.6042,
+        "macro_f1": 0.5939
+      }
+    }
+  },
+  "conformal_oof": {
+    "ask_proxy_rate": 0.0926,
+    "category": {
+      "coverage": 0.9167,
+      "mean_size": 3.3356,
+      "n": 432,
+      "q": 0.856812
+    },
+    "n_groups": 30,
+    "note": "quantile calibrated on these same OOF scores; approximate, effective n ~ groups",
+    "priority": {
+      "coverage": 0.9028,
+      "mean_size": 1.0,
+      "n": 432,
+      "q": 0.394165
+    }
+  },
+  "counts": {
+    "all": {
+      "distinct_texts": 42,
+      "groups": 30,
+      "rows": 432
+    },
+    "official": {
+      "distinct_texts": 42,
+      "groups": 30,
+      "rows": 432
+    }
+  },
+  "encoder": {
+    "model_id": "intfloat/multilingual-e5-small",
+    "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+    "runtime": "onnx_int8"
+  },
+  "joint_accuracy_oof_official": 0.4398,
+  "k": 5,
+  "members": [
+    "m1",
+    "m2lr",
+    "m2knn"
+  ],
+  "priority": {
+    "accuracy_oof_official": 0.9028,
+    "macro_f1_head_oof_official": 0.8604,
+    "macro_f1_model_oof_official": 0.578,
+    "macro_f1_oof_all": 0.9036,
+    "macro_f1_oof_official": 0.9036,
+    "per_member": {
+      "ensemble": {
+        "accuracy": 0.5625,
+        "macro_f1": 0.578
+      },
+      "final": {
+        "accuracy": 0.9028,
+        "macro_f1": 0.9036
+      },
+      "head": {
+        "accuracy": 0.8565,
+        "macro_f1": 0.8604
+      },
+      "m1": {
+        "accuracy": 0.537,
+        "macro_f1": 0.5423
+      },
+      "m2knn": {
+        "accuracy": 0.3681,
+        "macro_f1": 0.3367
+      },
+      "m2lr": {
+        "accuracy": 0.5833,
+        "macro_f1": 0.5885
+      }
+    }
+  },
+  "protocol": "scenario-held-out OOF over the frozen cv_fold folds (LD-31); metrics on official hard labels",
+  "safety_floor_rows": 40,
+  "stage_b": "provisional: equal weights, C = grid midpoint (P2.7 tunes on OOF)",
+  "thresholds": {
+    "human_review_maxprob": 0.518482,
+    "tau_injection": 0.910022,
+    "tau_ood": 0.836229,
+    "tau_safety": 0.919777
+  }
+}
