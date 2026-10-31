@@ -39,7 +39,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-1"></a>
 ## P3.1 — Implement the deterministic DecisionPolicy
 
-- [ ] Done
+- [x] Done
 - Depends on: P1 (`CoreResult`, `Outcome`, `FrozenConfig.thresholds.tau_ood`)
 - Est: 1 h · Cut: no
 - Files:
@@ -460,7 +460,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
      - SLA hours;
      - provisional deferral;
      - repository round-trips.
-- Acceptance: `pytest services/ai/tests/unit/test_routing.py services/ai/tests/unit/test_inmemory_repo.py -q` → `passed`; `python -c "import campuspulse_ai.application.dto"` → exit 0, with no pydantic in `sys.modules` from that import.
+- Acceptance: `pytest services/ai/tests/unit/test_routing.py services/ai/tests/unit/test_inmemory_repo.py -q` → `passed`. (**LD-36:** `application/dto.py` already exists from P0.13 as pydantic; do not re-create it. **LD-37:** `InMemoryRepository` is built by the DB stream; use it.)
 - Hands off: `build_test()` to every P3/P4 API test; `TableActionPlanner` to P3.9 and [P4.8](P4_product_backend.md#p4-8).
 
 <a id="p3-9"></a>

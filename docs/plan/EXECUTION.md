@@ -101,7 +101,7 @@ Nothing runs in parallel until gate G0 passes, because every stream depends on t
 <a id="p0-13"></a>
 ### P0.13 — API contract stub (new task, Backend, 1.5 h)
 
-- [ ] Done
+- [x] Done
 - **Goal:** freeze the HTTP contract before the backend exists, so the UI can build against it from day 1.
 - **Files:**
   - `services/ai/campuspulse_ai/application/dto.py`: Pydantic models for every `/v1` request and response in SPEC §7, plus the [LD-25](../PLAN.md#ld-25) additions, `understanding` ([UD-10](../PLAN.md#ud-10)) and `/v1/insights/recurring` ([UD-6](../PLAN.md#ud-6)).

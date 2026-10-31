@@ -315,6 +315,15 @@ Decided by the lead on 2026-10-31 and applied throughout the phase files and [AR
   - P2.9 adds a masked-deadline ablation.
   - The report states the risk ([P6.7](plan/P6_ship.md#p6-7)). (audit F3)
 - <a id="ld-35"></a>**LD-35 Wrapper stripping.** `clean_data.py` strips exact matches only. The package stripper ([P1.1](plan/P1_scored_core.md#p1-1)) also strips `urgent:` (lowercase), `URGENT` without a colon and case/punctuation variants of known prefixes, with tests. The P0.3c print guard is the only edit to `clean_data.py`, and its outputs stay byte-identical. (audit F4, F6)
+- <a id="ld-36"></a>**LD-36 API DTOs use pydantic.** `application/dto.py` (built in P0.13) is the HTTP contract and uses pydantic v2. It is the **only** application module allowed to import pydantic, and `test_architecture.py` enforces this. P3.8 no longer re-creates the DTOs, and its "no pydantic" acceptance line is dropped.
+  - **Accepted P0.13 contract choices:**
+    - error body `{"error": {"code", "message", "details"}}`;
+    - response keys are always present (null when unused);
+    - snake_case JSON everywhere, including `/v1/insights/recurring` (P5.20 uses the generated snake_case types);
+    - roles per route in `frameworks/api_contract.py`;
+    - `out_of_scope` returns topic chips (`question_id: "topic"`, which ClarifyUseCase accepts);
+    - `frameworks/api_contract.route_kwargs` must be used by the real routes (P3.12), and `/health` adopts `dto.HealthResponse` there.
+- <a id="ld-37"></a>**LD-37 Ownership moves.** P1.7 `LocalNumpyVectorStore` and `InMemoryRepository` (formerly part of P3.8) move to the DB stream, because they sit in DB-owned paths (`adapters/vectors`, `adapters/store`). `build_online` (P4.3) is assigned later by the lead, once the notifier, sink and oracle adapters exist.
 
 ## Open questions for the user
 
@@ -352,4 +361,6 @@ Global log for decisions that change scope, a threshold, a model, a library or a
 
 | ID | Date | Phase / task | Decision | Why / evidence (command output, link) | Supersedes |
 | --- | --- | --- | --- | --- | --- |
-| D-001 | | | | | |
+| D-001 | 2026-10-31 | P0.13 / P0.6 | pydantic allowed in `application/dto.py` only (LD-36) | the contract is pydantic; the architecture test was updated, and 120 tests pass on main | P3.8 "stdlib DTOs" |
+| D-002 | 2026-10-31 | P1.7, P3.8 | LocalNumpyVectorStore and InMemoryRepository move to the DB stream (LD-37) | ownership table: adapters/vectors and adapters/store are DB-owned | EXECUTION stream table |
+| D-003 | 2026-10-31 | P4.1/P4.2 | DB deviations accepted: security-definer student view, column grants on embeddings, private helper schema, `starts_at`/`ends_at`, outbox `kind`/`channel` | stricter RLS; matches the domain `Slot` | SPEC §8 column names |
