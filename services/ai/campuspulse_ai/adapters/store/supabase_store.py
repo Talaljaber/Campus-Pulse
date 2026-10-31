@@ -270,6 +270,19 @@ class SupabaseRepository:
 
         return self._incidents(self._rows("list_incidents", run))
 
+    def mark_simulated(self, request_id: str) -> None:
+        self._update("requests", {"simulated": True}, "id", request_id)
+
+    def simulated(self, request_ids: Sequence[str]) -> set[str]:
+        ids = list(dict.fromkeys(request_ids))
+        if not ids:
+            return set()
+        rows = self._rows(
+            "simulated",
+            lambda: self._db.table("requests").select("id").in_("id", ids).eq("simulated", True).execute(),
+        )
+        return {str(r["id"]) for r in rows}
+
     # ------------------------------------------------------------------ outbox / signals / audit
 
     def save_outbox(self, m: OutboxMessage) -> OutboxMessage:

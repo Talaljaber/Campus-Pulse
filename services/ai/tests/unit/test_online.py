@@ -62,6 +62,7 @@ def wire(offline: OfflineContainer, **settings: Any) -> Wired:
     adapters = online.OnlineAdapters(
         repo=repo,
         reads=repo,
+        marks=repo,
         vectors=vectors,
         memory=memory,
         sinks=(SupabaseSink(repo), linear),
@@ -76,7 +77,8 @@ def wire(offline: OfflineContainer, **settings: Any) -> Wired:
 def test_every_route_use_case_is_wired_and_health_is_ok(offline: OfflineContainer) -> None:
     w = wire(offline)
     s = w.services
-    wired = (s.triage, s.clarify, s.feedback, s.tickets, s.sla, s.clock, s.batch, s.metrics, s.redteam)
+    wired = (s.triage, s.clarify, s.feedback, s.tickets, s.incidents, s.sla, s.clock)
+    assert None not in (s.batch, s.metrics, s.redteam)
     assert None not in wired
     body = w.client.get("/health").json()
     assert body["status"] == "ok" and body["artifact"] == offline.manifest.artifact_version
@@ -194,3 +196,14 @@ def test_a_staff_correction_is_a_memory_neighbour_of_the_next_request(offline: O
     _, core = w.services.triage._core.classify(text)  # noqa: SLF001 - inspect the neighbours
     memory = [n for n in core.neighbors if n.source == "memory"]
     assert memory and memory[0].category == "Registration" and memory[0].sim > 0.99
+
+
+def test_hand_tuned_thresholds_override_the_frozen_ones(tmp_path: Path) -> None:
+    frozen = online.HandTuned(tau_faq=0.75, tau_inc=0.80)
+    tuned = online.HandTuned.load(online.HAND_TUNED_YAML, frozen)
+    assert tuned.tau_inc == pytest.approx(0.92)  # D-015
+    assert online.HandTuned.load(tmp_path / "missing.yaml", frozen) == frozen
+    bad = tmp_path / "bad.yaml"
+    bad.write_text("tau_inc: 1.5\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="tau_inc"):
+        online.HandTuned.load(bad, frozen)

@@ -4067,6 +4067,12 @@
               }
             ],
             "title": "Resolved At"
+          },
+          "simulated": {
+            "type": "boolean",
+            "title": "Simulated",
+            "description": "True when every member report is `simulate_pulse.py` traffic (P4.10).",
+            "default": false
           }
         },
         "additionalProperties": false,

@@ -834,7 +834,8 @@ Response `200`:
     ],
     "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0015",
     "opened_at": "2026-11-05T11:42:30+03:00",
-    "resolved_at": null
+    "resolved_at": null,
+    "simulated": false
   }
 ]
 ```
@@ -917,7 +918,8 @@ Response `200`:
     ],
     "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0015",
     "opened_at": "2026-11-05T11:42:30+03:00",
-    "resolved_at": "2026-11-05T12:30:00+03:00"
+    "resolved_at": "2026-11-05T12:30:00+03:00",
+    "simulated": false
   },
   "closed_ticket_ids": [
     "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0011",
@@ -2277,6 +2279,7 @@ A Pulse incident: several reports of the same problem in one building.
 | `ticket_id` | string \| null | yes | The one incident ticket (linked to Linear) |
 | `opened_at` | string (date-time) | yes |  |
 | `resolved_at` | string (date-time) \| null | yes |  |
+| `simulated` | boolean | no | True when every member report is `simulate_pulse.py` traffic (P4.10); default `false` |
 
 <a id="schema-lang"></a>
 ### Lang

@@ -22,6 +22,8 @@ from campuspulse_ai.frameworks.routes.deps import Services
 
 router = APIRouter()
 
+SIMULATION_ROLES = frozenset({"service", "admin"})
+"""Callers whose `simulated: true` is honoured (`simulate_pulse.py` uses the service token)."""
 DEBUG_ROLE = "admin"
 """`?debug=members` (per-model probabilities) is admin-only (P5.16)."""
 
@@ -47,6 +49,8 @@ def triage(
     if debug and caller.role != DEBUG_ROLE:
         raise ApiError(ErrorCode.FORBIDDEN, "debug=members is for admins only.", {"role": caller.role})
     cmd = body if caller.alias is None else body.model_copy(update={"student_alias": caller.alias})
+    if cmd.simulated and caller.role not in SIMULATION_ROLES:
+        cmd = cmd.model_copy(update={"simulated": False})  # only scripts and admins mark traffic
     return triage_view(services.triage.run(cmd, debug_members=debug), caller.role)
 
 

@@ -29,6 +29,8 @@ class StudentMessages:
     booking_unavailable: str
     safety: str  # {office}
     update_subject: str
+    incident_merged: str  # {building} {reports}
+    incident_resolved: str  # {title}
 
 
 @dataclass(frozen=True, slots=True)

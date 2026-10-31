@@ -33,6 +33,10 @@ student:
       If anyone is in danger, move away from the area and call campus security now (demo) or 911.
       We've alerted the {office} team.
     update_subject: "Your CampusPulse request"
+    incident_merged: >-
+      Other students in building {building} reported the same problem ({reports} reports so far). Staff
+      are already on it as one incident; we'll tell you here when it's fixed.
+    incident_resolved: "Good news: \"{title}\" has been resolved. Thanks for reporting it."
   ar:
     distress: >-
       حاسين إنك بتمر بإشي صعب كتير، وما لازم تواجهه لحالك. حدا من الموظفين رح يتواصل معك شخصياً. فيك
@@ -48,6 +52,10 @@ student:
     booking_unavailable: "ما قدرنا نحجز موعد مع مرشد هلأ، ففتحنا تذكرة مستعجلة ورح يتواصل معك مرشد."
     safety: "إذا في حدا بخطر، ابعدوا عن المكان واتصلوا بأمن الحرم الجامعي هلأ (تجريبي) أو على 911. بلّغنا فريق {office}."
     update_subject: "طلبك على CampusPulse"
+    incident_merged: >-
+      طلاب ثانيين بمبنى {building} بلّغوا عن نفس المشكلة ({reports} بلاغات لهلأ). الموظفين شغالين عليها
+      كبلاغ واحد، ورح نخبرك هون لما تنحل.
+    incident_resolved: "أخبار حلوة: انحلّت مشكلة \"{title}\". شكراً إنك بلّغت."
 
 email:
   booking_subject: "[CampusPulse demo] Advisor appointment: {title}"

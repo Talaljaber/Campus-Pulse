@@ -19,6 +19,7 @@ They are structural (Protocols), so the real classes satisfy them without import
 - `LifecycleReads` are the reads feedback and Pulse need beyond the `Repository` port (a prediction
   by id, a pending review, the tickets of requests, incidents); both store adapters implement it.
 - `Identified` is an `Actor` that also carries its auth user id (`frameworks/auth.Principal`).
+- `SimulationMarks` writes and reads `requests.simulated` (simulator traffic, P4.10).
 """
 
 from __future__ import annotations
@@ -190,3 +191,15 @@ class LifecycleReads(Protocol):
     def get_incident(self, id: str) -> Incident: ...
 
     def list_incidents(self, *, open_only: bool, limit: int) -> list[Incident]: ...
+
+
+@runtime_checkable
+class SimulationMarks(Protocol):
+    """`requests.simulated` (P4.10): `scripts/simulate_pulse.py` traffic is marked so the UI can label
+    it. `mark_simulated(id)` sets the flag (`NotFound` for an unknown request); `simulated(ids)` returns
+    the subset of `ids` that are marked. Both store adapters implement it; `StoreError` when unreachable.
+    """
+
+    def mark_simulated(self, request_id: str) -> None: ...
+
+    def simulated(self, request_ids: Sequence[str]) -> set[str]: ...

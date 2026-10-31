@@ -62,9 +62,10 @@ from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
+from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
-from campuspulse_ai.application.use_cases.ports import IdentityVerifier, LifecycleReads
+from campuspulse_ai.application.use_cases.ports import IdentityVerifier, LifecycleReads, SimulationMarks
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.composition.api import ApiServices, HealthInfo, build_identity
@@ -98,6 +99,7 @@ VECTOR_STORE_PGVECTOR = "pgvector"
 SINK_LINEAR = "linear"
 CHANNEL_EMAIL = "email"
 CHANNEL_IN_APP = "in_app"
+HAND_TUNED_YAML = CONFIG_DIR / "hand_tuned.yaml"
 PROMPTS_DIR = CONFIG_DIR / "prompts"
 TEMPLATES_DIR = CONFIG_DIR / "templates"
 ORACLE_PROMPT = "oracle"
@@ -109,7 +111,8 @@ UNDERSTAND_PROMPT_VERSION = "v1"
 class OnlineAdapters:
     """The I/O adapters `wire_online` composes (Supabase and integrations in production, fakes in tests).
 
-    - `reads`: the extra reads of feedback and Pulse (the repository itself in production).
+    - `reads`: the extra reads of feedback and Pulse; `marks`: `requests.simulated` (both are the
+      repository itself in production).
     - `vectors` holds the live collections (`requests`, `faq`; `memory` behind `memory`).
     - `sinks`: the record sink first, then the mirrors (Linear), in push order.
     - `channels`: notifier per outbox kind (`in_app` always; `email` only when SMTP is configured).
@@ -119,6 +122,7 @@ class OnlineAdapters:
 
     repo: Repository
     reads: LifecycleReads
+    marks: SimulationMarks | None
     vectors: VectorStore
     memory: MemoryStore
     sinks: tuple[TicketSink, ...]
@@ -126,6 +130,30 @@ class OnlineAdapters:
     calendars: tuple[CalendarProvider, ...] = ()
     identity: IdentityVerifier | None = None
     vector_store: str = VECTOR_STORE_PGVECTOR
+
+
+@dataclass(frozen=True, slots=True)
+class HandTuned:
+    """The thresholds no training data can set (LD-11): `tau_faq` (FAQ answer floor, P4.5) and
+    `tau_inc` (incident clustering floor, D-015). Read from `config/hand_tuned.yaml` at startup so a
+    hand-tuned value reaches the live service without re-freezing the model; `predict.py` and the
+    scored labels use neither."""
+
+    tau_faq: float
+    tau_inc: float
+
+    @classmethod
+    def load(cls, path: Path, fallback: HandTuned) -> HandTuned:
+        """The file's values; a missing file or key keeps `fallback` (the frozen config's values).
+        Raises `ValueError` for a value outside (0, 1]."""
+        data = _yaml(path) if path.is_file() else {}
+        values = {
+            key: float(data.get(key, getattr(fallback, key))) for key in ("tau_faq", "tau_inc")
+        }
+        for key, value in values.items():
+            if not 0.0 < value <= 1.0:
+                raise ValueError(f"{path}: {key} must be in (0, 1], got {value}")
+        return cls(**values)
 
 
 @dataclass(frozen=True)
@@ -198,6 +226,7 @@ def supabase_adapters(
     return OnlineAdapters(
         repo=repo,
         reads=repo,
+        marks=repo,
         vectors=vectors,
         memory=PgVectorMemoryStore(vectors, client),
         sinks=(SupabaseSink(repo), *mirror_sinks(settings, clock)),
@@ -339,6 +368,10 @@ def wire_online(
     beyond reading `config/*.yaml`. Raises `ValueError`/`KeyError` for a malformed config file."""
     llm = llm or LLMWiring()
     config = offline.config
+    frozen = HandTuned(config.thresholds.tau_faq, config.thresholds.tau_inc)
+    tuned = HandTuned.load(HAND_TUNED_YAML, frozen)
+    if tuned != frozen:
+        log.info("hand-tuned thresholds %s override the frozen %s", tuned, frozen)
     repo = adapters.repo
     core = with_memory(offline.core, adapters.memory)
     policy = DefaultDecisionPolicy(config.thresholds.tau_ood)
@@ -361,7 +394,7 @@ def wire_online(
         recipients,
         repo,
         clock,
-        tau_faq=config.thresholds.tau_faq,
+        tau_faq=tuned.tau_faq,
         config=act_config,
         messages=messages,
     )
@@ -374,6 +407,7 @@ def wire_online(
         prompt_version=config.llm.prompt_version,
         enabled=bool(llm.oracles),
     )
+    incident_actions = IncidentActions(act, sinks, repo, adapters.reads, notifier, clock, messages)
     flow = DecisionFlow(
         policy=policy,
         clarifier=InfoGainStrategy(QuestionBank.load(CONFIG_DIR / "clarify_questions.yaml")),
@@ -391,13 +425,14 @@ def wire_online(
             vectors=adapters.vectors,
             encoder=offline.encoder,
             incidents=WindowedCentroidDetector(
-                repo, adapters.vectors, clock, config.thresholds.tau_inc, settings.incident_window_min
+                repo, adapters.vectors, clock, tuned.tau_inc, settings.incident_window_min
             ),
+            actions=incident_actions,
         ),
     )
     manifest = offline.manifest
     return ApiServices(
-        triage=TriageUseCase(core, flow, repo, clock),
+        triage=TriageUseCase(core, flow, repo, clock, marks=adapters.marks),
         clarify=ClarifyUseCase(core, flow, repo, clock),
         feedback=FeedbackUseCase(adapters.reads, repo, adapters.memory, act, offline.encoder, clock, sinks),
         tickets=SyncTicketUseCase(
@@ -405,6 +440,16 @@ def wire_online(
         ),
         sla=EscalateSlaUseCase(sinks, repo, messages),
         clock=clock,
+        incidents=IncidentsUseCase(
+            adapters.reads,
+            repo,
+            sinks,
+            notifier,
+            clock,
+            messages,
+            marks=adapters.marks,
+            student_inbox=act_config.student_inbox,
+        ),
         batch=BatchCsvUseCase(offline.labeler, max_rows=settings.batch_max_rows),
         metrics=MetricsUseCase(
             JsonReportsSource(resolve(settings.reports_dir)), repo, adapters.memory, core.artifact

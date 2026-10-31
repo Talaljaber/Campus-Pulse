@@ -189,7 +189,7 @@ def external_refs(ticket: Ticket) -> list[dto.ExternalRefOut]:
     ]
 
 
-def incident_out(incident: Incident, ticket_id: str | None) -> dto.IncidentOut:
+def incident_out(incident: Incident, ticket_id: str | None, *, simulated: bool = False) -> dto.IncidentOut:
     """`IncidentOut`; `ticket_id` is the one incident ticket (None before it exists)."""
     return dto.IncidentOut(
         id=incident.id,
@@ -203,4 +203,5 @@ def incident_out(incident: Incident, ticket_id: str | None) -> dto.IncidentOut:
         ticket_id=ticket_id,
         opened_at=incident.opened_at,
         resolved_at=incident.resolved_at,
+        simulated=simulated,
     )

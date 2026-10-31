@@ -225,6 +225,13 @@ class InMemoryRepository:
         rows.sort(key=lambda r: (_ts(r["opened_at"]), r["id"]), reverse=True)
         return [self._incident(r) for r in rows[:limit]]
 
+    def mark_simulated(self, request_id: str) -> None:
+        self._get("requests", request_id)["simulated"] = True
+
+    def simulated(self, request_ids: Sequence[str]) -> set[str]:
+        rows = self.tables["requests"]
+        return {i for i in request_ids if i in rows and rows[i].get("simulated")}
+
     # ------------------------------------------------------------------ outbox / signals / audit
 
     def save_outbox(self, m: OutboxMessage) -> OutboxMessage:

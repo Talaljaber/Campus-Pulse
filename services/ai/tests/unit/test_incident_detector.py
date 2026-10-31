@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import math
 import random
 import uuid
@@ -15,7 +16,7 @@ from fixtures.supabase_test import supabase_test_client
 from campuspulse_ai.adapters.pulse.incident_detector import WindowedCentroidDetector
 from campuspulse_ai.adapters.store.inmemory import InMemoryRepository
 from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
-from campuspulse_ai.domain.entities import CoreResult, IncidentDecision, Prediction, Request
+from campuspulse_ai.domain.entities import CoreResult, IncidentDecision, Prediction, Request, Ticket
 from campuspulse_ai.domain.labels import CATEGORY_LABELS, PRIORITY_LABELS, Category, Priority
 from campuspulse_ai.domain.ports import IncidentDetector, Repository, VectorStore
 from campuspulse_ai.domain.values import (
@@ -29,6 +30,7 @@ from campuspulse_ai.domain.values import (
     PredictionSet,
     ProbVector,
     RequestStatus,
+    TicketStatus,
     Tier,
     VectorItem,
 )
@@ -37,6 +39,7 @@ DIM = 384
 TAU = 0.80
 WINDOW_MIN = 30
 B1, B2 = "zz-pulse-1", "zz-pulse-2"
+TICKETS: dict[str, str] = {}  # request id -> its ticket id (the flow creates one per report)
 
 
 class FixedClock:
@@ -161,7 +164,14 @@ def report(
         "created_at": created.isoformat(),
     }
     h.vectors.upsert("requests", [VectorItem(req.id, emb, text, Lang.EN, meta)])
-    return det.detect(req, prediction(req.id, category, priority), emb)
+    ticket = h.repo.save_ticket(Ticket("", req.id, None, "it", category, priority, TicketStatus.OPEN, False,
+                                       created + timedelta(days=1)))  # fmt: skip
+    TICKETS[req.id] = ticket.id
+    decision = det.detect(req, prediction(req.id, category, priority), emb)
+    if decision.incident is not None:  # what the action engine does: link the members' tickets
+        ids = [TICKETS[m] for m in decision.members if m in TICKETS]
+        h.repo.save_incident(dataclasses.replace(decision.incident, member_ticket_ids=ids))
+    return decision
 
 
 def test_satisfies_port(h: Harness) -> None:
@@ -246,3 +256,48 @@ def test_open_incident_takes_reports_whatever_its_age(h: Harness) -> None:
     assert (late.incident.id, late.incident.report_count, len(late.members)) == (opened.incident.id, 4, 1)
     elsewhere = report(h, det, around(7, 11), building=B2)
     assert elsewhere.kind == "none"
+
+
+def toward(base: tuple[float, ...], cos: float, seed: int) -> tuple[float, ...]:
+    """A unit vector at cosine `cos` to `base`, in a random direction of its own."""
+    rnd = random.Random(seed)
+    g = [rnd.gauss(0, 1) for _ in range(DIM)]
+    dot = sum(a * b for a, b in zip(g, base, strict=True))
+    ortho = unit([a - dot * b for a, b in zip(g, base, strict=True)])
+    sin = math.sqrt(1 - cos * cos)
+    return unit([cos * b + sin * o for b, o in zip(base, ortho, strict=True)])
+
+
+def test_d015_unrelated_it_complaints_do_not_join_the_wifi_incident(h: Harness) -> None:
+    """D-015 geometry measured on the v1-rc1 encoder: Wi-Fi reports >= 0.926 to their centroid,
+    unrelated IT complaints in the same building 0.856-0.909. tau_inc = 0.92 separates them."""
+    det = detector(h, tau_inc=0.92)
+    topic = around(8, 0, noise=0.0)
+    wifi = [report(h, det, toward(topic, 0.97, 100 + i)) for i in range(3)]
+    assert [d.kind for d in wifi] == ["none", "none", "new"] and wifi[-1].incident is not None
+    incident_id = wifi[-1].incident.id
+    others = [report(h, det, toward(topic, 0.89, 200 + i)) for i in range(8)]  # printer, projector, ...
+    assert not [d for d in others if d.incident is not None and d.incident.id == incident_id]
+    late = report(h, det, toward(topic, 0.97, 300))
+    assert late.kind == "attach" and late.incident is not None
+    assert (late.incident.id, late.incident.report_count) == (incident_id, 4)
+
+
+def test_d015_the_old_threshold_would_have_merged_them(h: Harness) -> None:
+    det = detector(h, tau_inc=0.80)
+    topic = around(9, 0, noise=0.0)
+    for i in range(3):
+        report(h, det, toward(topic, 0.97, 400 + i))
+    assert report(h, det, toward(topic, 0.89, 500)).kind == "attach"
+
+
+def test_d015_attach_picks_the_open_incident_whose_centroid_is_closest(h: Harness) -> None:
+    det = detector(h, tau_inc=0.92)
+    a, b = around(10, 0, noise=0.0), around(11, 0, noise=0.0)
+    for i in range(3):
+        report(h, det, toward(a, 0.97, 600 + i))
+    second = [report(h, det, toward(b, 0.97, 700 + i)) for i in range(3)]
+    assert second[-1].kind == "new"  # a different problem in the same building opens its own incident
+    nxt = report(h, det, toward(b, 0.97, 800))
+    assert nxt.kind == "attach" and nxt.incident is not None and second[-1].incident is not None
+    assert nxt.incident.id == second[-1].incident.id

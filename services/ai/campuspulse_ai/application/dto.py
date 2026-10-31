@@ -520,6 +520,9 @@ class IncidentOut(_Model):
     ticket_id: str | None = Field(description="The one incident ticket (linked to Linear).")
     opened_at: datetime
     resolved_at: datetime | None
+    simulated: bool = Field(
+        default=False, description="True when every member report is `simulate_pulse.py` traffic (P4.10)."
+    )
 
 
 class IncidentListQuery(_Model):

@@ -19,12 +19,14 @@ from campuspulse_ai.application.services.llm_merge import LLMMerger
 from campuspulse_ai.application.services.understanding import understanding_flags
 from campuspulse_ai.application.use_cases import responses as out
 from campuspulse_ai.application.use_cases.act import ActUseCase
+from campuspulse_ai.application.use_cases.incidents import IncidentActions
 from campuspulse_ai.application.use_cases.messages import Messages
-from campuspulse_ai.application.use_cases.ports import Clarifier, TriageClassifier
+from campuspulse_ai.application.use_cases.ports import Clarifier, SimulationMarks, TriageClassifier
 from campuspulse_ai.domain.entities import (
     Clarification,
     CoreResult,
     Explanation,
+    IncidentDecision,
     OracleContext,
     Prediction,
     Request,
@@ -52,6 +54,8 @@ from campuspulse_ai.domain.ports import (
     VectorStore,
 )
 from campuspulse_ai.domain.values import (
+    ActionPlan,
+    ActionType,
     ClarificationBudget,
     ClarificationQuestion,
     Location,
@@ -61,6 +65,7 @@ from campuspulse_ai.domain.values import (
     Outcome,
     RequestStatus,
     Tier,
+    Understanding,
     VectorItem,
 )
 
@@ -114,12 +119,15 @@ class Pulse:
 
     The embedding is the one the core computed (`CoreResult.embedding`, D-012); `encoder` embeds
     `model_text` only when the core has none (e.g. a request that was entirely an injection).
-    `incidents` may be None (embeddings are still stored).
+    `incidents` may be None (embeddings are still stored). `actions` (P4.10) folds a detected report
+    into its incident (`incident_merge`); without it the report keeps its own action and only
+    `action.incident_id` is set.
     """
 
     vectors: VectorStore
     encoder: SentenceEncoder
     incidents: IncidentDetector | None = None
+    actions: IncidentActions | None = None
 
 
 class DecisionFlow:
@@ -378,10 +386,12 @@ class DecisionFlow:
                 ReviewItem(id="", prediction_id=pred.id, reason=REVIEW_NEEDS_REVIEW, status="open")
             )
 
-        action = self._act.run(pred, request, provisional, understanding)
-        incident_id = self._pulse_step(request, req, pred)
-        if incident_id is not None:
-            action = action.model_copy(update={"incident_id": incident_id})
+        decision = self._pulse_step(request, req, pred, plan.kind)
+        action = self._merge(decision, request, pred, plan, understanding, provisional)
+        if action is None:
+            action = self._act.run(pred, request, provisional, understanding)
+            if decision is not None and decision.incident is not None:
+                action = action.model_copy(update={"incident_id": decision.incident.id})
 
         status = RequestStatus.HUMAN_REVIEW if provisional else RequestStatus.DECIDED
         self._repo.set_request_status(request.id, status)
@@ -451,8 +461,11 @@ class DecisionFlow:
             )
         )
 
-    def _pulse_step(self, request: Request, req: NormalizedRequest, pred: Prediction) -> str | None:
-        """[12b] store the request embedding; [13] incident detection. Never fails the request."""
+    def _pulse_step(
+        self, request: Request, req: NormalizedRequest, pred: Prediction, kind: ActionType
+    ) -> IncidentDecision | None:
+        """[12b] store the request embedding; [13] incident detection (located reports whose action is
+        a ticket, when the incident actions are wired). Never fails the request."""
         pulse = self._pulse
         if pulse is None:
             return None
@@ -471,6 +484,8 @@ class DecisionFlow:
             )
             if pulse.incidents is None or location is None:
                 return None
+            if pulse.actions is not None and kind != ActionType.TICKET:
+                return None  # FAQ answers, bookings and safety alerts are never folded into an incident
             decision = pulse.incidents.detect(request, pred, embedding)
         except (StoreError, ArtifactError) as exc:
             log.warning("pulse step skipped for request %s: %s", request.id, exc)
@@ -478,7 +493,28 @@ class DecisionFlow:
         if decision.kind == "none" or decision.incident is None:
             return None
         self._audit(f"incident.{decision.kind}", request, {"incident_id": decision.incident.id})
-        return decision.incident.id
+        return decision
+
+    def _merge(
+        self,
+        decision: IncidentDecision | None,
+        request: Request,
+        pred: Prediction,
+        plan: ActionPlan,
+        understanding: Understanding | None,
+        provisional: bool,
+    ) -> dto.ActionOut | None:
+        """The `incident_merge` action, or None (no incident, no actions wired, or a store failure:
+        the report then gets its own ticket as usual)."""
+        if decision is None or self._pulse is None or self._pulse.actions is None:
+            return None
+        try:
+            return self._pulse.actions.merge(
+                decision, request, pred, plan, understanding, provisional=provisional
+            )
+        except StoreError as exc:
+            log.warning("incident merge failed for request %s, opening its own ticket: %s", request.id, exc)
+            return None
 
     def _audit(self, action: str, request: Request, payload: dict[str, object]) -> None:
         try:
@@ -497,7 +533,9 @@ class TriageUseCase:
        conversation id);
     3. `DecisionFlow.run` with a fresh one-question budget.
     `debug_members` fills `explanation.trace.per_model` (admin `?debug=members`; the route checks the
-    role). Errors: `InvalidInput` (422), `StoreError` (503), `ArtifactError` (503).
+    role). `cmd.simulated` (simulator traffic; the route honours it for the service token and admins
+    only) sets `requests.simulated` through `marks`. Errors: `InvalidInput` (422), `StoreError` (503),
+    `ArtifactError` (503).
     """
 
     def __init__(
@@ -508,12 +546,14 @@ class TriageUseCase:
         clock: Clock,
         *,
         max_questions: int = DEFAULT_MAX_QUESTIONS,
+        marks: SimulationMarks | None = None,
     ) -> None:
         self._core = core
         self._flow = flow
         self._repo = repo
         self._clock = clock
         self._max_questions = max_questions
+        self._marks = marks
 
     def run(self, cmd: dto.TriageRequest, *, debug_members: bool = False) -> dto.TriageResponse:
         picked = Location(cmd.location.building, cmd.location.room, "picked") if cmd.location else None
@@ -530,6 +570,11 @@ class TriageUseCase:
                 conversation_id=cmd.conversation_id,
             )
         )
+        if cmd.simulated and self._marks is not None:
+            try:
+                self._marks.mark_simulated(request.id)
+            except StoreError as exc:  # a marker only; the request itself stands
+                log.warning("request %s not marked simulated: %s", request.id, exc)
         return self._flow.run(
             request,
             req,
