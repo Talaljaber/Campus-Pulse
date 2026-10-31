@@ -1,4 +1,4 @@
-# CampusPulse CI. No secrets are used or needed: Supabase-marked tests stay deselected.
+# CampusPulse CI. Only the workflow's own GITHUB_TOKEN is used (release downloads); Supabase-marked tests stay deselected.
 # Private repo, so minutes are scarce: caches, cancel-in-progress, path filters, docker on main only.
 name: ci
 
@@ -222,5 +222,6 @@ jobs:
           context: .
           file: services/ai/Dockerfile
           push: false
+          secrets: gh_token=${{ secrets.GITHUB_TOKEN }} # fetch_models reads the private release
           cache-from: type=gha
           cache-to: type=gha,mode=max

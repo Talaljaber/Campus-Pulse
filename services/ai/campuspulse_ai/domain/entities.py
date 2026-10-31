@@ -167,7 +167,7 @@ class ReviewItem:
 
     `assignee` is the profile id of the advisor the item is assigned to (UD-13; None = the office
     queue) and `office` the D-005 office whose queue holds it (None = filled by the database from
-    the prediction's category). Both are additive (D-019).
+    the prediction's category). Both are additive (D-020).
     """
 
     id: str
