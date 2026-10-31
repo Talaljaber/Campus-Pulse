@@ -295,15 +295,16 @@ The seed files are `supabase/seed/*.sql`, loaded by `supabase db reset` (`config
 
 **Scripts:**
 - `python scripts/check_seed_contacts.py` fails unless every email in the seeds passes `RecipientPolicy(DEMO_EMAIL_ALLOWLIST)`. The allow-list must contain the 6 advisor plus-addresses.
-- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles`:
+- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles`. All three share `DEMO_USER_PASSWORD`.
 
   | Login | Role | Office | Alias |
   | --- | --- | --- | --- |
-  | `student-demo-17@demo.local` | student | — | `student-17` |
-  | `staff-it@demo.local` | staff | `it` | `staff-it` |
+  | `talal@demo.local` | student | — | `talal` |
+  | `it@demo.local` | staff | `it` | `staff-it` |
   | `admin@demo.local` | admin | — | `admin` |
 
-  No mail is sent to these addresses: the users are created already confirmed.
+  - **Login names:** chosen by the user on 2026-10-31. They replace `student-demo-17@demo.local` and `staff-it@demo.local`; the script renames users still on those names in place, keeping their ids.
+  - **No mail:** nothing is sent to these addresses. The users are created already confirmed.
 - `python scripts/seed_faq.py [--model-dir models/frozen/v1] [--all]` embeds FAQ questions with the frozen `OnnxEncoder` and writes them through `PgVectorStore`. It refuses to run when `config.json` `encoder.dim` ≠ `vector_dim()`.
 
 `rls.sql` creates its own fictional users (`rls-*@example.invalid`) and rolls them back. The contract tests tag their rows per run and delete them afterwards.

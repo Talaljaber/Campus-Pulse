@@ -533,3 +533,8 @@
 - **Check:** each user signed in with the anon key (as the web app does) and read `profiles` under RLS. Student and staff saw only their own row; admin saw all 3.
 - **Password:** `DEMO_USER_PASSWORD` lives only in the gitignored worktree `.env`. The user will change it later: edit `.env` and re-run the script, which resets existing users' passwords.
 - **Affects streams:** UI (the login page's three "Sign in as" buttons can now be tested against the real project).
+
+### P4.3 follow-up — demo login names changed by the user  (DB, 2026-10-31)
+- **What changed:** the student login is now `talal@demo.local` (alias `talal`), the IT staff login is `it@demo.local` (alias `staff-it`, office `it`), and admin stays `admin@demo.local`. All three share the user's `DEMO_USER_PASSWORD` from `.env`. The old names (`student-demo-17@demo.local`, `staff-it@demo.local`) were renamed in place, so the user ids and profiles are unchanged.
+- **Acceptance:** `python scripts/seed_demo_users.py` → `renamed (was student-demo-17@demo.local): talal@demo.local …`, `renamed (was staff-it@demo.local): it@demo.local …`, `updated: admin@demo.local …`, `3 users ready`. With the anon key, all three new logins sign in and see the right profiles under RLS; the two old names are rejected.
+- **Affects streams:** UI and Lead. ARCHITECTURE §1.7 and the P5 Playwright steps still name the old logins. The "Sign in as" buttons and tests should use `talal@demo.local` / `it@demo.local` / `admin@demo.local`, and student-facing rows now carry the alias `talal`.
