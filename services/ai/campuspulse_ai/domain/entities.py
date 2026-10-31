@@ -101,6 +101,13 @@ class Clarification:
 
 @dataclass
 class Ticket:
+    """A CampusPulse ticket (system of record: the `tickets` table).
+
+    `tags` come from the routing plan (`config/actions.yaml`): e.g. `safety` (Linear priority 1),
+    `exam-in-progress`, `transport-alert`, `unconfirmed` and `deferred:<kind>` on provisional tickets
+    (D-011). `links` are the external mirrors; a link with `error` set is a failed sink push.
+    """
+
     id: str
     request_id: str
     incident_id: str | None
@@ -115,6 +122,7 @@ class Ticket:
     escalated_at: datetime | None = None
     resolved_at: datetime | None = None
     links: list[TicketLink] = field(default_factory=list)
+    tags: tuple[str, ...] = ()
 
 
 @dataclass
@@ -165,7 +173,12 @@ class ReviewItem:
 
 @dataclass
 class OutboxMessage:
-    """Every outgoing message is recorded here, including rejected ones."""
+    """Every outgoing message is recorded here, including rejected ones.
+
+    Status: `queued` (built, not sent), `sent`, `failed` (provider error), `rejected` (allow-list),
+    `deferred` (held back, e.g. the daily email cap; D-011). `error` carries the reason for
+    `failed`, `rejected` and `deferred` (D-011); None otherwise.
+    """
 
     id: str
     kind: Literal["email", "in_app", "whatsapp"]
@@ -173,10 +186,11 @@ class OutboxMessage:
     subject: str
     body: str
     provider_id: str | None
-    status: Literal["queued", "sent", "failed", "rejected"]
+    status: Literal["queued", "sent", "failed", "rejected", "deferred"]
     created_at: datetime
     priority: Priority | None = None
     flags: frozenset[str] = frozenset()
+    error: str | None = None
 
 
 @dataclass

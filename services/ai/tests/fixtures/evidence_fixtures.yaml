@@ -1,0 +1,22 @@
+# Positive examples per evidence feature (P1.12): >= 1 EN and >= 1 AR each. New sentences, not official rows.
+# tests/unit/test_evidence.py asserts the named feature fires on each (other features may fire too).
+- {feature: deadline_today, lang: en, text: "The add-drop period closes tonight and I still have no seat"}
+- {feature: deadline_today, lang: ar, text: "آخر يوم للدفع اليوم والبوابة مسكرة"}
+- {feature: exam_now, lang: en, text: "Moodle crashed while I was taking my online quiz"}
+- {feature: exam_now, lang: ar, text: "النظام علق بنص الامتحان"}
+- {feature: safety_risk, lang: en, text: "There are sparks coming from the outlet next to the printer"}
+- {feature: safety_risk, lang: ar, text: "في دخان طالع من غرفة الكهربا"}
+- {feature: stranded, lang: en, text: "We missed the last bus and have no way home"}
+- {feature: stranded, lang: ar, text: "ضلينا بالجامعة بدون مواصلات"}
+- {feature: enrollment_blocked, lang: en, text: "The system dropped me from my registered section"}
+- {feature: enrollment_blocked, lang: ar, text: "شالوا المادة من تسجيلي بدون ما يحكولي"}
+- {feature: transient_glitch, lang: en, text: "The library computers keep freezing every few minutes"}
+- {feature: transient_glitch, lang: ar, text: "الموقع بطيء كثير وبيعلق"}
+- {feature: info_request, lang: en, text: "Where do I submit the scholarship form?"}
+- {feature: info_request, lang: ar, text: "وين بقدم طلب المنحة؟"}
+- {feature: fault_report, lang: en, text: "The printer in the library is broken"}
+- {feature: fault_report, lang: ar, text: "الطابعة بالمكتبة خربانة"}
+- {feature: ambient_fixture, lang: en, text: "The light in the corridor of building C flickers"}
+- {feature: ambient_fixture, lang: ar, text: "اللمبة بالممر طافية"}
+- {feature: teaching_room, lang: en, text: "The projector in the lecture hall has no signal"}
+- {feature: teaching_room, lang: ar, text: "البروجكتور بالقاعة ما بشتغل"}

@@ -1,0 +1,89 @@
+{
+  "exported_at": "2026-10-31T13:34:26+00:00",
+  "exporter": "torch.onnx.export (TorchScript, dynamo=False) + onnxruntime.quantization.quantize_dynamic",
+  "files": {
+    "encoder_meta.json": {
+      "bytes": 966,
+      "sha256": "8363a8de00e28c514b480da293fdfe9f6c9e2fcf645ad77e9aa32d1d5b27f8b4"
+    },
+    "model_int8.onnx": {
+      "bytes": 118265347,
+      "sha256": "78f7c1e025cd9155a624436740644bd4e2706386399e074ff1f7548c94ce59c2"
+    },
+    "tokenizer.json": {
+      "bytes": 17082730,
+      "sha256": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
+    }
+  },
+  "gates": {
+    "max_size_mb": 130,
+    "min_cosine": 0.98,
+    "rss_warn_mb": 250
+  },
+  "machine": {
+    "cpu": "Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz",
+    "logical_cpus": 8,
+    "os": "Windows-11-10.0.26300-SP0",
+    "python": "3.13.1"
+  },
+  "max_tokens": 256,
+  "measure": [
+    {
+      "encoder_batch_size": 1,
+      "load_s": 2.04,
+      "ms_per_batch32_median": 740.8,
+      "ms_per_batch32_padded_median": 734.3,
+      "ms_per_text_median": 15.3,
+      "repeats_batch": 5,
+      "repeats_single": 20,
+      "rss_mb_after_encode": 442.1,
+      "rss_mb_after_load": 439.4,
+      "rss_mb_baseline": 25.2,
+      "rss_mb_peak": 524.2,
+      "threads": 1
+    },
+    {
+      "encoder_batch_size": 1,
+      "load_s": 2.11,
+      "ms_per_batch32_median": 376.8,
+      "ms_per_batch32_padded_median": 246.1,
+      "ms_per_text_median": 8.5,
+      "repeats_batch": 5,
+      "repeats_single": 20,
+      "rss_mb_after_encode": 443.0,
+      "rss_mb_after_load": 440.1,
+      "rss_mb_baseline": 25.3,
+      "rss_mb_peak": 524.5,
+      "threads": 4
+    }
+  ],
+  "model_id": "intfloat/multilingual-e5-small",
+  "opset": 17,
+  "parity": {
+    "batch_invariance_min_cos": 0.993422,
+    "mean_cos": 0.9963,
+    "min_cos": 0.9895,
+    "min_cos_fp32_onnx": 1.0,
+    "min_cos_padded_batch32": 0.992,
+    "n_sentences": 50,
+    "worst_sentence": "مين المسؤول عن الاعتراض على العلامة؟"
+  },
+  "quantization": {
+    "per_channel": true,
+    "reduce_range": true,
+    "weight_type": "QInt8"
+  },
+  "query_prefix": "query: ",
+  "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+  "size_mb_fp32": 448.4,
+  "size_mb_int8": 112.8,
+  "versions": {
+    "numpy": "2.4.6",
+    "onnx": "1.23.2",
+    "onnxruntime": "1.31.0",
+    "sentence_transformers": "6.1.0",
+    "tokenizers": "0.23.3",
+    "torch": "2.14.1+cpu",
+    "transformers": "5.20.1"
+  }
+}

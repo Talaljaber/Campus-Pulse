@@ -68,6 +68,8 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `SMTP_BACKOFF_S` | local, Render | no | ai | default `1.0`; exponential (`backoff * 2**attempt`) |
 | `SMTP_DAILY_CAP` | local, Render | no | ai | default `100` sends per Asia/Amman day (Gmail allows 500); counted in-process, reset on restart |
 | `DEMO_EMAIL_ALLOWLIST` | local, Render | no | ai | comma-separated; empty rejects every recipient |
+| `DEMO_STUDENT_INBOX` | local, Render | no | ai | P4.8: the allow-listed developer inbox that stands in for every student's email (booking confirmations); unset = no student emails |
+| `DEMO_OFFICE_INBOX` | local, Render | no | ai | P4.8: the allow-listed developer inbox for safety and transport alerts; unset = alerts are not emailed (the ticket still carries them) |
 | `LINEAR_API_KEY` | local, Render | yes | ai | |
 | `LINEAR_WEBHOOK_SECRET` | local, Render | yes | ai | |
 | `OUTBOUND_WEBHOOK_URL` | local, Render | no | ai | optional |

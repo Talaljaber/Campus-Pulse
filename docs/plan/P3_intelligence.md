@@ -404,8 +404,8 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-8"></a>
 ## P3.8 — Write the DTOs, test fakes, `build_test()`, InMemoryRepository and ActionPlanner v0
 
-- [ ] Done
-- Progress (2026-10-31): `TableActionPlanner` + `config/actions.yaml` merged (e921144); DTOs done in P0.13; InMemoryRepository moved to DB (D-002). Left: `FakeCore`, `HashingEncoder`, `build_test()`.
+- [x] Done
+
 - Depends on: P3.1–P3.7 (types only)
 - Est: 2 h · Cut: no
 - Files:
@@ -467,7 +467,8 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-9"></a>
 ## P3.9 — Implement TriageUseCase (steps [1]–[14], with act v0)
 
-- [ ] Done
+- [x] Done
+
 - Depends on: P3.1–P3.8, [P3.3a](#p3-3a)
 - Est: 2.5 h · Cut: no
 - **UD-10:** after the core decides and the action is planned, call `RequestUnderstander.understand(...)` and add `understanding` to the response. Injection-flagged requests use `RuleBasedUnderstander` only.
@@ -505,7 +506,8 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-10"></a>
 ## P3.10 — Implement ClarifyUseCase
 
-- [ ] Done
+- [x] Done
+
 - Depends on: P3.9
 - Est: 1 h · Cut: no
 - Files:

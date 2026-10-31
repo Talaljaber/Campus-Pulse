@@ -10,7 +10,7 @@ Rows here **are** training data (unlike `data/our_test/` and `data/robustness/`)
 | `request_id` | unique id, e.g. `AUG-AZ-0001` |
 | `text` | the request text as a student would type it |
 | `lang` | `en`, `ar` or `arabizi` |
-| `source` | how the row was made: `rule_arabizi`, `llm_paraphrase`, `new_scenario`, ... |
+| `source` | how the row was made: `arabizi_rule`, `llm_paraphrase`, `llm_arabizi`, `new_scenario`, `hand` (the list in `config/datasets.yaml` `augmented.sources`) |
 | `source_scenario_id` | the official scenario the row derives from (e.g. `TR-S14`), or the new scenario id `NEW-Sxx`. **Required.** |
 | `cv_group` | the leakage unit: inherited from the source scenario, or `NEW-Sxx` for a new scenario |
 | `needs_human_check` | `True` until the developer has checked the row; only `False` rows are trained on |

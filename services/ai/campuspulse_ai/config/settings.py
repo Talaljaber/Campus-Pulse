@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     smtp_daily_cap: int = 100  # far below Gmail's 500/day; counted per Amman day in-process
     # Comma-separated, lower-cased. Empty rejects every recipient.
     demo_email_allowlist: Annotated[frozenset[str], NoDecode] = frozenset()
+    # Allow-listed demo inboxes the action engine emails (P4.8). Unset = that email is skipped.
+    demo_student_inbox: str | None = None  # stands in for every student's email (booking confirmations)
+    demo_office_inbox: str | None = None  # safety and transport alerts
 
     # Linear and outbound sinks
     linear_api_key: SecretStr | None = None

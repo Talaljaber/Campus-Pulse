@@ -193,11 +193,11 @@ The exact spellings above are the **only** place label strings exist. `predict.p
 - `CoreResult` (output of `TriageCore.classify`): `p_cat: ProbVector, p_pri: ProbVector, per_model: dict[str, ProbVector] (keys `"<member>.<target>"`, e.g. `"m1.category"`), flags: frozenset[str], set_cat: PredictionSet, set_pri: PredictionSet, ood_score: float, neighbors: tuple[Neighbor, ...], evidence: EvidenceVector, guard: GuardVerdict, safety: bool, floors_applied: tuple[str, ...], tier: Tier, latency_ms: int, artifact: ArtifactVersion`
 - `Prediction(id, request_id, category, priority, core: CoreResult, tier, flags: set[str], explanation: Explanation | None, cost: Money, artifact_version)`
 - `Clarification(id, request_id, question_id, options, answer, asked_at, answered_at)`
-- `Ticket(id, request_id, incident_id, office, category, priority, status: TicketStatus, provisional, sla_due_at, escalated_at, resolved_at, links: list[TicketLink])`
+- `Ticket(id, request_id, incident_id, office, category, priority, status: TicketStatus, provisional, sla_due_at, escalated_at, resolved_at, links: list[TicketLink], tags: tuple[str, ...] = ())` (tags: D-011); `TicketLink(ticket_id, sink, external_id, url, error: str | None = None)` (error → `ticket_links.last_error`, D-011)
 - `Incident(id, building, category, title, priority, report_count, status, member_ticket_ids, opened_at, resolved_at)`
 - `MemoryExample(id, text_norm, lang, embedding, category, priority, author_id, created_at, active)`
 - `ReviewItem(id, prediction_id, reason, status, reviewer_id, corrected_category, corrected_priority, note)`
-- `OutboxMessage(id, kind, to_address, subject, body, provider_id, status, created_at)`
+- `OutboxMessage(id, kind, to_address, subject, body, provider_id, status: queued|sent|failed|rejected|deferred, created_at, priority, flags, error: str | None = None)` (deferred + error: D-011)
 - `LLMCall(id, request_id, tier, model, prompt_hash, tokens_in, tokens_out, cost, latency_ms, cached)`
 - `RedTeamItem(text, style, lang, intended_category, intended_priority, expected_flags)`; `Scorecard(run_id, by_style: dict, by_lang: dict, overall: float, failures: list)`
 - `Explanation(top_tokens, urgency_reasons, neighbors, counterfactual, trace)`
