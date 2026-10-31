@@ -18,6 +18,19 @@ Rows here **are** training data (unlike `data/our_test/` and `data/robustness/`)
 | `category` | exact official category spelling |
 | `priority` | `low`, `medium` or `high` |
 
+## Files
+- `new_scenarios.csv` (P2.3): 78 new situations that are not in the official data (not paraphrases or
+  translations of the 42 official cores), 390 rows. Finance has 18 situations; Registration, IT Support,
+  Transportation, Facilities and Academic Support have 12 each, and each category splits evenly across
+  low / medium / high. Every situation has 5 rows (`en`, `ar` Jordanian dialect, `arabizi`, an `en`
+  paraphrase and an `ar` paraphrase) that share its labels and its group `NEW-Cxx`
+  (`source_scenario_id == cv_group`). `source=new_scenario`, `author_method=llm`, and every row is
+  `needs_human_check=True`, so nothing trains until it has been reviewed. Labels follow
+  `docs/reference/label_decisions.md`. Highs use varied urgency (exam or defence happening now, a deadline
+  within hours, safety, stranded students, a definitive loss of enrolment), and some lows and mediums carry
+  time words ("today", "tomorrow", "next week") on purpose. `new_scenarios_notes.md` lists each situation's
+  labels, the rule that decided its priority and its sub-topic, for fast review.
+
 ## Rules
 - A paraphrase or transliteration keeps the `cv_group` of its source scenario, so it is always held out together
   with it (ARCHITECTURE §3.2).

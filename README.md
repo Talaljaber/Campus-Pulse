@@ -1,0 +1,68 @@
+# CampusPulse
+
+A bilingual (English, Jordanian Arabic, Arabizi) campus-request triage system for GJU AI Quest 2026, Track C.
+It classifies each student request by **category** and **priority** with calibrated (conformal) uncertainty,
+asks a clarifying question when unsure, explains its decision, acts (FAQ answer, ticket, advisor booking,
+safety alert), detects incidents on a live map, and learns from staff corrections.
+
+> Integration-ready prototype on synthetic data. Not a verified university deployment.
+
+## Offline prediction (the scored path)
+
+Python 3.11+ on CPU, no API key, no network after the model download:
+
+```
+pip install -r services/ai/requirements.txt
+python scripts/fetch_models.py
+python services/ai/predict.py --input <requests.csv> --output predictions.csv
+```
+
+`fetch_models.py` downloads the `models-v1-rc1` release asset and verifies every file against
+`models/frozen/v1/MANIFEST.json`. The input is `request_id,text`. The output is `request_id,category,priority`.
+
+## Repository layout
+
+| Path | What |
+|---|---|
+| `services/ai/` | Python package `campuspulse_ai` (domain, application, adapters, frameworks), FastAPI service, `train.py`, `predict.py`, `evaluate.py` |
+| `apps/web/` | Next.js web app (student chat, staff desk, Pulse map, model lab, outbox) |
+| `supabase/` | SQL migrations (Postgres, pgvector, RLS) |
+| `data/` | official data (`raw/`, `clean/`), our augmentation (`augmented/`), our holdout (`our_test/`) |
+| `docs/` | plan, architecture, API, DB, ML and UI docs |
+| `reports/` | evaluation reports (`results_v1.md`, red-team runs, model-lab metrics) |
+
+The full README (results, architecture diagram, local app setup, responsible AI) is written in P6.6.
+
+## Disclosures
+
+The challenge rules require disclosing external services and pretrained models. This list is kept current as
+components are added.
+
+**Pretrained models**
+- `intfloat/multilingual-e5-small` at revision `614241f622f53c4eeff9890bdc4f31cfecc418b3` (MIT licence).
+  Shipped as an int8 ONNX export whose vocabulary we pruned to Latin, Arabic, digit and symbol pieces with our
+  own tool (`frameworks/cli/prune_encoder.py`). The embeddings are bit-identical to the unpruned int8 model on
+  981 checked texts.
+
+**External services**
+- **Supabase**: Postgres with pgvector, Auth and Realtime (app data, request embeddings, FAQ vectors).
+- **Render**: hosts the FastAPI AI service. **Netlify**: hosts the web app.
+- **OpenRouter**: the optional LLM tier in the live app, consulted only when the trained model is unsure
+  (`ENABLE_LLM`, pinned model IDs, temperature 0, cached). Also used offline to draft training augmentation.
+  `predict.py` never calls it.
+- **Linear**: ticket mirroring and status sync, in a separate demo workspace.
+- **Gmail SMTP**: notifications, sent only to allow-listed demo inboxes (enforced in code).
+- **GitHub Releases**: hosts the model artifact tarball.
+
+**Data**
+- Official `train.csv` and `validation.csv` from the organizers (synthetic). Labels are never edited;
+  disputed labels live only in `data/clean/label_flags.csv` as soft targets.
+- `data/augmented/arabizi.csv`: rule-based Arabizi transliterations (`author_method=rule`).
+- `data/augmented/new_scenarios.csv`: 78 new scenarios (390 rows), written by an LLM (`author_method=llm`).
+  They are used for training only after human review (`needs_human_check`).
+- `data/our_test/`: our holdout, never trained on. Set 1 was hand-written by the developer; sets 2 and 3 were
+  written by an LLM (decision D-010 in `docs/PLAN.md`). Scores are reported per set.
+
+**Code**
+- No copied code without attribution. Third-party libraries are listed in `services/ai/requirements*.txt`
+  and `apps/web/package.json`.

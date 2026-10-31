@@ -214,6 +214,8 @@ describe("review views", () => {
     note: null,
     resolved_at: null,
     reviewer_id: null,
+    assignee: null,
+    office: null,
     ...o,
   });
 

@@ -19,6 +19,7 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 | 0009 | `0009_ticket_tags_outbox_deferred.sql` | D-011: `tickets.tags text[] not null default '{}'`; `outbox_status_check` re-created with `deferred` added |
 | 0010 | `0010_office_notifications.sql` | `notifications_read` altered: staff also read alias `office:<their office>`; `review_queue` and `ticket_links` added to Realtime |
 | 0011 | `0011_distress_reviews_admin_only.sql` | `review_queue_read` altered: staff no longer read `distress` items; admin only |
+| 0012 | `0012_advisor_routing.sql` | UD-13: `profiles.advisor_id`, `advisors.profile_id`, `review_queue.assignee` + `office` (trigger-filled); `review_queue_read` narrowed to own office, unassigned or own items |
 
 **Applying a migration.** Commit the file first. Then apply the same SQL with the Supabase MCP `apply_migration`, or with `supabase db push` on a linked CLI.
 - **MCP version repair.** MCP records a timestamp version. Afterwards, set the row in `supabase_migrations.schema_migrations` to the file's version and name (`0001`/`init`, …). This is what `supabase migration repair` does. It keeps the remote history identical to the file names, so a later `db push` does not re-apply anything.
@@ -33,7 +34,7 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 2. Keep the two-line `// GENERATED` header and update the migration number in it.
 3. Check it: `npx -p typescript@5.9.3 tsc --noEmit --strict supabase/types/database.types.ts`.
 
-**Advisors:** run MCP `get_advisors` (security and performance) after each migration. As of 0011:
+**Advisors:** run MCP `get_advisors` (security and performance) after each migration. As of 0012:
 - **Security:** only expected items. `request_embeddings` has RLS with no policy (intentional: service role only), and `public.rls_auto_enable()` is Supabase-managed, left alone by decision. Auth also warns that leaked-password protection is off; that is a dashboard setting (Auth › Passwords), not a migration.
 - **Performance:** only `unused_index` INFO notes, expected on a near-empty database.
 
@@ -56,7 +57,7 @@ All ids are `uuid default gen_random_uuid()` unless stated. Every table has `cre
 
 | Table | Columns (beyond id, created_at) | Keys / indexes |
 | --- | --- | --- |
-| `profiles` | `id` = `auth.users.id`, `role` (`student`/`staff`/`admin`, default `student`), `office`, `alias` | pk `id` → auth.users (cascade); `alias` unique |
+| `profiles` | `id` = `auth.users.id`, `role` (`student`/`staff`/`admin`, default `student`), `office`, `alias`, `advisor_id` → advisors (a student's own advisor, UD-13; set null on delete) | pk `id` → auth.users (cascade); `alias` unique; idx `(advisor_id)` |
 | `buildings` | `id text`, `code`, `name_en`, `name_ar`, `map_x real`, `map_y real` (fictional campus, SVG coords) | pk `id`; `code` unique |
 | `requests` | `alias`, `raw_text`, `core`, `text_norm`, `model_text`, `lang`, `is_arabizi`, `input_mode` (`text`/`voice`), `building_id`, `room`, `location_source` (`picked`/`extracted`), `stated_urgency`, `truncated`, `status`, `simulated bool default false`, `conversation_id uuid` | fk `building_id` → buildings; idx `(alias, created_at desc)`, `(created_at desc)` |
 | `predictions` | `request_id`, `category`, `priority`, `p_cat jsonb`, `p_pri jsonb`, `set_cat text[]`, `set_pri text[]`, `per_model jsonb`, `tier`, `models_used text[]`, `cost_usd numeric(10,6)`, `latency_ms`, `flags text[] default '{}'`, `explanation jsonb`, `artifact_version`, `core jsonb` (full CoreResult, 0007) | fk `request_id` (cascade); idx `(request_id, created_at desc)` |
@@ -64,12 +65,12 @@ All ids are `uuid default gen_random_uuid()` unless stated. Every table has `cre
 | `incidents` | `building_id`, `category`, `office` (filled from its first ticket by trigger `tickets_fill_incident_office`), `title`, `priority`, `report_count`, `status` (`open`/`resolved`), `opened_at`, `resolved_at` | fk building; idx `(building_id, status)` |
 | `tickets` | `request_id`, `incident_id`, `office`, `category`, `priority`, `status`, `provisional`, `title`, `body`, `sla_due_at`, `escalated_at`, `resolved_at`, `tags text[] not null default '{}'` (D-011) | fk request (cascade), incident (set null); idx `(office, status, sla_due_at)`, `(request_id)`, `(incident_id)` partial |
 | `ticket_links` | `ticket_id`, `sink`, `external_id`, `external_url`, `last_synced_at`, `last_error` | pk `(ticket_id, sink)`; unique `(sink, external_id)` (for `ticket_by_link`) |
-| `advisors` | `fictional_name`, `department`, `room`, `calendar_id`, `demo_email`, `office_hours jsonb` | — |
+| `advisors` | `fictional_name`, `department`, `room`, `calendar_id`, `demo_email`, `office_hours jsonb`, `profile_id` → profiles (the advisor's staff login, UD-13) | `profile_id` unique (set null on delete) |
 | `advisor_slots` | `advisor_id`, `starts_at`, `ends_at`, `booked_by` (alias), `booked_at` | unique `(advisor_id, starts_at)`; check `ends_at > starts_at`; partial idx on free slots |
 | `cases` | `request_id`, `ticket_id`, `advisor_id`, `slot_id`, `slot_start`, `outcome_code`, `booking jsonb`, `closed_at` | fks (cascade / set null) |
 | `outbox` | `kind` (`email`,`ticket`,`booking`,`alert`,`broadcast`,`in_app`,`whatsapp`), `channel` (`email`/`in_app`/`whatsapp`, default `email`), `alias`, `request_id`, `to_address`, `subject`, `body`, `provider_id`, `status` (`queued`,`sent`,`failed`,`rejected`,`simulated`,`deferred`), `priority`, `flags text[]`, `error` | idx `(created_at desc)`, `(alias, created_at desc)` |
 | `notifications` | `alias`, `kind`, `payload jsonb`, `read_at` | idx `(alias, created_at desc)` |
-| `review_queue` | `prediction_id`, `reason`, `status` (`open`/`confirmed`/`corrected`), `reviewer_id` → auth.users, `corrected_category`, `corrected_priority`, `note`, `resolved_at` | idx `(status, created_at)` |
+| `review_queue` | `prediction_id`, `reason`, `status` (`open`/`confirmed`/`corrected`), `reviewer_id` → auth.users, `corrected_category`, `corrected_priority`, `note`, `resolved_at`, `assignee` → profiles (the advisor; null = office queue), `office` (D-005 code; trigger `review_queue_fill_office` fills it from the prediction's category unless set) | idx `(status, created_at)`, `(assignee)`, `(office, status, created_at)` |
 | `student_signals` | pk `alias`, `n_requests`, `n_claimed_urgent`, `n_claimed_urgent_not_high`, `n_high`, `n_injection`, `gaming_flag`, `updated_at` | pk `alias` |
 | `llm_calls` | `request_id`, `tier`, `model`, `prompt_hash`, `cache_key` (unique, for `SupabaseCache`), `response jsonb`, `tokens_in`, `tokens_out`, `cost_usd`, `latency_ms`, `cached` | `cache_key` unique; idx `(created_at desc)` |
 | `redteam_runs` | `config jsonb`, `scorecard jsonb` | — |
@@ -103,7 +104,7 @@ Helpers live in schema `private` (not exposed by the API). All are `security def
 | `incidents` | staff of the incident's `office`; admin |
 | `outbox` | the student it was sent for (alias); staff and admin |
 | `notifications` | the recipient (alias); staff, for alias `office:<their profiles.office>` (escalation notes, 0010); admin |
-| `review_queue` | admin; staff for every item except `reason = 'distress'` (0011) |
+| `review_queue` | admin; staff for the non-distress items of their own `office` that are unassigned or assigned to them (0012). An advisor (staff, office `academic`) sees the academic queue plus their own items, never another advisor's. Items with a null `office` are admin-only. |
 | `llm_calls`, `redteam_runs`, `events`, `advisor_slots`, `cases`, `memory_examples_v` (and `memory_examples` without `embedding`) | staff and admin |
 | `student_signals` | admin only |
 | `request_embeddings` | **nobody** (no grant, no policy; service role only) |
@@ -114,9 +115,9 @@ Helpers live in schema `private` (not exposed by the API). All are `security def
 
 **Distress and the review queue (0011):** a distress request has no ticket and no routed office, so staff cannot read its text, and staff saw an empty review item. Distress items are therefore admin-only; admins already read every request. Showing the text to the office guessed from the predicted category was rejected: it would copy the routing table into SQL and show sensitive text to an office with no part in it.
 
-**Known widening:** staff read every non-distress `review_queue` item from every office (and receive them over Realtime). The rows carry ids and a reason, never request text; the cross-office human-review queue needs this for the demo. Scope it by office if that changes.
+**Review routing (0012, UD-13):** the cross-office widening of 0011 is gone. `review_queue.office` comes from the prediction's category through the one-to-one D-005 table (`private.cp_category_office`, the same mapping as `config/actions.yaml`), unless Backend writes it. Assignment (`assignee`) is Backend's (hybrid routing: the student's `profiles.advisor_id` → that advisor's `advisors.profile_id`).
 
-**Proof:** [`supabase/tests/rls.sql`](../../supabase/tests/rls.sql) checks 11 cases inside a rolled-back transaction:
+**Proof:** [`supabase/tests/rls.sql`](../../supabase/tests/rls.sql) checks 13 cases inside a rolled-back transaction:
 - student A ≠ student B
 - IT staff ≠ Finance tickets
 - authenticated insert fails
@@ -128,6 +129,8 @@ Helpers live in schema `private` (not exposed by the API). All are `security def
 - no gaming flags for students
 - IT staff read `office:it` notifications only
 - staff never read distress review items; admin does
+- an advisor reads own + unassigned academic items, not another advisor's
+- IT staff read no academic review items
 
 Run it with `python scripts/test_rls.py`: local stack (Docker) via psql, or `--db-url`. Or paste it into the SQL editor or the MCP `execute_sql`.
 
@@ -313,13 +316,14 @@ The seed files are `supabase/seed/*.sql`, loaded by `supabase db reset` (`config
 
 **Scripts:**
 - `python scripts/check_seed_contacts.py` fails unless every email in the seeds passes `RecipientPolicy(DEMO_EMAIL_ALLOWLIST)`. The allow-list must contain the 6 advisor plus-addresses.
-- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles`. All three share `DEMO_USER_PASSWORD`.
+- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles`. All four share `DEMO_USER_PASSWORD`. It also links `advisor@demo.local` to the fictional advisor `a0000000-…-0001` (Dr. Rana Haddad (fictional), `academic`, allow-listed `demo_email`) and makes that advisor `talal@demo.local`'s advisor (UD-13).
 
   | Login | Role | Office | Alias |
   | --- | --- | --- | --- |
   | `talal@demo.local` | student | — | `talal` |
   | `it@demo.local` | staff | `it` | `staff-it` |
   | `admin@demo.local` | admin | — | `admin` |
+  | `advisor@demo.local` | staff | `academic` | `advisor` |
 
   - **Login names:** chosen by the user on 2026-10-31. They replace `student-demo-17@demo.local` and `staff-it@demo.local`; the script renames users still on those names in place, keeping their ids.
   - **No mail:** nothing is sent to these addresses. The users are created already confirmed.

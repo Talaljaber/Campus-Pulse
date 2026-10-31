@@ -6,3 +6,4 @@
 *.joblib binary
 # official organizer files: keep exact bytes (never normalize)
 data/raw/** -text
+*.npz binary

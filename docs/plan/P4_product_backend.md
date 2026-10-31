@@ -27,7 +27,7 @@
 | X4.1 | Lifecycle with fakes | `pytest services/ai/tests/e2e/test_lifecycle.py -q` → `passed`. Covers request → ticket → FakeSink issue → inbound status → `notifications` row + outbox row. |
 | X4.2 | Lifecycle against real services, run once and logged | `python scripts/smoke_integrations.py --api %RENDER_URL% --linear --email` → `linear issue: https://linear.app/...`, `email: sent (provider_id=<Message-ID>)`, then after moving the issue to *Done* in Linear: `ticket <id> status=resolved via linear webhook; notification row created`. The output is pasted into the PLAN.md decisions log with the date. |
 | X4.3 | Simulator creates an incident | `python scripts/simulate_pulse.py --api %RENDER_URL% --scenario config/simulation/wifi_m.yaml` → `incident created: <uuid> building=M category=IT Support reports=3`, and after 6 reports `priority bumped → high` |
-| X4.4 | RLS holds | `python scripts/test_rls.py` (local `supabase start`) → `RLS: 11/11 checks passed` |
+| X4.4 | RLS holds | `python scripts/test_rls.py` (local `supabase start`) → `RLS: 13/13 checks passed` |
 | X4.5 | Vector store contract on real pgvector | `set SUPABASE_TEST_URL=… && pytest services/ai/tests/contracts/test_vector_store_contract.py -q` → `passed` for both `LocalNumpyVectorStore` and `PgVectorStore` |
 | X4.6 | Render memory and latency budget (§3.17) | `python scripts/measure_rss.py --remote %RENDER_URL% --n 20` → `rss_mb_max<=400 p95_ms<=1500 OK`. The numbers are recorded in PLAN.md. |
 | X4.7 | Allow-list cannot be bypassed | `pytest services/ai/tests/unit/test_allowlist.py -q` → `passed`. `real.person@gju.edu.jo` → rejected; the provider is called 0 times. |
@@ -101,7 +101,7 @@
   5. **`scripts/test_rls.py`** runs `supabase db reset` on the local stack (needs Docker Desktop) and then runs `rls.sql` via `psql`. It prints a pass count.
 - Acceptance:
   - `supabase db reset` → `Finished supabase db reset`
-  - `python scripts/test_rls.py` → `RLS: 11/11 checks passed`
+  - `python scripts/test_rls.py` → `RLS: 13/13 checks passed`
 - Hands off: the schema to P4.2/P4.3; RLS to the P5 read layer.
 - Notes: the service role bypasses RLS and lives only in Render env (§1.7). The web app never holds it.
 
@@ -727,6 +727,6 @@ Non-blocking; the UI works around each today.
 - [ ] A `simulated` marker on incidents (the UI infers it from the building's requests).
 
 ## UD-13: hybrid advisor routing (queued, 2026-10-31)
-- [ ] DB: student→advisor link (e.g. `profiles.advisor_id` → `advisors`); `review_queue.assignee` (the advisor's profile); RLS so an advisor sees only review items assigned to them (admins all); an advisor demo login (`advisor@demo.local`, fictional) linked to the demo student.
+- [x] DB (0012, live 2026-10-31; RLS 13/13): student→advisor link (e.g. `profiles.advisor_id` → `advisors`); `review_queue.assignee` (the advisor's profile); RLS so an advisor sees only review items assigned to them (admins all); an advisor demo login (`advisor@demo.local`, fictional) linked to the demo student.
 - [ ] Backend: HUMAN_REVIEW items are assigned to the student's advisor (fallback: the academic office queue). A forward action (`POST /v1/tickets/{id}/forward` or a review resolution) re-routes to another office, recorded as a correction for FeedbackUseCase. Safety and same-day-high requests bypass review. Notify the advisor (in-app; email only to allow-listed inboxes).
 - [ ] UI: an advisor review view ("My students' requests"), with confirm or forward-to-office; a "Forward to another office" button on staff tickets; the advisor demo login button.
