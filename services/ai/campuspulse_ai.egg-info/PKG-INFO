@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: campuspulse-ai
-Version: 0.1.0
-Summary: CampusPulse AI service: triage core, adapters and CLIs
-Requires-Python: <3.14,>=3.11

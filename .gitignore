@@ -19,3 +19,5 @@ models/frozen/*/m3/
 .ruff_cache/
 .pytest_cache/
 apps/web/.netlify/
+*.egg-info/
+build/
