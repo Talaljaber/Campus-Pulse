@@ -1,0 +1,123 @@
+{
+  "artifact_version": "v1",
+  "conformal": {
+    "alpha_category": 0.1,
+    "alpha_priority": 0.1,
+    "method": "lac",
+    "mondrian_by_lang": false,
+    "n_calib": 432,
+    "q_category": 0.8568117755684683,
+    "q_priority": 0.39416523059119746
+  },
+  "cv": {
+    "fold_col": "cv_fold",
+    "folds_file": "data/clean/cv_folds.csv",
+    "group_col": "cv_group",
+    "k": 5,
+    "oof_macro_f1_category": 0.49014434141669216,
+    "oof_macro_f1_priority": 0.9035605549726888
+  },
+  "encoder": {
+    "dim": 384,
+    "file": "encoder/model_int8.onnx",
+    "max_tokens": 256,
+    "model_id": "intfloat/multilingual-e5-small",
+    "normalize": true,
+    "pooling": "mean",
+    "query_prefix": "query: ",
+    "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+    "runtime": "onnx_int8"
+  },
+  "ensemble": {
+    "members": [
+      "m1",
+      "m2lr",
+      "m2knn"
+    ],
+    "weights_category": {
+      "m1": 0.3333333333333333,
+      "m2knn": 0.3333333333333333,
+      "m2lr": 0.3333333333333333
+    },
+    "weights_priority": {
+      "m1": 0.3333333333333333,
+      "m2knn": 0.3333333333333333,
+      "m2lr": 0.3333333333333333
+    }
+  },
+  "explain": {
+    "max_occlusions": 20
+  },
+  "guards": {
+    "gibberish_min_letter_ratio": 0.5,
+    "gibberish_min_tokens": 2,
+    "injection_sentence_strip_ratio": 0.6,
+    "max_tokens": 256
+  },
+  "knn": {
+    "k": 5,
+    "laplace_mass": 1.0,
+    "max_memory_neighbors": 2,
+    "memory_min_sim": 0.8,
+    "memory_weight_cap": 0.6
+  },
+  "llm": {
+    "prompt_version": "v1",
+    "w_llm": 0.5
+  },
+  "m1": {
+    "C": 2.0,
+    "char_ngram": [
+      2,
+      5
+    ],
+    "word_ngram": [
+      1,
+      2
+    ]
+  },
+  "m2lr": {
+    "C": 2.0
+  },
+  "priority_head": {
+    "C": 1.0,
+    "features": [
+      "deadline_today",
+      "exam_now",
+      "safety_risk",
+      "stranded",
+      "enrollment_blocked",
+      "transient_glitch",
+      "info_request",
+      "fault_report",
+      "ambient_fixture",
+      "teaching_room"
+    ]
+  },
+  "priors": {
+    "category": {
+      "Academic Support": 0.16898148148148148,
+      "Facilities": 0.16435185185185186,
+      "Finance": 0.16898148148148148,
+      "IT Support": 0.16898148148148148,
+      "Registration": 0.16435185185185186,
+      "Transportation": 0.16435185185185186
+    },
+    "priority": {
+      "high": 0.3287037037037037,
+      "low": 0.28703703703703703,
+      "medium": 0.38425925925925924
+    }
+  },
+  "schema_version": 1,
+  "seed": 42,
+  "thresholds": {
+    "human_review_maxprob": 0.5184823610541043,
+    "tau_faq": 0.75,
+    "tau_inc": 0.8,
+    "tau_injection": 0.910022387031824,
+    "tau_ood": 0.8362285315990448,
+    "tau_safety": 0.9197773647907549
+  },
+  "trained_at": "2026-10-31T16:32:02+00:00"
+}

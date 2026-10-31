@@ -1,0 +1,16 @@
+{
+  "C": 2.0,
+  "dim": 384,
+  "kind": "embed_lr",
+  "labels": [
+    "Registration",
+    "IT Support",
+    "Finance",
+    "Transportation",
+    "Facilities",
+    "Academic Support"
+  ],
+  "name": "m2lr",
+  "seed": 42,
+  "target": "category"
+}

@@ -1,6 +1,6 @@
 # CampusPulse v1: first results (ML batch 3)
 
-Artifact `v1` sha `f0fb27055242`, generated 2026-10-31T16:30:44+00:00 by `python scripts/results_v1.py`. This previews P2.8 (`evaluate.py`). Stage B is still provisional (equal ensemble weights, C at the grid midpoint). Encoder: int8 e5-small, vocabulary-pruned (identical embeddings).
+Artifact `v1` sha `8fb011621fb6`, generated 2026-10-31T16:32:40+00:00 by `python scripts/results_v1.py`. This previews P2.8 (`evaluate.py`). Stage B is still provisional (equal ensemble weights, C at the grid midpoint). Encoder: int8 e5-small, vocabulary-pruned (identical embeddings).
 
 **Protocol.** Only two kinds of numbers appear here: scenario-held-out OOF over the frozen `cv_fold` folds (LD-31), and the frozen model on our own test set. No random split is used anywhere. Groups are `cv_group` for OOF and `scenario_family` for our_test.
 
