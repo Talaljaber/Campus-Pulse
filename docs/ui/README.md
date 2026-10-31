@@ -1,6 +1,6 @@
 # UI (apps/web): as-built
 
-Owner: UI stream. Covers what exists after P0.8, P5.1, P5.2, P5.3, P5.4 and P5.5. Pages, data layer and feature components are added by later tasks and will be appended here.
+Owner: UI stream. Covers what exists after P0.8, P5.1 to P5.8. Later pages (staff, pulse, lab) and voice are appended by their tasks.
 
 ## Run it
 
@@ -14,6 +14,36 @@ pnpm --filter web test -- --run          # vitest (jsdom, threads pool)
 pnpm --filter web build
 cd apps/web; pnpm exec playwright install chromium   # once
 pnpm exec playwright test e2e/devui.spec.ts          # starts next dev on :3100 itself
+```
+
+### Local dev with the mock API (no backend needed)
+
+Until the real service is deployed, point the web app at the fixture-backed mock API.
+
+```powershell
+# once, from the repo root (Python 3.11+)
+python -m venv .venv
+.venv\Scripts\python -m pip install -r services/ai/requirements-dev.txt -e services/ai
+
+# terminal 1: the mock API on :8000 (every route answers from services/ai/tests/fixtures/api)
+.venv\Scripts\python -m uvicorn campuspulse_ai.frameworks.mock_app:create_mock_app --factory --port 8000
+
+# terminal 2: apps/web/.env.local (gitignored), then the app
+#   NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key>
+#   AI_SERVICE_URL=http://localhost:8000
+#   AI_SERVICE_TOKEN=local-dev-token          # any value; the mock only checks it is present
+cd apps/web; pnpm dev
+```
+
+The mock chooses its answer by the exact request text (case and spacing ignored), so type a sentence from `services/ai/tests/fixtures/api/triage_*.json`, for example `where is the bus timetable for the Madaba route?`. Sign in with a demo login (below); the password is `DEMO_USER_PASSWORD` from the root `.env`, typed by hand.
+
+Checks that must pass before a commit (all from `apps/web`):
+
+```powershell
+pnpm typecheck; pnpm lint; pnpm test -- --run
+pnpm build; node scripts/check-bundle-secrets.mjs      # prints: bundle clean (0 matches)
+$env:PW_PYTHON = "<path to the venv python>"; pnpm exec playwright test   # starts fake Supabase, mock API and next dev itself
 ```
 
 Notes: the package manager is pnpm 10.17.0 (`packageManager` in `apps/web/package.json`), not npm as the P0.8 text says. Every dependency is an exact pin from Appendix A. No service-role key exists in `apps/web`.
@@ -78,6 +108,8 @@ All are presentational: no fetching, no business logic, no keys. Every one expor
 | `LanguageSwitch` | EN/AR toggle | `LanguageSwitchProps` | labelled group, `aria-pressed`, each name in its own language |
 | `ThemeSwitch` | system/light/dark | `ThemeSwitchProps` | labelled radiogroup; persisted in localStorage `cp_theme` (guarded) |
 | `RtlProvider` | owns language, syncs `<html lang dir>`, cookie `cp_lang` | `RtlProviderProps` | direction set server-side first, so there is no flash |
+| `TextField`, `TextArea` (P5.7/P5.8) | labelled input and textarea | `TextFieldProps`, `TextAreaProps` | visible `<label>` (textarea can hide it visually), `aria-describedby` for helper text, 44px target, `dir="auto"` on the textarea |
+| `ServiceBanner` (P5.7) | "AI waking up" / "unavailable" strip | `ServiceBannerProps` | polite `role="status"` region always in the DOM; empty when `state="ok"` |
 
 Helpers: `tone.ts` (`Tone`, `CATEGORY_TONE`, `PRIORITY_TONE`: exact backend label to tone), `cn.ts`.
 
@@ -161,11 +193,97 @@ Add a string:
 3. Use `t("area.key")` in the component. Never hard-code visible text, including `aria-label`s.
 4. Run `pnpm --filter web typecheck` and the `src/i18n` tests.
 
+## Data layer (P5.6)
+
+Components never import it (ESLint enforces this); hooks in `src/hooks/*` and pages do.
+
+| File | What |
+| --- | --- |
+| `src/lib/supabase/types.ts` | type-only re-export of `Database` from `supabase/types/database.types.ts` through the `@db/*` alias (tsconfig and vitest). The file is DB-owned and is never copied. Also `Sb = SupabaseClient<Database>`, the client type every repo takes. |
+| `src/lib/supabase/browser.ts` | `createBrowserSupabase()`: one `@supabase/ssr` browser client per tab (anon key + the user's cookie session). |
+| `src/lib/supabase/server.ts` | `createServerSupabase()` (`server-only`): the same client bound to request cookies, for Server Components and route handlers. |
+| `src/lib/supabase/env.ts` | reads `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. No service-role key exists in `apps/web`. |
+
+### Repos (`src/lib/repos/*`, read-only, RLS decides the rows)
+
+Every function takes the client first. `subscribe*` returns an unsubscribe function. Realtime delivers only rows the table's SELECT policy allows; `eqFilter` refuses filter values that are not plain slugs. Errors throw `Error(<PostgREST message>)`.
+
+| Function | Reads | Notes |
+| --- | --- | --- |
+| `listMyRequests(sb, limit=20)` | table `requests` | student: own rows (RLS by alias) |
+| `listMyPredictions(sb, requestId)` | **view `predictions_student_v`** | students have no policy on `predictions`; the view hides staff-only flags, `per_model` and cost |
+| `listRequestsWithLocation(sb, limit=200)` / `subscribeRequestsWithLocation(sb, cb)` | table `requests` where `building_id` is set | staff and admin; the subscription drops rows without a building |
+| `listReviewQueue(sb)` | table `review_queue`, `status = open`, oldest first | staff and admin |
+| `listBuildings(sb)` | table `buildings` | any signed-in user |
+| `listOfficeTickets(sb, office)` / `subscribeTickets(sb, office, cb)` | table `tickets` | sorted by `sla_due_at`; the subscription filters `office=eq.<office>` |
+| `listTicketsForRequest(sb, requestId)`, `listTicketLinks(sb, ticketIds)` | `tickets`, `ticket_links` | link rows carry the Linear URL |
+| `listOpenIncidents(sb)` / `subscribeIncidents(sb, cb)` | table `incidents`, `status = open` | staff of the office, admin all |
+| `listOutbox(sb, {kind?, limit?})` / `subscribeOutbox(sb, cb)` | table `outbox` | student: rows for their alias; staff and admin all |
+| `listNotifications(sb, alias)` / `subscribeNotifications(sb, alias, cb)` | table `notifications` | the only table a student subscribes to; the callback gets inserts only |
+| `listRedteamRuns(sb)`, `listRecentEvents(sb)` | `redteam_runs`, `events` | staff and admin. Live model numbers come from `GET /v1/metrics` through the proxy, not the database |
+
+Plan differences: `listReviewQueue` lives in `requests.ts` (it reads the review items of predictions), and `ReviewRow` is the `review_queue` row type.
+
+### AI client and proxy
+
+| File | What |
+| --- | --- |
+| `src/lib/ai/client.ts` | `import "server-only"`. `aiFetch<T>(path, { method, body?, userJwt, timeoutMs? })` calls `${AI_SERVICE_URL}/v1/<path>` with `Authorization: Bearer AI_SERVICE_TOKEN` and `X-CP-User-JWT`, 20 s timeout. It never throws: the result is `AiResult<T>`. The only module that reads `AI_SERVICE_URL` and `AI_SERVICE_TOKEN`. |
+| `src/lib/ai/result.ts` | `AiResult<T> = {ok:true,data} \| AiFail`. `AiFail = {ok:false, status, code, error, details, waking}`. `code` is an API error code (`docs/api/README.md > Errors`) or a web-layer one: `ai_waking`, `ai_not_configured`, `bad_gateway`, `network`. `waking` is true for a timeout, a network error, or an empty 502/503/504 (Render booting). A 503 that carries the API body (`artifact_unavailable`, `store_unavailable`) is a real error, not waking. |
+| `src/lib/ai/allowlist.ts` | `matchAllowed(method, segments)`. Allowed: `POST triage`, `POST triage/{id}/clarify`, `GET explain/{id}/counterfactual`, `POST feedback`, `POST tickets/{id}/status`, `GET incidents`, `POST incidents/{id}/resolve`, `GET insights/recurring`, `POST redteam/run`, `GET metrics`, `POST batch`, `GET health` (public), `POST admin/simulate`, `POST admin/reindex`. Ids match `[A-Za-z0-9_-]{1,64}`. Everything else (including the Linear webhook) is 404. |
+| `src/app/api/ai/[...path]/route.ts` | the proxy (`GET`, `POST`). Allow-list, then `getUser()` (401 without a session; only `health` is public), then `aiFetch` with the verified session token. It drops any client `Authorization` and `X-CP-*` header (headers are built from scratch), and for `triage` sets `student_alias` from the profile. Errors keep the API status and body and add `waking`. |
+| `src/lib/ai/browser.ts` | `callAi<T>(path, { method?, body?, timeoutMs?, signal? })`: the browser's way to call `/api/ai/<path>`; maps the proxy answer to `AiResult<T>`. Holds no secret. |
+
+The browser calls `/api/ai/...` only. The leak check (`scripts/check-bundle-secrets.mjs`, `pnpm check:secrets`) scans `.next/static` and the prerendered HTML for `AI_SERVICE_TOKEN`, `service_role`, `sk-or-`, `GMAIL_APP_PASSWORD`, `WHATSAPP_TOKEN` and the literal values of `AI_SERVICE_TOKEN` / `SUPABASE_SERVICE_ROLE_KEY` when set; it exits 1 on a match. The scanner itself is covered by `src/lib/__tests__/bundle-secrets.test.ts`.
+
+Env vars the web app reads: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `AI_SERVICE_URL`, `AI_SERVICE_TOKEN` (server runtime only), and the optional `NEXT_PUBLIC_DEMO_LOGIN_HINT` (a reminder shown on the login page, never the password).
+
+## Auth and roles (P5.7)
+
+- **Sign-in:** Supabase email and password, `signIn()` in `src/lib/auth/signin.ts`, driven by `useSignIn` and the `LoginForm` on `/login`. After sign-in the role comes from the user's own `profiles` row (`fetchProfile`); an account with no profile is signed out again with a message.
+- **Demo logins (D-008):** three "Sign in as" buttons (`src/lib/auth/demo.ts`): `talal@demo.local` (student), `it@demo.local` (staff, office `it`), `admin@demo.local`. A button only fills the email and moves focus to the password field. The shared password is typed by hand; nothing secret is in code or `NEXT_PUBLIC_*`.
+- **Role routing, `src/proxy.ts`** (Next 16 renamed `middleware` to `proxy`; the plan text still says `middleware.ts`). It refreshes the session (`@supabase/ssr`), verifies it with `getUser()`, reads the role, and applies `decideRoute` (`src/lib/auth/routing.ts`, a pure function with a tested matrix):
+
+  | Path | signed out | student | staff | admin |
+  | --- | --- | --- | --- | --- |
+  | `/login` | passes | `/` | `/staff` | `/lab` |
+  | `/` | `/login` | passes | passes | passes |
+  | `/staff`, `/pulse`, `/outbox` | `/login?next=...` | `/` | passes | passes |
+  | `/lab` | `/login?next=...` | `/` | `/staff` | passes |
+  | `/dev/*` | passes (404s itself in production) | | | |
+
+  `/api/*` and static assets are outside the matcher: route handlers authenticate themselves. A user whose profile is missing or has an unknown role is treated as signed out. `?next=` is accepted only as a same-origin path (`safeNext`).
+- **"AI waking up" banner:** `ServiceBanner({ state: 'ok'|'waking'|'down' })` (`components/ui`), mounted once in the root layout by `components/shell/ServiceStatus` and driven by `useServiceHealth`: it polls `GET /api/ai/health` every 30 s while healthy and every 5 s otherwise; a probe slower than 3 s or an unreachable service is `waking`; 12 failed probes (about a minute) or a degraded/misconfigured service is `down`. The state machine is `src/lib/ai/health.ts`. The banner is a polite live region and shows nothing when ok.
+
+## Student chat `/` (P5.8)
+
+`src/app/(student)/page.tsx` (server) checks the session and profile, then renders `ChatScreen` with the alias. Composition: `ChatThread` (a `role="log"` list) renders, per item, a student bubble, a `ResultCard` (which already contains `ExplanationPanel`, `ActionSummary`, `FlagBadges`, `UnderstandingView` and the Arabizi "understood as" line), the `DistressCard`, a `ClarificationBubble`, a live notice or an error line.
+
+| Piece | Where | Behaviour |
+| --- | --- | --- |
+| `Composer({ onSubmit(text, mode), busy, micSlot? })` | `components/chat` | Enter sends, Shift+Enter adds a line, IME composition does not send; blank text is not sent; cleared after sending. `micSlot` is empty until P5.9. |
+| `ClarificationBubble({ q, onPick, disabled, answered? })` | `components/chat` | the question in its own script's direction; options are buttons in a labelled group, not a radiogroup (an arrow key would otherwise send an answer on every move). Answered chip shows a check and `aria-pressed`. |
+| `BuildingPicker({ buildings, value, onChange, disabled })` | `components/chat` | native select, names in the UI language; `value` is the building id, which equals its code in the seed and is sent as `location.building`. |
+| `DistressCard({ message })` | `components/chat` | the service's supportive text as written (counselling placeholder and 911), no labels or ticket UI. |
+| `Disclaimer` | `components/chat` | "Integration-ready prototype on synthetic data". |
+| `TextField`, `TextArea` | `components/ui` | new primitives (none existed): a real visible label, 44 px target, `dir="auto"` on the textarea. |
+| `ArabiziHint` | not built | `ResultCard` already prints "Understood as: ..." from `understood_as`; a second component would duplicate it. |
+
+Logic, outside components:
+- `src/lib/chat/reducer.ts` is a pure reducer. `needs_clarification` adds only the question; `out_of_scope` adds the rephrase card and the topic chips; everything else adds one card.
+- `src/lib/chat/service.ts` has `submitTriage`, `answerClarification`, `fetchCounterfactual` (all through `callAi`), `chatErrorKind` (the service's English prose is never shown: a status or code maps to `chat.error*`) and `noticeFromNotification`.
+- Hooks (`src/hooks`): `useChat` (state, send, pick, counterfactual, notice; locks against double sends), `useNotifications(alias, cb)` (Realtime on `notifications`, unsubscribes on unmount), `useBuildings`, `useServiceHealth`, `useSignIn` and `useSignOut`. The plan's `useTriage`, `useClarify` and `useCounterfactual` are one hook because they share the thread.
+- Clarification: the chip answer goes to `POST triage/{id}/clarify` with `question_id` and `option_id`; the result is appended and the chip stays selected. A failed answer re-opens the question. Counterfactual: clicking a highlighted word calls `GET explain/{id}/counterfactual?drop=<token>` and the answer appears inside the same `ResultCard`.
+- Live updates: ticket status and incident broadcasts arrive as notices. The notification payload shape is not fixed by the backend yet: `{status, title}` becomes "Your ticket ... is now ...", `{message}` is shown as is, anything else is "You have a new update".
+
+Tests: `src/components/chat/__tests__/flow.test.tsx` runs the real hook against the API fixtures (clarify, counterfactual, distress, waking, re-open, double send); `e2e/student-basic.spec.ts` runs the real app against the mock API and `e2e/support/fake-supabase.mjs` (a test double that accepts `E2E_PASSWORD`, default `e2e-password`).
+
 ## Routes
 
 | Route | Roles | Status |
 | --- | --- | --- |
-| `/` | any | placeholder (language switch, tagline, disclaimer); chat arrives in P5.8 |
+| `/login` | public | email and password, demo buttons (P5.7) |
+| `/` | any signed-in role | student chat (P5.8) |
+| `/api/ai/[...path]` | session (health is public) | allow-listed proxy to the AI service (P5.6) |
 | `/dev/ui` | dev only | kitchen sink; `notFound()` when `NODE_ENV === "production"` |
-
-Data-layer functions (`src/lib/repos/*`, `src/lib/ai/client.ts`) do not exist yet (P5.6). `src/lib/ai/` currently holds only the generated types.
+| `/staff`, `/pulse`, `/outbox`, `/lab` | staff/admin, admin | guarded by `src/proxy.ts`; pages arrive in P5.10 to P5.12 |
