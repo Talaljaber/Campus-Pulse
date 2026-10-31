@@ -28,3 +28,12 @@
 - **Acceptance:** `pytest services/ai/tests/unit/test_clean_pipeline.py -q` → `2 passed`; `python scripts/test_clean.py` → `ALL TESTS PASSED`; `pytest services/ai/tests/unit/test_paths.py -q` → `9 passed`.
 - **Limitations / TODO / known issues:** `is_holdout` is a substring match (strict on purpose). **Parity issue for the lead:** with the pinned `pandas==3.0.6`, `clean_data.py` regenerates `cleaning_report.md` with tied `value_counts` rows in another order (md5 `ee82727f…` vs committed `eb2430a1…`, made with pandas 2.2.3); the 4 CSVs are identical. CI's `git diff --exit-code -- data/clean` will fail on the report until the lead decides (see the ML hand-back). On Windows the regenerated files are CRLF, so `git status` shows them modified although `git diff` is empty for the CSVs.
 - **Affects streams:** all (paths); Foundation (CI `git diff` gate on `data/clean`, `CAMPUSPULSE_ROOT` in `.env.example`).
+
+### P0.3a — Freeze a category-stratified `cv_fold` assignment  (ML, 2026-10-31)
+- **What now exists:** `data/clean/cv_folds.csv` (`cv_group,cv_fold`, 30 rows, folds 0..4) from `scripts/make_folds.py`: one group per category per fold, all 3 priorities and ≥ 2 Arabic groups in every fold (LD-31, audit F1). It reproduces the audit's assignment exactly (rows/fold 84/84/84/89/91).
+- **Public interfaces added:** `scripts/make_folds.py [--k] [--seed] [--include-augmented] [--out]`; `assign_folds(groups, k, seed, *, iterations, min_arabic_groups) -> dict[str, int]`; `append_new_groups(folds, new_groups, k) -> dict[str, int]` ([docs/ml/models.md §2.1](../ml/models.md#21-frozen-folds-cv_foldscsv-p03a-ld-31)).
+- **How to use it:** `pd.read_csv("data/clean/train_val_combined.csv").merge(pd.read_csv("data/clean/cv_folds.csv"), on="cv_group")`; hold out `cv_fold == f` for f in 0..4.
+- **Config / env added:** `config/train.yaml`: `seed: 42`, `cv.k: 5`, `cv.search_iterations: 20000`, `cv.min_arabic_groups_per_fold: 2`.
+- **Acceptance:** `python scripts/make_folds.py` → `wrote data/clean/cv_folds.csv: 30 groups, 5 folds, categories 6/6 and priorities 3/3 in every fold, rows/fold 84/84/84/89/91`; `python -c "...;print(len(d),d.cv_fold.nunique())"` → `30 5`; a second run with `--out .tmp/folds2.csv` is byte-identical (`cmp` silent).
+- **Limitations / TODO / known issues:** the search requires exactly k groups per category (true for the official data). New augmentation groups are placed by `--include-augmented` only; they never move an official group.
+- **Affects streams:** ML (P1.8 `group_folds`, every OOF computation).

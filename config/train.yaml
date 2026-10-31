@@ -1,0 +1,8 @@
+# Training INPUTS (knobs). Learned OUTPUTS go to models/frozen/vN/config.json, written only by train.py.
+seed: 42
+
+cv:
+  k: 5
+  # scripts/make_folds.py: seeded randomized search for a category-stratified fold assignment (LD-31).
+  search_iterations: 20000      # fixed cap; exit 1 if no feasible assignment is found within it
+  min_arabic_groups_per_fold: 2 # every validation fold keeps at least this many groups with Arabic rows
