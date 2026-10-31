@@ -37,3 +37,12 @@
 - **Acceptance:** `vitest run src/design` -> `11 passed` (WCAG contrast for both themes); lint 0 errors; typecheck and build pass.
 - **Limitations / TODO / known issues:** dark-mode polish is P5.17 (cut-flagged); category colours were chosen for colour-blind separation but are always paired with a text label.
 - **Affects streams:** none outside UI.
+
+### P5.2 — i18n dictionaries, `useT()`, RtlProvider and the language switch  (ui, 2026-10-31, commit see git log)
+- **What now exists:** in-repo EN/AR dictionaries (`src/i18n/{en,ar}.ts`; `ar: Dict` makes a missing key a type error), `useT()`, `useLang()`, `labelOf()`, `resolveLang()`, `RtlProvider` (sets `<html lang dir>`, cookie `cp_lang`), `LangScope` (fixed-language subtree for side-by-side demos) and `LanguageSwitch`. The root layout resolves the language server-side (cookie, then `Accept-Language`, then `en`), so the first paint already has the right direction.
+- **Public interfaces added or changed:** `useT(): (key: DictKey, vars?) => string`, `labelOf(kind, value, lang)`, `RtlProvider({ lang })`, `LanguageSwitch()`; see [docs/ui/README.md](../ui/README.md#i18n).
+- **How to use it:** `const t = useT(); t("common.close")`; `labelOf("category", "IT Support", lang)`.
+- **Config / env added:** cookie `cp_lang` (`en` | `ar`).
+- **Acceptance:** `vitest run src/i18n src/components` -> `10 passed`; typecheck and lint exit 0.
+- **Limitations / TODO / known issues:** the root layout reads cookies and headers, so every page renders dynamically. Chat, staff, pulse and lab strings are added by the tasks that build those pages. vitest is configured with `pool: "threads"` because forked workers timed out on this Windows machine.
+- **Affects streams:** none outside UI.

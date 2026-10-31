@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   test: {
+    // Threads start faster than forks on Windows; forked workers timed out at startup here.
+    pool: "threads",
+    maxWorkers: 2,
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],

@@ -1,0 +1,111 @@
+/**
+ * English dictionary: the source of truth for keys. `ar.ts` must have exactly these
+ * keys (enforced by the `Dict` type and a runtime test).
+ *
+ * Conventions: `<area>.<name>` in camelCase; areas are `app`, `common`, `lang`,
+ * `theme`, `category`, `priority`, `ui` (primitives), `chat`, `staff`, `pulse`,
+ * `lab`, `devui`. Placeholders use `{name}`. Backend label strings (e.g. "IT Support")
+ * are never translated in data, only displayed through `labelOf`.
+ */
+export const en = {
+  app: {
+    name: "CampusPulse",
+    tagline: "Tell us what you need. We route it to the right office.",
+    skipToContent: "Skip to content",
+  },
+  common: {
+    close: "Close",
+    cancel: "Cancel",
+    confirm: "Confirm",
+    retry: "Try again",
+    loading: "Loading",
+    dismiss: "Dismiss notification",
+    send: "Send",
+    save: "Save",
+    yes: "Yes",
+    no: "No",
+  },
+  lang: {
+    label: "Language",
+    en: "English",
+    ar: "العربية",
+    switchTo: "Switch language to {name}",
+  },
+  theme: {
+    label: "Theme",
+    system: "System",
+    light: "Light",
+    dark: "Dark",
+  },
+  category: {
+    registration: "Registration",
+    itSupport: "IT Support",
+    finance: "Finance",
+    transportation: "Transportation",
+    facilities: "Facilities",
+    academicSupport: "Academic Support",
+  },
+  priority: {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+  },
+  ui: {
+    table: { empty: "No rows to show" },
+    dialog: { closeLabel: "Close dialog" },
+    toast: { region: "Notifications" },
+    skeleton: { label: "Loading content" },
+    emptyState: { defaultTitle: "Nothing here yet" },
+  },
+  chat: {
+    placeholder: "Describe your request",
+    send: "Send request",
+    needsReview: "Needs staff review",
+    outOfScope: "Outside campus services",
+    safety: "Safety concern",
+  },
+  staff: {
+    memoryToast: "Added to memory: it will influence similar requests right away.",
+    resolve: "Resolve",
+  },
+  disclaimer: "Integration-ready prototype on synthetic data. Not an official GJU service.",
+  devui: {
+    title: "UI kitchen sink",
+    intro: "Every primitive, in both languages and both themes.",
+    buttons: "Buttons",
+    chips: "Chips",
+    badges: "Badges",
+    cards: "Cards",
+    tabs: "Tabs",
+    table: "Table",
+    toast: "Toast",
+    dialog: "Dialog",
+    skeleton: "Skeleton",
+    emptyState: "Empty state",
+    sampleCardTitle: "Wi-Fi is down in building M",
+    sampleCardBody: "Three students reported this in the last ten minutes.",
+    primary: "Primary",
+    secondary: "Secondary",
+    ghost: "Ghost",
+    danger: "Danger",
+    loadingBtn: "Saving",
+    disabled: "Disabled",
+    showToast: "Show toast",
+    toastMessage: "Saved successfully",
+    openDialog: "Open dialog",
+    dialogTitle: "Confirm the action",
+    dialogBody: "This is a modal dialog. Press Escape or use the buttons to close it.",
+    tabOverview: "Overview",
+    tabTickets: "Tickets",
+    tabIncidents: "Incidents",
+    colOffice: "Office",
+    colOpen: "Open",
+    colSla: "SLA",
+    emptyHint: "New items will appear here.",
+    emptyAction: "Refresh",
+    chipPick: "Pick the closest topic",
+    ticketsTab: "Tickets for {office}",
+  },
+};
+
+export type Dict = typeof en;

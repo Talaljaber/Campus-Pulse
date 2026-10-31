@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
+import { cookies, headers } from "next/headers";
+import { RtlProvider } from "@/components/ui/RtlProvider";
+import { LANG_COOKIE, dirOf, resolveLang } from "@/i18n";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
@@ -15,10 +18,14 @@ export const metadata: Metadata = {
   description: "Bilingual campus-request triage",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const [jar, hdrs] = await Promise.all([cookies(), headers()]);
+  const lang = resolveLang(jar.get(LANG_COOKIE)?.value, hdrs.get("accept-language"));
   return (
-    <html lang="en" dir="ltr" className={`${inter.variable} ${plexArabic.variable}`}>
-      <body>{children}</body>
+    <html lang={lang} dir={dirOf(lang)} className={`${inter.variable} ${plexArabic.variable}`}>
+      <body>
+        <RtlProvider lang={lang}>{children}</RtlProvider>
+      </body>
     </html>
   );
 }
