@@ -117,23 +117,25 @@ The service is a Docker web service defined in the repo-root `render.yaml` (LD-4
 
 One-time setup (human): Render dashboard, New, Blueprint, pick the repo (grant Render access to the private repo), apply. Then fill every `sync: false` variable in the service Environment tab (values from the table above). Confirm plan Starter and the health check path `/health` in Settings.
 
-Health check: `GET /health` returns `{"status":"ok","artifact":null,"rss_mb":<float>}` (`artifact` is the model manifest sha once models are loaded). `/v1/health` is an alias. `rss_mb` is the number to compare against the 512 MB limit.
+Health check: `GET /health` returns `{"status":"ok","artifact":"v1","sha":"<manifest sha>","rss_mb":<float>,"encoder_loaded":true,"sinks":["supabase","linear"],"llm_tiers":[],"vector_store":"pgvector"}`. `/v1/health` is an alias. `rss_mb` is the number to compare against the 512 MB limit (budget 400 MB, §3.17).
 
-The encoder fetch step in the Dockerfile is a disabled TODO (`FETCH_MODELS=0`) until the `models-v1-rcN` releases exist (P4). It will read `GITHUB_TOKEN` as a BuildKit secret.
+**What the image contains (Backend batch 7).** `services/ai`, `config/`, `reports/model_lab.json`, `data/clean/train_clean.csv` (red-team seeds) and `models/frozen/v1` with the encoder. `.dockerignore` admits nothing else of `data/` or `reports/`. `CAMPUSPULSE_ROOT=/app`, `TZ=Asia/Amman`, `ORT_INTRA_OP_THREADS=1` are set in the image. The app is `build_online` ([docs/api/README.md › build_online](../api/README.md#build-online)): it **refuses to start** without the model artifacts or without `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
+
+**Encoder in the image.** If `models/frozen/v1/encoder` exists in the build context (after `python scripts/fetch_models.py` locally) it is copied; otherwise (Render, CI: a clean checkout) the build downloads the GitHub Release asset `MODELS_TAG` (build arg, default `models-v1-rc1`). Both paths end with `fetch_models.py` verifying every file against `MANIFEST.json`, so a mismatch fails the build. While the repo is private the download needs `GITHUB_TOKEN` as a BuildKit secret: `docker build --secret id=GITHUB_TOKEN,env=GITHUB_TOKEN ...`. **Open item for Foundation:** check that Render passes `GITHUB_TOKEN` to the Docker build as a secret, and give the CI `docker` job the secret (or make the release public at submission, UD-8).
 
 ### Local Docker run
 
 ```bash
+python scripts/fetch_models.py                                         # once; else the build downloads it
 docker build -f services/ai/Dockerfile -t campuspulse-ai .            # context = repo root
-docker run --rm -e PORT=8000 -p 8000:8000 campuspulse-ai              # Git Bash / PowerShell
+# Render-like limits (RAM budget check); .env must set AI_SERVICE_TOKEN and the Supabase keys:
+docker run --rm -m 512m --cpus 0.5 -p 8000:10000 --env-file .env -e SLA_SCAN_MINUTES=0 campuspulse-ai
 curl.exe -s localhost:8000/health
-# Render-like limits (RAM budget check):
-docker run --rm -m 512m --cpus 0.5 -e PORT=8000 -p 8000:8000 campuspulse-ai
 ```
 
-Without Docker: `cd services/ai && ../../.venv/Scripts/python -m uvicorn api:app --port 8000`.
+`--env-file` passes the `.env` lines as they are; it does not strip inline `# comments`, so for Docker use a copy of `.env` without them (uvicorn's `--env-file` and pydantic-settings strip them). Without Docker: `uvicorn api:app --app-dir services/ai --env-file .env --port 8000` from the repo root.
 
-The local image is about 880 MB on disk (onnxruntime, scipy, scikit-learn, pandas); idle RSS was about 52 MB in P0.
+Measured 2026-10-31 (Backend batch 7, image 308 MB, `-m 512m --cpus 0.5`, live Supabase, Linear off): startup under a minute (model load on 0.5 CPU); 20 sequential `/v1/triage` p50 1538 ms, p95 1699 ms; RSS (`/health`, psutil) idle 428.5 MB, max 433.0 MB; cgroup usage (`docker stats`) 362 MiB. Over the 400 MB / 1.5 s budget of ARCHITECTURE §3.17, under the 512 MB limit: the §3.17 ladder is a lead/user decision.
 
 ### Web on Netlify
 
@@ -164,5 +166,8 @@ Notes:
 ## Troubleshooting
 
 TODO. Notes collected so far:
+
+- Every `/v1` route answers 401 locally: `AI_SERVICE_TOKEN` is empty in `.env` (the service fails closed). Set it on both the AI service and the web app.
+- The API exits at startup with `ArtifactMissing ... fetch_models.py`: the encoder is not installed; run `python scripts/fetch_models.py` (or `--from-file <tar.gz>`).
 
 - `scripts/clean_data.py` and `scripts/test_clean.py` are excluded from ruff (root `extend-exclude`). They are legacy, byte-stable data scripts, and only the P0.3c print guard may change them.

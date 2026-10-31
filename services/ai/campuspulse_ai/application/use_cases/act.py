@@ -160,6 +160,8 @@ class ActUseCase:
     `ticket_links.last_error`) and the next sink still runs. The student gets one in-app message with
     `understanding.student_reply` when the request has an alias.
 
+    `open_ticket(ticket)` saves a ready-made ticket and pushes it to the sinks (the incident ticket).
+
     `finalize(ticket)` runs after staff confirm a provisional ticket: it re-plans from the ticket's
     (possibly corrected) labels, clears the `unconfirmed`/`deferred:*` tags, mirrors the change to the
     sinks and fires what was deferred (booking, transport alert; a safety alert only if it did not
@@ -356,6 +358,12 @@ class ActUseCase:
             body=u.ticket_body if u else ctx.request.raw_text,
             tags=plan.tags,
         )
+        return self.open_ticket(ticket)
+
+    def open_ticket(self, ticket: Ticket) -> Ticket:
+        """Save `ticket` (the record), then create it in every sink in order; returns it with its
+        mirror links. A `SinkError` becomes a link with `error` and the next sink still runs. Also
+        used for the one ticket of a Pulse incident (`IncidentActions`)."""
         self._save_record(ticket)
         links: list[TicketLink] = []
         for sink in self._sinks:

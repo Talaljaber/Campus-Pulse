@@ -1,6 +1,6 @@
 # Pulse simulation (P4.10, video moment 2): a Wi-Fi outage in building M reported by eight
 # fictional students (aliases sim-01..sim-08) in EN, Jordanian Arabic and Arabizi.
-# category/priority are only used by --mode direct (no classifier yet); --mode api (P4.14)
+# category/priority are only used by --mode direct (no classifier); --mode api (the default with --api)
 # lets /v1/triage classify the text.
 building: M
 room: "204"

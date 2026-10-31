@@ -33,14 +33,17 @@ from campuspulse_ai.adapters.llm.prompt import load_prompt
 from campuspulse_ai.adapters.notify.allowlist import AllowlistedNotifier
 from campuspulse_ai.adapters.notify.channels import ChannelNotifier
 from campuspulse_ai.adapters.notify.inapp import InAppNotifier
+from campuspulse_ai.adapters.pulse.incident_detector import WindowedCentroidDetector
 from campuspulse_ai.adapters.store.inmemory import InMemoryRepository
 from campuspulse_ai.adapters.understand.rule_understander import ReplyTemplates, RuleBasedUnderstander
 from campuspulse_ai.adapters.understand.schema import UnderstandLimits
+from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
 from campuspulse_ai.application.services.gaming import GamingDetector
 from campuspulse_ai.application.services.llm_merge import LLMMerger
 from campuspulse_ai.application.use_cases.act import ActConfig, ActUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
+from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
@@ -52,6 +55,7 @@ from campuspulse_ai.domain.ports import (
     Explainer,
     LabelOracle,
     RequestUnderstander,
+    SentenceEncoder,
     TicketSink,
 )
 from campuspulse_ai.domain.routing import ActionsConfig, TableActionPlanner
@@ -72,6 +76,7 @@ OFFICE_INBOX = "office-inbox@campuspulse.invalid"
 ADVISOR_EMAIL = "advisor@campuspulse.invalid"
 ALLOWLIST = frozenset({STUDENT_INBOX, OFFICE_INBOX, ADVISOR_EMAIL})
 ADVISOR_NAME = "Dr. Test Advisor (fictional)"
+INCIDENT_WINDOW_MIN = 30
 SLOT_COUNT = 3  # free 30-minute slots seeded from the next office-hours morning
 
 
@@ -156,6 +161,8 @@ def build_test(
     office_inbox: str | None = OFFICE_INBOX,
     advisor_email: str = ADVISOR_EMAIL,
     pulse: Pulse | None = None,
+    pulse_encoder: SentenceEncoder | None = None,
+    tau_inc: float = 0.92,
     q_category: float = 0.5,
     q_priority: float = 0.5,
 ) -> BackendTestContainer:
@@ -209,6 +216,14 @@ def build_test(
         prompt_version=config.llm.prompt_version,
         enabled=bool(oracle.script) if llm_enabled is None else llm_enabled,
     )
+    incidents: IncidentsUseCase | None = None
+    if pulse_encoder is not None:  # P4.10: the real detector and incident actions over local stores
+        vectors = LocalNumpyVectorStore(pulse_encoder.dim, collections=("requests",))
+        detector = WindowedCentroidDetector(repo, vectors, clock, tau_inc, INCIDENT_WINDOW_MIN)
+        actions = IncidentActions(act, chosen, repo, repo, notifier, clock, msgs)
+        pulse = Pulse(vectors=vectors, encoder=pulse_encoder, incidents=detector, actions=actions)
+        incidents = IncidentsUseCase(repo, repo, chosen, notifier, clock, msgs, marks=repo,
+                                     student_inbox=acfg.student_inbox)  # fmt: skip
     flow = DecisionFlow(
         policy=DefaultDecisionPolicy(config.thresholds.tau_ood),
         clarifier=InfoGainStrategy(QuestionBank.load(CONFIG_DIR / "clarify_questions.yaml")),
@@ -236,10 +251,11 @@ def build_test(
         advisor=advisor,
         act=act,
         flow=flow,
-        triage=TriageUseCase(core, flow, repo, clock),
+        triage=TriageUseCase(core, flow, repo, clock, marks=repo),
         clarify=ClarifyUseCase(core, flow, repo, clock),
         sync=SyncTicketUseCase(chosen, repo, notifier, clock, msgs, student_inbox=acfg.student_inbox),
         sla=EscalateSlaUseCase(chosen, repo, msgs),
+        extras={"incidents": incidents} if incidents else {},
     )
 
 

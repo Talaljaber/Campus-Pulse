@@ -37,6 +37,7 @@ from campuspulse_ai.frameworks.routes import (
     explain,
     feedback,
     health,
+    incidents,
     integrations,
     lab,
     pending,
@@ -57,6 +58,7 @@ _ROUTERS = (
     integrations.router,
     lab.router,
     redteam.router,
+    incidents.router,
     pending.router,
     health.router,
 )

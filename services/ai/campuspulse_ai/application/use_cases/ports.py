@@ -16,6 +16,10 @@ They are structural (Protocols), so the real classes satisfy them without import
   `adapters/reports/json_reports.JsonReportsSource` implements it.
 - `RedTeamJudge` scores one red-team item (P4.11); `adapters/redteam/scorer.RedTeamScorer`
   implements it.
+- `LifecycleReads` are the reads feedback and Pulse need beyond the `Repository` port (a prediction
+  by id, a pending review, the tickets of requests, incidents); both store adapters implement it.
+- `Identified` is an `Actor` that also carries its auth user id (`frameworks/auth.Principal`).
+- `SimulationMarks` writes and reads `requests.simulated` (simulator traffic, P4.10).
 """
 
 from __future__ import annotations
@@ -25,7 +29,7 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from campuspulse_ai.application import dto
-from campuspulse_ai.domain.entities import CoreResult, RedTeamItem
+from campuspulse_ai.domain.entities import CoreResult, Incident, Prediction, RedTeamItem, ReviewItem, Ticket
 from campuspulse_ai.domain.values import (
     ClarificationConstraint,
     ClarificationQuestion,
@@ -155,3 +159,47 @@ class ReportsSource(Protocol):
     """
 
     def load(self) -> Mapping[str, object] | None: ...
+
+
+@runtime_checkable
+class Identified(Protocol):
+    """An actor with its Supabase auth user id (None for the service token or trusted headers)."""
+
+    @property
+    def user_id(self) -> str | None: ...
+
+
+@runtime_checkable
+class LifecycleReads(Protocol):
+    """Reads beyond the `Repository` port (P3.11 feedback, P4.10 Pulse); `SupabaseRepository` and
+    `InMemoryRepository` implement it with the same semantics.
+
+    - `get_prediction(id)`: that prediction; `NotFound` if absent.
+    - `open_review_for(prediction_id)`: its oldest `open` review item, or None.
+    - `tickets_for_requests(ids)`: the tickets of those requests (links included), oldest first.
+    - `get_incident(id)`: that incident; `NotFound` if absent.
+    - `list_incidents(open_only=..., limit=...)`: incidents newest first (`opened_at`, then id).
+    Raises `StoreError` when the store is unreachable.
+    """
+
+    def get_prediction(self, id: str) -> Prediction: ...
+
+    def open_review_for(self, prediction_id: str) -> ReviewItem | None: ...
+
+    def tickets_for_requests(self, request_ids: Sequence[str]) -> list[Ticket]: ...
+
+    def get_incident(self, id: str) -> Incident: ...
+
+    def list_incidents(self, *, open_only: bool, limit: int) -> list[Incident]: ...
+
+
+@runtime_checkable
+class SimulationMarks(Protocol):
+    """`requests.simulated` (P4.10): `scripts/simulate_pulse.py` traffic is marked so the UI can label
+    it. `mark_simulated(id)` sets the flag (`NotFound` for an unknown request); `simulated(ids)` returns
+    the subset of `ids` that are marked. Both store adapters implement it; `StoreError` when unreachable.
+    """
+
+    def mark_simulated(self, request_id: str) -> None: ...
+
+    def simulated(self, request_ids: Sequence[str]) -> set[str]: ...
