@@ -1,9 +1,10 @@
 """Service-role Supabase client for `-m supabase` tests, gated on env vars.
 
-Reads the process env first, then the repo-root `.env` (gitignored). The key is
-SUPABASE_TEST_SERVICE_ROLE_KEY, or SUPABASE_SERVICE_ROLE_KEY when SUPABASE_TEST_URL is the same
-project as SUPABASE_URL. Tests that use it write uniquely-identified rows and delete them in
-teardown. Never point SUPABASE_TEST_URL at a project holding data you cannot lose.
+Reads the process env first, then the repo-root `.env` (gitignored). The URL is
+SUPABASE_TEST_URL, else the main project's (SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL). The key is
+SUPABASE_TEST_SERVICE_ROLE_KEY, or SUPABASE_SERVICE_ROLE_KEY when the test URL is the main project.
+Tests that use it write uniquely-identified rows and delete them in teardown. Never point
+SUPABASE_TEST_URL at a project holding data you cannot lose.
 """
 
 from __future__ import annotations
@@ -30,9 +31,10 @@ def _env() -> dict[str, str]:
 def supabase_test_settings() -> tuple[str, str]:
     """(url, service-role key) for the test project, or skip the calling test."""
     env = _env()
-    url = env.get(URL_ENV, "").rstrip("/")
+    main_url = (env.get("SUPABASE_URL") or env.get("NEXT_PUBLIC_SUPABASE_URL") or "").rstrip("/")
+    url = (env.get(URL_ENV) or main_url).rstrip("/")
     key = env.get(KEY_ENV)
-    if not key and url and url == env.get("SUPABASE_URL", "").rstrip("/"):
+    if not key and url and url == main_url:
         key = env.get("SUPABASE_SERVICE_ROLE_KEY")
     if not url or not key:
         pytest.skip(f"{URL_ENV} and a service-role key are not set")
