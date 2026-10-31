@@ -1,0 +1,50 @@
+# Rule-based understanding templates, English (UD-10 fallback, P3.3a). Owner: Backend stream.
+#
+# Used by RuleBasedUnderstander when there is no key, the LLM fails or its reply is rejected, and for
+# every injection-flagged request. Templates state only what the system really does; they never name a
+# person, a fee, a date or a policy. Placeholders (str.format): {team} {category_name} {priority_name}
+# {gist} {text} {lang} {category} {priority} {entity_lines}. Ticket text is written in English for
+# staff, so `ticket` exists in this file only.
+
+category_names:
+  Registration: Registration
+  IT Support: IT support
+  Finance: Finance
+  Transportation: Transportation
+  Facilities: Facilities
+  Academic Support: Academic support
+
+priority_names:
+  low: low
+  medium: medium
+  high: high
+
+teams:
+  Registration: the Registration team
+  IT Support: the IT Support team
+  Finance: the Finance team
+  Transportation: the Transportation team
+  Facilities: the Facilities team
+  Academic Support: the Academic Support team
+
+summary: "{category_name} request, {priority_name} priority: {gist}"
+
+# One reply per planned action (ActionType); `none` when no action was planned yet.
+reply:
+  ticket: "Thanks, we've got it. We've passed your request to {team}, who will follow up with you here."
+  faq_answer: "Thanks for your question. We're checking the help pages for an answer; if they don't cover it, {team} will reply to you here."
+  booking: "We understand this is urgent. We're booking the earliest available advisor slot for you and will email you the details."
+  safety_alert: "If anyone is in danger, move away from the area and call 911 now. We've alerted {team}."
+  incident_merge: "Other students have reported the same problem and {team} is already working on it. We'll update everyone here."
+  none: "Thanks, we've received your request, and {team} will look at it."
+
+# Appended to the reply only when "today" was found in the request.
+deadline_today: " We've noted that this is about today."
+
+ticket:
+  title: "{category}/{priority}: {gist}"
+  body: |-
+    Request ({lang}): {text}
+    Category: {category}. Priority: {priority}.
+    {entity_lines}
+    Written from templates (rule-based understanding, no LLM).
