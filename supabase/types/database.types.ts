@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Supabase MCP generate_typescript_types for project efsanbaklpiakhsndhph
-// after migration 0008. Regenerate after every migration: see docs/db/schema.md › TypeScript types.
+// after migration 0009. Regenerate after every migration: see docs/db/schema.md › TypeScript types.
 export type Json =
   | string
   | number
@@ -882,6 +882,7 @@ export type Database = {
           resolved_at: string | null
           sla_due_at: string
           status: string
+          tags: string[]
           title: string
         }
         Insert: {
@@ -898,6 +899,7 @@ export type Database = {
           resolved_at?: string | null
           sla_due_at: string
           status?: string
+          tags?: string[]
           title?: string
         }
         Update: {
@@ -914,6 +916,7 @@ export type Database = {
           resolved_at?: string | null
           sla_due_at?: string
           status?: string
+          tags?: string[]
           title?: string
         }
         Relationships: [
