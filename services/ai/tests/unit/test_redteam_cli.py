@@ -1,7 +1,8 @@
 """P4.11: the offline red-team CLI (`evaluate.py --redteam`) and `composition.redteam`.
 
-The core is injected (`core_factory`) because the frozen model and `build_offline` belong to the ML
-stream; the real default factory is only checked to fail cleanly on a model directory that is absent.
+The core is injected (`core_factory`) so these tests need no model files (the encoder is fetched, not
+committed); the real default factory (`build_offline`) is only checked to fail cleanly on a model
+directory that is absent.
 """
 
 from __future__ import annotations

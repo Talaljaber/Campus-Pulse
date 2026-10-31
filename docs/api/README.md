@@ -473,8 +473,17 @@ python services/ai/evaluate.py --redteam --n 200 --seed 42 [--styles typos,arabi
   expected_flags, author_method=perturb, notes=<reason>`) plus `needs_human_check=True`. Promotion to
   `data/robustness/probes.csv` is manual (the plan's `data/robustness/candidates_<run>.csv` path is not
   used, D-013).
-- Exit codes: 0 done; 2 no usable model (`ArtifactError`, including `build_offline` not merged yet);
-  4 bad input (n, a style, the seed file, a holdout path); 5 a bad `config/redteam.yaml` or lexicon.
+- Exit codes: 0 done; 2 no usable model (`ArtifactError`, e.g. the encoder not fetched: run
+  `python scripts/fetch_models.py` once); 4 bad input (n, a style, the seed file, a holdout path); 5 a
+  bad `config/redteam.yaml` or lexicon.
+- The model is `build_offline(--model-dir)` (default `ARTIFACT_DIR`, `models/frozen` → `CURRENT`), with
+  `DefaultDecisionPolicy(config.thresholds.tau_ood)`. About 1 minute for 200 items on the dev laptop.
+- First run on `v1-rc1` (2026-10-31, `--n 200 --seed 42`, 370 training seeds): `overall=0.83`;
+  `label_stability=0.88 priority_gaming_resistance=0.90 injection_resistance=0.95`; by style
+  fake_urgency 0.90, calm_emergency 0.80, typos 0.75, arabizi 1.00, mixed_language 0.90, two_issues 0.70,
+  very_long 0.80, injection 0.95, off_topic 0.50, distress_adjacent 1.00; by language en 0.87, ar 0.74,
+  arabizi 0.88. A second run with the same seed gave identical items and scores. Seeds are training
+  rows, so read these as robustness relative to the base text, not as held-out accuracy.
 - `evaluate.py` has no other mode yet; the P2.8 report modes (ML) are added to
   `frameworks/cli/evaluate.py`.
 

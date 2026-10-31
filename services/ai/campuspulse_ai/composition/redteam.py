@@ -13,13 +13,11 @@ Seeds are never holdout rows: `load_seed_rows` refuses `data/our_test` and `data
 
 from __future__ import annotations
 
-import importlib
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
+from campuspulse_ai.adapters.clock import SystemClock
 from campuspulse_ai.adapters.redteam.config import RedTeamConfig
 from campuspulse_ai.adapters.redteam.perturbation import PerturbationGenerator
 from campuspulse_ai.adapters.redteam.report import write_candidates, write_report
@@ -30,25 +28,14 @@ from campuspulse_ai.application.use_cases.ports import TriageClassifier
 from campuspulse_ai.application.use_cases.run_redteam import RunRedTeamUseCase
 from campuspulse_ai.config.paths import CONFIG_DIR, LEXICONS, REPO_ROOT, REPORTS
 from campuspulse_ai.config.settings import Settings
-from campuspulse_ai.domain.errors import ArtifactMissing
 from campuspulse_ai.domain.policy import DefaultDecisionPolicy
 from campuspulse_ai.domain.ports import Clock, DecisionPolicy, Repository
 
 REDTEAM_YAML = CONFIG_DIR / "redteam.yaml"
 REDTEAM_REPORTS = REPORTS / "redteam"
-OFFLINE_MODULE = "campuspulse_ai.composition.offline"
-"""The ML stream's offline container (P1.15), imported lazily: it is not on main yet."""
 
 CoreFactory = Callable[[Path], tuple[TriageClassifier, DecisionPolicy]]
 """Builds the classifier and the decision policy from a model directory."""
-
-
-class UtcClock:
-    """`Clock` for the offline run (tz-aware UTC). Swap for `adapters.clock.SystemClock` once P1.15
-    is merged."""
-
-    def now(self) -> datetime:
-        return datetime.now(UTC)
 
 
 def resolve(path: Path) -> Path:
@@ -84,20 +71,16 @@ def build_redteam(
 
 
 def load_offline_core(model_dir: Path) -> tuple[TriageClassifier, DecisionPolicy]:
-    """`build_offline(model_dir).core` and the policy over its frozen `tau_ood`.
+    """`build_offline(model_dir).core` and the decision policy over its frozen `tau_ood`.
 
-    Raises `ArtifactMissing` while `composition.offline` is not merged, and whatever `build_offline`
-    raises for an unusable model directory (`ArtifactError`).
+    `composition.offline` is imported here, not at module level, so the API process (which imports
+    this module only for `build_redteam`) does not load the offline model stack. Raises whatever
+    `build_offline` raises for an unusable model directory (`ArtifactError`).
     """
-    try:
-        offline: Any = importlib.import_module(OFFLINE_MODULE)
-    except ModuleNotFoundError as exc:
-        raise ArtifactMissing(
-            f"{OFFLINE_MODULE} (build_offline, ML P1.15) is not available in this checkout"
-        ) from exc
-    container = offline.build_offline(model_dir)
-    core: TriageClassifier = container.core
-    return core, DefaultDecisionPolicy(float(container.config.thresholds.tau_ood))
+    from campuspulse_ai.composition.offline import build_offline
+
+    container = build_offline(model_dir)
+    return container.core, DefaultDecisionPolicy(container.config.thresholds.tau_ood)
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,7 +114,7 @@ def run_offline_redteam(
     resolved_model_dir = resolve(model_dir or settings.artifact_dir)
     resolved_seeds = resolve(seed_csv or settings.redteam_seed_csv)
     core, policy = core_factory(resolved_model_dir)
-    used_clock = clock or UtcClock()
+    used_clock = clock or SystemClock()
     use_case = build_redteam(
         core,
         policy,
