@@ -7,9 +7,10 @@ Every route except `/health`, `/v1/health` and the Linear webhook depends on `au
 2. **Caller.** `Principal(user_id, role, alias, office)`, by `Settings.auth_mode`:
    - `trusted_headers` (tests, local dev): `X-CP-Role`, `X-CP-Alias`, `X-CP-Office`; no role header
      means `service`.
-   - `supabase_jwt` (production): `X-CP-User-JWT` is verified and the role, office and alias come from
-     the user's `profiles` row (P4.12); the `X-CP-*` identity headers are ignored. No user token
-     means `service` (a server script holding only the service token).
+   - `supabase_jwt` (production, the default): `X-CP-User-JWT` is verified with Supabase Auth by
+     `ApiServices.identity` and the role, office and alias come from the user's `profiles` row
+     (P4.12); the `X-CP-Role/Alias/Office` headers are ignored. No user token means `service` (a
+     server script holding only the service token). A bad token is 401.
 3. **Role.** A role outside the endpoint's `x-roles` (`api_contract.ENDPOINTS`) -> 403 `forbidden`.
 
 The dependency declares exactly the parameters of the mock app's guard (`PrincipalHeaders` +
@@ -27,11 +28,14 @@ from fastapi import Depends, Header, Request
 from fastapi.security import HTTPAuthorizationCredentials
 
 from campuspulse_ai.application.dto import ErrorCode, PrincipalHeaders, Role
+from campuspulse_ai.composition.api import ApiServices
 from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.frameworks.api_contract import ENDPOINTS_BY_ID, SERVICE_TOKEN_SCHEME
-from campuspulse_ai.frameworks.errors import ApiError, not_wired
+from campuspulse_ai.frameworks.errors import ApiError
 
 ROLE_SERVICE: Role = "service"
+USER_ROLES: dict[str, Role] = {"student": "student", "staff": "staff", "admin": "admin"}
+"""`profiles.role` values a user token may carry (never `service`)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,8 +69,12 @@ def check_service_token(settings: Settings, credentials: HTTPAuthorizationCreden
         raise ApiError(ErrorCode.UNAUTHENTICATED, "Missing or invalid service token.")
 
 
-def resolve_principal(settings: Settings, headers: PrincipalHeaders) -> Principal:
-    """The caller, per `settings.auth_mode` (see the module docstring)."""
+def resolve_principal(settings: Settings, headers: PrincipalHeaders, services: ApiServices) -> Principal:
+    """The caller, per `settings.auth_mode` (see the module docstring).
+
+    `supabase_jwt` errors: no verifier wired -> 503 `store_unavailable`; Supabase unreachable ->
+    `StoreError` (503); an invalid or expired token, no profile, or an unknown role -> 401.
+    """
     if settings.auth_mode == "trusted_headers":
         return Principal(
             user_id=None,
@@ -74,9 +82,16 @@ def resolve_principal(settings: Settings, headers: PrincipalHeaders) -> Principa
             alias=headers.x_cp_alias or None,
             office=headers.x_cp_office or None,
         )
-    if headers.x_cp_user_jwt:
-        raise not_wired("user token verification")
-    return SERVICE_PRINCIPAL
+    token = headers.x_cp_user_jwt
+    if not token:
+        return SERVICE_PRINCIPAL
+    if services.identity is None:
+        raise ApiError(ErrorCode.STORE_UNAVAILABLE, "User token verification is not configured.")
+    user = services.identity.verify(token)
+    role = USER_ROLES.get(user.role) if user is not None else None
+    if user is None or role is None:
+        raise ApiError(ErrorCode.UNAUTHENTICATED, "Invalid or expired user token.")
+    return Principal(user_id=user.user_id, role=role, alias=user.alias, office=user.office)
 
 
 def authorize(op_id: str) -> Callable[..., Principal]:
@@ -90,7 +105,7 @@ def authorize(op_id: str) -> Callable[..., Principal]:
     ) -> Principal:
         settings: Settings = request.app.state.settings
         check_service_token(settings, credentials)
-        caller = resolve_principal(settings, principal)
+        caller = resolve_principal(settings, principal, request.app.state.services)
         if caller.role not in endpoint.roles:
             raise ApiError(ErrorCode.FORBIDDEN, "This role may not use this endpoint.", {"role": caller.role})
         return caller

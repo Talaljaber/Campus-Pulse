@@ -33,9 +33,25 @@ Every route lives under `/v1`. The only exception is `GET /health`, the root ali
 
 **User identity and roles.**
 - The Next.js server forwards the signed-in user's Supabase access token in `X-CP-User-JWT`.
-- In production (`AUTH_MODE=supabase_jwt`, P4.12), FastAPI verifies the JWT and reads `role`, `office` and `alias` from the `profiles` row.
+- In production (`AUTH_MODE=supabase_jwt`, the default since P4.12), FastAPI verifies the JWT and reads `role`, `office` and `alias` from the `profiles` row.
 - The role never comes from a client-controlled header.
 - A role outside an endpoint's allowed roles gets `403 forbidden`. So does staff acting on another office's ticket or incident.
+
+**`AUTH_MODE=supabase_jwt` in detail** (`adapters/integrations/supabase_auth.py`,
+`frameworks/auth.py`):
+1. `GET {SUPABASE_URL}/auth/v1/user` with the user token (and the service-role key as `apikey`)
+   verifies it, so expired and signed-out sessions fail too.
+2. `GET {SUPABASE_URL}/rest/v1/profiles?id=eq.<user id>&select=role,office,alias` with the service
+   role reads the caller. `role` must be `student`, `staff` or `admin`.
+3. The answer (also a negative one) is cached by the token's sha256 for `AUTH_CACHE_S` (60 s): one
+   Supabase round trip per user per minute, and a revoked session keeps working for at most 60 s.
+
+| Situation | Result |
+| --- | --- |
+| no `X-CP-User-JWT` | the caller is the `service` role (a script holding only the service token); `X-CP-Role/Alias/Office` are ignored |
+| token rejected by Supabase Auth, no `profiles` row, or a role outside the three | `401 unauthenticated` "Invalid or expired user token." |
+| Supabase unreachable, 5xx, or the profiles read refused (wrong service-role key) | `503 store_unavailable` |
+| no verifier wired (no `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`) and a user token is sent | `503 store_unavailable` "User token verification is not configured." |
 
 | Role | Who | Notes |
 | --- | --- | --- |
@@ -442,6 +458,40 @@ anything with `role`, `office`, `alias` (`use_cases/ports.Actor`; the route pass
 `EscalateSlaUseCase(sinks, repo, messages)`; returns the ids it escalated. Never raises. Shared sink
 pushing for both use cases and `ActUseCase.finalize` is `use_cases/mirror.TicketMirror`.
 
+### `BatchCsvUseCase.run(data, *, use_llm=False) -> bytes` — `use_cases/batch.py` (P4.12)
+
+`BatchCsvUseCase(labeler: BatchLabeler, *, max_rows)` behind `POST /v1/batch` (staff, admin;
+multipart `file` + form `use_llm`).
+- **Input:** UTF-8 (a BOM is fine), a header with `request_id` and `text` (extra columns ignored),
+  values kept exactly as written. At most `BATCH_MAX_ROWS` rows (10,000) and `BATCH_MAX_BYTES`
+  (5 MB, checked by the route).
+- **Labels:** `BatchLabeler.label(rows, use_llm)` (`use_cases/ports.py`). Composition adapts the ML
+  stream's `BatchPredictUseCase` (P1.15) to it, so the labels are `predict.py`'s.
+- **Output:** `text/csv`, header `request_id,category,priority`, input order, UTF-8 without BOM, `\n`,
+  minimal quoting (`read_batch_csv` / `write_predictions_csv` are public so `predict.py` writes the
+  same bytes).
+- **Errors:** a bad file (not UTF-8, no header, a missing column, too many rows or bytes) → 422;
+  `ArtifactError` → 503; a labeler that loses or reorders rows → 500. Nothing is written to the
+  database.
+
+### `MetricsUseCase.run() -> MetricsResponse` — `use_cases/metrics.py` (P4.12)
+
+`MetricsUseCase(reports: ReportsSource, repo, memory, artifact)` behind `GET /v1/metrics` (admin).
+- **Offline sections** come from `REPORTS_DIR/model_lab.json` (`adapters/reports/json_reports.py`),
+  written by `evaluate.py` (ML) in exactly the offline part of `MetricsResponse`:
+  `{generated_at, ask_rate, ask_rate_is_proxy, benchmark[], coverage[], calibration[], fairness[],
+  ablations[], confusions[]}` (each row in its DTO shape, see endpoints.md). The file is re-read on
+  every call.
+- **No report yet:** empty lists, `generated_at`/`ask_rate` null, `ask_rate_is_proxy` true. A section
+  that does not validate is logged and returned empty; the others are kept; the page never fails
+  because of the report.
+- **Live:** `router` from `Repository.router_stats()` plus `cost_per_1k_usd = cost / total × 1000`;
+  `memory` from `MemoryStore.stats()`; `artifact` the loaded version and sha (`"none"`/`""` without
+  models).
+- **`redteam` is `[]`** until the domain `Scorecard` carries `created_at`, `n` and `seed`
+  (P4.11; change request filed).
+- Errors: `StoreError` from the repository or memory store → 503.
+
 ### `CounterfactualUseCase.run(request_id, drop, *, caller_alias=None) -> CounterfactualResponse` — `use_cases/explain.py`
 
 - Loads the request (a student caller only for their own), checks that `drop` occurs in the request
@@ -471,12 +521,13 @@ pushing for both use cases and `ActUseCase.finalize` is `use_cases/mirror.Ticket
 `create_app(services=None, settings=None, *, build=None) -> FastAPI`:
 - `services` is `composition.api.ApiServices`, a frozen dataclass of the use cases behind the routes
   (`triage`, `clarify`, `counterfactual`, `feedback`, `tickets`, `sla` + `clock` for the SLA scanner,
-  and `health: HealthInfo` for `/health`). Every
+  `batch`, `metrics`, `identity` for `supabase_jwt`, and `health: HealthInfo` for `/health`). Every
   use-case field is optional: a route whose use case is `None` answers **`501 not_implemented`**
   after the auth checks, with `details.component` naming what is missing.
 - `build(settings) -> ApiServices` runs in the startup lifespan when `services` is None.
-  `services/ai/api.py` passes `composition.api.build_api`, which today wires nothing model- or
-  database-backed: `build_online` (P4.3, assigned by the lead) fills `ApiServices` from the
+  `services/ai/api.py` passes `composition.api.build_api`, which today wires only the Supabase
+  identity verifier (when `AUTH_MODE=supabase_jwt` and the Supabase URL and service-role key are
+  set): `build_online` (P4.3, assigned by the lead) fills the rest of `ApiServices` from the
   `OnlineContainer`. Until then the deployed app answers `/health` with `status: "degraded"` and the
   use-case routes with 501.
 - `settings` defaults to `Settings()` from the env (`AI_SERVICE_TOKEN`, `AUTH_MODE`).
@@ -493,11 +544,14 @@ pushing for both use cases and `ActUseCase.finalize` is `use_cases/mirror.Ticket
 | `routes/feedback.py` | `POST /v1/feedback` | any `FeedbackHandler` (`use_cases/ports.py`; P3.11 `FeedbackUseCase`) |
 | `routes/tickets.py` | `POST /v1/tickets/{ticket_id}/status` | `SyncTicketUseCase.change_status` + `propagate` (background) |
 | `routes/integrations.py` | `POST /v1/integrations/linear/webhook` | `SyncTicketUseCase.apply_inbound` + `propagate` (background) |
+| `routes/lab.py` | `POST /v1/batch`, `GET /v1/metrics` | `BatchCsvUseCase`, `MetricsUseCase` |
 | `routes/health.py` | `GET /health`, `GET /v1/health` | `ApiServices.health` (`status: ok` once triage is wired, else `degraded`) |
 | `routes/pending.py` | the routes of later tasks | none yet (501) |
 | lifespan (`background.py`) | — | `EscalateSlaUseCase.run` every `SLA_SCAN_MINUTES` |
 
-**Testing over HTTP.** `services/ai/tests/fixtures/api.py`: `api_client(build_test(...), **fields)`
+**Testing over HTTP.**
+(`AUTH_MODE` defaults to `supabase_jwt`; the test helper and the local run below set
+`trusted_headers` explicitly.) `services/ai/tests/fixtures/api.py`: `api_client(build_test(...), **fields)`
 returns a `TestClient` over the real app with `AUTH_MODE=trusted_headers` and a test token, and
 `auth(role, alias, office)` builds the headers. Example:
 

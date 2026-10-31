@@ -6,15 +6,13 @@ OpenAPI document as the mock app) and clients get a typed error instead of a 404
 - `GET /v1/insights/recurring`: Recurring problems (P4.21).
 - `POST /v1/redteam/run`: red team (P4.11).
 - `POST /v1/admin/simulate`, `POST /v1/admin/reindex`: optional extras (P5.19, P4.20).
-- `POST /v1/batch`, `GET /v1/metrics`: model lab (P4.12).
 """
 
 from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, Query, Request
 
 from campuspulse_ai.application.dto import (
     IncidentListQuery,
@@ -62,17 +60,6 @@ def insights_recurring(
     raise not_wired("recurring problems")
 
 
-@router.api_route(**route_kwargs("batch"), response_class=Response)
-def batch(
-    file: Annotated[UploadFile, File(description="CSV with columns request_id,text (UTF-8).")],
-    request: Request,
-    caller: Annotated[Principal, Depends(authorize("batch"))],
-    use_llm: Annotated[bool, Form()] = False,
-) -> Response:
-    """Batch predictions (P4.12)."""
-    raise not_wired("batch predictions")
-
-
 @router.api_route(**route_kwargs("redteam_run"))
 def redteam_run(
     body: RedTeamRunRequest,
@@ -81,15 +68,6 @@ def redteam_run(
 ) -> Any:
     """Red-team run (P4.11)."""
     raise not_wired("the red team")
-
-
-@router.api_route(**route_kwargs("metrics"))
-def metrics(
-    request: Request,
-    caller: Annotated[Principal, Depends(authorize("metrics"))],
-) -> Any:
-    """Model-lab metrics (P4.12)."""
-    raise not_wired("metrics")
 
 
 @router.api_route(**route_kwargs("admin_simulate"))

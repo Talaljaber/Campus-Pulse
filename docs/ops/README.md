@@ -59,7 +59,12 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `SUPABASE_URL` | local, Render | no | ai | |
 | `SUPABASE_SERVICE_ROLE_KEY` | local, Render | yes | ai | never on Netlify |
 | `AI_SERVICE_TOKEN` | local, Render, Netlify | yes | ai, web | same value on both; on Netlify scope it to Functions/runtime as well as Builds. Unset on the AI service = every `/v1` route answers 401 (fail closed) |
-| `AUTH_MODE` | local, Render | no | ai | P3.12: `trusted_headers` (caller role/alias/office from `X-CP-*` headers; tests and local dev only) or `supabase_jwt` (verified Supabase user token + `profiles`; required on Render). See [docs/api/README.md › Auth](../api/README.md#auth) |
+| `AUTH_MODE` | local, Render | no | ai | default `supabase_jwt` (P4.12: the user token in `X-CP-User-JWT` is verified with Supabase Auth and the role/office/alias read from `profiles`; needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`). `trusted_headers` takes the caller from `X-CP-*` headers: tests and local dev only, never on Render. See [docs/api/README.md › Auth](../api/README.md#auth) |
+| `AUTH_CACHE_S` | local, Render | no | ai | default `60`; seconds a verified user token (and its profile) is cached, so a revoked session works at most this long |
+| `AUTH_TIMEOUT_S` | local, Render | no | ai | default `5`; per call to Supabase Auth and to `profiles` |
+| `REPORTS_DIR` | local, Render (image) | no | ai | default `reports`; `/v1/metrics` reads `model_lab.json` from it (written by `evaluate.py`) |
+| `BATCH_MAX_ROWS` | local, Render | no | ai | default `10000`; `/v1/batch` rejects a larger CSV with 422 |
+| `BATCH_MAX_BYTES` | local, Render | no | ai | default `5000000`; `/v1/batch` rejects a larger upload with 422 |
 | `GMAIL_SMTP_USER` | local, Render | no | ai | the campuspulse support Gmail address |
 | `GMAIL_APP_PASSWORD` | local, Render | yes | ai | needs 2-Step Verification |
 | `SMTP_HOST` | local, Render | no | ai | `smtp.gmail.com` |

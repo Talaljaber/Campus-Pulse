@@ -8,11 +8,18 @@ They are structural (Protocols), so the real classes satisfy them without import
 - `Actor` is the caller of a role-checked action. `frameworks/auth.Principal` satisfies it, so use
   cases check roles without importing the web layer.
 - `FeedbackHandler` is the `/v1/feedback` surface that `FeedbackUseCase` (P3.11) implements.
+- `IdentityVerifier` turns a Supabase access token into a `UserIdentity` (P4.12);
+  `adapters/integrations/supabase_auth.SupabaseIdentityVerifier` implements it.
+- `BatchLabeler` labels `(request_id, text)` rows for `/v1/batch`; the composition root adapts the ML
+  stream's `BatchPredictUseCase` (P1.15) to it.
+- `ReportsSource` reads the offline model-lab report for `/v1/metrics`;
+  `adapters/reports/json_reports.JsonReportsSource` implements it.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from campuspulse_ai.application import dto
@@ -30,6 +37,8 @@ ROLE_STAFF = "staff"
 ROLE_ADMIN = "admin"
 ROLE_SERVICE = "service"
 """`service` is the bare service token (a server script), never a signed-in user."""
+USER_ROLES: frozenset[str] = frozenset({ROLE_STUDENT, ROLE_STAFF, ROLE_ADMIN})
+"""Roles a `profiles` row may carry."""
 
 
 @runtime_checkable
@@ -86,3 +95,47 @@ class FeedbackHandler(Protocol):
     """
 
     def run(self, cmd: dto.FeedbackRequest, reviewer: Actor) -> dto.FeedbackResponse: ...
+
+
+@dataclass(frozen=True, slots=True)
+class UserIdentity:
+    """A verified signed-in user: the auth user id and their `profiles` row (role, office, alias)."""
+
+    user_id: str
+    role: str
+    office: str | None
+    alias: str | None
+
+
+@runtime_checkable
+class IdentityVerifier(Protocol):
+    """Verifies an end user's Supabase access token (P4.12, `AUTH_MODE=supabase_jwt`).
+
+    `verify(token)` returns the user's identity read from `profiles` (never from the token's claims or
+    a client header), or None when the token is invalid or expired, the user has no profile, or the
+    profile's role is not one of `USER_ROLES`. Raises `StoreError` when Supabase cannot be reached.
+    """
+
+    def verify(self, token: str) -> UserIdentity | None: ...
+
+
+@runtime_checkable
+class BatchLabeler(Protocol):
+    """Labels rows in input order: `[(request_id, text)] -> [(request_id, category, priority)]`.
+
+    The same labels as `predict.py` (tier 0 unless `use_llm`); empty text still gets a label (LD-17).
+    Raises `ArtifactError` if the model is unusable.
+    """
+
+    def label(self, rows: Sequence[tuple[str, str]], *, use_llm: bool) -> list[tuple[str, str, str]]: ...
+
+
+@runtime_checkable
+class ReportsSource(Protocol):
+    """The offline model-lab report written by `evaluate.py` (`REPORTS_DIR/model_lab.json`).
+
+    `load()` returns the parsed JSON object, or None when no report exists yet. Raises `InvalidInput`
+    when the file exists but is not a JSON object.
+    """
+
+    def load(self) -> Mapping[str, object] | None: ...
