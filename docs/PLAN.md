@@ -63,6 +63,13 @@ These override any lead decision or default below that conflicts with them.
   - a `docs/streams/CHANGELOG.md` entry
 
   Agents read the docs, not each other's code ([EXECUTION.md › Documentation](plan/EXECUTION.md#documentation)).
+- <a id="ud-13"></a>**UD-13 Hybrid routing with the student's advisor (2026-10-31).**
+  - Confident requests (singleton category and priority sets) go straight to the office, as now.
+  - Unsure requests (human review) go to the **student's academic advisor**, not a general staff queue. The advisor confirms the office or forwards the request to another one. That choice is a correction that feeds live learning (P3.11).
+  - Safety and same-day-urgent requests never wait for an advisor: the office ticket and the alert fire immediately.
+  - Any staff member can **forward a ticket to another office**.
+  - Rejected: routing every request through an advisor (it bottlenecks, delays urgent requests, and removes the automatic triage the track scores).
+  - Needs: a student→advisor link (DB), advisor assignment of review items and a forward action (Backend), an advisor review view and a forward button (UI), and an advisor demo login.
 - <a id="ud-9"></a>**UD-9 Render plan.** Starter ($7) is approved. Standard (2 GB) only after asking the user, if the memory test fails ([OQ-8](#oq-8)).
 
 ## How to use these files
