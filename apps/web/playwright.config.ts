@@ -15,10 +15,13 @@ const SERVICE_TOKEN = "e2e-service-token";
 
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 90_000,
+  timeout: 150_000,
   // `next dev` compiles each route on first visit, which can take several seconds.
-  expect: { timeout: 30_000 },
+  expect: { timeout: 60_000 },
   fullyParallel: false,
+  // One worker: the specs share one dev server and one fake backend, and two workers compiling and signing in
+  // at once left the first sign-in of a spec hanging.
+  workers: 1,
   reporter: [["list"]],
   use: { baseURL, trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
@@ -37,7 +40,7 @@ export default defineConfig({
           url: `http://127.0.0.1:${API_PORT}/health`,
           env: { MOCK_SERVICE_TOKEN: SERVICE_TOKEN },
           reuseExistingServer: true,
-          timeout: 90_000,
+          timeout: 150_000,
         },
         {
           command: `pnpm exec next dev -p ${PORT}`,

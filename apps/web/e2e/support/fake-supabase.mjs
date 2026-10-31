@@ -24,6 +24,62 @@ const BUILDINGS = [
   { id: "A", code: "A", name_en: "Administration", name_ar: "الإدارة", map_x: 140, map_y: 100, created_at: "2026-01-01T00:00:00Z" },
 ];
 
+// Rows for the staff and pulse pages. They are tiny on purpose: one overdue ticket in the staff
+// office, one in another office (must never show for staff), one finished, a review item, an incident.
+const ago = (h) => new Date(Date.now() - h * 3_600_000).toISOString();
+const ahead = (h) => new Date(Date.now() + h * 3_600_000).toISOString();
+const ticketRow = (o) => ({
+  incident_id: null,
+  tags: [],
+  provisional: false,
+  body: "",
+  escalated_at: null,
+  resolved_at: null,
+  created_at: ago(5),
+  ...o,
+});
+const explanation = {
+  top_tokens: [["hold", 0.55], ["fees", 0.3]],
+  neighbors: [],
+  counterfactual: null,
+  trace: {},
+};
+const TABLES = {
+  tickets: [
+    ticketRow({ id: "t-1", request_id: "r-1", office: "it", category: "IT Support", priority: "high", status: "open", title: "Wi-Fi is down in building M", sla_due_at: ago(3) }),
+    ticketRow({ id: "t-2", request_id: "r-3", office: "finance", category: "Finance", priority: "medium", status: "open", title: "Fee receipt missing", sla_due_at: ahead(40) }),
+    ticketRow({ id: "t-3", request_id: "r-4", office: "it", category: "IT Support", priority: "low", status: "resolved", title: "Reset my e-learning password", sla_due_at: ahead(100), resolved_at: ago(1) }),
+  ],
+  ticket_links: [{ ticket_id: "t-1", sink: "linear", external_id: "CP-47", external_url: "https://linear.app/campuspulse-demo/issue/CP-47", created_at: ago(5), last_error: null, last_synced_at: null }],
+  requests: [
+    { id: "r-5", alias: "sim-01", raw_text: "the projector in A 101 is broken", lang: "en", input_mode: "text", building_id: "A", room: "A 101", simulated: true, status: "decided", created_at: ago(0.5), truncated: false },
+    { id: "r-1", alias: "talal", raw_text: "the wifi in building M is down again", lang: "en", input_mode: "voice", building_id: "M", room: "M 214", simulated: false, status: "decided", created_at: ago(5), truncated: false },
+    { id: "r-2", alias: "talal", raw_text: "my account is on hold after paying fees", lang: "en", input_mode: "text", building_id: null, room: null, simulated: false, status: "human_review", created_at: ago(1), truncated: false },
+  ],
+  predictions: [
+    { id: "p-5", request_id: "r-5", category: "Facilities", priority: "medium", flags: [], set_cat: ["Facilities"], set_pri: ["medium"], tier: "tier0", cost_usd: 0, latency_ms: 40, artifact_version: "v1", explanation, core: { evidence: { spans: [] } }, created_at: ago(0.5) },
+    { id: "p-1", request_id: "r-1", category: "IT Support", priority: "high", flags: [], set_cat: ["IT Support"], set_pri: ["high"], tier: "tier0", cost_usd: 0, latency_ms: 40, artifact_version: "v1", explanation, core: { evidence: { spans: [] } }, created_at: ago(5) },
+    { id: "p-2", request_id: "r-2", category: "Finance", priority: "medium", flags: ["needs_review"], set_cat: ["Finance", "Registration"], set_pri: ["medium"], tier: "tier0", cost_usd: 0, latency_ms: 40, artifact_version: "v1", explanation, core: { evidence: { spans: [] } }, created_at: ago(1) },
+  ],
+  review_queue: [{ id: "rv-1", prediction_id: "p-2", reason: "ambiguous", status: "open", created_at: ago(1), corrected_category: null, corrected_priority: null, note: null, resolved_at: null, reviewer_id: null }],
+  incidents: [{ id: "e4f2a6c8-1b3d-4f5e-8a7c-9b0d1e2f0001", building_id: "M", category: "IT Support", office: "it", title: "Wi-Fi outage in building M", priority: "high", report_count: 4, status: "open", opened_at: ago(0.4), resolved_at: null, created_at: ago(0.4) }],
+  outbox: [{ id: "o-1", kind: "broadcast", channel: "in_app", alias: null, request_id: null, to_address: "", subject: "Wi-Fi in building M: we are on it", body: "", status: "simulated", priority: "high", flags: [], error: null, provider_id: null, created_at: ago(0.2) }],
+};
+
+/** Applies PostgREST-style `col=eq.value` and `col=in.(a,b)` filters; everything else (select, order, limit) is ignored. */
+function applyFilters(rows, params) {
+  let out = rows;
+  for (const [col, expr] of params) {
+    if (["select", "order", "limit", "offset"].includes(col)) continue;
+    if (expr.startsWith("eq.")) out = out.filter((r) => String(r[col]) === expr.slice(3));
+    else if (expr.startsWith("in.(")) {
+      const set = new Set(expr.slice(4, -1).split(","));
+      out = out.filter((r) => set.has(String(r[col])));
+    } else if (expr.startsWith("not.is.null")) out = out.filter((r) => r[col] !== null && r[col] !== undefined);
+  }
+  return out;
+}
+
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 function sign(payload) {
   const head = b64({ alg: "HS256", typ: "JWT" });
@@ -108,7 +164,15 @@ const server = createServer(async (req, res) => {
     return send(res, 200, rows);
   }
   if (url.pathname === "/rest/v1/buildings") return send(res, 200, BUILDINGS);
-  if (url.pathname.startsWith("/rest/v1/")) return send(res, 200, []);
+  if (url.pathname.startsWith("/rest/v1/")) {
+    const table = url.pathname.slice("/rest/v1/".length);
+    let rows = TABLES[table] ?? [];
+    // A stand-in for row-level security on tickets: staff only get their own office.
+    const caller = verify((req.headers.authorization ?? "").replace(/^Bearer /, ""));
+    const me = caller ? byId(caller.sub)?.[1] : null;
+    if (table === "tickets" && me?.role === "staff") rows = rows.filter((r) => r.office === me.office);
+    return send(res, 200, applyFilters(rows, url.searchParams));
+  }
 
   return send(res, 404, { message: "not faked" });
 });

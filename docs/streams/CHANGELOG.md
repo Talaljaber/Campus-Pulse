@@ -839,6 +839,50 @@
 - **Limitations / TODO / known issues:** there is no index on `tags`; add a GIN index if staff filter large queues by tag. The security advisor reports Auth leaked-password protection as off; that is a dashboard setting, not a migration.
 - **Affects streams:** Backend (D-011 writes now persist), UI (`tickets.tags` for badges and filters; the `deferred` outbox status).
 
+### P5.9 — Voice input with Web Speech (`ar-JO` / `en-US`)  (ui, 2026-10-31, commit 3510c97)
+- **What now exists:** a mic button in the student composer that dictates in Jordanian Arabic or English (the page language picks which). The transcript only fills the text box; the student edits it and sends, and the request goes out with `input_mode: "voice"`. Where the browser has no Web Speech API (Firefox) the button is not rendered.
+- **Public interfaces added or changed:** `useSpeech(lang)` (`src/hooks/useSpeech.ts`), `MicButton` (`components/chat`), `Composer.micSlot` now accepts a node or a function of `{ begin, apply }` (`ComposerMicApi`), `src/lib/voice/speech.ts`, an `Icon` named `mic`, and a `ToastProvider` in the root layout. See [docs/ui/README.md > Voice input](../ui/README.md#voice-input-p59).
+- **How to use it:** `<Composer micSlot={(mic) => <MicButton lang="en-US" onStart={mic.begin} onTranscript={mic.apply} />} ... />`; in Chrome press the mic and speak.
+- **Config / env added:** none.
+- **Acceptance:** `vitest run src/hooks/__tests__/useSpeech.test.tsx src/lib/voice src/components/chat/__tests__/voice.test.tsx` -> all passed (mocked `webkitSpeechRecognition`: unsupported, start language, interim results, stop, errors, abort on unmount, voice mode on send, reset on empty).
+- **Limitations / TODO / known issues:** the dictation language follows the page language, not a separate choice, so an Arabic page cannot dictate English. Not tried in a real browser here (no microphone in the automated run). New Arabic strings `chat.voice.*` need a native speaker's review.
+- **Affects streams:** Backend (`input_mode: "voice"` now reaches `/v1/triage`), Lead (demo moment 1 can use voice).
+
+### P5.10 — Staff dashboard `/staff`  (ui, 2026-10-31, commit fc6ca08)
+- **What now exists:** the staff page with four tabs: the office's ticket queue (SLA order, overdue marked, status change, Linear link, request details with a collapsed explanation), the human-review queue (confirm or correct with the memory toast), open incidents (confirmed resolve) and a flags panel. An admin sees every office. Rows are limited by RLS, not by the page.
+- **Public interfaces added or changed:** `components/staff/*` (`TicketQueue`, `TicketRow`, `StatusSelect`, `ReviewQueue`, `CorrectionForm`, `IncidentsPanel`, `FlagsPanel`, `RequestDetail`, `StaffScreen`), hooks `useTicketQueue`, `useReviewQueue`, `useIncidents`, `useFlagEvents`, `useTicketDetail`, `useMapBuildings`; `src/lib/staff/*`, `src/lib/incidents`; repos `listTickets`, `subscribeTickets(sb, office | null, ...)`, `listRequestsByIds`, and the new `repos/predictions.ts`; UI primitives `Select` and `Loadable`. See [docs/ui/README.md > Staff dashboard](../ui/README.md#staff-dashboard-staff-p510).
+- **How to use it:** sign in as `it@demo.local` and open `/staff`; Playwright: `PW_PYTHON=<venv python> pnpm exec playwright test e2e/staff-basic.spec.ts`.
+- **Config / env added:** none.
+- **Acceptance:** `vitest run src/lib/staff src/components/staff src/hooks/__tests__/staffHooks.test.tsx src/lib/__tests__/repos-staff.test.ts` -> passed; `playwright test e2e/staff-basic.spec.ts` -> `3 passed`.
+- **Limitations / TODO / known issues:**
+  - The flags panel reads `predictions.flags`, not the `events` log (the audit action names are undocumented).
+  - A staff member only sees requests and predictions of tickets in their office, so a distress item (no ticket) shows no text or explanation; it can only be acknowledged.
+  - `tickets.tags` (D-011) are not shown yet (backend codes, not translated).
+  - Live ticket updates and the review re-read depend on Realtime, which the e2e double does not fake.
+  - New Arabic strings under `staff.*` need a native speaker's review.
+- **Affects streams:** DB (the page reads `predictions`, `requests`, `review_queue`, `ticket_links`, `incidents`), Backend (`POST /v1/feedback`, `POST /v1/tickets/{id}/status`, `POST /v1/incidents/{id}/resolve`).
+
+### P5.11 — Pulse page `/pulse`  (ui, 2026-10-31, commit 0e0f5a4)
+- **What now exists:** the live campus map (a dot per located request, a pulsing ring per open incident), the incident list with a confirmed resolve, and a live feed with a SIMULATED badge for demo traffic. Choosing a building filters the incident list.
+- **Public interfaces added or changed:** `PulseScreen`, `IncidentList`, `EventFeed` (`components/pulse`), `usePulse`, `src/lib/pulse/{state,view}.ts` (a pure reducer), `listLatestPredictions`/`subscribePredictions`. See [docs/ui/README.md > Pulse](../ui/README.md#pulse-pulse-p511).
+- **How to use it:** sign in as `it@demo.local` or the admin and open `/pulse`; run `python scripts/simulate_pulse.py --scenario config/simulation/wifi_m.yaml` to see dots and a ring appear.
+- **Config / env added:** none.
+- **Acceptance:** `vitest run src/lib/pulse src/components/pulse src/hooks/__tests__/usePulse.test.tsx` -> passed; `playwright test e2e/pulse-basic.spec.ts` -> `3 passed`.
+- **Limitations / TODO / known issues:** a dot needs both the request and its prediction (the page also subscribes to `predictions` inserts for that), so a request without a prediction is not drawn. No timeline scrubber (cut-flagged). `PulseLegend` was not built: the existing `MapLegend` is used. New Arabic strings under `pulse.*` need a native speaker's review.
+- **Affects streams:** DB (Realtime on `requests`, `predictions`, `incidents`, `outbox`), Backend (`POST /v1/incidents/{id}/resolve`).
+
+### Notifications and clarify errors follow the backend contract  (ui, 2026-10-31)
+- **What now exists:** `noticeFromNotification` shows `message` when a notification has one (kinds `message`, `incident`, and `ticket_status` with a sentence), otherwise "Your ticket <title> is now <status>" from `status` and `title`; the old `body` key is not read. A clarify answer that fails with 409, 422 or 404 shows "that question is no longer open".
+- **Public interfaces added or changed:** `noticeFromNotification`, `chatErrorKind` in `src/lib/chat/service.ts` (docs/api/README.md > Notifications payload).
+- **Acceptance:** `vitest run src/lib/chat` -> passed.
+- **Affects streams:** Backend (the payload keys are now read as documented).
+
+### e2e config: one worker, longer timeouts  (ui, 2026-10-31)
+- **What now exists:** `apps/web/playwright.config.ts` runs with `workers: 1`, a 150 s test timeout and a 60 s expect timeout. Two workers made the first sign-in of a spec hang; the new specs (`staff-basic`, `pulse-basic`) made that visible.
+- **How to use it:** `PW_PYTHON=<venv python> pnpm exec playwright test`; set `PW_PORT`, `PW_API_PORT`, `PW_SUPABASE_PORT` when another checkout holds the default ports (the config reuses servers it finds).
+- **Acceptance:** `playwright test` -> `8 passed`.
+- **Affects streams:** Foundation (CI e2e job, if one is added).
+
 ### P3.12 — The real FastAPI app: P3 routes, auth, error mapping, OpenAPI  (backend, 2026-10-31, commit c999ea9)
 - **What now exists:** `create_app()` serves the whole `/v1` contract with the mock app's declarations, so the real export is byte-identical to the mock export and to `services/ai/openapi.json` (no schema change). Triage, clarify, counterfactual, feedback and health are real routes; routes of later tasks authenticate and answer `501 not_implemented`. Service-token auth (fail closed), trusted-header identity, per-route roles, one error mapping.
 - **Public interfaces added or changed:** `frameworks.fastapi_app.create_app(services=None, settings=None, *, build=None)`; `composition.api.ApiServices` / `HealthInfo` / `build_api`; `frameworks.auth.Principal`, `authorize(op_id)`; `frameworks.errors.ApiError`; `CounterfactualUseCase` (`use_cases/explain.py`); `ClarifyUseCase.run(..., caller_alias=None)`; `use_cases/ports.Actor`, `FeedbackHandler`; `/health` now returns `dto.HealthResponse` (`status: degraded` until triage is wired). See [docs/api/README.md › The real app](../api/README.md#real-app) and [Auth](../api/README.md#auth).
@@ -865,6 +909,96 @@
 - **Acceptance:** `pytest services/ai/tests/contracts/test_routes_auth.py -q` → `27 passed` (401 without the token on all 13 protected routes; student → /feedback 403; staff → /redteam/run 403; role and alias from the profile, not headers; bad token 401; Supabase down 503). Adapter and use-case tests: `test_supabase_auth.py`, `test_batch_csv.py`, `test_metrics_usecase.py`.
 - **Limitations / TODO / known issues:** the byte-identity check against `predict.py` (`fc /b` on `data/raw/validation.csv`) was not run: `predict.py`, `BatchPredictUseCase` and the models are not merged; `predict.py` should write with `write_predictions_csv`. `redteam` in `/metrics` is `[]` until the domain `Scorecard` has `created_at`, `n` and `seed`. `model_lab.json` must be written by `evaluate.py` and copied into the image.
 - **Affects streams:** ML (`evaluate.py` writes `reports/model_lab.json`; `predict.py` uses `write_predictions_csv`; composition adapts `BatchPredictUseCase` to `BatchLabeler`), Foundation (copy `reports/` into the image; Render needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` for user tokens), UI (forward `X-CP-User-JWT` from the Next.js server; send no `X-CP-Role` in production).
+
+### P1.10 — M1 `TfidfLR`  (ml, 2026-10-31, commit 44ec516)
+- **What now exists:** the TF-IDF (char_wb 2–5 + word 1–2) → balanced LR member, with per-word contributions for the explainer.
+- **Public interfaces added or changed:** `adapters/models/tfidf_lr.py::TfidfLR`; shared helpers `adapters/models/probs.py` (`balanced_sample_weight`, `row_proba`, `save_estimator`/`load_estimator`). See [models.md §13](../ml/models.md).
+- **How to use it:** `m = TfidfLR("category", (2, 5), (1, 2), C=2.0, seed=42); m.fit(texts, y, w); m.predict_proba(texts); m.token_contributions(text)`.
+- **Config / env added:** none (`m1.*` existed).
+- **Acceptance:** `pytest services/ai/tests/unit/test_tfidf_lr.py -q` → `4 passed`.
+- **Limitations / TODO / known issues:** weakest member on unseen scenarios (OOF category macro-F1 0.205).
+- **Affects streams:** Backend (P3.4 explainer uses `token_contributions`).
+
+### P1.11 — M2-LR, `ExampleIndex`, `KnnClassifier`, OOD score  (ml, 2026-10-31, commit 92659f5)
+- **What now exists:** the frozen-encoder members, the `train` index (one item per distinct text) and the OOD score.
+- **Public interfaces added or changed:** `EmbedLR`, `ExampleIndex`, `IndexEntry`, `KnnClassifier`, `ood_score`; new config key `knn.laplace_mass` (FrozenConfig + `config/train.yaml`, default 1.0). See [models.md §13](../ml/models.md).
+- **How to use it:** `KnnClassifier("category", ExampleIndex(store), enc, 5, 0.6, 2, memory_min_sim=0.8, laplace_mass=1.0).predict_from_embedding(vec, memory)`.
+- **Config / env added:** `knn.laplace_mass: 1.0`.
+- **Acceptance:** `pytest services/ai/tests/unit/test_embed_lr.py services/ai/tests/unit/test_knn.py -q` → `7 passed` (6 planned + a batch-independence test).
+- **Limitations / TODO / known issues:** `KnnClassifier.fit` raises by design (the index is the model).
+- **Affects streams:** Backend (P3 memory reaches the kNN vote, capped by `memory_weight_cap`).
+
+### P1.13 — `WeightedEnsemble`, `LogisticPriorityHead`, `PriorityFinalizer`  (ml, 2026-10-31, commit e98a53a)
+- **What now exists:** the config-driven ensemble, the 13-input priority head and the floors (safety beats a clarification answer; no rule lowers priority).
+- **Public interfaces added or changed:** `adapters/models/{ensemble,priority_head}.py`, `application/services/priority_finalizer.py` (`PriorityFinalizer`, `onehot`). See [models.md §13](../ml/models.md).
+- **How to use it:** `PriorityFinalizer().apply(p_head, safety, verdict, constraints) -> (p, floors)`.
+- **Config / env added:** none.
+- **Acceptance:** `pytest services/ai/tests/unit/test_ensemble.py services/ai/tests/unit/test_priority_head.py services/ai/tests/unit/test_priority_finalizer.py -q` → `9 passed`.
+- **Limitations / TODO / known issues:** weights are equal until P2.7.
+- **Affects streams:** Backend (clarification answers of kind `priority` become one-hot unless safety fired).
+
+### P1.15 — `TriageCore`, `BatchPredictUseCase`, `build_offline`  (ml, 2026-10-31, commit 87554ab)
+- **What now exists:** the one path that produces labels, wired offline; it satisfies `TriageClassifier`. `CoreResult.embedding` (D-012) is filled. A request that is entirely an injection gets the priors (no model sees it).
+- **Public interfaces added or changed:** `TriageCore.classify`, `classify_many` (batch, P1.17), `priors`; `BatchPredictUseCase`, `BatchRow`, `BatchPrediction`; `composition/offline.py::build_offline`, `OfflineContainer` (`core, oracle, config, manifest, batch, vectors, encoder`, `labeler`), `resolve_model_dir`; `adapters/clock.py::SystemClock`; domain `CoreResult.embedding: tuple[float, ...] = ()`. See [models.md §14](../ml/models.md).
+- **How to use it:** `c = build_offline(Path("models/frozen")); req, core = c.core.classify(text)`; tests: `build_offline(tiny_model_dir, encoder_override=HashingEncoder())`.
+- **Config / env added:** none.
+- **Acceptance:** `pytest services/ai/tests/unit/test_triage_core.py services/ai/tests/unit/test_batch_predict.py -q` → `10 passed` (8 planned + the `TriageClassifier` check + `classify_many` equivalence).
+- **Limitations / TODO / known issues:** `use_llm=True` raises `LLMUnavailable` until the P3 oracle is wired into `build_offline`.
+- **Affects streams:** Backend (wire the real core into `build_online`; reuse `CoreResult.embedding`), DB (Pulse can use the embedding).
+
+### P1.16 — `train.py`  (ml, 2026-10-31, commit ddd522d)
+- **What now exists:** stage A (OOF over the frozen folds), provisional stage B, stage C (freeze with manifest, lexicon snapshot, `CURRENT`), `reports/cv_p1.json`; the `tiny_model_dir` session fixture.
+- **Public interfaces added or changed:** `python services/ai/train.py`; `composition/training.py::run_training(TrainOptions)`; `adapters/training/{train_config,oof,stages,tuning,metrics}.py` (`run_cv`, `PipelineToggles`, `OOFResult`); `adapters/models/hashing_encoder.py::HashingEncoder` (moved from tests; `tests/fixtures/fakes.py` re-exports it); `tests/conftest.py::tiny_model_dir`. See [models.md §15](../ml/models.md).
+- **How to use it:** `python services/ai/train.py` → `froze v1: members=m1,m2lr,m2knn cat_macroF1_oof_official=0.490 pri_macroF1_oof_official=0.904 sha=8fb011621fb6`.
+- **Config / env added:** none.
+- **Acceptance:** the command above; `FrozenConfig.load(...).artifact_version` → `v1`; `pytest services/ai/tests/e2e/test_train_determinism.py -q` → `2 passed`.
+- **Limitations / TODO / known issues:** stage B is provisional (equal weights, mid-grid C); `run_cv` lives in `oof.py` (not `cv.py`) to keep the splitter model-free; `--fast`/`--retune` are accepted no-ops in P1.
+- **Affects streams:** Backend (`tiny_model_dir` for `build_test()`), Lead (retrain after the P1.9 review: `python services/ai/train.py`).
+
+### P1.17 — `predict.py`, `fetch_models.py`, `no_network.py`, `validate_predictions.py`  (ml, 2026-10-31, commits d762c5e, 308a9cb)
+- **What now exists:** the judges' command, offline and keyless, byte-identical to `POST /v1/batch` (shared `read_batch_csv` / `write_predictions_csv`); the network tripwire; the output validator; the stdlib fetcher; `OfflineBatchLabeler` for `/v1/batch`.
+- **Public interfaces added or changed:** `services/ai/predict.py`, `frameworks/cli/predict.py::main`; `scripts/{fetch_models,no_network,validate_predictions}.py`; `composition.offline.OfflineBatchLabeler` / `OfflineContainer.labeler`; M2-LR and the head now score row by row in float64 (`probs.row_proba`). See [models.md §16](../ml/models.md).
+- **How to use it:** `python scripts/no_network.py services/ai/predict.py --input data/raw/validation.csv --output .tmp/pred_val.csv`.
+- **Config / env added:** `CAMPUSPULSE_HF_REPO` (only for `fetch_models.py --source hf`; optional, not in `Settings`).
+- **Acceptance:** `wrote 62 rows → .tmp\pred_val.csv (artifact v1 sha=8fb011621fb6, tier0=62, llm=0, 3.0 s)`; validator `OK: 62 rows; ...; LF`; `--score` → `category acc=1.000` (wiring only); `pytest services/ai/tests/e2e/test_predict_cli.py -q -m "artifacts and not slow"` → `6 passed, 1 deselected`; slow speed test (1,000 distinct texts < 60 s) passes.
+- **Limitations / TODO / known issues:** the release asset does not exist yet (lead: P1.19 steps); `--use-llm` exits 3 until P3.
+- **Affects streams:** Backend (wire `container.labeler` as the `BatchLabeler`), Foundation (Docker: `python scripts/fetch_models.py --tag models-v1-rc1`).
+
+### P1.18 — Invariants and the offline import graph  (ml, 2026-10-31, commit 93dea00)
+- **What now exists:** URGENT-prefix invariance on all 432 rows, safety → high, injection never raises priority (42 cores), no `stated_urgency` feature; runtime import-graph check of `composition.offline` and the predict CLI; exact offline collections; predict with an unreachable Supabase URL; the null offline memory.
+- **Public interfaces added or changed:** `tests/invariants/{test_priority_invariants,test_memory_isolation}.py`, additions to `test_vector_isolation.py` and `test_architecture.py::test_offline_graph_sys_modules`.
+- **How to use it:** `pytest services/ai/tests/invariants services/ai/tests/test_architecture.py -q`.
+- **Config / env added:** none.
+- **Acceptance:** the three P1.18 files → `12 passed`; invariants + architecture → `27 passed`.
+- **Limitations / TODO / known issues:** §3.11 (c) (online memory vs offline batch) is P3's.
+- **Affects streams:** Backend (P3 extends `test_memory_isolation.py`).
+
+### Task 9 — Encoder vocabulary pruning  (ml, 2026-10-31, commit 2fc9218)
+- **What now exists:** the shipped encoder keeps 130,021 of 250,002 pieces (Latin/Arabic letters; every non-letter), with bit-identical embeddings on the 981-text gate. RSS after load 438 → 242 MB; peak 524 → 282 MB; int8 file 112.8 → 68.8 MB; release tarball 50.3 MB.
+- **Public interfaces added or changed:** `python -m campuspulse_ai.frameworks.cli.prune_encoder` (training machine); `reports/encoder_prune.json`; `encoder_meta.json` gains `vocab_pruning`. See [models.md §8.1](../ml/models.md).
+- **How to use it:** `python -m campuspulse_ai.frameworks.cli.prune_encoder --src models/frozen/v1/encoder --install`.
+- **Config / env added:** none.
+- **Acceptance:** `pieces 250002 -> 130021; gate PASSED (texts=981, token_mismatches=0, min_cos=1.000000); rss_mb_after_load 438.1 -> 242.2 (threads=1); installed=True`; retrain reproduced `reports/cv_p1.json` byte for byte.
+- **Limitations / TODO / known issues:** CJK/Cyrillic/Greek letters now map to `<unk>`.
+- **Affects streams:** Foundation (P4.13 Render memory test: expect ≈ 240 MB for the encoder instead of ≈ 440 MB).
+
+### P2.8 preview — First results report  (ml, 2026-10-31, commit 12204ed, regenerated in b65bd56)
+- **What now exists:** `reports/results_v1.{md,json}` (OOF and our_test per set, per language, per member, conformal coverage, ASK proxy, errors, findings, caveats) and `reports/model_lab.json` (offline `MetricsResponse` shape, DTO-validated).
+- **Public interfaces added or changed:** `python scripts/results_v1.py [--model-dir] [--out]`. See [models.md §17](../ml/models.md).
+- **How to use it:** run it after any retrain.
+- **Config / env added:** none.
+- **Acceptance:** `OOF official cat macroF1=0.490 pri macroF1=0.904; our_test pooled cat macroF1=0.710 pri macroF1=0.847`.
+- **Limitations / TODO / known issues:** a preview: no calibration (ECE), ablations or probes yet (P2.8 proper).
+- **Affects streams:** Backend/UI (`/v1/metrics` now has real offline numbers).
+
+### P1.19 — Package v1-rc1 locally  (ml, 2026-10-31, commit b65bd56)
+- **What now exists:** the committed small v1 artifacts (0.3 MB) and `models/frozen/CURRENT`; `dist/campuspulse-models-v1.tar.gz` (50.3 MB, sha256 `e9c57de6c15381c78fd6b140a15c4bd6886b975be176829f193403ec8c532617`) + `dist/SHA256SUMS` built locally (not committed). `LocalNumpyVectorStore.save` now writes LF (a CRLF `items.jsonl` would have failed the manifest check in a fresh clone).
+- **Public interfaces added or changed:** none new.
+- **How to use it:** fresh tree → `python scripts/fetch_models.py --from-file <tar.gz>` → `verified 29 files against MANIFEST.json (v1 sha=8fb011621fb6)` → offline predict identical to the worktree.
+- **Config / env added:** none.
+- **Acceptance:** committed size `0.3`; fresh-tree fetch and offline predict as above; P1 exit checks in the batch report.
+- **Limitations / TODO / known issues:** GitHub pre-release `models-v1-rc1` and the CI `artifacts` job are left to the lead.
+- **Affects streams:** Foundation (CI job, Docker fetch), Lead (release).
 
 ### P4.9 — office notifications, Realtime for reviews and links, admin-only distress items  (db, 2026-10-31, commits a03e57c, c226c3d and the docs follow-up)
 - **What now exists:** migrations `0010_office_notifications` and `0011_distress_reviews_admin_only`, applied to the linked project (history repaired to `0010` and `0011`).

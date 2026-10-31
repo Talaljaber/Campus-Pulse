@@ -517,7 +517,7 @@
 <a id="p1-10"></a>
 ## P1.10 — Implement M1 `TfidfLR`
 
-- [ ] Done
+- [x] Done
 - **Goal:** the transparent baseline member (SPEC §5.1[5] M1), with token contributions for the P3 explainer.
 - **Depends on:** P1.4, P1.8
 - **Est / Cut:** 0.5 h · Cut: no
@@ -549,7 +549,7 @@
 <a id="p1-11"></a>
 ## P1.11 — Implement M2: `EmbedLR`, `ExampleIndex`, `KnnClassifier` and the OOD score
 
-- [ ] Done
+- [x] Done
 - **Goal:** the frozen-encoder members and the OOD score (max cosine to the frozen `train` collection), from one forward pass per text.
 - **Depends on:** P1.6, P1.7, P1.10
 - **Est / Cut:** 1 h · Cut: no
@@ -625,7 +625,7 @@
 <a id="p1-13"></a>
 ## P1.13 — Implement `WeightedEnsemble`, `LogisticPriorityHead` and `PriorityFinalizer`
 
-- [ ] Done
+- [x] Done
 - **Goal:**
   - combine members per config
   - map `[p_pri_model ‖ evidence]` → priority
@@ -702,7 +702,7 @@
 <a id="p1-15"></a>
 ## P1.15 — Build `TriageCore`, `BatchPredictUseCase` and `build_offline`
 
-- [ ] Done
+- [x] Done
 - **Goal:** the only path that produces labels (§1.4), wired offline with `NullMemoryStore`, `NullOracle` and `LocalNumpyVectorStore` (§1.5).
 - **Depends on:** P1.5, P1.13, P1.14
 - **Est / Cut:** 1 h · Cut: no
@@ -756,7 +756,7 @@
 <a id="p1-16"></a>
 ## P1.16 — Write `train.py`: stage A (OOF), provisional stage B, stage C (freeze v1)
 
-- [ ] Done
+- [x] Done
 - **Goal:** one command produces:
   - scenario-held-out OOF predictions
   - provisional thresholds, all > 0, so `FrozenConfig` validates
@@ -832,7 +832,7 @@
 <a id="p1-17"></a>
 ## P1.17 — Write `predict.py`, `fetch_models.py`, `no_network.py` and `validate_predictions.py`
 
-- [ ] Done
+- [x] Done
 - **Goal:** the judge-facing command (SPEC §5.5, §2.5), offline and fail-fast, plus a network tripwire and an output validator so anyone can prove both.
 - **Depends on:** P1.16
 - **Est / Cut:** 1 h · Cut: no
@@ -889,7 +889,7 @@
 <a id="p1-18"></a>
 ## P1.18 — Add the invariant tests and the offline import graph
 
-- [ ] Done
+- [x] Done
 - **Goal:** the P1 invariants of §4.2 and §3.8/§3.11/§3.18.
 - **Depends on:** P1.17
 - **Est / Cut:** 0.75 h · Cut: no
@@ -924,6 +924,7 @@
 ## P1.19 — Package `v1-rc1` (commit, release, CI artifacts job) and run the P1 exit gate
 
 - [ ] Done
+- Progress (2026-10-31): v1-rc1 frozen (sha 8fb011621fb6), tarball built (sha256 e9c57de6…532617), fresh-checkout fetch verified. Left: the GitHub pre-release `models-v1-rc1` and the CI `artifacts` job.
 - **Goal:** a fresh clone plus one fetch reproduces `predict.py`. P4's Render build and CI can fetch the encoder.
 - **Depends on:** P1.18
 - **Est / Cut:** 0.75 h · Cut: no

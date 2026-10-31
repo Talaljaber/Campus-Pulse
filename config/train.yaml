@@ -81,6 +81,7 @@ knn:
   memory_weight_cap: 0.6
   max_memory_neighbors: 2
   memory_min_sim: 0.80
+  laplace_mass: 1.0             # one pseudo-vote in total, spread evenly over the labels (P1.11)
 
 priority_head:
   features: [deadline_today, exam_now, safety_risk, stranded, enrollment_blocked, transient_glitch,

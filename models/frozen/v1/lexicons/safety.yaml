@@ -1,0 +1,112 @@
+# Safety lexicon (P1.5, ARCHITECTURE §2.0, LD-19). Read by campuspulse_ai.adapters.guards.bank.compile_bank and
+# load_texts. train.py snapshots this file into models/frozen/vN/lexicons/ (LD-12).
+#
+# Patterns run on NormalizedRequest.model_text (English lower-cased; Arabic normalized: أ/إ/آ→ا, ى→ي, ة→ه).
+# Write natural Arabic: the loader applies the same character map to each pattern; all case-insensitive.
+#
+# `danger` = an immediate physical hazard to people. Offline it is the ONLY source of `safety=True`, which
+# floors the batch priority to high. A false hit raises a row to high, so these stay narrow:
+#   GATE: zero hits on every non-high official row, and hits on exactly the four official safety scenarios
+#   (TR-S03 stuck lab door, TR-S19/TR-S29 water near electricity, TR-S31 students stranded)
+#   (tests/unit/test_safety.py). Generic words ("fire alarm", "extinguisher", "door is stuck") do not fire.
+# `distress` = a person in crisis (self-harm, suicidal thoughts, panic). Online the use case stops and shows
+#   support; in batch it is a flag only and never changes a label. Frustration ("this portal is killing me")
+#   must NOT match.
+# Precedence when both match: distress (see SafetyGuard).
+
+danger:
+  # --- EN: trapped / stranded --------------------------------------------------------------------------
+  - '\b(can(no|'')?t|unable\s+to|could\s*n''?t|are\s+not\s+able\s+to)\s+(leave|get\s+out|exit|escape|get\s+home)\b'
+  - '\b(trapped|stranded)\b'
+  - '\b(locked|stuck|shut)\s+(in|inside)\s+(the\s+|a\s+|an\s+|our\s+)?(lab|laboratory|room|elevator|lift|building|class\w*|hall|toilet|bathroom|library|lecture\s+\w+)\b'
+  - '\bstudents?\s+(are\s+|were\s+|got\s+|have\s+been\s+)?(left|stuck|stranded)\s+(behind|without|at|on|in|outside)\b'
+  - '\b(no|without\s+an?y?)\s+(way|transport\w*|ride|bus)\s+(home|back)\b'
+  # --- EN: water near electricity, fire, gas, shock, collapse, injury --------------------------------
+  - '\b(water|leak\w*|flood\w*|spill\w*|dripping)\b[^.!?|]{0,40}\b(electric\w*|socket|outlet|wir(e|es|ing)|cables?|power\s+strip|plugs?)\b'
+  - '\b(electric\w*|socket|outlet|wir(e|es|ing)|cables?|power\s+strip)\b[^.!?|]{0,40}\b(water|leak\w*|flood\w*|wet|dripping)\b'
+  - '\b(on\s+fire|caught\s+fire|fire\s+broke\s+out|there\s+is\s+a\s+fire|there''s\s+a\s+fire|a\s+fire\s+(in|at|on|near)\b)'
+  - '\bsmoke\s+(is\s+)?(coming|filling|pouring|from|in\s+the)\b'
+  - '\bsmell(s|ing)?\s+(of\s+|like\s+)?(gas|smoke|burning)\b'
+  - '\bgas\s+(leak\w*|smell\w*)\b'
+  - '\b(burning\s+smell|sparks?\s+(from|coming|flying)|sparking|electric(al)?\s+shock|electrocut\w*|exposed\s+(live\s+)?wir(e|es|ing))\b'
+  - '\b(ceiling|roof|wall|stairs?)\s+(is\s+|are\s+)?(falling|fell|collaps\w*|caved)\b'
+  - '\b(is|are|got|been|was|were)\s+(badly\s+|seriously\s+)?(injured|bleeding|unconscious)\b'
+  - '\b(fainted|passed\s+out|not\s+breathing|having\s+a\s+seizure)\b'
+  # --- AR ---------------------------------------------------------------------------------------------
+  - '(ضلوا|ظلوا|علقوا|ضلينا|ظلينا|انحبسوا|انحبسنا)\s+(ال)?طلاب'
+  - '(ال)?طلاب\s+(عالقين|محبوسين|محصورين|محشورين)'
+  - '(بدون|بلا|من\s+غير)\s+مواصلات'
+  - '(ما\s+في|مافي|ما\s+فيه)\s+مواصلات'
+  - '(محبوس|محبوسين|انحبس|انحبسنا|انحبسوا|عالق|عالقين|عالقة)\s+(في|ب|جوا|داخل)'
+  - '(مش|مو|ما)\s+(قادرين|قادر|بنقدر|بقدر|بيقدروا|بقدروا)\s+(نطلع|يطلعوا|اطلع|نخرج|يخرجوا)'
+  - '(تسرب|بتسرب|تسريب|بنقط|بتنقط|بيدلف|رشح)[^.؟!|]{0,30}(كهربا|كهرباء|فيش|بريز|أسلاك|سلك|إفياش)'
+  - '(?:^|\s)(?:و|ف)?(?:في\s+)?(?:مي|مية|مياه|ماء|مويه)(?:\s|$)[^.؟!|]{0,30}(كهربا|كهرباء|فيش|بريز|أسلاك|سلك)'
+  - '(كهربا|كهرباء|فيش|بريز|أسلاك)[^.؟!|]{0,30}(تسرب|بتسرب|مي\s|مية|مياه|ماء|مويه|مبلول)'
+  - 'حريق|ولعت\s+نار|في\s+نار|اشتعل|دخان|(ريحة|ريحه|رائحة)\s+(غاز|دخان|حريق)|(تسرب|تسريب)\s+غاز|غاز\s+(بتسرب|بيسرب)'
+  - 'شرار|كهربني|كهربت|انكهرب|تكهرب|(سلك|أسلاك)\s+(مكشوف|مكشوفة|عريان|عريانة)'
+  - '(انصاب|انصابت|بنزف|بينزف|نزيف|أغمي\s+عليه|اغمى\s+عليه|مغمى\s+عليه|فاقد\s+الوعي|ما\s+بتنفس)'
+  - '(السقف|الحيط|الدرج)\s+(وقع|بوقع|رح\s+يوقع|انهار|بنهار)'
+  # --- Arabizi (original half of model_text) ----------------------------------------------------------
+  - '\b(ma7boseen|m7boseen|ma7boos|m7bos|ma7bous|3al2aneen|3al2een|3al2an|3al2|3alqeen)\b'
+  - '\b(bdoon|bdun|bedun|bidoon|bedoon|bala|min\s+gher|men\s+3'')\s+(mwasalat|mowasalat|mawaslat|mwaslat|mowaslat)\b'
+  - '\b(dallo|dallu|thallo|9allo|3el2o|3l2o)\s+(el\s*)?(tolab|6olab|tullab|tolaab)\b'
+  - '\b(7ari2|7aree2|7ari8|7ar2a|do5an|dokhan|du5an|dukhan)\b'
+  - '\b(ri7et|ri7it|rihet|re7et)\s+(gaz|ghaz|ghaaz|do5an)\b'
+  - '\b(tasarrob|tasarub|btesarreb|bitsarrab|btsarrab|btnaa6|bitna66)\b[^.!?|]{0,30}\b(kahraba|kahrba|kahraba2|keherba)\b'
+  - '\b(kahraba|kahrba|kahraba2|keherba)\b[^.!?|]{0,30}\b(tasarrob|tasarub|btesarreb|bitsarrab|btsarrab|mai|mayy|mayeh|maya)\b'
+  - '\b(mai|mayy|mayeh|maya)\b[^.!?|]{0,30}\b(kahraba|kahrba|kahraba2|keherba)\b'
+
+distress:
+  # --- EN ---------------------------------------------------------------------------------------------
+  - '\b(want|wanna|going|planning|thinking\s+(about|of)|ready)\s+(to\s+)?(die|kill\s+myself|end\s+(my\s+life|it\s+all)|hurt\s+myself|harm\s+myself)\b'
+  - '\bkill(ing)?\s+myself\b'
+  - '\bend(ing)?\s+my\s+(own\s+)?life\b'
+  - '\bsuicid\w*'
+  - '\bself[-\s]?harm\w*'
+  - '\b(hurt|harm|cut)(ing)?\s+myself\b'
+  - '\bno\s+(reason|point)\s+(to|in)\s+(live|living|being\s+alive)\b'
+  - '\b(feel|feeling|felt)\s+(so\s+|completely\s+)?(hopeless|worthless)\b'
+  - '\bpanic\s+attacks?\b'
+  - '\bdon''?t\s+want\s+to\s+(live|be\s+alive|exist)\b'
+  # --- AR ---------------------------------------------------------------------------------------------
+  - '(بدي|بدّي|ودي|حابب)\s+(اموت|أموت|انتحر|أنتحر|اقتل\s+حالي|اذي\s+حالي|أأذي\s+حالي|انهي\s+حياتي)'
+  - 'انتحار|انتحر|أنتحر|بنتحر'
+  - '(اقتل|أقتل|اذي|أذي|أأذي|اؤذي|أوذي)\s+(حالي|نفسي)'
+  - '(تعبت|زهقت|مليت)\s+من\s+(حياتي|الحياة|العيشة|عيشتي)'
+  - '(كرهت|بكره)\s+(حياتي|الحياة|عيشتي)'
+  - '(ما|مش)\s+(بدي|حابب)\s+(اعيش|أعيش)'
+  - 'نوبة\s+(هلع|ذعر)'
+  # --- Arabizi ----------------------------------------------------------------------------------------
+  - '\b(bdi|bade|badi|baddi|bidi|bde)\s+(amoot|amot|amut|ent7er|anta7er|ante7er|a2tol\s+7ali|2adhi\s+7ali|azi\s+7ali)\b'
+  - '\b(ent7ar|enti7ar|inti7ar|ente7ar|enta7ar|ent7er|ente7er|ante7er|anta7er|int7er|bent7er|b2nt7er)\b'
+  - '\b(ta3abt|ta3bt|t3bt|zhe2t|zhi2t)\s+(mn|min|men)\s+(7ayati|el\s*7aya|3eshti)\b'
+  - '\b(krihet|krht|kreht)\s+(7ayati|el\s*7aya)\b'
+  - '\bnobet\s+(hala3|hal3|6hu3r)\b'
+
+# Exemplars. `distress` is embedded into the `safety_exemplars` collection by P1.16 (LD-20): an exemplar hit
+# only ever adds `distress` (LD-19), and tau_safety = max similarity over the pool + 0.02 (LD-18). `danger`
+# exemplars are not embedded offline; they are a regression set that the danger lexicon must catch
+# (tests/unit/test_guard_banks.py) and seed P3.5's online review.
+exemplars:
+  danger:
+    - "There is smoke coming from the server room in building C"
+    - "Students are trapped in the elevator between floors"
+    - "Water is dripping onto the electrical wires in the lab"
+    - "I smell gas in the chemistry lab"
+    - "A student fainted in the lecture hall"
+    - "في دخان طالع من مختبر الكمبيوتر"
+    - "علقوا طلاب بالمصعد ومش قادرين يطلعوا"
+    - "في مي بتنقط على الكهربا بالممر"
+    - "fi do5an tale3 men el mo5tabar"
+    - "el tolab 3al2aneen bel mas3ad"
+  distress:
+    - "I feel hopeless and I want to end my life"
+    - "I keep thinking about hurting myself after failing"
+    - "I am having a panic attack before my exam"
+    - "There is no point in living anymore"
+    - "بدي اموت، ما عاد اتحمل الضغط"
+    - "صرت افكر انتحر بسبب العلامات"
+    - "تعبت من حياتي ومش قادر اكمل"
+    - "bdi amoot, ma 3ad a2dar at7ammal"
+    - "ta3bt mn 7ayati w ma bdi ashoof 7ada"
+    - "sert afakker b el enti7ar"

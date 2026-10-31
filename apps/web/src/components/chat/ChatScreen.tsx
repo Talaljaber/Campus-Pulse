@@ -5,12 +5,14 @@ import { useBuildings } from "@/hooks/useBuildings";
 import { useChat } from "@/hooks/useChat";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSignOut } from "@/hooks/useSignIn";
-import { useT } from "@/i18n";
+import { useLang, useT } from "@/i18n";
+import { speechLangFor } from "@/lib/voice/speech";
 import { Button } from "../ui/Button";
 import { LanguageSwitch } from "../ui/LanguageSwitch";
 import { BuildingPicker } from "./BuildingPicker";
 import { ChatThread } from "./ChatThread";
 import { Composer } from "./Composer";
+import { MicButton } from "./MicButton";
 import { Disclaimer } from "./Disclaimer";
 
 /** Props for {@link ChatScreen}. */
@@ -25,6 +27,7 @@ export interface ChatScreenProps {
  */
 export function ChatScreen({ alias }: ChatScreenProps) {
   const t = useT();
+  const { lang } = useLang();
   const chat = useChat();
   const buildings = useBuildings();
   const signOut = useSignOut();
@@ -57,7 +60,11 @@ export function ChatScreen({ alias }: ChatScreenProps) {
 
       <div className="sticky bottom-0 flex flex-col gap-3 bg-surface-0 pb-2 pt-3">
         {buildings.length > 0 && <BuildingPicker buildings={buildings} value={building} onChange={setBuilding} disabled={chat.busy} />}
-        <Composer busy={chat.busy} onSubmit={(text, mode) => void chat.send(text, mode, building)} />
+        <Composer
+          busy={chat.busy}
+          onSubmit={(text, mode) => void chat.send(text, mode, building)}
+          micSlot={(mic) => <MicButton lang={speechLangFor(lang)} onStart={mic.begin} onTranscript={mic.apply} disabled={chat.busy} />}
+        />
         <Disclaimer />
       </div>
     </main>
