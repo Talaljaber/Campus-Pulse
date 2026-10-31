@@ -1,11 +1,13 @@
 # services/ai/requirements-train.txt  (dev machine only)
+# huggingface-hub stays <2.0 for sentence-transformers 6.1.0; onnx is needed by quantize_dynamic (P1.6).
 -r requirements.txt
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.14.1+cpu
 sentence-transformers==6.1.0
 transformers==5.20.1
 safetensors==0.8.0
-huggingface-hub==2.2.0
+onnx==1.23.2
+huggingface-hub==1.33.0
 matplotlib==3.11.2
 mapie==1.5.0
 ipykernel==7.4.0
