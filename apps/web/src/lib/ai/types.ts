@@ -44,5 +44,9 @@ export type Understanding = S["UnderstandingOut"];
 export type Entities = S["EntitiesOut"];
 
 export type Incident = S["IncidentOut"];
+export type TicketOut = S["TicketOut"];
+export type TicketStatus = S["TicketStatus"];
+export type FeedbackResponse = S["FeedbackResponse"];
+export type ResolveIncidentResponse = S["ResolveIncidentResponse"];
 export type ErrorResponse = S["ErrorResponse"];
 export type HealthResponse = S["HealthResponse"];
