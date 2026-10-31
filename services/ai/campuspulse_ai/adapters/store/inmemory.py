@@ -235,7 +235,13 @@ class InMemoryRepository:
     def save_redteam_run(self, scorecard: Scorecard) -> str:
         run_id = scorecard.run_id if codec.is_uuid(scorecard.run_id) else str(uuid.uuid4())
         self._upsert(
-            "redteam_runs", run_id, {"id": run_id, "scorecard": codec.scorecard_json(scorecard, run_id)}
+            "redteam_runs",
+            run_id,
+            {
+                "id": run_id,
+                "scorecard": codec.scorecard_json(scorecard, run_id),
+                "created_at": codec.iso(scorecard.created_at),
+            },
         )
         return run_id
 
@@ -243,7 +249,7 @@ class InMemoryRepository:
         rows = sorted(
             self.tables["redteam_runs"].values(), key=lambda r: (r["created_at"], r["_seq"]), reverse=True
         )
-        return [codec.to_scorecard(r["scorecard"]) for r in rows[:limit]]
+        return [codec.to_scorecard(r["scorecard"], r["created_at"]) for r in rows[:limit]]
 
     def save_notification(self, alias: str, kind: str, payload: Mapping[str, object]) -> None:
         id = str(uuid.uuid4())

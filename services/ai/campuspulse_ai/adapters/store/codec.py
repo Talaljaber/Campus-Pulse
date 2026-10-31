@@ -26,6 +26,7 @@ from campuspulse_ai.domain.entities import (
     Scorecard,
     Ticket,
 )
+from campuspulse_ai.domain.errors import StoreError
 from campuspulse_ai.domain.labels import Category, Priority
 from campuspulse_ai.domain.values import (
     Advisor,
@@ -522,22 +523,40 @@ def to_signals(row: Mapping[str, Any]) -> StudentSignals:
 
 
 def scorecard_json(s: Scorecard, run_id: str) -> Row:
+    """`redteam_runs.scorecard` (jsonb). `created_at`, `n` and `seed` are the D-013 fields."""
     return {
         "run_id": run_id,
+        "created_at": iso(s.created_at),
+        "n": s.n,
+        "seed": s.seed,
         "by_style": dict(s.by_style),
         "by_lang": dict(s.by_lang),
         "overall": s.overall,
-        "failures": [dict(f) for f in s.failures],
+        "failures": [jsonify(f) for f in s.failures],
     }
 
 
-def to_scorecard(d: Mapping[str, Any]) -> Scorecard:
+LEGACY_SCORECARD_N = 0
+LEGACY_SCORECARD_SEED = 0
+"""`n` and `seed` read from a scorecard stored before D-013."""
+
+
+def to_scorecard(d: Mapping[str, Any], row_created_at: str | None = None) -> Scorecard:
+    """A stored scorecard. A scorecard written before D-013 has no `created_at` in its JSON: the
+    row's `created_at` column is used instead, and `n`/`seed` read as 0. Raises `StoreError` when
+    neither carries a timestamp."""
+    created = parse_dt(d.get("created_at")) or parse_dt(row_created_at)
+    if created is None:
+        raise StoreError(f"red-team run {d.get('run_id')!r} has no created_at")
     return Scorecard(
         run_id=d["run_id"],
         by_style={k: float(v) for k, v in d["by_style"].items()},
         by_lang={k: float(v) for k, v in d["by_lang"].items()},
         overall=float(d["overall"]),
         failures=list(d.get("failures") or ()),
+        created_at=created,
+        n=int(d.get("n", LEGACY_SCORECARD_N)),
+        seed=int(d.get("seed", LEGACY_SCORECARD_SEED)),
     )
 
 

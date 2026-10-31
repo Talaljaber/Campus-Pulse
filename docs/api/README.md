@@ -451,7 +451,7 @@ merged the tests use `FakeCore`.
 
 `StatusChange(ticket, previous, source, note)`; `source` is the sink name or `dashboard`. `actor` is
 anything with `role`, `office`, `alias` (`use_cases/ports.Actor`; the route passes its `Principal`).
-`STATUS_RANK` holds the forward order.
+The forward order is the domain's `TicketStatus.rank` (D-013; it was `STATUS_RANK` here).
 
 ### `EscalateSlaUseCase.run(now) -> list[str]` — `use_cases/escalate_sla.py` (P4.9)
 

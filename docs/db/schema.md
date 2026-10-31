@@ -272,7 +272,7 @@ Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, 
 | `Incident` | `incidents` | `building` ⇄ `building_id`. `member_ticket_ids` is derived from `tickets.incident_id` (by `created_at, id`); `save_incident` points the listed tickets at the incident. |
 | `OutboxMessage` | `outbox` | The domain `kind` (transport) is written to both `kind` and `channel`. `alias`/`request_id` are not in the entity, so they stay null. `status` and `error` map one to one, `deferred` included. |
 | `StudentSignals` | `student_signals` | `bump_student_signals` is atomic (RPC). `gaming_suspected` = the stored `gaming_flag`, which stays unused (lead decision): GamingDetector (P3.6) computes suspicion from the returned counters. |
-| `Scorecard` | `redteam_runs.scorecard` | `run_id` is kept if it is a UUID, else a new UUID is returned. History is newest first. |
+| `Scorecard` | `redteam_runs.scorecard` | `run_id` is kept if it is a UUID, else a new UUID is returned. The JSON holds `run_id, created_at, n, seed, by_style, by_lang, overall, failures` (D-013) and the row `created_at` is the scorecard's. History is newest first (by `created_at`, then `id`). A scorecard stored before D-013 reads with the row `created_at` and `n = seed = 0`. |
 | `Slot`, `Advisor`, `Case` | `advisor_slots`, `advisors`, `cases` | `claim_slot` = `update … where id = ? and booked_by is null`, true only for the winner. `free_slots` = unbooked and inside the window, by `starts_at, id`. |
 | events, notifications | `events`, `notifications` | Payloads go through a JSON round trip (datetimes become ISO strings); `at`/`created_at` = `clock.now()`. |
 
