@@ -1,0 +1,74 @@
+# Routing table: category x priority -> action (SPEC §5.1 [11], UD-1). Owner: Backend stream.
+# Parsed by yaml.safe_load and validated by campuspulse_ai.domain.routing.ActionsConfig.from_dict
+# (unknown keys are errors). Read by TableActionPlanner (P3.8) and ActUseCase (P4.8).
+#
+# kind:          faq_answer | ticket | booking | safety_alert   (incident_merge is never routed here)
+# office:        a D-005 office code; it decides which staff see the ticket (RLS matches on it)
+# also_ticket:   the action also opens a ticket (booking, safety_alert)
+# tags:          copied onto the ticket / ActionOut.tags
+# evidence_tags: evidence name -> tag, added when that evidence fired (ActUseCase passes the fired
+#                evidence names in `flags`)
+version: 1
+
+# D-005: exactly these codes (tickets.office, profiles.office, advisors.department).
+offices: [registrar, it, finance, transport, facilities, academic]
+
+# Hours from creation to sla_due_at. low = 14 days.
+sla_hours:
+  high: 24
+  medium: 72
+  low: 336
+
+# Flag `safety` (physical danger) overrides any cell, for any category, even when provisional.
+safety:
+  kind: safety_alert
+  also_ticket: true
+  tags: [safety]
+
+# HUMAN_REVIEW: a ticket only, labelled unconfirmed; the cell's kind is kept as `deferred:<kind>`
+# and fired by ActUseCase.finalize after staff confirm (SPEC §5.1 [11] provisional actions).
+provisional:
+  tags: [unconfirmed]
+
+routes:
+  Academic Support:
+    office: academic
+    low: {kind: faq_answer}
+    medium: {kind: ticket, tags: [office-hours-queue]}
+    # UD-1: the only booking cell. Earliest fictional advisor slot within the SLA (24 h) + email + case.
+    high: {kind: booking, also_ticket: true}
+
+  Registration:
+    office: registrar
+    low: {kind: faq_answer}
+    medium: {kind: ticket}
+    # UD-1: same-day escalation ticket, no advisor booking.
+    high: {kind: ticket, tags: [same-day-escalation]}
+
+  IT Support:
+    office: it
+    low: {kind: faq_answer, tags: [self-help]}
+    medium: {kind: ticket}
+    high: {kind: ticket, evidence_tags: {exam_now: exam-in-progress}}
+
+  Finance:
+    office: finance
+    low: {kind: faq_answer}
+    medium: {kind: ticket}
+    # "Escalation ticket due before the stated deadline": ActUseCase may move sla_due_at earlier
+    # when understanding.entities.deadline is sooner than the SLA.
+    high: {kind: ticket, tags: [escalation]}
+
+  Transportation:
+    office: transport
+    low: {kind: faq_answer, tags: [timetable]}
+    medium: {kind: ticket}
+    # "Immediate transport alert + ticket": a ticket whose `transport-alert` tag tells ActUseCase to
+    # also send an alert to the transport office. A physical-danger case carries the safety flag.
+    high: {kind: ticket, tags: [transport-alert]}
+
+  Facilities:
+    office: facilities
+    low: {kind: ticket}
+    medium: {kind: ticket}
+    high: {kind: safety_alert, also_ticket: true, tags: [safety]}
