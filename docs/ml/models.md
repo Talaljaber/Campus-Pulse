@@ -183,3 +183,57 @@ normalize_text(r.core, script_lang(r.core))     # 'my account is locked'
 `config/lexicons/wrappers.yaml` keys: `prefixes`, `suffixes` (exactly `clean_data.KNOWN_PREFIXES/SUFFIXES`,
 asserted by a test), `urgency_markers`, `urgent_regex` (`(?i)^urgent\b[\s:!.,،-]*`), `prefix_variants: true`,
 `variant_punctuation: [",", "!", ":", ".", "?", "،", "؟"]`.
+
+### 4.2 Language ID and Arabizi: `langid.py`, `arabizi.py` (P1.2, LD-33)
+
+```python
+from campuspulse_ai.adapters.preprocess.langid import LangIdentifier
+from campuspulse_ai.adapters.preprocess.arabizi import ArabiziTransliterator
+
+langid = LangIdentifier.from_yaml(LEXICONS / "arabizi.yaml")
+translit = ArabiziTransliterator.from_yaml(LEXICONS / "arabizi.yaml")
+langid.identify("My university account is locked and I have an online exam today")  # Lang.EN
+langid.identify("حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم")                       # Lang.AR
+langid.identify("7esabi msakkar w 3indi emte7an online elyom")                        # Lang.ARABIZI
+translit.model_text("7esabi msakkar w 3indi emte7an online elyom")
+# 'حسابي مسكر وعندي امتحان اونلاين اليوم | 7esabi msakkar w 3indi emte7an online elyom'
+```
+
+**`LangIdentifier.identify(text) -> Lang`**, conservative by design (a false Arabizi positive on an English
+hidden-test row is the only way this step can cost macro-F1):
+1. Arabic-block characters > Latin letters → `AR` (the `clean_data` script rule, so `AR`/`EN` equal the CSV
+   `lang` on all 432 rows).
+2. **Any guard hit → `EN`**: `guard_tokens` (English function words such as `the`, `my`, `is`, `please`, plus
+   `2nd`, `24/7`, `mp3`, `2fa` ...) or a full match of `guard_patterns` (ordinals, clock times `3pm`, units,
+   versions `ipv6`).
+3. ≥ `min_digit_tokens` (2) Arabizi digit-words, or ≥ `min_lexicon_hits` (1) evidence words → `ARABIZI`.
+   A digit-word has a signal digit (2/3/5/6/7/8/9) touching a letter and ≥ 2 letters; course and room codes
+   (`cs201`, `m214`, `ee-302`) match `ignore_patterns` and never count. Evidence words are the lexicon keys
+   plus `el`/`il`/`bel`/... minus `not_signals` (English homographs such as `fee`, `law`, `min`, `sir`, `men`,
+   and loanwords such as `bus`, `wifi`, `exam`).
+4. Otherwise `EN`.
+
+Measured: 0 Arabizi detections on the 432 official rows (297 EN); 24/24 golden Arabizi rows detected; English
+probes with digits (`I got a 2nd notice at 3pm`, `CS201 and MATH102 are both full`, `Tuition fee for semester 2`,
+`Exam in room A3 at 9am`, ...) stay `EN`. `signals(text)` returns `(digit_words, lexicon_hits, guard_hits)`.
+
+**`ArabiziTransliterator.transliterate(text) -> str`**, per lower-cased token: a standalone proclitic (`el`,
+`w`, `b`, `bel`, `lal`, `3al`) is glued to the next token; then a whole-token lexicon hit, or proclitic + lexicon
+word (`elbus` → `الباص`); otherwise digraphs (`sh`, `kh`, `gh`, `th`, `3'`, `aa`, ...) then the char map
+(`2`→ء, `3`→ع, `5`→خ, `6`→ط, `7`→ح, `8`→ق, `9`→ص, `g`→ق, short `e` dropped). Latin `?`/`,`/`;` become `؟`/`،`/`؛`,
+and the result is normalized like an Arabic `text_norm` (`ة`→`ه`, `أ`→`ا`, trailing punctuation removed).
+`model_text(original)` returns `f"{transliterate(original)} | {original}"`.
+
+| Arabizi | transliteration |
+| --- | --- |
+| `mesh 3arif` | `مش عارف` |
+| `wein el bus?` | `وين الباص` |
+| `el mokayyef bel 2a3a 5arban` | `المكيف بالقاعه خربان` |
+| `bade a3ref mawa3eed el sa7b w el edafe` | `بدي اعرف مواعيد السحب والاضافه` |
+
+`config/lexicons/arabizi.yaml`: `lexicon` (340 entries: pronouns, particles, time words such as
+`elyom`/`bokra`, campus nouns, Jordanian verbs; LLM-drafted, **to be checked by the developer**), `not_signals`,
+`proclitics`, `digraphs`, `charmap`, `punctuation`, `signal_digits`, `min_digit_tokens: 2`,
+`min_lexicon_hits: 1`, `min_letters_in_digit_token: 2`, `guard_tokens`, `guard_patterns`, `ignore_patterns`.
+Golden pairs: `services/ai/tests/fixtures/arabizi_golden.csv` (24 `arabizi,arabic` rows, **to be checked by the
+developer**).
