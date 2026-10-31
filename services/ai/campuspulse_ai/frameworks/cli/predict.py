@@ -32,8 +32,13 @@ for _var, _value in (
 ):
     os.environ.setdefault(_var, _value)
 
-from campuspulse_ai.application.dto import BATCH_CSV_COLUMNS, BATCH_INPUT_COLUMNS  # noqa: E402
-from campuspulse_ai.composition.offline import BatchRow, build_offline  # noqa: E402
+from campuspulse_ai.application.dto import BATCH_CSV_COLUMNS  # noqa: E402
+from campuspulse_ai.composition.offline import (  # noqa: E402
+    BatchRow,
+    build_offline,
+    read_batch_csv,
+    write_predictions_csv,
+)
 from campuspulse_ai.config.paths import MODELS_FROZEN  # noqa: E402
 from campuspulse_ai.domain.errors import ArtifactError, InvalidInput, LLMUnavailable  # noqa: E402
 
@@ -70,17 +75,16 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def read_rows(path: Path) -> list[BatchRow]:
-    """Read `request_id,text` rows (UTF-8, BOM accepted, every value a string). Raises InvalidInput."""
+    """Read `request_id,text` rows with the shared `/v1/batch` reader (UTF-8, BOM accepted, values kept
+    exactly as written). Raises InvalidInput (unreadable file, not UTF-8, missing column)."""
     try:
-        with path.open(encoding="utf-8-sig", newline="") as fh:
-            reader = csv.DictReader(fh)
-            columns = list(reader.fieldnames or [])
-            missing = [c for c in BATCH_INPUT_COLUMNS if c not in columns]
-            if missing:
-                raise InvalidInput(f"{path}: missing column(s) {missing}; found {columns}")
-            return [BatchRow(str(r["request_id"] or ""), str(r["text"] or "")) for r in reader]
-    except (OSError, UnicodeDecodeError, csv.Error) as exc:
-        raise InvalidInput(f"{path}: unreadable CSV: {exc}") from exc
+        data = path.read_bytes()
+    except OSError as exc:
+        raise InvalidInput(f"{path}: cannot read: {exc}") from exc
+    try:
+        return [BatchRow(rid, text) for rid, text in read_batch_csv(data, max_rows=sys.maxsize)]
+    except InvalidInput as exc:
+        raise InvalidInput(f"{path}: {exc}") from exc
 
 
 def _peak_rss_mb() -> float | None:
@@ -132,12 +136,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_INPUT
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    with args.output.open("w", encoding="utf-8", newline="") as fh:
-        writer = csv.writer(fh, lineterminator="\n")
-        writer.writerow([*BATCH_CSV_COLUMNS, *(DEBUG_COLUMNS if args.debug else ())])
-        for p in predictions:
-            row: list[object] = [p.request_id, p.category, p.priority]
-            writer.writerow(row + (_debug_cells(p.debug) if args.debug else []))
+    if args.debug:  # our extension: the contract columns first, then the debug columns
+        with args.output.open("w", encoding="utf-8", newline="") as fh:
+            writer = csv.writer(fh, lineterminator="\n")
+            writer.writerow([*BATCH_CSV_COLUMNS, *DEBUG_COLUMNS])
+            for p in predictions:
+                writer.writerow([p.request_id, p.category, p.priority, *_debug_cells(p.debug)])
+    else:  # the challenge's predictions.csv: the same bytes as /v1/batch
+        labelled = [(p.request_id, p.category, p.priority) for p in predictions]
+        args.output.write_bytes(write_predictions_csv(labelled))
     llm = sum(1 for p in predictions if p.debug.get("tier") not in (None, "tier0"))
     elapsed = time.perf_counter() - started
     sha = container.manifest.sha[:12]

@@ -70,6 +70,17 @@ def test_exit_2_without_encoder(tmp_path: Path, capsys: pytest.CaptureFixture[st
     assert "python scripts/fetch_models.py" in capsys.readouterr().err
 
 
+def test_predict_bytes_equal_v1_batch(tmp_path: Path) -> None:
+    """predict.py and POST /v1/batch write byte-identical predictions (shared reader and writer)."""
+    from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
+    from campuspulse_ai.composition.offline import build_offline
+
+    out = tmp_path / "pred.csv"
+    assert main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out)]) == 0
+    api = BatchCsvUseCase(build_offline(MODELS_FROZEN).labeler, max_rows=10_000)
+    assert api.run((DATA_RAW / "validation.csv").read_bytes()) == out.read_bytes()
+
+
 def test_exit_4_missing_text_column(tmp_path: Path) -> None:
     bad = tmp_path / "bad.csv"
     bad.write_text("request_id,body\nX-1,hello\n", encoding="utf-8")

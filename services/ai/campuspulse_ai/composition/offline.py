@@ -21,6 +21,7 @@ Steps (§1.5):
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -45,6 +46,7 @@ from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
 from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
 from campuspulse_ai.application.services.priority_finalizer import PriorityFinalizer
 from campuspulse_ai.application.services.triage_core import TriageCore
+from campuspulse_ai.application.use_cases.batch import read_batch_csv, write_predictions_csv
 from campuspulse_ai.application.use_cases.batch_predict import BatchPredictUseCase, BatchRow
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.settings import Settings
@@ -52,7 +54,8 @@ from campuspulse_ai.domain.errors import ArtifactVersionMismatch, LLMUnavailable
 from campuspulse_ai.domain.ports import Guard, LabelOracle, ProbabilisticClassifier, SentenceEncoder
 from campuspulse_ai.domain.values import ArtifactVersion, Manifest
 
-__all__ = ["BatchRow", "OfflineContainer", "build_offline", "resolve_model_dir"]
+__all__ = ["BatchRow", "OfflineBatchLabeler", "OfflineContainer", "build_offline", "read_batch_csv",
+           "resolve_model_dir", "write_predictions_csv"]
 
 INDEX_DIR = "index"
 LEXICON_DIR = "lexicons"
@@ -61,6 +64,22 @@ HEAD_DIR = "head"
 OFFLINE_COLLECTIONS = frozenset({TRAIN_COLLECTION, "injection_exemplars", "safety_exemplars"})
 USE_LLM_MESSAGE = ("--use-llm is not available yet: the LLM tier (OpenRouterOracle, P3) is not built; "
                    "run without --use-llm (tier 0 is fully offline)")
+
+
+class OfflineBatchLabeler:
+    """Adapts `BatchPredictUseCase` to the `BatchLabeler` port of `/v1/batch` (`use_cases/ports.py`).
+
+    `label([(request_id, text)], use_llm=...)` returns `[(request_id, category, priority)]` in input order:
+    the same labels `predict.py` writes (empty text gets the priors' argmax, LD-17).
+    Raises `ArtifactError` only from construction (`build_offline`); labelling itself does not.
+    """
+
+    def __init__(self, batch: BatchPredictUseCase) -> None:
+        self._batch = batch
+
+    def label(self, rows: Sequence[tuple[str, str]], *, use_llm: bool) -> list[tuple[str, str, str]]:
+        predictions = self._batch.run([BatchRow(rid, text) for rid, text in rows], use_llm=use_llm)
+        return [(p.request_id, p.category, p.priority) for p in predictions]
 
 
 @dataclass(frozen=True)
@@ -72,6 +91,11 @@ class OfflineContainer:
     batch: BatchPredictUseCase
     vectors: LocalNumpyVectorStore
     encoder: SentenceEncoder
+
+    @property
+    def labeler(self) -> OfflineBatchLabeler:
+        """The `BatchLabeler` for `/v1/batch` (same labels as `predict.py`)."""
+        return OfflineBatchLabeler(self.batch)
 
 
 def resolve_model_dir(path: Path) -> Path:
