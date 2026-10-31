@@ -643,3 +643,46 @@
 - **Acceptance:** `pytest services/ai/tests/unit/test_calendar.py -q` → `12 passed, 5 skipped` (earliest slot; office hours, Friday and closing-time slots skipped; window; booking claims; double booking prevented with one retry; non-allow-listed attendee → nothing written; store failure → `CalendarUnavailable`; fallback order, empty provider, finder-then-fall-through, all unavailable, a real attendee never reaches a provider). The 5 skips are the `-m supabase` cases: no keys in the worktree `.env`.
 - **Limitations / TODO / known issues:** `booked_by` is the first attendee (the student's demo inbox) because `CalendarProvider.book` carries no alias. Per-advisor `OfficeHours` is not exposed by the repository (`advisors_for` does not read `advisors.office_hours`), so P4.8 passes the seed hours (Sun–Thu 09:00–15:00 Amman).
 - **Affects streams:** Backend (P4.8 booking path); DB (`free_slots`/`claim_slot` semantics relied on).
+
+### P5.6 — Data layer: Supabase clients, repos, server-only AI client, proxy and leak check  (ui, 2026-10-31, commits e5ed920, c559aff)
+- **What now exists:**
+  - Typed browser and server Supabase clients (`@supabase/ssr`, `Database` re-exported from `supabase/types/database.types.ts` through the `@db/*` alias, no copy).
+  - Read-only repos with Realtime subscriptions.
+  - `src/lib/ai/client.ts` (`server-only`), the allow-listed proxy `src/app/api/ai/[...path]/route.ts`, and the bundle leak check.
+- **Public interfaces added or changed:** see [docs/ui/README.md > Data layer](../ui/README.md#data-layer-p56) for every repo signature and the view or table it reads. `aiFetch<T>(path, { method, body?, userJwt, timeoutMs? }): Promise<AiResult<T>>`; browser side `callAi<T>(path, init?)`. `AiFail = { ok:false, status, code, error, details, waking }`.
+- **How to use it:** `const rows = await listOfficeTickets(createBrowserSupabase(), "it")`; `const r = await callAi<TriageResponse>("triage", { method: "POST", body: { text } })`.
+- **Config / env added:** none new (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `AI_SERVICE_URL`, `AI_SERVICE_TOKEN` already listed). tsconfig and vitest alias `@db/*`; scripts `check:secrets` and `e2e`.
+- **Acceptance:** `pnpm typecheck` exit 0; `pnpm exec vitest run src/lib` -> `11 files, 136 tests passed`; `pnpm build; node scripts/check-bundle-secrets.mjs` -> `bundle clean (0 matches)` (built with `AI_SERVICE_TOKEN` set, so the literal value was scanned too).
+- **Limitations / TODO / known issues:**
+  - The proxy sets `student_alias` on `triage` from the profile so the mock and the real service agree; in `AUTH_MODE=supabase_jwt` the service reads the alias from the JWT anyway.
+  - The route trusts the API for role checks (`/metrics`, `/redteam/run`, `admin/*`); it does not duplicate them.
+  - `aiFetch` returns CSV as a string for `batch`; no page uses it yet.
+  - Repos are tested against a mocked client only. They were not run against the live project in this batch.
+- **Affects streams:** Backend (any new browser-callable route must be added to `src/lib/ai/allowlist.ts`); UI P5.10 to P5.12 (use the repos and `callAi`); Lead (`.env.example`, ops doc).
+
+### P5.7 — Auth, role routing, demo login and the AI status banner  (ui, 2026-10-31, commit 91ac9f6)
+- **What now exists:** `/login` with email and password and three "Sign in as" buttons (D-008) that only prefill the email; `src/proxy.ts` (Next 16's name for middleware) that refreshes the session, verifies it with `getUser()` and redirects by `profiles.role`; `ServiceBanner` driven by a health poll, mounted in the root layout.
+- **Public interfaces added or changed:** `decideRoute(pathname, role)`, `homeFor(role)`, `safeNext(next, fallback)` in `src/lib/auth/routing.ts`; `signIn(sb, email, password, next?)`, `fetchProfile(sb, userId)`; `ServiceBanner({ state })`, `useServiceHealth()`; `TextField`, `TextArea` primitives. Redirect table in [docs/ui/README.md > Auth and roles](../ui/README.md#auth-and-roles-p57).
+- **How to use it:** open `/login`, press "Sign in as Student", type the shared demo password. Student -> `/`, staff -> `/staff`, admin -> `/lab`; a student opening `/lab` lands on `/`.
+- **Config / env added:** optional `NEXT_PUBLIC_DEMO_LOGIN_HINT` (a hint line on the login page, never the password). Lead: add it to `.env.example` if wanted.
+- **Acceptance:** the plan's `vitest run src/middleware` does not match any file: the matrix lives in `src/lib/auth/__tests__` (routing, proxy with a mocked session, signin) and `src/lib/ai/__tests__/health.test.ts`. `pnpm exec vitest run src/lib/auth src/hooks` -> `4 files, 54 tests passed`. E2E: a signed-out visit to `/` redirects to `/login`; a student visiting `/lab` ends on `/`.
+- **Limitations / TODO / known issues:**
+  - Realtime is not faked in the e2e, so the Realtime path is covered by unit tests only.
+  - `/staff`, `/pulse`, `/outbox`, `/lab` are guarded but have no pages yet (P5.10 to P5.12), so a staff login lands on a 404 until then.
+  - Each page request makes one extra `profiles` read in the proxy; fine for a demo, cache the role if it ever matters.
+- **Affects streams:** Lead (plan says `middleware.ts`; the file is `proxy.ts`); UI P5.10 to P5.12 (routes are already guarded); DB (the proxy depends on the `profiles` own-row policy).
+
+### P5.8 — Student chat page `/`  (ui, 2026-10-31, commits 9767b61, 9eaac10)
+- **What now exists:** the chat page with composer, thread, clarification chips, optional building picker, counterfactual click, distress card, disclaimer and live notices from `notifications`. Logic is a pure reducer, a small service and hooks under `src/lib/chat` and `src/hooks`.
+- **Public interfaces added or changed:** `ChatThread`, `Composer`, `ClarificationBubble`, `BuildingPicker`, `DistressCard`, `Disclaimer` (props in [docs/ui/README.md > Student chat](../ui/README.md#student-chat--p58)); hooks `useChat`, `useNotifications`, `useBuildings`. `ArabiziHint` was not built: `ResultCard` already shows "Understood as".
+- **How to use it:** run the mock API and `pnpm dev` (see "Local dev with the mock API"), sign in as the student, type `where is the bus timetable for the Madaba route?`.
+- **Config / env added:** Playwright env `PW_PYTHON` (venv python for the mock API), `PW_API_PORT` (8765), `PW_SUPABASE_PORT` (54399) and `E2E_PASSWORD` (the fake Supabase password, default `e2e-password`). None are secrets.
+- **Acceptance:** `pnpm exec vitest run src/components/chat` -> `3 files, 45 tests passed`; `pnpm exec playwright test e2e/student-basic.spec.ts` -> `1 passed` (also run together with `devui.spec.ts`: `2 passed`). Full run: typecheck and lint exit 0, `vitest run` -> `23 files, 266 tests passed`, `pnpm build` ok, `bundle clean (0 matches)`.
+- **Limitations / TODO / known issues:**
+  - The mock picks its fixture by the exact request text, so the e2e types the full sentence `where is the bus timetable for the Madaba route?` (the plan's shorter sentence would fall to the default fixture).
+  - The e2e uses a fake Supabase (`e2e/support/fake-supabase.mjs`), because the real login needs the demo password. A run against the live project with `DEMO_USER_PASSWORD` is still to do (P5.13).
+  - Clarification chips are plain buttons, not the `ChipGroup` radiogroup: its arrow keys select, and a selection here sends the answer to the server.
+  - The notification payload shape is not fixed by the backend; unknown shapes show a generic "new update" line.
+  - Arabic strings added in this batch are first-draft Jordanian Arabic and need a native read-through.
+  - Voice (P5.9) is not wired: `Composer.micSlot` is empty and `input_mode` is always `text`.
+- **Affects streams:** Backend (notification `payload` keys `status`, `title`, `message` are what the chat reads; tell the UI stream if they differ); Lead (P5.13 moment 1 builds on this page).
