@@ -86,7 +86,6 @@ export const ar: Dict = {
     working: "عم نشتغل على طلبك",
     you: "أنت",
     clarifyGroup: "اختار جواب واحد",
-    answered: "جاوبت: {answer}",
     needsReview: "بحاجة لمراجعة الموظف",
     outOfScope: "خارج خدمات الجامعة",
     safety: "قلق يخص السلامة",
@@ -96,6 +95,7 @@ export const ar: Dict = {
     errorSession: "انتهت الجلسة. سجّل دخولك من جديد.",
     errorNothingToAnswer: "هذا السؤال ما عاد مفتوح. ابعت طلبك من جديد.",
     ticketStatus: "تذكرتك \"{title}\" صارت {status}.",
+    ticketStatusNoTitle: "تذكرتك صارت {status}.",
     updateGeneric: "في تحديث جديد على طلبك.",
     status: {
       open: "مفتوحة",

@@ -92,7 +92,6 @@ export const en = {
     working: "Working on your request",
     you: "You",
     clarifyGroup: "Choose one answer",
-    answered: "You answered: {answer}",
     needsReview: "Needs staff review",
     outOfScope: "Outside campus services",
     safety: "Safety concern",
@@ -102,6 +101,7 @@ export const en = {
     errorSession: "Your session ended. Please sign in again.",
     errorNothingToAnswer: "That question is no longer open. Send your request again.",
     ticketStatus: "Your ticket \"{title}\" is now {status}.",
+    ticketStatusNoTitle: "Your ticket is now {status}.",
     updateGeneric: "You have a new update on your request.",
     status: {
       open: "open",
