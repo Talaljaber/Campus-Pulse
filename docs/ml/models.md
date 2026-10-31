@@ -271,3 +271,85 @@ if nothing but punctuation remains, `InvalidInput` → `lang = LangIdentifier.id
 "extracted")`. The code letter must be upper-case and a separate token, so `A hallway light is broken`,
 `I am in a building` and `Block b` give `None`. Codes: `A B C D E F G H K L M`. It never changes `text_norm` or
 `model_text` (tested on all 432 rows).
+
+## 5. `FrozenConfig` (`campuspulse_ai.config.frozen`, P1.4): the schema of `config.json`
+
+```python
+from campuspulse_ai.config.frozen import FrozenConfig
+cfg = FrozenConfig.load(Path("models/frozen/v1/config.json"))   # ArtifactMissing / ArtifactVersionMismatch
+cfg.thresholds.tau_ood, cfg.ensemble.weights_category["m1"], cfg.guards.max_tokens
+cfg.save(path)                                                    # sorted keys, indent 2, UTF-8, LF; byte-stable
+FrozenConfig.from_dict(mapping)                                   # validate an in-memory mapping
+```
+
+Strict pydantic: unknown or missing keys, wrong types and out-of-range values raise
+`ArtifactVersionMismatch` on load (thresholds ≤ 0 → "thresholds not trained"). The object is immutable.
+`train.py` (P1.16) is the only writer. It assembles the file from `config/train.yaml` (copied sections and
+knobs), `config/hand_tuned.yaml` and the values it learns. There is **no `config.json` yet** (no training has
+run), so "value" below is the input default and "source" says where the frozen value will come from.
+
+| key | value / default | source (how tuned) |
+| --- | --- | --- |
+| `schema_version` | 1 | code constant; a mismatch → `ArtifactVersionMismatch` |
+| `artifact_version` | `v1` | `train.yaml artifact_version` |
+| `trained_at`, `seed` | ISO time, 42 | train.py clock; `train.yaml seed` |
+| `encoder.{model_id, dim, max_tokens, query_prefix, runtime, file, pooling, normalize}` | `intfloat/multilingual-e5-small`, 384, 256, `"query: "`, `onnx_int8`, `encoder/model_int8.onnx`, `mean`, true | copied from `train.yaml encoder` (`runtime: hashing` only in test fixtures) |
+| `encoder.revision` | HF commit sha | resolved by `export_encoder.py` (P1.6) |
+| `ensemble.members` | `[m1, m2lr, m2knn]` | `train.yaml`; `m3` only if LD-6 passes |
+| `ensemble.weights_category`, `weights_priority` | a distribution over exactly `members` | simplex grid (step `grids.weight_step` 0.1) maximizing OOF macro-F1 (P2) |
+| `m1.char_ngram`, `m1.word_ngram` | [2,5], [1,2] | copied |
+| `m1.C`, `m2lr.C` | from grid `[0.5,1,2,4,8]` | OOF macro-F1 (`grids.m1_C`, `grids.m2lr_C`) |
+| `knn.{k, memory_weight_cap, max_memory_neighbors, memory_min_sim}` | 5, 0.6, 2, 0.80 | copied (memory is online-only) |
+| `priority_head.features` | the 10 evidence flags (`deadline_today` … `teaching_room`) | copied; `stated_urgency` is rejected by the schema (§3.8) |
+| `priority_head.C` | 1.0 | copied |
+| `conformal.method`, `mondrian_by_lang` | `lac`, false | copied; Mondrian only per `train.yaml mondrian` rule (P2) |
+| `conformal.alpha_category`, `alpha_priority` | 0.10, 0.10 | `train.yaml alpha` (`alpha_priority_fallback` 0.15 if the ASK rate > `ask_rate_max` 0.35) |
+| `conformal.q_category`, `q_priority`, `n_calib` | in [0, 1]; n | LAC quantile on OOF scores (P1.14/P2) |
+| `thresholds.tau_ood` | > 0 | `tau_ood_percentile` (5th) of OOF max-similarity of in-distribution rows |
+| `thresholds.tau_injection`, `tau_safety` | > 0 (may exceed 1) | max exemplar similarity over the pool + `tau_margin` 0.02 (LD-18) |
+| `thresholds.human_review_maxprob` | in (0, 1] | max-prob below which OOF accuracy < `human_review_min_acc` 0.6 |
+| `thresholds.tau_faq`, `tau_inc` | 0.75, 0.80 | `config/hand_tuned.yaml` (LD-11) |
+| `guards.{max_tokens, gibberish_min_tokens, gibberish_min_letter_ratio, injection_sentence_strip_ratio}` | 256, 2, 0.5, 0.6 | copied (LD-10) |
+| `llm.{w_llm, prompt_version}` | 0.5, `v1` | copied (LD-10) |
+| `explain.max_occlusions` | 20 | copied (LD-10) |
+| `priors.category`, `priors.priority` | distributions over exactly the official labels | training-pool label frequencies; argmax labels empty input (LD-17) |
+| `cv.{k, group_col, fold_col, folds_file}` | 5, `cv_group`, `cv_fold`, `data/clean/cv_folds.csv` | copied (LD-31) |
+| `cv.oof_macro_f1_category`, `oof_macro_f1_priority` | in [0, 1] | stage A OOF on the frozen folds |
+
+`config/train.yaml` also holds knobs that never reach `config.json`: `cv.search_iterations`,
+`cv.min_arabic_groups_per_fold` (make_folds), `grids`, `tau_ood_percentile`, `tau_margin`,
+`human_review_min_acc`, `ask_rate_max`, `alpha_priority_fallback`, `mondrian.{min_cov_minority, min_cov_en}`,
+`m3.{min_gain, max_predict_s_per_1000, time_box_h, max_download_mb, max_rss_mb}`.
+
+A valid example mapping for tests: `services/ai/tests/fixtures/frozen_config.py::valid_config_dict()`
+(import it as `from fixtures.frozen_config import valid_config_dict`; `services/ai/tests` is the pytest rootdir).
+
+## 6. Artifacts: `FileArtifactStore` and `MANIFEST.json` (`adapters/artifacts/io.py`, P1.4)
+
+```python
+from campuspulse_ai.adapters.artifacts.io import FileArtifactStore, sha256_file
+store = FileArtifactStore()                                  # FileArtifactStore(now=lambda: fixed_dt) for tests
+manifest = store.write_manifest(model_dir, [Path("config.json"), Path("m1/model.joblib"), ...])
+manifest = store.load_manifest(model_dir)                    # re-hashes every listed file
+manifest.sha                                                 # identity reported by /health and predict.py --debug
+```
+
+`models/frozen/vN/MANIFEST.json` (sorted keys, indent 2, LF):
+
+```json
+{
+  "artifact_version": "v1",
+  "created_at": "2026-11-01T10:00:00+00:00",
+  "files": {"config.json": "<sha256>", "encoder/model_int8.onnx": "<sha256>", "m1/model.joblib": "<sha256>"}
+}
+```
+
+- Paths are POSIX, relative to the model dir; files outside it, or the manifest itself, are rejected
+  (`ValueError`). `artifact_version` comes from `config.json` if present, else the directory name.
+- `load_manifest` raises `ArtifactMissing` (manifest or listed file absent; the message says
+  `run python scripts/fetch_models.py ...`), `ArtifactChecksumMismatch` (a sha256 differs, naming the file) or
+  `ArtifactVersionMismatch` (malformed JSON, an unsafe `..`/absolute entry, or `artifact_version` differs from
+  `config.json`).
+- The fetched encoder files (`encoder/model_int8.onnx`, `encoder/tokenizer.json`, ...) are listed too, so a
+  bad download fails before loading (ARCHITECTURE §3.12). Lexicon snapshots (`lexicons/*.yaml`, LD-12) will be
+  listed by `train.py`.
