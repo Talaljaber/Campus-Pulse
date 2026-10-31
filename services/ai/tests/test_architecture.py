@@ -165,6 +165,12 @@ TRAIN_CLI_EXTRA: dict[Path, tuple[str, ...]] = {
         "torch", "sentence_transformers", "transformers", "huggingface_hub", "onnx", "onnxruntime", "numpy",
         "yaml", "tokenizers", f"{PKG}.adapters.models.encoder",
     ),
+    # Task 9 (batch 3): the vocabulary-pruning CLI edits the ONNX graph (onnx) and checks the gate over the
+    # same normalizer and lexicons as inference. Training machine only; never imported by predict.py/API.
+    PKG_DIR / "frameworks" / "cli" / "prune_encoder.py": (
+        "onnx", "numpy", "tokenizers", f"{PKG}.adapters.models.encoder", f"{PKG}.adapters.guards.bank",
+        f"{PKG}.adapters.preprocess.normalizer",
+    ),
 }
 
 
