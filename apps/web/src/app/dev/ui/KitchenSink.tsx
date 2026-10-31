@@ -15,7 +15,6 @@ import {
   Table,
   TabPanel,
   Tabs,
-  ThemeSwitch,
   ToastProvider,
   useToast,
   CATEGORY_TONE,
@@ -275,7 +274,6 @@ export function KitchenSink() {
     <AppShell role={null} width="wide">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageHeader title={t("devui.title")} subtitle={t("devui.intro")} />
-        <ThemeSwitch />
       </div>
       <Palette />
       <div className="grid gap-4 lg:grid-cols-2">

@@ -50,12 +50,6 @@ export const en = {
     footerBuilt: "Built with Next.js, FastAPI and Supabase.",
     loginTitle: "Welcome to CampusPulse",
   },
-  theme: {
-    label: "Theme",
-    system: "System",
-    light: "Light",
-    dark: "Dark",
-  },
   category: {
     registration: "Registration",
     itSupport: "IT Support",
@@ -706,7 +700,7 @@ export const en = {
   },
   devui: {
     title: "UI kitchen sink",
-    intro: "Every primitive, in both languages and both themes.",
+    intro: "Every primitive, in both languages.",
     palette: "Palette",
     tiles: "Icon tiles",
     tileRequests: "Requests",

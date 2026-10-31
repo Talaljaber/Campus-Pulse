@@ -44,12 +44,6 @@ export const ar: Dict = {
     footerBuilt: "مبني باستخدام Next.js وFastAPI وSupabase.",
     loginTitle: "أهلاً فيك في كامبس بلس",
   },
-  theme: {
-    label: "المظهر",
-    system: "حسب النظام",
-    light: "فاتح",
-    dark: "داكن",
-  },
   category: {
     registration: "التسجيل",
     itSupport: "الدعم التقني",

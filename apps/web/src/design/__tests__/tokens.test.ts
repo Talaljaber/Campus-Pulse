@@ -26,9 +26,6 @@ function blockOf(selector: string): string {
 }
 
 const light = declsOf(blockOf(":root {"));
-const darkMedia = declsOf(blockOf(':root:not([data-theme="light"])'));
-const darkForced = declsOf(blockOf(':root[data-theme="dark"]'));
-const dark: Vars = { ...light, ...darkMedia };
 
 function rgb(hex: string): [number, number, number] {
   const h = hex.replace("#", "");
@@ -69,7 +66,6 @@ const TONES = [
 
 describe.each([
   ["light", light],
-  ["dark", dark],
 ])("%s theme", (_name, v) => {
   it("text tokens reach 4.5:1 on every surface", () => {
     for (const t of TEXTS)
@@ -96,7 +92,7 @@ describe.each([
 
 /**
  * Named foreground/background pairs of the GJU-style shell (UI batch 6). Each is checked in both
- * themes against its WCAG 2.2 AA minimum: 4.5 for text, 3 for large text, icons and borders.
+ * light palette against its WCAG 2.2 AA minimum: 4.5 for text, 3 for large text, icons and borders.
  * Orange itself is decorative; the pairs below are the only ways orange appears with text.
  */
 const PAIRS: { name: string; fg: string; bg: string; min: number }[] = [
@@ -126,7 +122,6 @@ const PAIRS: { name: string; fg: string; bg: string; min: number }[] = [
 
 describe.each([
   ["light", light],
-  ["dark", dark],
 ])("%s shell pairs", (_name, v) => {
   it.each(PAIRS)("$name reaches its AA minimum", ({ fg, bg, min }) => {
     expect(contrast(rgb(v[fg]!), rgb(v[bg]!)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(min);
@@ -134,10 +129,10 @@ describe.each([
 });
 
 describe("structure", () => {
-  it("forced-dark block overrides the same keys as the media-query block", () => {
-    const keys = (o: Vars) => Object.keys(o).filter((k) => !k.startsWith("--cp-space")).sort();
-    expect(keys(darkForced)).toEqual(keys(darkMedia));
-    for (const k of Object.keys(darkMedia)) expect(darkForced[k], k).toBe(darkMedia[k]);
+  it("is light only: no dark media query, no data-theme blocks, color-scheme is light", () => {
+    expect(css).not.toMatch(/prefers-color-scheme/);
+    expect(css).not.toMatch(/data-theme/);
+    expect(light["color-scheme"] ?? css.match(/:root\s*\{[^}]*color-scheme:\s*light/)?.[0]).toBeTruthy();
   });
 
   it("defines the full token API", () => {

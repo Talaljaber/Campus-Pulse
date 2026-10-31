@@ -1,7 +1,6 @@
 /*
  * CampusPulse design tokens. Every component styles against these variables.
- * Light is the default; dark applies under prefers-color-scheme unless the user
- * forced light (data-theme="light"), or when forced dark (data-theme="dark").
+ * The app is light only (no dark theme, no OS-following).
  *
  * Palette: GJU-inspired blue + orange-yellow + warm grey (UI batch 6). Original tokens, not
  * the official brand assets. Orange (--cp-orange) fails contrast against white, so it is for
@@ -12,10 +11,13 @@
  *  - category/priority/semantic colours reach >= 3:1 on every surface (graphics)
  *  - badge text (text-1) reaches >= 4.5:1 on each 16% tint of a tone
  *  - every named foreground/background pair of the shell (band, nav, panel, footer, tabs)
- *    reaches its WCAG AA minimum in both themes
+ *    reaches its WCAG AA minimum
  */
 
 :root {
+  /* Light only: native controls and scrollbars stay light even on a dark OS. */
+  color-scheme: light;
+
   /* surfaces + text + lines */
   --cp-surface-0: #ffffff;
   --cp-surface-1: #f4f6f8;
@@ -98,116 +100,8 @@
   --cp-overlay: rgb(18 22 29 / 0.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --cp-surface-0: #10151c;
-    --cp-surface-1: #171d26;
-    --cp-surface-2: #212936;
-    --cp-text-1: #eef1f5;
-    --cp-text-2: #c5ccd7;
-    --cp-text-3: #9aa4b3;
-    --cp-border: #2e3744;
-    --cp-border-strong: #7f8a9b;
-    --cp-focus: #8cc3f2;
-    --cp-on-accent: #0e1218;
-    --cp-accent: #8cc3f2;
-
-    --cp-brand: #4ea6e6;
-    --cp-heading: #c9ced6;
-    --cp-page: #0b0f14;
-    --cp-band: #14507f;
-    --cp-band-2: #0e3a5e;
-    --cp-on-band: #ffffff;
-    --cp-orange: #f0a81f;
-    --cp-on-orange: #1c2025;
-    --cp-orange-ink: #f0b84a;
-    --cp-panel: #3d5f80;
-    --cp-on-panel: #ffffff;
-    --cp-footer: #07090d;
-    --cp-on-footer: #d5d9df;
-    --cp-footer-link: #9dcdf5;
-
-    --cp-cat-registration: #5fadff;
-    --cp-cat-it: #c996f2;
-    --cp-cat-finance: #f2a65a;
-    --cp-cat-transport: #3fd1a2;
-    --cp-cat-facilities: #e8cd52;
-    --cp-cat-academic: #f58cbf;
-
-    --cp-pri-low: #9db0c6;
-    --cp-pri-medium: #f0b040;
-    --cp-pri-high: #ff8585;
-
-    --cp-ok: #55d08a;
-    --cp-warn: #f0b040;
-    --cp-danger: #ff8585;
-    --cp-info: #8cc3f2;
-
-    --cp-shadow-card: 0 2px 6px rgb(0 0 0 / 0.4), 0 8px 32px rgb(0 0 0 / 0.5);
-    --cp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
-    --cp-shadow-2: 0 8px 24px rgb(0 0 0 / 0.6);
-    --cp-overlay: rgb(0 0 0 / 0.65);
-  }
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --cp-surface-0: #10151c;
-  --cp-surface-1: #171d26;
-  --cp-surface-2: #212936;
-  --cp-text-1: #eef1f5;
-  --cp-text-2: #c5ccd7;
-  --cp-text-3: #9aa4b3;
-  --cp-border: #2e3744;
-  --cp-border-strong: #7f8a9b;
-  --cp-focus: #8cc3f2;
-  --cp-on-accent: #0e1218;
-  --cp-accent: #8cc3f2;
-
-  --cp-brand: #4ea6e6;
-  --cp-heading: #c9ced6;
-  --cp-page: #0b0f14;
-  --cp-band: #14507f;
-  --cp-band-2: #0e3a5e;
-  --cp-on-band: #ffffff;
-  --cp-orange: #f0a81f;
-  --cp-on-orange: #1c2025;
-  --cp-orange-ink: #f0b84a;
-  --cp-panel: #3d5f80;
-  --cp-on-panel: #ffffff;
-  --cp-footer: #07090d;
-  --cp-on-footer: #d5d9df;
-  --cp-footer-link: #9dcdf5;
-
-  --cp-cat-registration: #5fadff;
-  --cp-cat-it: #c996f2;
-  --cp-cat-finance: #f2a65a;
-  --cp-cat-transport: #3fd1a2;
-  --cp-cat-facilities: #e8cd52;
-  --cp-cat-academic: #f58cbf;
-
-  --cp-pri-low: #9db0c6;
-  --cp-pri-medium: #f0b040;
-  --cp-pri-high: #ff8585;
-
-  --cp-ok: #55d08a;
-  --cp-warn: #f0b040;
-  --cp-danger: #ff8585;
-  --cp-info: #8cc3f2;
-
-  --cp-shadow-card: 0 2px 6px rgb(0 0 0 / 0.4), 0 8px 32px rgb(0 0 0 / 0.5);
-  --cp-shadow-1: 0 1px 2px rgb(0 0 0 / 0.5);
-  --cp-shadow-2: 0 8px 24px rgb(0 0 0 / 0.6);
-  --cp-overlay: rgb(0 0 0 / 0.65);
-}
-
 /* Tailwind v4 CSS-first mapping (LD-2). `inline` keeps utilities pointing at the
-   live --cp-* variables so theme switches need no rebuild. */
+   live --cp-* variables. */
 @theme inline {
   --color-surface-0: var(--cp-surface-0);
   --color-surface-1: var(--cp-surface-1);

@@ -18,7 +18,6 @@ export { Table, type TableColumn, type TableProps } from "./Table";
 export { TabPanel, Tabs, type TabPanelProps, type TabsProps } from "./Tabs";
 export { TextArea, TextField, type TextAreaProps, type TextFieldProps } from "./TextField";
 export { useDuration } from "./useDuration";
-export { ThemeSwitch, type ThemeChoice, type ThemeSwitchProps } from "./ThemeSwitch";
 export { ToastProvider, useToast, type ToastApi, type ToastProviderProps } from "./Toast";
 export {
   CATEGORY_TONE,
