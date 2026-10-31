@@ -1083,7 +1083,7 @@ Response `200`:
 
 **Response `200`:** `application/json` [WebhookAck](#schema-webhookack)
 
-**Example** (fixture `linear_webhook_status_sync`): Linear moved CP-43 to Done: the linked ticket becomes resolved.
+**Example** (fixture `linear_webhook_status_sync`): Linear moved CDP-43 to Done (`updatedFrom.stateId` marks a state change): the linked ticket becomes resolved.
 
 `request.json`:
 
@@ -1092,12 +1092,15 @@ Response `200`:
   "action": "update",
   "type": "Issue",
   "data": {
-    "id": "lin-issue-43",
-    "identifier": "CP-43",
+    "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003",
+    "identifier": "CDP-43",
     "state": {
       "name": "Done",
       "type": "completed"
     }
+  },
+  "updatedFrom": {
+    "stateId": "<previous state id>"
   },
   "webhookTimestamp": 1793858400000
 }
