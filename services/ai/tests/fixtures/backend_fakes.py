@@ -13,6 +13,9 @@ edit the same file; P3.8 re-exports these from `fakes.py` for `build_test()`.
 - `make_outbox(...)`: an `OutboxMessage` ready to send.
 - `FakeSink`, `make_ticket(...)`: a scripted `TicketSink` and a ticket builder.
 - `FakeCalendar`: a `CalendarProvider` with one fixed slot that records `book` calls.
+- `FakeCore` (P3.8): a `TriageClassifier` that returns scripted cores per text and applies
+  clarification constraints like the real `TriageCore` (P1.15).
+- `FakeFAQ`: a `FAQRetriever` that returns scripted hits.
 """
 
 from __future__ import annotations
@@ -34,12 +37,14 @@ from campuspulse_ai.domain.entities import (
     OutboxMessage,
     Ticket,
 )
-from campuspulse_ai.domain.errors import CalendarUnavailable
+from campuspulse_ai.domain.errors import CalendarUnavailable, InvalidInput
 from campuspulse_ai.domain.labels import CATEGORY_LABELS, PRIORITY_LABELS, Category, Priority
 from campuspulse_ai.domain.values import (
     ArtifactVersion,
     Booking,
+    ClarificationConstraint,
     EvidenceVector,
+    FAQHit,
     GuardVerdict,
     InboundEvent,
     Lang,
@@ -109,6 +114,7 @@ def make_request(
     is_arabizi: bool = False,
     model_text: str | None = None,
     location: Location | None = None,
+    stated_urgency: bool = False,
 ) -> NormalizedRequest:
     """A NormalizedRequest with raw `text`; core/text_norm default to `text`, model_text to the core."""
     stripped = text if core is None else core
@@ -119,7 +125,7 @@ def make_request(
         model_text=model_text or stripped,
         lang=lang,
         is_arabizi=is_arabizi,
-        stated_urgency=False,
+        stated_urgency=stated_urgency,
         truncated=False,
         location=location,
     )
@@ -344,3 +350,111 @@ class FakeCalendar:
         return Booking(
             slot=slot, attendees=tuple(attendees), title=title, provider="fake", external_id=slot.id
         )
+
+
+@dataclass(frozen=True)
+class _Scripted:
+    core: CoreResult
+    lang: Lang
+    is_arabizi: bool
+    model_text: str | None
+    stated_urgency: bool
+    location: Location | None
+
+
+# Priority a feature constraint implies in FakeCore (the real priority head decides from the evidence).
+FEATURE_PRIORITY: dict[str, Priority] = {"deadline_today": Priority.HIGH, "safety_risk": Priority.HIGH}
+
+
+@dataclass
+class FakeCore:
+    """A `TriageClassifier` (the `TriageCore.classify` surface, P1.15) with scripted results.
+
+    - `add(text, core, ...)` scripts the result for one raw text (exact match after `strip()`); any
+      other text gets `default` (an IT Support x medium singleton by default).
+    - Constraints are applied the way §2.0 step 7 does: a `category` constraint fixes `S_cat` and puts
+      the probability mass on that label, a `priority` constraint does the same for priority, and a
+      `feature` constraint sets that evidence flag and, per `FEATURE_PRIORITY`, fixes the priority.
+    - A safety core is floored to high (step 6). Every call is recorded in `calls` as
+      (raw, picked_location, constraints, memory).
+    """
+
+    default: CoreResult = field(default_factory=lambda: make_core({"IT Support": 0.9}, {"medium": 0.9}))
+    script: dict[str, _Scripted] = field(default_factory=dict)
+    calls: list[tuple[str, Location | None, tuple[ClarificationConstraint, ...], bool]] = field(
+        default_factory=list
+    )
+
+    def add(
+        self,
+        text: str,
+        core: CoreResult,
+        *,
+        lang: Lang = Lang.EN,
+        is_arabizi: bool = False,
+        model_text: str | None = None,
+        stated_urgency: bool = False,
+        location: Location | None = None,
+    ) -> FakeCore:
+        self.script[text.strip()] = _Scripted(core, lang, is_arabizi, model_text, stated_urgency, location)
+        return self
+
+    def classify(
+        self,
+        raw: str,
+        picked_location: Location | None = None,
+        constraints: Sequence[ClarificationConstraint] = (),
+        memory: bool = True,
+    ) -> tuple[NormalizedRequest, CoreResult]:
+        self.calls.append((raw, picked_location, tuple(constraints), memory))
+        if not raw.strip():
+            raise InvalidInput("empty request text")
+        entry = self.script.get(raw.strip())
+        core = entry.core if entry else self.default
+        for c in constraints:
+            core = _constrain(core, c)
+        if core.safety:
+            core = _constrain(core, ClarificationConstraint("priority", Priority.HIGH.value))
+        req = make_request(
+            raw,
+            lang=entry.lang if entry else Lang.EN,
+            is_arabizi=entry.is_arabizi if entry else False,
+            model_text=entry.model_text if entry else None,
+            stated_urgency=entry.stated_urgency if entry else False,
+            location=picked_location or (entry.location if entry else None),
+        )
+        return req, core
+
+
+def _constrain(core: CoreResult, c: ClarificationConstraint) -> CoreResult:
+    if c.kind == "category":
+        return dataclasses.replace(
+            core,
+            set_cat=PredictionSet(frozenset({c.value})),
+            p_cat=prob_vector(CATEGORY_LABELS, {c.value: 0.95}),
+        )
+    if c.kind == "priority":
+        return dataclasses.replace(
+            core,
+            set_pri=PredictionSet(frozenset({c.value})),
+            p_pri=prob_vector(PRIORITY_LABELS, {c.value: 0.95}),
+        )
+    flags = {**core.evidence.flags, c.value: True}
+    core = dataclasses.replace(core, evidence=EvidenceVector(flags=flags, spans=core.evidence.spans))
+    implied = FEATURE_PRIORITY.get(c.value)
+    return _constrain(core, ClarificationConstraint("priority", implied.value)) if implied else core
+
+
+@dataclass
+class FakeFAQ:
+    """A `FAQRetriever` returning `hits` (best first) and recording each query; `error` is raised."""
+
+    hits: list[FAQHit] = field(default_factory=list)
+    error: Exception | None = None
+    queries: list[tuple[str, Lang, int]] = field(default_factory=list)
+
+    def search(self, text: str, lang: Lang, k: int) -> list[FAQHit]:
+        self.queries.append((text, lang, k))
+        if self.error is not None:
+            raise self.error
+        return self.hits[:k]

@@ -215,9 +215,9 @@ def test_daily_cap_is_per_amman_day() -> None:
     factory = Factory()
     notifier, _ = make_notifier(factory, clock=clock, cap=1)
     notifier.send(make_outbox(TO))
-    with pytest.raises(NotificationError) as info:
-        notifier.send(make_outbox(TO))
-    assert info.value.retryable is False and len(factory.made) == 1
+    held = notifier.send(make_outbox(TO))  # D-011: over the cap -> deferred, nothing sent
+    assert (held.status, held.provider_id, held.error) == ("deferred", None, "daily email cap of 1 reached")
+    assert len(factory.made) == 1
     clock.at = clock.at + timedelta(days=1)
     assert notifier.send(make_outbox(TO)).status == "sent"
 

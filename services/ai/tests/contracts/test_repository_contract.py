@@ -15,6 +15,7 @@ from typing import Any, Protocol
 import pytest
 from fixtures.supabase_test import supabase_test_client
 
+from campuspulse_ai.adapters.store import codec
 from campuspulse_ai.adapters.store.inmemory import InMemoryRepository
 from campuspulse_ai.domain.entities import (
     Case,
@@ -340,6 +341,23 @@ def test_ticket_round_trip_with_links(h: Harness) -> None:
     assert [link.sink for link in h.repo.get_ticket(saved.id).links] == ["linear", "webhook"]
 
 
+def test_ticket_tags_and_link_error_round_trip(h: Harness) -> None:
+    """D-011: `Ticket.tags` and `TicketLink.error` (-> ticket_links.last_error) survive a round trip.
+
+    While `tickets.tags` is a pending column (codec.PENDING_COLUMNS) SupabaseRepository drops it on
+    write, so the save must still succeed and the tags read back empty (graceful degradation).
+    """
+    req = h.repo.save_request(make_request(h))
+    ticket = make_ticket(req.id, sla=T0 + timedelta(hours=24))
+    ticket.tags = ("safety", "deferred:booking")
+    ticket.links = [TicketLink("", "linear", f"error:{h.tag}", None, "Linear timed out")]
+    saved = h.repo.save_ticket(ticket)
+    back = h.repo.get_ticket(saved.id)
+    assert back.links == saved.links and back.links[0].error == "Linear timed out"
+    tags_pending = isinstance(h, SupabaseHarness) and "tags" in codec.PENDING_COLUMNS.get("tickets", ())
+    assert back.tags == (() if tags_pending else ("safety", "deferred:booking"))
+
+
 def test_ticket_link_is_unique_per_sink(h: Harness) -> None:
     req = h.repo.save_request(make_request(h))
     a = h.repo.save_ticket(make_ticket(req.id, sla=T0))
@@ -389,6 +407,10 @@ def test_outbox_notification_and_events_save(h: Harness) -> None:
     msg = OutboxMessage("", "email", f"{h.tag}@example.invalid", "Ticket opened", "Body", None, "rejected",
                         T0, Priority.HIGH, frozenset({"safety"}))  # fmt: skip
     assert h.repo.save_outbox(msg).id
+    # D-011: a held-back message is `deferred` with its reason (mapped while the status is pending).
+    held = OutboxMessage("", "email", f"{h.tag}@example.invalid", "Cap", "Body", None, "deferred", T0,
+                         error="daily email cap of 100 reached")  # fmt: skip
+    assert h.repo.save_outbox(held).error == "daily email cap of 100 reached"
     h.repo.save_notification(h.tag, "ticket_status", {"status": "resolved", "at": T0})
     h.repo.append_event(h.tag, "test", "request", {"n": 1, "at": T0})
 

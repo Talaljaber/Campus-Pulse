@@ -61,9 +61,11 @@ _LINEAR_KEYS = frozenset(
     }
 )  # fmt: skip
 
+# Page sizes stay small: Linear rejects teams(first: 100) x states(first: 100) as "Query too complex"
+# (verified live by scripts/smoke_linear.py, 2026-10-31). The demo workspace has 2 teams, 6 states each.
 _TEAMS = (
-    "query CampusPulseTeams { teams(first: 100) { nodes { id key name "
-    "states(first: 100) { nodes { id name type position } } } } }"
+    "query CampusPulseTeams { teams(first: 20) { nodes { id key name "
+    "states(first: 50) { nodes { id name type position } } } } }"
 )
 _LABELS = "query CampusPulseLabels { issueLabels(first: 250) { nodes { id name } } }"
 _ISSUE = "query CampusPulseIssue($id: String!) { issue(id: $id) { id identifier url } }"
@@ -213,7 +215,7 @@ class LinearSink:
             "teamId": team.id,
             "title": self._title(ticket),
             "description": self._description(ticket),
-            "priority": self._mapping.priority_for(ticket.priority),
+            "priority": self._priority(ticket),
             "dueDate": ticket.sla_due_at.astimezone(ZoneInfo(self._mapping.timezone)).date().isoformat(),
         }
         label_id = self._label_id(ticket)
@@ -246,7 +248,7 @@ class LinearSink:
         link = self._link(ticket)
         if link is None:
             raise SinkError(f"ticket {ticket.id} has no Linear issue", retryable=False)
-        issue_input: dict[str, object] = {"priority": self._mapping.priority_for(ticket.priority)}
+        issue_input: dict[str, object] = {"priority": self._priority(ticket)}
         state_type = self._mapping.state_type_by_status.get(status)
         if state_type is not None:
             state_id = self._team(ticket.office).state_id(state_type)
@@ -303,10 +305,15 @@ class LinearSink:
     # ------------------------------------------------------------------ helpers
 
     def _link(self, ticket: Ticket) -> TicketLink | None:
+        # A link with `error` records a failed push (D-011), not an issue: it must not stop a retry.
         for link in ticket.links:
-            if link.sink == SINK_NAME:
+            if link.sink == SINK_NAME and link.error is None:
                 return link
         return self._created.get(ticket.id)
+
+    def _priority(self, ticket: Ticket) -> int:
+        """Linear priority: `priority_map.safety` (1, urgent) for a ticket tagged `safety` (D-011)."""
+        return self._mapping.priority_for(ticket.priority, safety=SAFETY_PRIORITY_KEY in ticket.tags)
 
     def _recover(self, ticket: Ticket) -> dict[str, Any] | None:
         try:
@@ -361,6 +368,8 @@ class LinearSink:
         )
         if ticket.provisional:
             trace += " | provisional: labels unconfirmed, waiting for staff review"
+        if ticket.tags:
+            trace += f" | tags: {', '.join(ticket.tags)}"
         body = ticket.body or ticket.title
         return f"{DEMO_BANNER}\n\n{body}\n\n---\n{TICKET_MARKER}{ticket.id}\n{trace}\n"
 

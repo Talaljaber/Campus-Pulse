@@ -28,6 +28,8 @@ def test_inapp_writes_one_notification_row() -> None:
     assert (row["alias"], row["kind"]) == ("student-17", "ticket_status")
     payload = row["payload"]
     assert payload["subject"] == "Ticket resolved" and payload["priority"] == "high"
+    # docs/api/README.md › Notifications payload: free text is `message`, and never `status`.
+    assert set(payload) == {"ref", "message", "subject", "priority", "flags"} and payload["message"]
     assert payload["flags"] == ["safety"]
     assert sent.status == "sent" and sent.provider_id == f"inapp:{payload['ref']}"
     assert repo.tables["outbox"] == {}  # only AllowlistedNotifier writes the outbox

@@ -336,10 +336,14 @@ class FAQHit:
 
 @dataclass(frozen=True, slots=True)
 class TicketLink:
+    """A ticket mirrored in an external sink. `error` is the last push error (D-011): a link with an
+    error is a failed push, stored in `ticket_links.last_error`, not a live mirror."""
+
     ticket_id: str
     sink: str
     external_id: str
     url: str | None = None
+    error: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
