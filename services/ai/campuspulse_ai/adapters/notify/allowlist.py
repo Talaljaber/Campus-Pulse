@@ -29,8 +29,10 @@ class AllowlistedNotifier:
       (`ActUseCase` catches it; triage never fails because of a notification, LD-15);
     - the inner notifier raises `RecipientNotAllowed` (its own defence-in-depth check) -> recorded
       as `rejected`, re-raised;
-    - otherwise the delivered message (status `sent`, `provider_id`) is saved and returned with its
-      outbox id.
+    - otherwise the returned message is saved as is (status `sent` with `provider_id`, or
+      `deferred` with `error`, e.g. the daily email cap) and returned with its outbox id.
+
+    Rejected and failed rows carry the reason in `OutboxMessage.error` (D-011).
 
     Must be the outermost decorator: inner notifiers do not write the outbox (see `outbox.py`).
     Errors: `RecipientNotAllowed`, `NotificationError`, `StoreError` (repository).
