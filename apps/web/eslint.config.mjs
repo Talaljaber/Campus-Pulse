@@ -10,7 +10,7 @@ const PHYSICAL_TEXT = String.raw`(^|[\s"'\`:])text-(left|right)([\s"'\`]|$)`;
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "coverage/**"]),
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "coverage/**", "src/lib/ai/types.gen.ts"]),
   {
     files: ["src/components/**/*.{ts,tsx}", "src/app/**/*.{ts,tsx}"],
     ignores: ["**/__tests__/**"],
@@ -33,14 +33,22 @@ export default defineConfig([
     },
   },
   {
-    // Presentational layer must not reach the data layer (ARCHITECTURE 1.7).
+    // Presentational layer must not reach the data layer (ARCHITECTURE 1.7). Type-only
+    // imports from `@/lib/ai/*` are allowed (DTO types); they are erased at build time.
     files: ["src/components/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**"],
     rules: {
-      "no-restricted-imports": [
+      "no-restricted-imports": "off",
+      "@typescript-eslint/no-restricted-imports": [
         "error",
         {
           patterns: [
-            { group: ["@/lib/supabase/*", "@/lib/ai/*", "@/lib/repos/*"], message: "Components are presentational; fetch in hooks/pages." },
+            { group: ["@/lib/supabase/*", "@/lib/repos/*"], message: "Components are presentational; fetch in hooks/pages." },
+            {
+              group: ["@/lib/ai/*"],
+              allowTypeImports: true,
+              message: "Components may only `import type` from @/lib/ai; fetch in hooks/pages.",
+            },
           ],
         },
       ],
