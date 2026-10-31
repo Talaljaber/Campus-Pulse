@@ -5,9 +5,10 @@ notifier outbox rows: it records `rejected`, `failed` or the sent message throug
 Inner notifiers never write the outbox, so each send is recorded exactly once, and use cases must not
 save it again.
 
-The `OutboxMessage` entity has no `error` field (frozen contract), so the reason for a rejected or
-failed send goes to the audit log (`events`: actor `notifier`, action `outbox.rejected` /
-`outbox.failed`, entity `outbox:<id>`, payload `{to_address, kind, reason, retryable}`).
+The reason for a rejected or failed send is written to the row's `error` (`outbox.error`, D-011).
+It is also kept in the audit log (`events`: actor `notifier`, action `outbox.rejected` /
+`outbox.failed`, entity `outbox:<id>`, payload `{to_address, kind, reason, retryable}`), so admins
+see it in the same timeline as every other action.
 """
 
 from __future__ import annotations
@@ -33,18 +34,23 @@ class OutboxRecorder:
         self._repo = repo
 
     def sent(self, msg: OutboxMessage) -> OutboxMessage:
-        """Record a message the inner notifier delivered (its status and provider id as returned)."""
+        """Record a message as the inner notifier returned it: `sent` (with provider id), or
+        `deferred` with its reason in `error` (e.g. the daily email cap)."""
         return self._repo.save_outbox(msg)
 
     def rejected(self, msg: OutboxMessage, error: RecipientNotAllowed) -> OutboxMessage:
         """Record a send the allow-list blocked: status `rejected`, nothing was sent."""
-        saved = self._repo.save_outbox(dataclasses.replace(msg, status="rejected", provider_id=None))
+        saved = self._repo.save_outbox(
+            dataclasses.replace(msg, status="rejected", provider_id=None, error=str(error))
+        )
         self._event(ACTION_REJECTED, saved, str(error), retryable=False)
         return saved
 
     def failed(self, msg: OutboxMessage, error: NotificationError) -> OutboxMessage:
         """Record a send the provider refused or could not complete: status `failed`."""
-        saved = self._repo.save_outbox(dataclasses.replace(msg, status="failed", provider_id=None))
+        saved = self._repo.save_outbox(
+            dataclasses.replace(msg, status="failed", provider_id=None, error=str(error))
+        )
         self._event(ACTION_FAILED, saved, str(error), retryable=error.retryable)
         return saved
 

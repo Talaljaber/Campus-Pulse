@@ -160,6 +160,33 @@ def test_create_sends_one_issue_with_the_mapped_fields(linear: FakeLinear, make_
     assert all(h["Authorization"] == API_KEY for h in linear.headers)
 
 
+def test_a_safety_ticket_is_urgent_and_lists_its_tags(linear: FakeLinear, make_sink: SinkFactory) -> None:
+    """D-011: the `safety` tag maps to Linear priority 1 on create and on update."""
+    linear.on("CampusPulseTeams", ok("teams.json"))
+    linear.on("CampusPulseLabels", ok("labels.json"))
+    linear.on("CampusPulseIssueCreate", ok("issue_create.json"))
+    linear.on("CampusPulseIssueUpdate", ok("issue_update.json"))
+    ticket = make_ticket(REQUEST_ID, id=TICKET_ID, office="facilities", category=Category.FACILITIES)
+    ticket.tags = ("safety", "exam-in-progress")
+    sink = make_sink()
+    sink.create(ticket)
+    issue = linear.calls[-1][1]["input"]
+    assert issue["priority"] == 1 and "tags: safety, exam-in-progress" in issue["description"]
+    sink.update_status(ticket)
+    assert linear.calls[-1][1]["input"]["priority"] == 1
+
+
+def test_a_failed_link_does_not_block_a_retry(linear: FakeLinear, make_sink: SinkFactory) -> None:
+    """D-011: a link that records a failed push (error set) is not an issue; create tries again."""
+    linear.on("CampusPulseTeams", ok("teams.json"))
+    linear.on("CampusPulseLabels", ok("labels.json"))
+    linear.on("CampusPulseIssueCreate", ok("issue_create.json"))
+    ticket = make_ticket(REQUEST_ID, id=TICKET_ID)
+    ticket.links = [TicketLink(TICKET_ID, "linear", f"error:{TICKET_ID}", error="Linear timed out")]
+    link = make_sink().create(ticket)
+    assert link.error is None and linear.ops().count("CampusPulseIssueCreate") == 1
+
+
 def test_due_date_is_the_amman_date(linear: FakeLinear, make_sink: SinkFactory) -> None:
     linear.on("CampusPulseTeams", ok("teams.json"))
     linear.on("CampusPulseLabels", ok("labels.json"))

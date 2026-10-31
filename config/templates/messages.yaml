@@ -1,0 +1,70 @@
+# Student-facing and notification texts of the triage, clarify and act use cases (P3.9, P3.10,
+# P4.8). Owner: Backend stream. Parsed by yaml.safe_load and validated by
+# campuspulse_ai.application.use_cases.messages.Messages.from_dict (unknown or missing keys are
+# errors). Placeholders use str.format.
+#
+# Rules: texts state only what the system really did; they never name a real person, fee, date or
+# policy. FAQ answers are retrieved and cited, never written here. Emails go only to allow-listed demo
+# inboxes (DEMO_EMAIL_ALLOWLIST), so they are written in English for developers/staff.
+#
+# The Arabic text is a draft in Jordanian register and needs a native-speaker check.
+
+version: 1
+
+student:
+  en:
+    distress: >-
+      It sounds like you're going through something really hard, and you don't have to deal with it
+      alone. A member of staff will reach out to you personally. You can talk to the university
+      counselling service [placeholder: counselling contact]. If you are in danger or thinking about
+      hurting yourself, call 911 now.
+    out_of_scope: >-
+      I couldn't tell what this is about. Could you rephrase it, or pick the topic that's closest?
+    human_review: "A staff member will confirm this; we've opened it as {category}."
+    ticket_opened: "Thanks, we've opened a ticket for {category} and the team will follow up with you here."
+    faq_source: "Source: {source}"
+    demo_marker: "[demo]"
+    faq_unsure: "I'm not sure. I've opened a ticket so a person can answer."
+    booking_confirmed: "You're booked with {advisor} on {starts_at}. We've emailed you the details."
+    booking_unavailable: >-
+      We couldn't book an advisor slot right now, so we've opened an urgent ticket and an advisor will
+      contact you.
+    safety: >-
+      If anyone is in danger, move away from the area and call campus security now (demo) or 911.
+      We've alerted the {office} team.
+    update_subject: "Your CampusPulse request"
+  ar:
+    distress: >-
+      حاسين إنك بتمر بإشي صعب كتير، وما لازم تواجهه لحالك. حدا من الموظفين رح يتواصل معك شخصياً. فيك
+      تحكي مع خدمة الإرشاد النفسي بالجامعة [placeholder: counselling contact]. إذا كنت بخطر أو بتفكر
+      تأذي حالك، اتصل على 911 هلأ.
+    out_of_scope: "ما قدرت أفهم شو الطلب. بتقدر تكتبه بطريقة ثانية، أو تختار الموضوع الأقرب؟"
+    human_review: "حدا من الموظفين رح يأكد هالطلب؛ فتحناه مبدئياً على أنه {category}."
+    ticket_opened: "شكراً، فتحنا تذكرة بخصوص {category} والفريق رح يتابع معك هون."
+    faq_source: "المصدر: {source}"
+    demo_marker: "[تجريبي]"
+    faq_unsure: "مش متأكد من الجواب، ففتحت تذكرة عشان حدا من الموظفين يجاوبك."
+    booking_confirmed: "حجزنالك موعد مع {advisor} بتاريخ {starts_at}. بعتنالك التفاصيل على الإيميل."
+    booking_unavailable: "ما قدرنا نحجز موعد مع مرشد هلأ، ففتحنا تذكرة مستعجلة ورح يتواصل معك مرشد."
+    safety: "إذا في حدا بخطر، ابعدوا عن المكان واتصلوا بأمن الحرم الجامعي هلأ (تجريبي) أو على 911. بلّغنا فريق {office}."
+    update_subject: "طلبك على CampusPulse"
+
+email:
+  booking_subject: "[CampusPulse demo] Advisor appointment: {title}"
+  booking_body: |-
+    An advisor appointment was booked by CampusPulse.
+    Advisor: {advisor}
+    When: {starts_at} to {ends_at} (Asia/Amman)
+    Ticket: {ticket_id}
+    Request: {text}
+  safety_subject: "[CampusPulse demo] SAFETY ALERT: {category} in {building}"
+  safety_body: |-
+    SAFETY ALERT (demo): call campus security now (demo).
+    Building: {building}
+    Ticket: {ticket_id} (priority high)
+    Request: {text}
+  transport_subject: "[CampusPulse demo] Transport alert: {title}"
+  transport_body: |-
+    A high-priority transport problem was reported (demo).
+    Ticket: {ticket_id}
+    Request: {text}

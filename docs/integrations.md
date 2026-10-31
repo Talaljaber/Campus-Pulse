@@ -27,8 +27,9 @@ attendee passes `RecipientPolicy(DEMO_EMAIL_ALLOWLIST)` in code; an empty list r
 - **Order** (`enabled` in `config/integrations.yaml`): `supabase` first (the system of record: the
   `tickets` row must exist before `ticket_links` can point at it), then `linear`.
 - **Failures never fail triage.** `ActUseCase` (P4.8) catches `SinkError` per sink, keeps going and
-  records the error for the dashboard. *Known gap:* `TicketLink` has no error field and the codec does
-  not write `ticket_links.last_error`, so recording the error needs a small contract change (filed).
+  records the error on a link `TicketLink(ticket_id, sink, external_id="error:<ticket id>", error=<message>)`,
+  which the codec writes to `ticket_links.last_error` (D-011). A link with `error` set is a failed push,
+  not a mirror: it is left out of `action.external`, and `LinearSink.create` ignores it and tries again.
 - `WebhookSink` is future work (UD-3) and is not built; its payload is specified in §5 for later.
 
 ### 1.2 `SupabaseSink(repo)` — `adapters/integrations/supabase_sink.py`
@@ -70,16 +71,20 @@ used. Smoke issue CDP-1 belongs to the lead; leave it alone.
 a personal API key, **no `Bearer` prefix** (verified). The key is a `SecretStr`, read only for the
 header, never logged, and masked in `repr`.
 
-**GraphQL operations.** "Verified" = checked with a real call on the CampusPulse workspace.
+**GraphQL operations.** "Verified" = checked with a real call on the CampusPulse workspace. Run log
+(2026-10-31, `scripts/smoke_linear.py`): `viewer` admin=True (the developer can create the webhook
+later); team CDP state types backlog, canceled, completed, duplicate, started, unstarted; issue CDP-2
+created with the ticket UUID as its id, moved to In Progress and Done, then archived. Still
+UNVERIFIED: the inbound webhook payload (no webhook exists until Render is deployed).
 
 | Operation | Document | Status |
 | --- | --- | --- |
 | `issueCreate` | `mutation CampusPulseIssueCreate($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { id identifier url } } }` with `input {teamId, title, description, priority, dueDate: "YYYY-MM-DD", labelIds}` | **verified** (lead, 2026-10-31: returned CDP-1 and its url) |
-| `issueCreate` input `id` | the CampusPulse ticket UUID, so a retried create can never make a second issue | UNVERIFIED |
-| `teams` | `teams(first: 100) { nodes { id key name states(first: 100) { nodes { id name type position } } } }`, once per process | UNVERIFIED (same query as the P4.0 smoke) |
-| `issueLabels` | `issueLabels(first: 250) { nodes { id name } }`, once per process | UNVERIFIED |
-| `issueUpdate` | `issueUpdate(id: $id, input: {stateId?, priority}) { success issue { id identifier url } }` | UNVERIFIED |
-| `issue` | `issue(id: $id) { id identifier url }`, to recover after a failed or repeated create | UNVERIFIED |
+| `issueCreate` input `id` | the CampusPulse ticket UUID, so a retried create can never make a second issue | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived): the returned issue id equals the ticket UUID |
+| `teams` | `teams(first: 20) { nodes { id key name states(first: 50) { nodes { id name type position } } } }`, once per process | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived). The first version (`first: 100` x `first: 100`) was rejected live with **HTTP 400 "Query too complex"**; fixed |
+| `issueLabels` | `issueLabels(first: 250) { nodes { id name } }`, once per process | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived): 6/6 category labels found |
+| `issueUpdate` | `issueUpdate(id: $id, input: {stateId?, priority}) { success issue { id identifier url } }` | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived): in_progress -> `started`, closed -> `completed`, priority kept, each read back |
+| `issue` | `issue(id: $id) { id identifier url }`, to recover after a failed or repeated create | **verified** (`scripts/smoke_linear.py`, 2026-10-31: CDP-2, archived): found by the ticket UUID |
 
 **Field mapping (ticket → issue).**
 
@@ -88,8 +93,8 @@ header, never logged, and masked in `repr`.
 | `id` | `ticket.id` | only when it is a UUID |
 | `teamId` | `ticket.office` | `team_by_office[office]` or `default_team` (CDP), resolved by key |
 | `title` | `ticket.title` (UD-10 `understanding.ticket_title`) | fallback `"<category> request (<priority>)"`; provisional tickets get `[unconfirmed] ` |
-| `description` | `ticket.body` (UD-10 `understanding.ticket_body`) | demo-data banner, the body, then `cp-ticket:<ticket id>` and a trace line `category / priority / office / SLA due` (+ "provisional" note) |
-| `priority` | `ticket.priority` | `priority_map`: high 2, medium 3, low 4; `safety` 1 is reserved for safety alerts (needs `Ticket.tags`, filed) |
+| `description` | `ticket.body` (UD-10 `understanding.ticket_body`) | demo-data banner, the body, then `cp-ticket:<ticket id>` and a trace line `category / priority / office / SLA due` (+ "provisional" note, + `tags: …` when the ticket has tags) |
+| `priority` | `ticket.priority`, `ticket.tags` | `priority_map`: high 2, medium 3, low 4; a ticket tagged `safety` gets `safety` = 1 (urgent), on create and on every update (D-011) |
 | `dueDate` | `ticket.sla_due_at` | the date in `Asia/Amman`, `YYYY-MM-DD` |
 | `labelIds` | `ticket.category` | `label_by_category` name → id (case-insensitive); a missing label is skipped |
 | `stateId` (update) | `ticket.status` | `state_type_by_status` → the team's first state (lowest `position`) of that type |
@@ -158,8 +163,8 @@ notifier = AllowlistedNotifier(
 
 | Class | Behaviour |
 | --- | --- |
-| `AllowlistedNotifier(inner, policy, repo)` | Outermost, and the **only writer of notifier outbox rows**. External kinds (`email`, and `whatsapp` if ever wired) must pass the allow-list, else: outbox `rejected`, audit event, inner **never called**, `RecipientNotAllowed` raised. Inner `NotificationError` → outbox `failed` + event, re-raised. Success → the sent message is saved (`sent`, `provider_id`). `in_app` is not checked (aliases, our own DB) but is recorded. |
-| `GmailSmtpNotifier` | stdlib `smtplib` (LD-3). 587: EHLO → STARTTLS (verified default SSL context) → EHLO → LOGIN → send; 465: `SMTP_SSL`. Plain text + HTML with the footer "Demo message from an integration-ready prototype; sent to a developer-owned inbox." `provider_id` = the generated Message-ID. Holds its own `RecipientPolicy` (refuses before connecting). At most `SMTP_DAILY_CAP` sends per Amman day (in-process). |
+| `AllowlistedNotifier(inner, policy, repo)` | Outermost, and the **only writer of notifier outbox rows**. External kinds (`email`, and `whatsapp` if ever wired) must pass the allow-list, else: outbox `rejected` (reason in `error`), audit event, inner **never called**, `RecipientNotAllowed` raised. Inner `NotificationError` → outbox `failed` (reason in `error`) + event, re-raised. Otherwise the returned message is saved as is (`sent` with `provider_id`, or `deferred` with `error`). `in_app` is not checked (aliases, our own DB) but is recorded. |
+| `GmailSmtpNotifier` | stdlib `smtplib` (LD-3). 587: EHLO → STARTTLS (verified default SSL context) → EHLO → LOGIN → send; 465: `SMTP_SSL`. Plain text + HTML with the footer "Demo message from an integration-ready prototype; sent to a developer-owned inbox." `provider_id` = the generated Message-ID. Holds its own `RecipientPolicy` (refuses before connecting). At most `SMTP_DAILY_CAP` sends per Amman day (in-process); above it the message comes back `deferred` (nothing sent). |
 | `InAppNotifier(repo)` | `kind="in_app"` only; `to_address` is the alias. Writes one `notifications` row `(alias, kind="message", payload {ref, subject, body, priority, flags})`; `provider_id = "inapp:<ref>"`. Students get updates this way (D-006). |
 | `ChannelNotifier({kind: notifier})` | dispatch on `msg.kind`; an unconfigured channel → `NotificationError(retryable=False)`. Leaving `email` out is the SMTP-blocked fallback (OQ-5). |
 
@@ -168,9 +173,14 @@ notifier = AllowlistedNotifier(
 disconnects, connect errors, timeouts, `OSError` (blocked port). Retryable errors are retried
 `SMTP_MAX_RETRIES` (2) times with `SMTP_BACKOFF_S * 2**n` (1 s, 2 s), then raised retryable.
 
-**Why reasons go to `events`.** `OutboxMessage` has no `error` field (frozen contract), so the reason
-of a rejected/failed send is an audit event: actor `notifier`, action `outbox.rejected` /
-`outbox.failed`, entity `outbox:<id>`, payload `{to_address, kind, reason, retryable}`.
+**Where reasons go (D-011).** A rejected or failed send has its reason in `OutboxMessage.error`
+(`outbox.error`). The audit event is still written for the admin timeline: actor `notifier`, action
+`outbox.rejected` / `outbox.failed`, entity `outbox:<id>`, payload `{to_address, kind, reason, retryable}`.
+
+**Daily cap → `deferred`.** Above `SMTP_DAILY_CAP` the Gmail notifier sends nothing and returns the
+message with `status: "deferred"` and `error: "daily email cap of N reached"`; the outbox row is
+saved as such. Until the DB allows `deferred` in the `outbox.status` check, `SupabaseRepository`
+writes it as `queued` with `error: "deferred: …"` (`codec.for_live_schema`).
 
 ## 4. Advisor booking (calendar)
 
@@ -211,4 +221,4 @@ Receivers should reject timestamps older than 5 minutes and dedupe on `event_id`
 | Check | Command | Expected |
 | --- | --- | --- |
 | Email, once | `python scripts/smoke_email.py --to <allow-listed inbox> --yes` | `SMTP OK port=587 message_id=<…@gmail.com> outbox=sent`. Refuses (exit 2, nothing sent) without `--yes` or for an address not on `DEMO_EMAIL_ALLOWLIST`. |
-| Linear | `scripts/smoke_linear.py` (P4.0, not written yet) | should exercise `teams`, `issueLabels`, `issueCreate` with `id`, `issueUpdate` and `issue`, then archive its demo-labelled issue |
+| Linear | `python scripts/smoke_linear.py --env-file <path to .env> --yes` (in a worktree set `PYTHONPATH=services/ai`) | `Linear OK team=CDP checks=9/9 archived=1 webhook=not-created`: `viewer` (admin), `teams`, `issueLabels`, `issueCreate` with `id`, `issue`, `issueUpdate` (twice, read back), then `issueArchive` of every issue it created (also after a failure). Refuses (exit 2) without `--yes` or a key. Never creates a webhook. |

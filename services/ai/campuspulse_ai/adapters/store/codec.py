@@ -54,6 +54,36 @@ from campuspulse_ai.domain.values import (
 
 Row = dict[str, Any]
 
+# --------------------------------------------------------------------------- live-schema guard (D-011)
+#
+# The domain writes a few things the live Supabase schema does not have yet (DB change request
+# D-011). Until the DB stream ships the migration, SupabaseRepository passes every row through
+# `for_live_schema`, which drops the missing columns and maps the missing enum values, so a write
+# never fails on them. InMemoryRepository keeps the full rows (it models the target schema).
+# When the migration lands, empty these two mappings; nothing else changes.
+PENDING_COLUMNS: Mapping[str, frozenset[str]] = {"tickets": frozenset({"tags"})}
+"""table -> columns the codec writes that the live schema lacks (dropped on write, read as default)."""
+PENDING_VALUES: Mapping[tuple[str, str], Mapping[str, str]] = {("outbox", "status"): {"deferred": "queued"}}
+"""(table, column) -> {value the check constraint rejects: the value written instead}."""
+
+
+def for_live_schema(table: str, row: Row) -> Row:
+    """`row` as the live schema accepts it (see PENDING_COLUMNS / PENDING_VALUES).
+
+    A mapped value keeps its meaning in `error` when the table has one (e.g. a `deferred` outbox row
+    is written as `queued` with error `deferred: <reason>`).
+    """
+    out = {k: v for k, v in row.items() if k not in PENDING_COLUMNS.get(table, frozenset())}
+    for (tbl, column), mapping in PENDING_VALUES.items():
+        value = out.get(column)
+        if tbl != table or not isinstance(value, str) or value not in mapping:
+            continue
+        out[column] = mapping[value]
+        if "error" in out:
+            reason = out.get("error") or ""
+            out["error"] = reason if reason.startswith(f"{value}:") else f"{value}: {reason}".rstrip(": ")
+    return out
+
 
 # --------------------------------------------------------------------------- scalars
 
@@ -385,6 +415,7 @@ def ticket_row(t: Ticket) -> Row:
         "body": t.body,
         "escalated_at": iso(t.escalated_at),
         "resolved_at": iso(t.resolved_at),
+        "tags": list(t.tags),
     }
 
 
@@ -394,6 +425,7 @@ def link_row(link: TicketLink) -> Row:
         "sink": link.sink,
         "external_id": link.external_id,
         "external_url": link.url,
+        "last_error": link.error,
     }
 
 
@@ -403,6 +435,7 @@ def to_link(row: Mapping[str, Any]) -> TicketLink:
         sink=row["sink"],
         external_id=row["external_id"],
         url=row.get("external_url"),
+        error=row.get("last_error"),
     )
 
 
@@ -422,6 +455,7 @@ def to_ticket(row: Mapping[str, Any], links: list[TicketLink]) -> Ticket:
         escalated_at=parse_dt(row.get("escalated_at")),
         resolved_at=parse_dt(row.get("resolved_at")),
         links=links,
+        tags=tuple(row.get("tags") or ()),
     )
 
 
@@ -470,6 +504,7 @@ def outbox_row(m: OutboxMessage) -> Row:
         "status": m.status,
         "priority": str(m.priority) if m.priority else None,
         "flags": sorted(m.flags),
+        "error": m.error,
         "created_at": iso(m.created_at),
     }
 

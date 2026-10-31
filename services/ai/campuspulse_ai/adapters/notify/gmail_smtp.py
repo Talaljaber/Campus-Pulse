@@ -73,14 +73,16 @@ class GmailSmtpNotifier:
 
     Errors, all `NotificationError(retryable=...)` (LD-15):
     - not retryable: authentication failure (535), recipients refused, a 5xx reply, STARTTLS not
-      supported, a non-email message, the daily cap reached; also `RecipientNotAllowed` (not an
-      allow-listed address, raised before any connection);
+      supported, a non-email message; also `RecipientNotAllowed` (not an allow-listed address,
+      raised before any connection);
     - retryable: a 4xx reply, a disconnect, a connect error, a timeout, or `OSError` (e.g. the port
       is blocked). These are retried `max_retries` times with backoff `backoff_s * 2**attempt`,
       then raised.
 
     Daily cap: at most `daily_cap` successful sends per day of `clock` (Asia/Amman), counted in
     this process (Gmail's own limit is 500 recipients a day; the cap keeps the demo far below it).
+    Above the cap nothing is sent and `send` returns the message with `status="deferred"` and the
+    reason in `error` (P4.4 step 4, D-011); `AllowlistedNotifier` records that row as returned.
     The app password is a `SecretStr`, read only for `login`, and masked in `repr`.
     """
 
@@ -137,7 +139,8 @@ class GmailSmtpNotifier:
         today = self._clock.now().date()
         sent_today = self._sent_on[1] if self._sent_on and self._sent_on[0] == today else 0
         if sent_today >= self._daily_cap:
-            raise NotificationError(f"daily email cap of {self._daily_cap} reached", retryable=False)
+            reason = f"daily email cap of {self._daily_cap} reached"
+            return dataclasses.replace(msg, status="deferred", provider_id=None, error=reason)
 
         email, message_id = self._build(msg)
         last: NotificationError | None = None

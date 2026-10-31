@@ -1,0 +1,20 @@
+# Action-engine settings that are not routing (P4.8). Owner: Backend stream. Parsed by
+# yaml.safe_load and validated by campuspulse_ai.application.use_cases.act.ActConfig.from_dict
+# (unknown or missing keys are errors). The routing table itself is config/actions.yaml; tau_faq is
+# FrozenConfig.thresholds.tau_faq; the demo inboxes come from Settings (DEMO_STUDENT_INBOX,
+# DEMO_OFFICE_INBOX).
+version: 1
+
+# FAQ answer-first: how many hits to fetch; the best one is used when its score >= tau_faq.
+faq_top_k: 3
+
+# Advisor booking (UD-1: Academic Support x high only). Advisors come from
+# Repository.advisors_for(department); the slot must lie inside these office hours. These are the
+# seed advisors' hours (supabase/seed/02_advisors.sql): Sunday-Thursday 09:00-15:00 Amman.
+booking:
+  department: academic
+  office_hours:
+    tz: Asia/Amman
+    weekdays: [6, 0, 1, 2, 3]   # Monday = 0, so Sunday = 6
+    start: "09:00"
+    end: "15:00"
