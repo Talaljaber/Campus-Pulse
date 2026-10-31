@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Supabase MCP generate_typescript_types for project efsanbaklpiakhsndhph
-// after migration 0011. Regenerate after every migration: see docs/db/schema.md › TypeScript types.
+// after migration 0012. Regenerate after every migration: see docs/db/schema.md › TypeScript types.
 export type Json =
   | string
   | number
@@ -63,6 +63,7 @@ export type Database = {
           fictional_name: string
           id: string
           office_hours: Json | null
+          profile_id: string | null
           room: string | null
         }
         Insert: {
@@ -73,6 +74,7 @@ export type Database = {
           fictional_name: string
           id?: string
           office_hours?: Json | null
+          profile_id?: string | null
           room?: string | null
         }
         Update: {
@@ -83,9 +85,18 @@ export type Database = {
           fictional_name?: string
           id?: string
           office_hours?: Json | null
+          profile_id?: string | null
           room?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "advisors_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       buildings: {
         Row: {
@@ -587,24 +598,35 @@ export type Database = {
       }
       profiles: {
         Row: {
+          advisor_id: string | null
           alias: string | null
           id: string
           office: string | null
           role: string
         }
         Insert: {
+          advisor_id?: string | null
           alias?: string | null
           id: string
           office?: string | null
           role?: string
         }
         Update: {
+          advisor_id?: string | null
           alias?: string | null
           id?: string
           office?: string | null
           role?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       redteam_runs: {
         Row: {
@@ -748,11 +770,13 @@ export type Database = {
       }
       review_queue: {
         Row: {
+          assignee: string | null
           corrected_category: string | null
           corrected_priority: string | null
           created_at: string
           id: string
           note: string | null
+          office: string | null
           prediction_id: string
           reason: string
           resolved_at: string | null
@@ -760,11 +784,13 @@ export type Database = {
           status: string
         }
         Insert: {
+          assignee?: string | null
           corrected_category?: string | null
           corrected_priority?: string | null
           created_at?: string
           id?: string
           note?: string | null
+          office?: string | null
           prediction_id: string
           reason: string
           resolved_at?: string | null
@@ -772,11 +798,13 @@ export type Database = {
           status?: string
         }
         Update: {
+          assignee?: string | null
           corrected_category?: string | null
           corrected_priority?: string | null
           created_at?: string
           id?: string
           note?: string | null
+          office?: string | null
           prediction_id?: string
           reason?: string
           resolved_at?: string | null
@@ -784,6 +812,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "review_queue_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "review_queue_prediction_id_fkey"
             columns: ["prediction_id"]

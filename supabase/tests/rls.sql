@@ -1,7 +1,7 @@
 -- RLS proof (ARCHITECTURE §3.14, P4.1). Plain SQL, no pgTAP. Runs as postgres inside one
 -- transaction that is rolled back, so fixtures never persist. Each check impersonates a
 -- client by setting request.jwt.claims and `set local role`, exactly as PostgREST does.
--- Output: one row per check, then a summary row "RLS: n/11 checks passed".
+-- Output: one row per check, then a summary row "RLS: n/13 checks passed".
 -- Run: scripts/test_rls.py (local stack via psql), or paste into the SQL editor / MCP.
 -- Fixture identities are fictional aliases; emails use the reserved example.invalid domain.
 
@@ -15,14 +15,18 @@ insert into auth.users (id, email, aud, role) values
   ('00000000-0000-4000-8000-00000000a002', 'rls-student-b@example.invalid', 'authenticated', 'authenticated'),
   ('00000000-0000-4000-8000-00000000a003', 'rls-staff-it@example.invalid',  'authenticated', 'authenticated'),
   ('00000000-0000-4000-8000-00000000a004', 'rls-staff-fin@example.invalid', 'authenticated', 'authenticated'),
-  ('00000000-0000-4000-8000-00000000a005', 'rls-admin@example.invalid',     'authenticated', 'authenticated');
+  ('00000000-0000-4000-8000-00000000a005', 'rls-admin@example.invalid',     'authenticated', 'authenticated'),
+  ('00000000-0000-4000-8000-00000000a006', 'rls-advisor-1@example.invalid', 'authenticated', 'authenticated'),
+  ('00000000-0000-4000-8000-00000000a007', 'rls-advisor-2@example.invalid', 'authenticated', 'authenticated');
 
 insert into public.profiles (id, role, office, alias) values
   ('00000000-0000-4000-8000-00000000a001', 'student', null,      'rls-student-a'),
   ('00000000-0000-4000-8000-00000000a002', 'student', null,      'rls-student-b'),
   ('00000000-0000-4000-8000-00000000a003', 'staff',   'it',      'rls-staff-it'),
   ('00000000-0000-4000-8000-00000000a004', 'staff',   'finance', 'rls-staff-fin'),
-  ('00000000-0000-4000-8000-00000000a005', 'admin',   null,      'rls-admin');
+  ('00000000-0000-4000-8000-00000000a005', 'admin',   null,      'rls-admin'),
+  ('00000000-0000-4000-8000-00000000a006', 'staff',   'academic', 'rls-advisor-1'),
+  ('00000000-0000-4000-8000-00000000a007', 'staff',   'academic', 'rls-advisor-2');
 
 insert into public.requests (id, alias, raw_text, lang, status) values
   ('00000000-0000-4000-8000-0000000b0001', 'rls-student-a', 'wifi down in M', 'en', 'decided'),
@@ -31,7 +35,8 @@ insert into public.requests (id, alias, raw_text, lang, status) values
 insert into public.predictions (id, request_id, category, priority, flags) values
   ('00000000-0000-4000-8000-0000000c0001', '00000000-0000-4000-8000-0000000b0001', 'IT Support', 'high',
    array['urgency_unsupported', 'priority_gaming_suspected', 'needs_review']),
-  ('00000000-0000-4000-8000-0000000c0002', '00000000-0000-4000-8000-0000000b0002', 'Finance', 'medium', '{}');
+  ('00000000-0000-4000-8000-0000000c0002', '00000000-0000-4000-8000-0000000b0002', 'Finance', 'medium', '{}'),
+  ('00000000-0000-4000-8000-0000000c0003', '00000000-0000-4000-8000-0000000b0002', 'Academic Support', 'medium', '{}');
 
 insert into public.tickets (id, request_id, office, category, priority, sla_due_at) values
   ('00000000-0000-4000-8000-0000000d0001', '00000000-0000-4000-8000-0000000b0001', 'it',      'IT Support', 'high',   now() + interval '4 hours'),
@@ -40,6 +45,12 @@ insert into public.tickets (id, request_id, office, category, priority, sla_due_
 insert into public.review_queue (prediction_id, reason) values
   ('00000000-0000-4000-8000-0000000c0001', 'rls fixture'),
   ('00000000-0000-4000-8000-0000000c0001', 'distress');
+
+-- academic items (office filled by trigger from the category, 0012): one per advisor, one unassigned
+insert into public.review_queue (prediction_id, reason, assignee) values
+  ('00000000-0000-4000-8000-0000000c0003', 'rls advisor', '00000000-0000-4000-8000-00000000a006'),
+  ('00000000-0000-4000-8000-0000000c0003', 'rls advisor', '00000000-0000-4000-8000-00000000a007'),
+  ('00000000-0000-4000-8000-0000000c0003', 'rls advisor', null);
 
 insert into public.notifications (alias, kind) values
   ('office:it', 'rls fixture'), ('office:finance', 'rls fixture'), ('rls-student-a', 'rls fixture');
@@ -53,6 +64,7 @@ declare
   v_a   constant uuid := '00000000-0000-4000-8000-00000000a001';
   v_it  constant uuid := '00000000-0000-4000-8000-00000000a003';
   v_adm constant uuid := '00000000-0000-4000-8000-00000000a005';
+  v_adv constant uuid := '00000000-0000-4000-8000-00000000a006';
   n_own int; n_other int; n int; m int; v_flags text[]; v_err text;
 begin
   -- 1. student A sees own request, not student B's
@@ -172,6 +184,23 @@ begin
   reset role;
   insert into _rls values (11, 'staff never read distress review items (admin does)', n = 0 and m = 1,
                            format('staff=%s admin=%s', n, m));
+
+  -- 12. an advisor reads their own items and the unassigned academic queue, not another advisor's (0012)
+  perform set_config('request.jwt.claims', json_build_object('sub', v_adv, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) filter (where assignee = v_adv or assignee is null),
+         count(*) filter (where assignee is not null and assignee <> v_adv)
+    into n_own, n_other from public.review_queue where reason = 'rls advisor';
+  reset role;
+  insert into _rls values (12, 'advisor reads own + unassigned academic items only', n_own = 2 and n_other = 0,
+                           format('own_or_queue=%s other_advisor=%s', n_own, n_other));
+
+  -- 13. IT staff read no academic review items (0012)
+  perform set_config('request.jwt.claims', json_build_object('sub', v_it, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.review_queue where reason = 'rls advisor';
+  reset role;
+  insert into _rls values (13, 'IT staff read no academic review items', n = 0, format('rows=%s', n));
 end $$;
 
 select n, name, ok, detail from _rls
