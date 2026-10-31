@@ -186,6 +186,48 @@ The frozen training index and the injection/safety exemplars are **not** in Post
   - **Scope:** it is the only store `build_offline` may construct. `collections=` pre-creates empty collections (tests).
 - **Isolation:** the pgvector modules import `supabase` for typing only, and `local_numpy` imports nothing online. `tests/invariants/test_vector_isolation.py` enforces this.
 
+## Memory stores (`adapters/memory/`)
+
+| Class | Where | Behaviour |
+| --- | --- | --- |
+| `PgVectorMemoryStore(vectors, client)` | online | `memory_examples` via `PgVectorStore("memory")` |
+| `InMemoryMemoryStore()` | tests, offline red team | dict-backed; same contract (`tests/contracts/test_memory_store_contract.py`, 7 cases) |
+| `NullMemoryStore()` | `build_offline` (§3.11) | always empty; `add` raises `StoreError`, `deactivate` raises `NotFound` |
+
+All three implement the same `MemoryStore` contract:
+- `neighbors` are cosine matches over **active** examples, ties broken by id, with `source="memory"`.
+- `stats.by_category` counts active examples only.
+- `last_added_at` is the newest `created_at`.
+
+## Incident detection (Pulse)
+
+`adapters/pulse/incident_detector.py`: **`WindowedCentroidDetector(repo, vectors, clock, tau_inc, window_min, min_reports=3, bump_at=6)`** implements `IncidentDetector`.
+
+For each located request, `detect(req, pred, embedding)` works like this:
+1. **Search:** `vectors.search("requests", embedding, k=50, filters={building_id, category, since: now − window_min, with_embedding: true})`. The request itself is excluded if it is already stored.
+2. **Cluster:** centroid = normalised mean of those embeddings plus the new one. Members = rows with cosine to the centroid ≥ `tau_inc`, and the request must be one of them.
+3. **Decide:**
+   - fewer than `min_reports` members → `none`;
+   - an open incident for that building and category, opened inside the window → `attach` (`report_count + 1`);
+   - otherwise → `new` (`report_count = members`).
+4. **Save:** the incident is saved through the repository.
+   - Priority = max of the member priorities.
+   - It is bumped one level, once, when `report_count` first reaches `bump_at` (capped at high).
+   - `incidents.office` is filled by the 0007 trigger when the first member ticket is attached.
+5. **Return:** `IncidentDecision.members` = the member request ids, with `req` last.
+
+The action engine (P4.8) owns the rest: marking member tickets `merged` with `incident_id`, the single incident ticket through the sinks, the broadcast, and `ResolveIncidentUseCase`.
+
+**Config:**
+- `tau_inc`: constructor argument until `config/hand_tuned.yaml` → FrozenConfig exists (LD-11); default 0.80.
+- `window_min`: Settings `INCIDENT_WINDOW_MIN` (30).
+- `min_reports` and `bump_at`: constructor arguments.
+
+**Simulator:** `python scripts/simulate_pulse.py --scenario config/simulation/wifi_m.yaml [--interval 4] [--reset]` replays 8 fictional reports (EN/AR/Arabizi, building M) as `sim-0N` with `requests.simulated = true`.
+- **Direct mode (default):** writes request, prediction and embedding through `SupabaseRepository` + `PgVectorStore`, then calls the detector. It uses the frozen encoder if `models/frozen/v1/encoder` exists, otherwise synthetic topic vectors (it prints which).
+- **API mode:** `--mode api` is a TODO for P4.14 (`/v1/triage`).
+- **`--reset`:** deletes earlier simulated requests and the open incident from this window.
+
 ## Realtime
 
 Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, `outbox`, `notifications` and `requests` (`requests` is for the Pulse dots, LD-25). Supabase applies RLS to `postgres_changes`, so each subscriber receives only rows its SELECT policy allows. Students subscribe to `notifications` only.
@@ -203,7 +245,7 @@ Publication `supabase_realtime` includes `predictions`, `tickets`, `incidents`, 
 | `Ticket` | `tickets` + `ticket_links` | `save_ticket` also upserts its links; links are read back ordered by `sink`. `(sink, external_id)` is unique. |
 | `Incident` | `incidents` | `building` ⇄ `building_id`. `member_ticket_ids` is derived from `tickets.incident_id` (by `created_at, id`); `save_incident` points the listed tickets at the incident. |
 | `OutboxMessage` | `outbox` | The domain `kind` (transport) is written to both `kind` and `channel`. `alias`/`request_id` are not in the entity, so they stay null. |
-| `StudentSignals` | `student_signals` | `bump_student_signals` is atomic (RPC). `gaming_suspected` = the stored `gaming_flag`; no port method sets it yet (P3.6 decides it). |
+| `StudentSignals` | `student_signals` | `bump_student_signals` is atomic (RPC). `gaming_suspected` = the stored `gaming_flag`, which stays unused (lead decision): GamingDetector (P3.6) computes suspicion from the returned counters. |
 | `Scorecard` | `redteam_runs.scorecard` | `run_id` is kept if it is a UUID, else a new UUID is returned. History is newest first. |
 | `Slot`, `Advisor`, `Case` | `advisor_slots`, `advisors`, `cases` | `claim_slot` = `update … where id = ? and booked_by is null`, true only for the winner. `free_slots` = unbooked and inside the window, by `starts_at, id`. |
 | events, notifications | `events`, `notifications` | Payloads go through a JSON round trip (datetimes become ISO strings); `at`/`created_at` = `clock.now()`. |
