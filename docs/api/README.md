@@ -210,6 +210,67 @@ Every LLM call (oracle and understander) is logged through the `CostLogger` port
 - **Where it shows.** `explanation.trace.cost_usd`, and `router` in `/v1/metrics`. Online, `SupabaseCostLogger` writes the `llm_calls` rows (P4); offline and in tests it is `InMemoryCostLogger`.
 - **Caches.** `SqliteCache` (offline `--use-llm`) or `SupabaseCache` (online, P4) keep the raw validated reply under the same key. A second identical request makes no call.
 
+<a id="actions-side-effects"></a>
+## Actions and side effects (tickets, emails, bookings)
+
+What `/v1/triage` (and `/v1/feedback` after a confirmation) *does* once the labels are decided. The
+building blocks exist (P3.6, P3.8, P4.4, P4.6, P4.7); `ActUseCase` wires them into the routes in
+P4.8 and the webhook route arrives in P4.9, so the side effects below are the contract those tasks
+implement. Integration details: [docs/integrations.md](../integrations.md).
+
+### Routing (`action.type`, `action.tags`) — `config/actions.yaml`, UD-1
+
+| Category | low | medium | high |
+| --- | --- | --- | --- |
+| Academic Support (`academic`) | `faq_answer` | `ticket` + `office-hours-queue` | `booking` + a ticket (the **only** booking cell) |
+| Registration (`registrar`) | `faq_answer` | `ticket` | `ticket` + `same-day-escalation` (no booking) |
+| IT Support (`it`) | `faq_answer` + `self-help` | `ticket` | `ticket` (+ `exam-in-progress` when the `exam_now` evidence fired) |
+| Finance (`finance`) | `faq_answer` | `ticket` | `ticket` + `escalation` |
+| Transportation (`transport`) | `faq_answer` + `timetable` | `ticket` | `ticket` + `transport-alert` (also alerts the transport office) |
+| Facilities (`facilities`) | `ticket` | `ticket` | `safety_alert` + a ticket, tag `safety` |
+
+- **Office** (in brackets) is the D-005 code written to `tickets.office`; staff see their office's tickets.
+- **SLA:** `action.sla_due_at` = creation + 24 h (high), 72 h (medium), 336 h = 14 days (low).
+- **Flag `safety`** (any category): `safety_alert` + ticket, priority high, fires immediately, even
+  for `human_review`.
+- **`human_review` (provisional):** a ticket only, `action.provisional: true`, tag `unconfirmed`;
+  the cell's own action is kept as tag `deferred:<kind>` (e.g. `deferred:booking`) and runs only
+  after staff confirm via `/v1/feedback`.
+- **`faq_answer`:** answered from the FAQ when the best match ≥ `tau_faq`, otherwise a ticket.
+
+### Side effects
+
+| Effect | When | Where it shows |
+| --- | --- | --- |
+| `tickets` row | every `ticket`, `booking`, `safety_alert` (and an unanswered FAQ) | `action.ticket_id`; staff dashboard (RLS by office) |
+| Linear issue | each ticket, when `LINEAR_API_KEY` is set (team CDP, label = category, due date = SLA date) | `action.external[]` `{sink: "linear", external_id, url}`. A Linear failure never fails triage. |
+| Ticket status from Linear | a signed `POST /v1/integrations/linear/webhook` that changes the issue state | ticket status; the student gets an in-app `notifications` row |
+| Advisor booking | Academic Support × high, not provisional | `action.booking`; the slot's `booked_by`; a `cases` row |
+| Email | booking confirmation (student + advisor), safety/transport alerts, resolution notices | `outbox` row (`sent`, `provider_id` = Message-ID) |
+| In-app message | status changes and replies to students (D-006) | `notifications` row for the alias (Realtime) |
+
+### Allow-list behaviour (never contacting real people)
+
+- Every email recipient and every booking attendee must be on `DEMO_EMAIL_ALLOWLIST`: an exact,
+  case-insensitive match with no plus-address or subdomain wildcards. **An empty list rejects all.**
+- A rejected email is **not sent**: an `outbox` row with `status: "rejected"` is written, and the
+  reason is in the `events` audit log (`action: outbox.rejected`). A provider failure is an `outbox`
+  row with `status: "failed"` (`events` `outbox.failed`). Neither changes the HTTP response: the
+  triage still succeeds.
+- A booking with a non-allow-listed attendee is refused before the slot is claimed.
+- In-app messages go to an alias inside our database and are not checked, but are recorded in
+  `outbox` the same way.
+
+### Anti-gaming flags (P3.6)
+
+`GamingDetector` runs after the priority is final and only adds flags; it never changes a label.
+- `urgency_unsupported`: this request claims urgency ("URGENT", "عاجل") but the priority is not high
+  and no high-urgency evidence fired (`deadline_today`, `exam_now`, `safety_risk`, `stranded`,
+  `enrollment_blocked`). Staff only.
+- `priority_gaming_suspected`: for this alias, after at least `GAMING_MIN_REQUESTS` (5) requests,
+  ≥ `GAMING_CLAIM_RATIO` (0.8) of them claim urgency and ≤ `GAMING_HIGH_RATIO_MAX` (0.2) of those
+  claims were really high; or 2 injection attempts. Admin only; no penalty.
+
 ## Optional extras
 
 `POST /v1/admin/simulate` (P5.19) and `POST /v1/admin/reindex` (P4.20) are B-list extras.

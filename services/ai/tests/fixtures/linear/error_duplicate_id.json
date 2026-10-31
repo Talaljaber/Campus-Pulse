@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "message": "Entity already exists",
+      "extensions": {"type": "invalid input", "code": "INPUT_ERROR", "userPresentableMessage": "An issue with this id already exists."}
+    }
+  ],
+  "data": null
+}

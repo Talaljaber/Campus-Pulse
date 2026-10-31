@@ -1,0 +1,30 @@
+{
+  "data": {
+    "teams": {
+      "nodes": [
+        {
+          "id": "8b4300c4-0a05-4581-bd9d-b761e8b6ee70",
+          "key": "CDP",
+          "name": "CampusPulse",
+          "states": {
+            "nodes": [
+              {"id": "st-backlog", "name": "Backlog", "type": "backlog", "position": 0},
+              {"id": "st-review", "name": "In Review", "type": "started", "position": 3},
+              {"id": "st-todo", "name": "Todo", "type": "unstarted", "position": 1},
+              {"id": "st-progress", "name": "In Progress", "type": "started", "position": 2},
+              {"id": "st-done", "name": "Done", "type": "completed", "position": 4},
+              {"id": "st-canceled", "name": "Canceled", "type": "canceled", "position": 5},
+              {"id": "st-duplicate", "name": "Duplicate", "type": "duplicate", "position": 6}
+            ]
+          }
+        },
+        {
+          "id": "0e4a1b5c-0000-4000-8000-00000000f1ce",
+          "key": "FAC",
+          "name": "Facilities (test-only team)",
+          "states": {"nodes": [{"id": "fac-todo", "name": "Todo", "type": "unstarted", "position": 0}]}
+        }
+      ]
+    }
+  }
+}

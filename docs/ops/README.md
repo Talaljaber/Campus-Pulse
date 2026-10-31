@@ -63,12 +63,21 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `GMAIL_APP_PASSWORD` | local, Render | yes | ai | needs 2-Step Verification |
 | `SMTP_HOST` | local, Render | no | ai | `smtp.gmail.com` |
 | `SMTP_PORT` | local, Render | no | ai | `587` (STARTTLS). Render Free blocks 587; Starter is believed open, verify on day one |
+| `SMTP_TIMEOUT_S` | local, Render | no | ai | default `10` (seconds per SMTP connection) |
+| `SMTP_MAX_RETRIES` | local, Render | no | ai | default `2`; 4xx replies, disconnects, timeouts and a blocked port only |
+| `SMTP_BACKOFF_S` | local, Render | no | ai | default `1.0`; exponential (`backoff * 2**attempt`) |
+| `SMTP_DAILY_CAP` | local, Render | no | ai | default `100` sends per Asia/Amman day (Gmail allows 500); counted in-process, reset on restart |
 | `DEMO_EMAIL_ALLOWLIST` | local, Render | no | ai | comma-separated; empty rejects every recipient |
 | `LINEAR_API_KEY` | local, Render | yes | ai | |
 | `LINEAR_WEBHOOK_SECRET` | local, Render | yes | ai | |
 | `OUTBOUND_WEBHOOK_URL` | local, Render | no | ai | optional |
 | `OUTBOUND_WEBHOOK_SECRET` | local, Render | yes | ai | optional |
 | `ENABLE_SINKS` | local, Render | no | ai | default `true` |
+| `SINK_RETRY_MAX` | local, Render | no | ai | default `3` attempts per sink call (retryable `SinkError` only) |
+| `SINK_RETRY_BASE_S` | local, Render | no | ai | default `0.5`; exponential (`base * 2**(attempt-1)`) |
+| `GAMING_MIN_REQUESTS` | local, Render | no | ai | default `5`; requests before an alias can be flagged `priority_gaming_suspected` |
+| `GAMING_CLAIM_RATIO` | local, Render | no | ai | default `0.8`; share of requests that claim urgency |
+| `GAMING_HIGH_RATIO_MAX` | local, Render | no | ai | default `0.2`; max share of those claims that were really high |
 | `SLA_SCAN_MINUTES` | local, Render | no | ai | default `5` |
 | `INCIDENT_WINDOW_MIN` | local, Render | no | ai | default `30` |
 | `ARTIFACT_DIR` | local, Render | no | ai | default `models/frozen` |
@@ -85,7 +94,7 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 | `HF_TOKEN` | dev machine | yes | model mirror upload | optional |
 | `WHATSAPP_*`, `DEMO_PHONE_ALLOWLIST`, `GOOGLE_SERVICE_ACCOUNT_JSON`, `DEMO_CALENDAR_IDS` | nowhere yet | | | future work (S1); commented out in `.env.example` |
 
-Not yet read by `Settings` (added by later tasks through the same test): `AUTH_MODE`, `TZ`, `REPORTS_DIR`, `SINK_RETRY_*`, `REDTEAM_MAX_N`.
+Not yet read by `Settings` (added by later tasks through the same test): `AUTH_MODE`, `TZ`, `REPORTS_DIR`, `REDTEAM_MAX_N`.
 
 ## Deploy
 

@@ -1,4 +1,4 @@
-"""Backend-stream test fakes (P3.2, P3.3, P3.3a).
+"""Backend-stream test fakes (P3.2, P3.3, P3.3a, P4.4, P4.6, P4.7).
 
 Kept apart from `tests/fixtures/fakes.py` (created by the ML stream in P1.4) so the two streams do not
 edit the same file; P3.8 re-exports these from `fakes.py` for `build_test()`.
@@ -9,30 +9,50 @@ edit the same file; P3.8 re-exports these from `fakes.py` for `build_test()`.
 - `FrozenClock`: a `Clock` fixed at one Asia/Amman instant.
 - `ScriptedOracle`: a `LabelOracle` that replays scripted answers or errors and records its calls.
 - `make_request(...)`: a `NormalizedRequest` without running the normalizer.
+- `FakeNotifier`: a `Notifier` that records every message and can be scripted to fail.
+- `make_outbox(...)`: an `OutboxMessage` ready to send.
+- `FakeSink`, `make_ticket(...)`: a scripted `TicketSink` and a ticket builder.
+- `FakeCalendar`: a `CalendarProvider` with one fixed slot that records `book` calls.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import math
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Literal
 
-from campuspulse_ai.domain.entities import CoreResult, LLMCall, OracleAnswer, OracleContext
+from campuspulse_ai.domain.entities import (
+    CoreResult,
+    LLMCall,
+    OracleAnswer,
+    OracleContext,
+    OutboxMessage,
+    Ticket,
+)
+from campuspulse_ai.domain.errors import CalendarUnavailable
 from campuspulse_ai.domain.labels import CATEGORY_LABELS, PRIORITY_LABELS, Category, Priority
 from campuspulse_ai.domain.values import (
     ArtifactVersion,
+    Booking,
     EvidenceVector,
     GuardVerdict,
+    InboundEvent,
     Lang,
     Location,
     Money,
     NormalizedRequest,
+    OfficeHours,
     PredictionSet,
     ProbabilityTarget,
     ProbVector,
+    Slot,
+    TicketLink,
+    TicketStatus,
     Tier,
 )
 
@@ -183,4 +203,144 @@ class ScriptedOracle:
         cat, pri = step
         return OracleAnswer(
             category=cat, priority=pri, rationale="scripted", call=fake_call(self.tier, self.model_id)
+        )
+
+
+def make_outbox(
+    to_address: str,
+    *,
+    kind: Literal["email", "in_app", "whatsapp"] = "email",
+    subject: str = "Your CampusPulse request",
+    body: str = "We opened a ticket for you.",
+    created_at: datetime | None = None,
+) -> OutboxMessage:
+    """A queued OutboxMessage (empty id: the repository assigns one)."""
+    return OutboxMessage(
+        id="",
+        kind=kind,
+        to_address=to_address,
+        subject=subject,
+        body=body,
+        provider_id=None,
+        status="queued",
+        created_at=created_at or datetime(2026, 11, 5, 9, 5, tzinfo=AMMAN),
+    )
+
+
+@dataclass
+class FakeNotifier:
+    """A Notifier that records each message in `sent` and returns it as delivered.
+
+    If `fail_with` is set, every call records the message and raises that error instead.
+    """
+
+    fail_with: Exception | None = None
+    sent: list[OutboxMessage] = field(default_factory=list)
+
+    @property
+    def calls(self) -> int:
+        return len(self.sent)
+
+    def send(self, msg: OutboxMessage) -> OutboxMessage:
+        self.sent.append(msg)
+        if self.fail_with is not None:
+            raise self.fail_with
+        return dataclasses.replace(msg, status="sent", provider_id=f"fake:{len(self.sent)}")
+
+
+SinkStep = Exception | None
+
+
+@dataclass
+class FakeSink:
+    """A TicketSink that records every call as (method, ticket id) and replays `script`.
+
+    Each create/update_status/close call takes the next `script` step: an exception is raised, None
+    succeeds. When the script runs out every call succeeds. `create` returns a link whose
+    external_id is `<name>-<ticket id>`, so repeated creates are idempotent like the real sinks.
+    """
+
+    name: str = "fake"
+    script: list[SinkStep] = field(default_factory=list)
+    calls: list[tuple[str, str]] = field(default_factory=list)
+    inbound: InboundEvent | None = None
+
+    def _step(self, method: str, ticket: Ticket) -> None:
+        self.calls.append((method, ticket.id))
+        step = self.script.pop(0) if self.script else None
+        if step is not None:
+            raise step
+
+    def create(self, ticket: Ticket) -> TicketLink:
+        self._step("create", ticket)
+        return TicketLink(ticket_id=ticket.id, sink=self.name, external_id=f"{self.name}-{ticket.id}")
+
+    def update_status(self, ticket: Ticket) -> None:
+        self._step("update_status", ticket)
+
+    def close(self, ticket: Ticket) -> None:
+        self._step("close", ticket)
+
+    def handle_inbound(self, payload: bytes, signature: str) -> InboundEvent | None:
+        self.calls.append(("handle_inbound", signature))
+        return self.inbound
+
+
+def make_ticket(
+    request_id: str,
+    *,
+    id: str = "",
+    office: str = "registrar",
+    category: Category = Category.REGISTRATION,
+    priority: Priority = Priority.HIGH,
+    status: TicketStatus = TicketStatus.OPEN,
+    provisional: bool = False,
+    sla_due_at: datetime | None = None,
+    title: str = "Registration portal error on the last add/drop day",
+    body: str = "The student cannot register CS 201; the portal shows an error and today is the deadline.",
+) -> Ticket:
+    """A Ticket for tests (defaults: an open Registration x high ticket due 6 Nov 09:05 Amman)."""
+    return Ticket(
+        id=id,
+        request_id=request_id,
+        incident_id=None,
+        office=office,
+        category=category,
+        priority=priority,
+        status=status,
+        provisional=provisional,
+        sla_due_at=sla_due_at or datetime(2026, 11, 6, 9, 5, tzinfo=AMMAN),
+        title=title,
+        body=body,
+    )
+
+
+@dataclass
+class FakeCalendar:
+    """A CalendarProvider: `find_slot` returns `slot`, `book` records the call and books it.
+
+    `unavailable` makes `find_slot` raise CalendarUnavailable; `book_unavailable` does the same
+    for `book`. Attendees are NOT checked here: the allow-list must be enforced before this point.
+    """
+
+    slot: Slot | None = None
+    unavailable: bool = False
+    book_unavailable: bool = False
+    finds: int = 0
+    booked: list[tuple[Slot, tuple[str, ...], str]] = field(default_factory=list)
+
+    def find_slot(
+        self, advisor_ids: Sequence[str], window: tuple[datetime, datetime], office_hours: OfficeHours
+    ) -> Slot | None:
+        self.finds += 1
+        if self.unavailable:
+            raise CalendarUnavailable("fake calendar down")
+        return self.slot
+
+    def book(self, slot: Slot, attendees: Sequence[str], title: str) -> Booking:
+        if self.book_unavailable:
+            raise CalendarUnavailable("fake calendar down")
+        self.booked.append((slot, tuple(attendees), title))
+        return Booking(
+            slot=slot, attendees=tuple(attendees), title=title, provider="fake", external_id=slot.id
         )
