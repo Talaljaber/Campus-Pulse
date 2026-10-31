@@ -21,3 +21,4 @@ models/frozen/*/m3/
 apps/web/.netlify/
 *.egg-info/
 build/
+.claude/worktrees/
