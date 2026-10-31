@@ -274,7 +274,7 @@
 <a id="p4-5"></a>
 ## P4.5 — Write VectorFAQRetriever and hand-tune `tau_faq`
 
-- [ ] Done — partial: VectorFAQRetriever and tune_faq.py are merged. Still to do: seed_faq + the real tau_faq tuning once the P1.6 encoder is merged.
+- [x] Done (2026-10-31): 28 FAQ rows embedded live; tau_faq = 0.90 (precision 1.00, recall 0.47 on 30 probes; Arabizi phrasings are never answered and become tickets).
 - Depends on: P4.2, P4.3
 - Est: 1 h · Cut: no
 - Files:
