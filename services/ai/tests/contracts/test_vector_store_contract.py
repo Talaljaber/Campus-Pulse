@@ -1,7 +1,7 @@
 """VectorStore contract (ARCHITECTURE §3.18, X4.5): the same cases run against every store.
 
-PgVectorStore runs when SUPABASE_TEST_URL / SUPABASE_TEST_SERVICE_ROLE_KEY are set.
-LocalNumpyVectorStore joins once the ML stream builds it (P1): add its harness to HARNESSES.
+LocalNumpyVectorStore always runs; PgVectorStore runs when SUPABASE_TEST_URL /
+SUPABASE_TEST_SERVICE_ROLE_KEY are set.
 """
 
 from __future__ import annotations
@@ -11,12 +11,14 @@ import random
 import uuid
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Protocol
 
 import pytest
 from fixtures.supabase_test import supabase_test_client
 
-from campuspulse_ai.domain.errors import ArtifactVersionMismatch, NotFound, StoreError
+from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
+from campuspulse_ai.domain.errors import ArtifactMissing, ArtifactVersionMismatch, NotFound, StoreError
 from campuspulse_ai.domain.ports import VectorStore
 from campuspulse_ai.domain.values import Lang, VectorItem
 
@@ -38,23 +40,17 @@ class Harness(Protocol):
     def faq_item(self, vec: tuple[float, ...], lang: Lang) -> VectorItem: ...
     def request_item(self, vec: tuple[float, ...], building_id: str | None) -> VectorItem: ...
     def wrong_dim_store(self) -> VectorStore: ...
+    def reloaded(self) -> VectorStore: ...
     def cleanup(self) -> None: ...
 
 
-class PgHarness:
-    """Creates rows in the test project and removes every one of them in cleanup()."""
+class _Items:
+    """Item builders shared by every harness; ids are UUIDs so pgvector accepts them."""
 
     def __init__(self) -> None:
-        from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
-
-        self.client: Any = supabase_test_client()
-        self.store = PgVectorStore(self.client, DIM)
         self._memory: list[str] = []
         self._faq: list[str] = []
         self._requests: list[str] = []
-        self.client.table("buildings").upsert(
-            {"id": TEST_BUILDING, "code": TEST_BUILDING, "name_en": "Contract test", "name_ar": "اختبار"}
-        ).execute()
 
     def memory_item(self, vec: tuple[float, ...], *, category: str = "Finance") -> VectorItem:
         id = str(uuid.uuid4())
@@ -77,23 +73,64 @@ class PgHarness:
     def request_item(self, vec: tuple[float, ...], building_id: str | None) -> VectorItem:
         id = str(uuid.uuid4())
         self._requests.append(id)
+        meta = {"building_id": building_id, "category": "IT Support", "priority": "medium"}
+        return VectorItem(id=id, embedding=vec, text="", lang=Lang.EN, meta=meta)
+
+
+class LocalHarness(_Items):
+    """LocalNumpyVectorStore with the three online collection names pre-created."""
+
+    def __init__(self, tmp_path: Path) -> None:
+        super().__init__()
+        self.tmp_path = tmp_path
+        self.store = LocalNumpyVectorStore(DIM, collections=("memory", "faq", "requests"))
+
+    def wrong_dim_store(self) -> VectorStore:
+        self.store.save(self.tmp_path / "wrong_dim")
+        return LocalNumpyVectorStore.load(self.tmp_path / "wrong_dim", expected_dim=DIM + 1)
+
+    def reloaded(self) -> VectorStore:
+        self.store.save(self.tmp_path / "index")
+        return LocalNumpyVectorStore.load(self.tmp_path / "index", expected_dim=DIM)
+
+    def cleanup(self) -> None:
+        pass
+
+
+class PgHarness(_Items):
+    """Creates rows in the test project and removes every one of them in cleanup()."""
+
+    def __init__(self, tmp_path: Path) -> None:
+        from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
+
+        super().__init__()
+        self.client: Any = supabase_test_client()
+        self.store = PgVectorStore(self.client, DIM)
+        self.client.table("buildings").upsert(
+            {"id": TEST_BUILDING, "code": TEST_BUILDING, "name_en": "Contract test", "name_ar": "اختبار"}
+        ).execute()
+
+    def request_item(self, vec: tuple[float, ...], building_id: str | None) -> VectorItem:
+        item = super().request_item(vec, building_id)
         self.client.table("requests").insert(
             {
-                "id": id,
+                "id": item.id,
                 "raw_text": "contract",
-                "text_norm": f"contract request {id[:8]}",
+                "text_norm": f"contract request {item.id[:8]}",
                 "lang": "en",
                 "status": "received",
                 "building_id": building_id,
             }
         ).execute()
-        meta = {"building_id": building_id, "category": "IT Support", "priority": "medium"}
-        return VectorItem(id=id, embedding=vec, text="", lang=Lang.EN, meta=meta)
+        return item
 
     def wrong_dim_store(self) -> VectorStore:
         from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
 
         return PgVectorStore(self.client, DIM + 1)
+
+    def reloaded(self) -> VectorStore:
+        pytest.skip("pgvector persists every write; there is no save/load step")
 
     def cleanup(self) -> None:
         if self._memory:
@@ -105,19 +142,15 @@ class PgHarness:
         self.client.table("buildings").delete().eq("id", TEST_BUILDING).execute()
 
 
-def _local_harness() -> Harness:
-    pytest.skip("LocalNumpyVectorStore not built yet (ML P1); add its harness here")
-
-
 HARNESSES = {
     "pgvector": pytest.param(PgHarness, marks=pytest.mark.supabase),
-    "local_numpy": pytest.param(_local_harness),
+    "local_numpy": pytest.param(LocalHarness),
 }
 
 
 @pytest.fixture(params=list(HARNESSES.values()), ids=list(HARNESSES))
-def harness(request: pytest.FixtureRequest) -> Iterator[Harness]:
-    h: Harness = request.param()
+def harness(request: pytest.FixtureRequest, tmp_path: Path) -> Iterator[Harness]:
+    h: Harness = request.param(tmp_path)
     try:
         yield h
     finally:
@@ -233,3 +266,33 @@ def test_wrong_query_dim_raises_store_error(harness: Harness) -> None:
 def test_dim_mismatch_raises_artifact_version_mismatch(harness: Harness) -> None:
     with pytest.raises(ArtifactVersionMismatch):
         harness.wrong_dim_store()
+
+
+def test_save_load_roundtrip(harness: Harness) -> None:
+    vec = unit_vector(12)
+    kept, hidden = harness.memory_item(vec), harness.memory_item(unit_vector(13))
+    harness.store.upsert("memory", [kept, hidden])
+    harness.store.set_active("memory", hidden.id, False)
+    loaded = harness.reloaded()
+    assert loaded.count("memory") == harness.store.count("memory")
+    hits = loaded.search("memory", vec, k=5, filters={"with_embedding": True})
+    assert hits[0].id == kept.id and hits[0].text == kept.text and hits[0].meta["category"] == "Finance"
+    assert hits[0].embedding == pytest.approx(vec, abs=1e-6)
+    assert hidden.id not in {h.id for h in hits}
+
+
+def test_local_store_read_only_and_missing_files(tmp_path: Path) -> None:
+    store = LocalNumpyVectorStore(DIM, collections=("train",))
+    store.upsert("train", [VectorItem(id="t1", embedding=unit_vector(14), text="t", lang=Lang.AR)])
+    written = store.save(tmp_path / "index")
+    frozen = LocalNumpyVectorStore.load(tmp_path / "index", expected_dim=DIM)
+    assert frozen.collections() == frozenset({"train"})
+    with pytest.raises(StoreError):
+        frozen.upsert("train", [VectorItem(id="t2", embedding=unit_vector(15), text="u", lang=Lang.EN)])
+    with pytest.raises(StoreError):
+        frozen.set_active("train", "t1", False)
+    next(p for p in written if p.name == "items.jsonl").unlink()
+    with pytest.raises(ArtifactMissing):
+        LocalNumpyVectorStore.load(tmp_path / "index", expected_dim=DIM)
+    with pytest.raises(ArtifactMissing):
+        LocalNumpyVectorStore.load(tmp_path / "absent", expected_dim=DIM)
