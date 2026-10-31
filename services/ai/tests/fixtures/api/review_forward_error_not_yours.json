@@ -1,0 +1,27 @@
+{
+  "name": "review_forward_error_not_yours",
+  "description": "Staff who cannot see the item (another office, or another advisor's student) cannot resolve it.",
+  "method": "POST",
+  "path": "/v1/reviews/{review_id}/forward",
+  "path_params": {
+    "review_id": "9e8d7c6b-5a49-4382-9170-6f5e4d3c0099"
+  },
+  "query": {},
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Alias": "staff-it",
+    "X-CP-Office": "it"
+  },
+  "request": {
+    "office": "finance",
+    "note": null
+  },
+  "status_code": 403,
+  "response": {
+    "error": {
+      "code": "forbidden",
+      "message": "this review item is in another advisor's queue, not yours",
+      "details": null
+    }
+  }
+}

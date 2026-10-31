@@ -17,8 +17,9 @@ artifacts and every online adapter:
 6. LLM tier 1 and the LLM understander only when `ENABLE_LLM`, `OPENROUTER_API_KEY` and
    `OPENROUTER_TIER1_MODEL` are all set; otherwise tier 0 and the rule-based understander.
 7. The use cases: triage, clarify, feedback (live learning), the ticket lifecycle and SLA scanner,
-   Pulse (embedding upsert and incident detection), batch, metrics, the red team (live memory on)
-   and the identity verifier.
+   Pulse (embedding upsert and incident detection), batch, metrics, the red team (live memory on),
+   the identity verifier, and UD-13 advisor routing (review assignment, `GET /v1/reviews`, review
+   and ticket forwards).
 
 `wire_online(settings, offline, adapters, clock)` does steps 6-7 over any adapters, so tests run the
 same wiring over `InMemoryRepository`, `LocalNumpyVectorStore` and fakes (`tests/unit/test_online.py`).
@@ -62,10 +63,19 @@ from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
+from campuspulse_ai.application.use_cases.forward import TicketForwardUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
-from campuspulse_ai.application.use_cases.ports import IdentityVerifier, LifecycleReads, SimulationMarks
+from campuspulse_ai.application.use_cases.offices import OfficeMap
+from campuspulse_ai.application.use_cases.ports import (
+    AdvisorDirectory,
+    IdentityVerifier,
+    LifecycleReads,
+    ReviewReads,
+    SimulationMarks,
+)
+from campuspulse_ai.application.use_cases.reviews import ReviewAssigner, ReviewRouter, ReviewsUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.composition.api import ApiServices, HealthInfo, build_identity
@@ -90,7 +100,7 @@ from campuspulse_ai.domain.routing import ActionsConfig, TableActionPlanner
 from campuspulse_ai.domain.values import Tier
 
 if TYPE_CHECKING:
-    from supabase import Client
+    from campuspulse_ai.adapters.store.rest import RestApi as Client
 
 log = logging.getLogger(__name__)
 
@@ -111,8 +121,10 @@ UNDERSTAND_PROMPT_VERSION = "v1"
 class OnlineAdapters:
     """The I/O adapters `wire_online` composes (Supabase and integrations in production, fakes in tests).
 
-    - `reads`: the extra reads of feedback and Pulse; `marks`: `requests.simulated` (both are the
-      repository itself in production).
+    - `reads`: the extra reads of feedback and Pulse; `marks`: `requests.simulated`; `reviews` and
+      `directory`: the review queue and the student->advisor links of UD-13 (all four are the
+      repository itself in production; without `reviews`/`directory` the review routes answer 501
+      and HUMAN_REVIEW items are queued unassigned, as before UD-13).
     - `vectors` holds the live collections (`requests`, `faq`; `memory` behind `memory`).
     - `sinks`: the record sink first, then the mirrors (Linear), in push order.
     - `channels`: notifier per outbox kind (`in_app` always; `email` only when SMTP is configured).
@@ -130,6 +142,8 @@ class OnlineAdapters:
     calendars: tuple[CalendarProvider, ...] = ()
     identity: IdentityVerifier | None = None
     vector_store: str = VECTOR_STORE_PGVECTOR
+    reviews: ReviewReads | None = None
+    directory: AdvisorDirectory | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -200,15 +214,18 @@ def load_offline(settings: Settings) -> OfflineContainer:
 
 
 def supabase_client(settings: Settings) -> Client:
-    """The service-role Supabase client. Raises `StoreError` when it is not configured."""
+    """The service-role PostgREST client (`adapters/store/rest.PostgrestRest`: the PostgREST half of
+    supabase-py, without the SDK's other modules, P4.13). Raises `StoreError` when it is not
+    configured or the URL is malformed."""
     key = settings.supabase_service_role_key
     if not settings.supabase_url or key is None:
         raise StoreError("the API needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (server-side only)")
-    from supabase import create_client  # online only: predict.py never imports this module
+    from campuspulse_ai.adapters.store.rest import PostgrestRest  # online only
 
     try:
-        return create_client(settings.supabase_url, key.get_secret_value())
-    except Exception as exc:  # the SDK validates the URL and key format here
+        secret = key.get_secret_value()
+        return PostgrestRest(settings.supabase_url, secret, timeout_s=settings.store_timeout_s)
+    except Exception as exc:  # a malformed URL; the key is never part of the message
         raise StoreError(f"cannot create the Supabase client: {type(exc).__name__}") from exc
 
 
@@ -216,6 +233,7 @@ def supabase_adapters(
     settings: Settings, client: Client, offline: OfflineContainer, clock: Clock
 ) -> OnlineAdapters:
     """The production adapters over one Supabase client (module docstring, steps 2-5)."""
+    from campuspulse_ai.adapters.memory.cached import QueryCachingMemoryStore
     from campuspulse_ai.adapters.memory.pgvector_memory import PgVectorMemoryStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
@@ -228,12 +246,16 @@ def supabase_adapters(
         reads=repo,
         marks=repo,
         vectors=vectors,
-        memory=PgVectorMemoryStore(vectors, client),
+        memory=QueryCachingMemoryStore(
+            PgVectorMemoryStore(vectors, client), clock, settings.memory_query_cache_s
+        ),
         sinks=(SupabaseSink(repo), *mirror_sinks(settings, clock)),
         channels=notifier_channels(settings, repo, policy, clock),
         calendars=(SlotsTableCalendar(repo, clock, policy),),
         identity=build_identity(settings),
         vector_store=VECTOR_STORE_PGVECTOR,
+        reviews=repo,
+        directory=repo,
     )
 
 
@@ -383,7 +405,9 @@ def wire_online(
         office_inbox=settings.demo_office_inbox,
     )
     notifier = AllowlistedNotifier(ChannelNotifier(dict(adapters.channels)), recipients, repo)
-    planner = TableActionPlanner(ActionsConfig.from_dict(_yaml(CONFIG_DIR / "actions.yaml")))
+    actions_config = ActionsConfig.from_dict(_yaml(CONFIG_DIR / "actions.yaml"))
+    planner = TableActionPlanner(actions_config)
+    offices = OfficeMap.from_actions(actions_config)
     sinks = adapters.sinks
     act = ActUseCase(
         planner,
@@ -408,6 +432,36 @@ def wire_online(
         enabled=bool(llm.oracles),
     )
     incident_actions = IncidentActions(act, sinks, repo, adapters.reads, notifier, clock, messages)
+    directory = adapters.directory
+    assigner = (
+        ReviewAssigner(
+            ReviewRouter(directory, settings.review_fallback_office),
+            repo,
+            notifier,
+            clock,
+            messages,
+            email_advisor=settings.review_email_advisor,
+        )
+        if directory is not None
+        else None
+    )
+    feedback = FeedbackUseCase(
+        adapters.reads, repo, adapters.memory, act, offline.encoder, clock, sinks, directory=directory
+    )
+    reviews = (
+        ReviewsUseCase(
+            adapters.reviews,
+            adapters.reads,
+            feedback,
+            offices,
+            directory,
+            repo,
+            messages,
+            limit=settings.review_list_limit,
+        )
+        if adapters.reviews is not None and directory is not None
+        else None
+    )
     flow = DecisionFlow(
         policy=policy,
         clarifier=InfoGainStrategy(QuestionBank.load(CONFIG_DIR / "clarify_questions.yaml")),
@@ -429,15 +483,18 @@ def wire_online(
             ),
             actions=incident_actions,
         ),
+        reviews=assigner,
     )
     manifest = offline.manifest
     return ApiServices(
         triage=TriageUseCase(core, flow, repo, clock, marks=adapters.marks),
         clarify=ClarifyUseCase(core, flow, repo, clock),
-        feedback=FeedbackUseCase(adapters.reads, repo, adapters.memory, act, offline.encoder, clock, sinks),
+        feedback=feedback,
         tickets=SyncTicketUseCase(
             sinks, repo, notifier, clock, messages, student_inbox=act_config.student_inbox
         ),
+        forward=TicketForwardUseCase(sinks, repo, offices, messages),
+        reviews=reviews,
         sla=EscalateSlaUseCase(sinks, repo, messages),
         clock=clock,
         incidents=IncidentsUseCase(

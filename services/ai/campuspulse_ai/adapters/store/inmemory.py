@@ -16,6 +16,7 @@ from typing import Any
 
 from campuspulse_ai.adapters.store import codec
 from campuspulse_ai.adapters.store.codec import Row
+from campuspulse_ai.application.use_cases.ports import AdvisorContact
 from campuspulse_ai.domain.entities import (
     Case,
     Clarification,
@@ -41,6 +42,16 @@ from campuspulse_ai.domain.values import (
 )
 
 OPEN_TICKET_STATUSES = ("open", "in_progress")
+REVIEW_OFFICE_BY_CATEGORY: Mapping[str, str] = {
+    "Registration": "registrar",
+    "IT Support": "it",
+    "Finance": "finance",
+    "Transportation": "transport",
+    "Facilities": "facilities",
+    "Academic Support": "academic",
+}
+"""What the 0012 trigger `review_queue_fill_office` does (`private.cp_category_office`, D-005): a review
+item saved without an office gets its prediction's category office. Modelled here so both stores agree."""
 
 
 class _UtcClock:
@@ -61,9 +72,10 @@ class InMemoryRepository:
       a review for an unknown prediction, or a link for an unknown ticket raises StoreError.
     - `get_*`, `latest_prediction`, `ticket_by_link`, `set_request_status`, `resolve_review`
       raise NotFound when the row is absent.
+    - `enqueue_review` fills a missing `office` from the prediction's category, like the 0012 trigger.
     - Orderings: clarifications by asked_at; incidents by opened_at; overdue tickets by
       sla_due_at; slots by starts_at; members by creation; always then by id.
-    - Seeding helpers outside the port: `add_advisor`, `add_slot`, `add_llm_call`.
+    - Seeding helpers outside the port: `add_advisor`, `add_slot`, `add_llm_call`, `add_profile`.
 
     `clock` stamps created_at/at/resolved_at/booked_at where the entity has no timestamp.
     """
@@ -76,7 +88,7 @@ class InMemoryRepository:
             for name in (
                 "requests", "predictions", "clarifications", "review_queue", "tickets", "ticket_links",
                 "incidents", "outbox", "student_signals", "events", "redteam_runs", "advisors",
-                "advisor_slots", "cases", "notifications", "llm_calls",
+                "advisor_slots", "cases", "notifications", "llm_calls", "profiles",
             )
         }  # fmt: skip
 
@@ -120,6 +132,10 @@ class InMemoryRepository:
     def enqueue_review(self, item: ReviewItem) -> ReviewItem:
         saved = dataclasses.replace(item, id=new_id(item.id))
         self._fk("predictions", saved.prediction_id)
+        self._fk("profiles", saved.assignee)
+        if saved.office is None:
+            category = self.tables["predictions"][saved.prediction_id].get("category")
+            saved = dataclasses.replace(saved, office=REVIEW_OFFICE_BY_CATEGORY.get(str(category)))
         self._upsert("review_queue", saved.id, codec.review_row(saved))
         return saved
 
@@ -174,14 +190,14 @@ class InMemoryRepository:
                 self.tables["tickets"][ticket_id]["incident_id"] = saved.id
         return self._incident(self.tables["incidents"][saved.id])
 
-    def open_incidents(self, building: str, category: Category, since: datetime) -> list[Incident]:
+    def open_incidents(self, building: str, category: Category | None, since: datetime) -> list[Incident]:
         start = _ts(codec.iso(since) or "")
         rows = [
             r
             for r in self.tables["incidents"].values()
             if r["status"] == "open"
             and r["building_id"] == building
-            and r["category"] == str(category)
+            and (category is None or r["category"] == str(category))
             and _ts(r["opened_at"]) >= start
         ]
         return [self._incident(r) for r in sorted(rows, key=lambda r: (_ts(r["opened_at"]), r["id"]))]
@@ -224,6 +240,42 @@ class InMemoryRepository:
         rows = [r for r in self.tables["incidents"].values() if not open_only or r["status"] == "open"]
         rows.sort(key=lambda r: (_ts(r["opened_at"]), r["id"]), reverse=True)
         return [self._incident(r) for r in rows[:limit]]
+
+    def get_review(self, id: str) -> ReviewItem:
+        return codec.to_review_item(self._get("review_queue", id))
+
+    def list_reviews(self, *, status: str | None, office: str | None, limit: int) -> list[ReviewItem]:
+        rows = [
+            r
+            for r in self.tables["review_queue"].values()
+            if (status is None or r["status"] == status) and (office is None or r.get("office") == office)
+        ]
+        rows.sort(key=lambda r: (_ts(r["created_at"]), r["_seq"]), reverse=True)
+        return [codec.to_review_item(r) for r in rows[:limit]]
+
+    def predictions_by_ids(self, ids: Sequence[str]) -> list[Prediction]:
+        rows = self.tables["predictions"]
+        return [codec.to_prediction(rows[i]) for i in dict.fromkeys(ids) if i in rows]
+
+    def requests_by_ids(self, ids: Sequence[str]) -> list[Request]:
+        rows = self.tables["requests"]
+        return [codec.to_request(rows[i]) for i in dict.fromkeys(ids) if i in rows]
+
+    # ------------------------------------------------------------------ AdvisorDirectory (UD-13)
+
+    def advisor_of(self, student_alias: str) -> AdvisorContact | None:
+        student = self._profile_by_alias(student_alias)
+        advisor_row = self.tables["advisors"].get(student.get("advisor_id")) if student else None
+        if advisor_row is None or not advisor_row.get("profile_id"):
+            return None
+        login = self.tables["profiles"].get(advisor_row["profile_id"])
+        if login is None:
+            return None
+        return advisor_contact(advisor_row, login)
+
+    def profile_id_of(self, alias: str) -> str | None:
+        row = self._profile_by_alias(alias)
+        return str(row["id"]) if row else None
 
     def mark_simulated(self, request_id: str) -> None:
         self._get("requests", request_id)["simulated"] = True
@@ -340,11 +392,42 @@ class InMemoryRepository:
 
     # ------------------------------------------------------------------ seeding helpers (not in the port)
 
-    def add_advisor(self, name: str, department: str, email: str = "", id: str = "") -> Advisor:
-        """Insert an advisor row (seed data; Supabase gets these from supabase/seed/02_advisors.sql)."""
-        row = {"id": new_id(id), "fictional_name": name, "department": department, "demo_email": email}
+    def add_advisor(
+        self, name: str, department: str, email: str = "", id: str = "", profile_id: str | None = None
+    ) -> Advisor:
+        """Insert an advisor row (seed data; Supabase gets these from supabase/seed/02_advisors.sql).
+        `profile_id` links the advisor's staff login (UD-13; `seed_demo_users.py` online)."""
+        self._fk("profiles", profile_id)
+        row = {
+            "id": new_id(id),
+            "fictional_name": name,
+            "department": department,
+            "demo_email": email,
+            "profile_id": profile_id,
+        }
         self._upsert("advisors", row["id"], row)
         return codec.to_advisor(row)
+
+    def add_profile(
+        self,
+        alias: str,
+        role: str,
+        office: str | None = None,
+        *,
+        advisor_id: str | None = None,
+        id: str = "",
+    ) -> str:
+        """Insert a `profiles` row (a demo login; `seed_demo_users.py` online) and return its id.
+        `advisor_id` makes an existing advisor this student's advisor (UD-13)."""
+        self._fk("advisors", advisor_id)
+        row = {"id": new_id(id), "alias": alias, "role": role, "office": office, "advisor_id": advisor_id}
+        self._upsert("profiles", row["id"], row)
+        return str(row["id"])
+
+    def link_advisor(self, student_profile_id: str, advisor_id: str) -> None:
+        """Set `profiles.advisor_id` of an existing student profile (seed helper)."""
+        self._fk("advisors", advisor_id)
+        self._get("profiles", student_profile_id)["advisor_id"] = advisor_id
 
     def add_slot(self, advisor_id: str, starts_at: datetime, ends_at: datetime, id: str = "") -> Slot:
         """Insert a free slot (seed data; Supabase gets these from supabase/seed/03_advisor_slots.sql)."""
@@ -392,6 +475,12 @@ class InMemoryRepository:
         if id is not None and id not in self.tables[table]:
             raise StoreError(f"foreign key violation: {table} {id} does not exist")
 
+    def _profile_by_alias(self, alias: str) -> Row | None:
+        wanted = alias.strip()
+        if not wanted:
+            return None
+        return next((r for r in self.tables["profiles"].values() if r.get("alias") == wanted), None)
+
     def _member_rows(self, incident_id: str) -> list[Row]:
         rows = [r for r in self.tables["tickets"].values() if r.get("incident_id") == incident_id]
         return sorted(rows, key=lambda r: (r["created_at"], r["_seq"]))
@@ -426,3 +515,15 @@ def router_stats_from_rows(predictions: Iterable[Row], llm_calls: Iterable[Row])
 def _ts(value: str | None) -> datetime:
     parsed = codec.parse_dt(value)
     return parsed if parsed is not None else datetime.min.replace(tzinfo=UTC)
+
+
+def advisor_contact(advisor: Row, login: Row) -> AdvisorContact:
+    """An `AdvisorContact` from an `advisors` row and its staff `profiles` row (both stores)."""
+    return AdvisorContact(
+        advisor_id=str(advisor["id"]),
+        profile_id=str(login["id"]),
+        name=str(advisor.get("fictional_name") or ""),
+        alias=login.get("alias") or None,
+        office=login.get("office") or None,
+        email=str(advisor.get("demo_email") or ""),
+    )

@@ -90,6 +90,7 @@ class OnnxEncoder:
         max_tokens: int | None = None,
         intra_op_threads: int | None = None,
         batch_size: int | None = None,
+        low_memory: bool = False,
     ) -> None:
         """
         Args:
@@ -99,6 +100,9 @@ class OnnxEncoder:
             intra_op_threads: ONNX Runtime intra-op threads (`Settings.ort_intra_op_threads`; Render uses 1);
                 None = the runtime default (all cores).
             batch_size: texts per ONNX call; None = the meta's `batch_size` (1 when absent).
+            low_memory: `Settings.ort_low_memory` (P4.13, ARCHITECTURE §3.17): no CPU memory arena, no
+                memory-pattern planning and no weight pre-packing. Same graph and kernels' math, so the
+                vectors are identical (checked on the validation file); about 15 MB less RSS.
 
         Raises:
             ArtifactMissing, ArtifactVersionMismatch: see the class docstring. ValueError: a size < 1.
@@ -132,6 +136,10 @@ class OnnxEncoder:
         options.inter_op_num_threads = 1
         options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         options.log_severity_level = 3
+        if low_memory:
+            options.enable_cpu_mem_arena = False
+            options.enable_mem_pattern = False
+            options.add_session_config_entry("session.disable_prepacking", "1")
         self._session = ort.InferenceSession(str(onnx_path), options, providers=["CPUExecutionProvider"])
         graph_inputs = [i.name for i in self._session.get_inputs()]
         if sorted(graph_inputs) != sorted(meta["input_names"]):

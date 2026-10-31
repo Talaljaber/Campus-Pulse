@@ -11,7 +11,8 @@ scripts/smoke_linear.py runs in P4.0):
 - `issueCreate(input: {id, teamId, title, description, priority, dueDate, labelIds})`. The issue
   id is the CampusPulse ticket UUID, so a retried create can never make a second issue: the
   duplicate is detected and the existing issue is returned;
-- `issueUpdate(id, input: {stateId?, priority})` for `update_status` and `close`;
+- `issueUpdate(id, input: {stateId?, priority, title, description, labelIds?})` for `update_status`
+  and `close` (the ticket's office, category and tags may have changed, e.g. a UD-13 forward);
 - `issue(id)` to recover an issue after a failed or repeated create.
 """
 
@@ -170,8 +171,11 @@ class LinearSink:
     - `create(ticket)` is idempotent on `ticket.id`: an existing `linear` link on the ticket (or one
       created earlier by this instance) is returned with no HTTP call; a repeated `issueCreate` for
       the same id is recovered with `issue(id)`.
-    - `update_status(ticket)` moves the issue to the first state of the mapped type and sets the
-      priority; `close(ticket)` uses the `closed` mapping (completed).
+    - `update_status(ticket)` moves the issue to the first state of the mapped type and re-sends the
+      priority, title, description and category label (so a forwarded or confirmed ticket shows its
+      new office and label); `close(ticket)` uses the `closed` mapping (completed). With a state,
+      `teamId` is the office's team too, so a ticket forwarded to an office with its own team moves
+      there (today every office maps to the default team, CDP).
     - `handle_inbound(raw_body, signature)` verifies `Linear-Signature` = hex HMAC-SHA256 of the raw
       body with `LINEAR_WEBHOOK_SECRET` (constant-time compare), rejects a `webhookTimestamp` more
       than `webhook_tolerance_s` from `clock.now()`, and returns an `InboundEvent` only for an
@@ -248,12 +252,25 @@ class LinearSink:
         link = self._link(ticket)
         if link is None:
             raise SinkError(f"ticket {ticket.id} has no Linear issue", retryable=False)
-        issue_input: dict[str, object] = {"priority": self._priority(ticket)}
+        # The whole ticket is mirrored, not only the state: a forward (UD-13) or a confirmed review
+        # changes the label, the "[unconfirmed]" title and the trace in the description.
+        issue_input: dict[str, object] = {
+            "priority": self._priority(ticket),
+            "title": self._title(ticket),
+            "description": self._description(ticket),
+        }
+        label_id = self._label_id(ticket)
+        if label_id:
+            issue_input["labelIds"] = [label_id]
         state_type = self._mapping.state_type_by_status.get(status)
         if state_type is not None:
-            state_id = self._team(ticket.office).state_id(state_type)
+            team = self._team(ticket.office)
+            state_id = team.state_id(state_type)
             if state_id is None:
                 raise SinkError(f"Linear team has no {state_type!r} state", retryable=False)
+            # The state belongs to the office's team; a ticket forwarded to an office with its own
+            # team moves there with it (a no-op while every office maps to the default team).
+            issue_input["teamId"] = team.id
             issue_input["stateId"] = state_id
         _issue(self._graphql(_UPDATE, {"id": link.external_id, "input": issue_input}), "issueUpdate")
 

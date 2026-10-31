@@ -14,8 +14,14 @@ from typing import TYPE_CHECKING, Any, cast
 
 from campuspulse_ai.adapters.store import codec
 from campuspulse_ai.adapters.store.codec import Row
-from campuspulse_ai.adapters.store.inmemory import OPEN_TICKET_STATUSES, new_id, router_stats_from_rows
+from campuspulse_ai.adapters.store.inmemory import (
+    OPEN_TICKET_STATUSES,
+    advisor_contact,
+    new_id,
+    router_stats_from_rows,
+)
 from campuspulse_ai.adapters.vectors.pgvector import store_call
+from campuspulse_ai.application.use_cases.ports import AdvisorContact
 from campuspulse_ai.domain.entities import (
     Case,
     Clarification,
@@ -33,7 +39,7 @@ from campuspulse_ai.domain.ports import Clock
 from campuspulse_ai.domain.values import Advisor, RequestStatus, RouterStats, Slot, StudentSignals, TicketLink
 
 if TYPE_CHECKING:
-    from supabase import Client
+    from campuspulse_ai.adapters.store.rest import RestApi as Client
 
 PAGE = 1000  # PostgREST default max-rows
 
@@ -174,22 +180,14 @@ class SupabaseRepository:
             )
         return self._incidents([self._one("incidents", "id", saved.id)])[0]
 
-    def open_incidents(self, building: str, category: Category, since: datetime) -> list[Incident]:
-        rows = self._rows(
-            "open_incidents",
-            lambda: (
-                self._db.table("incidents")
-                .select("*")
-                .eq("status", "open")
-                .eq("building_id", building)
-                .eq("category", str(category))
-                .gte("opened_at", codec.iso(since))
-                .order("opened_at")
-                .order("id")
-                .execute()
-            ),
-        )
-        return self._incidents(rows)
+    def open_incidents(self, building: str, category: Category | None, since: datetime) -> list[Incident]:
+        def run() -> Any:
+            q = self._db.table("incidents").select("*").eq("status", "open").eq("building_id", building)
+            if category is not None:
+                q = q.eq("category", str(category))
+            return q.gte("opened_at", codec.iso(since)).order("opened_at").order("id").execute()
+
+        return self._incidents(self._rows("open_incidents", run))
 
     def incident_members(self, incident_id: str) -> list[tuple[Ticket, Request]]:
         tickets = self._tickets(self._member_rows([incident_id]))
@@ -269,6 +267,83 @@ class SupabaseRepository:
             return q.order("opened_at", desc=True).order("id", desc=True).limit(limit).execute()
 
         return self._incidents(self._rows("list_incidents", run))
+
+    def get_review(self, id: str) -> ReviewItem:
+        return codec.to_review_item(self._one("review_queue", "id", id))
+
+    def list_reviews(self, *, status: str | None, office: str | None, limit: int) -> list[ReviewItem]:
+        def run() -> Any:
+            q = self._db.table("review_queue").select("*")
+            if status is not None:
+                q = q.eq("status", status)
+            if office is not None:
+                q = q.eq("office", office)
+            return q.order("created_at", desc=True).order("id", desc=True).limit(limit).execute()
+
+        return [codec.to_review_item(r) for r in self._rows("list_reviews", run)]
+
+    def predictions_by_ids(self, ids: Sequence[str]) -> list[Prediction]:
+        wanted = list(dict.fromkeys(ids))
+        if not wanted:
+            return []
+        rows = self._rows(
+            "predictions_by_ids",
+            lambda: self._db.table("predictions").select("*").in_("id", wanted).execute(),
+        )
+        return [codec.to_prediction(r) for r in rows]
+
+    def requests_by_ids(self, ids: Sequence[str]) -> list[Request]:
+        wanted = list(dict.fromkeys(ids))
+        if not wanted:
+            return []
+        rows = self._rows(
+            "requests_by_ids", lambda: self._db.table("requests").select("*").in_("id", wanted).execute()
+        )
+        return [codec.to_request(r) for r in rows]
+
+    # ------------------------------------------------------------------ AdvisorDirectory (UD-13, DB 0012)
+
+    def advisor_of(self, student_alias: str) -> AdvisorContact | None:
+        alias = student_alias.strip()
+        if not alias:
+            return None
+        students = self._rows(
+            "advisor_of profile",
+            lambda: self._db.table("profiles").select("advisor_id").eq("alias", alias).limit(1).execute(),
+        )
+        advisor_id = students[0].get("advisor_id") if students else None
+        if not advisor_id:
+            return None
+        advisors = self._rows(
+            "advisor_of advisor",
+            lambda: (
+                self._db.table("advisors")
+                .select("id,fictional_name,demo_email,profile_id")
+                .eq("id", advisor_id)
+                .limit(1)
+                .execute()
+            ),
+        )
+        profile_id = advisors[0].get("profile_id") if advisors else None
+        if not profile_id:
+            return None
+        logins = self._rows(
+            "advisor_of login",
+            lambda: (
+                self._db.table("profiles").select("id,alias,office").eq("id", profile_id).limit(1).execute()
+            ),
+        )
+        return advisor_contact(advisors[0], logins[0]) if logins else None
+
+    def profile_id_of(self, alias: str) -> str | None:
+        wanted = alias.strip()
+        if not wanted:
+            return None
+        rows = self._rows(
+            "profile_id_of",
+            lambda: self._db.table("profiles").select("id").eq("alias", wanted).limit(1).execute(),
+        )
+        return str(rows[0]["id"]) if rows else None
 
     def mark_simulated(self, request_id: str) -> None:
         self._update("requests", {"simulated": True}, "id", request_id)

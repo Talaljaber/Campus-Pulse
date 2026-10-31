@@ -83,7 +83,19 @@ email:
     Ticket: {title} ({ticket_id})
     Note from staff: {note}
     If the problem is back, send a new message in the CampusPulse chat.
+  # UD-13: sent to the advisor's allow-listed demo inbox when an unsure request is assigned to them.
+  review_subject: "[CampusPulse demo] Request to review: {category} ({priority})"
+  review_body: |-
+    A request from your student ({alias}) needs your review in CampusPulse.
+    Best guess: {category} ({priority}); the model was not sure.
+    Request: {text}
+    Confirm the office or forward it to another one in the advisor view.
 
 # P4.9: in-app notes for office staff (notifications row addressed to "office:<office code>").
+# UD-13: review_assigned goes to the advisor's alias; review_queued to "office:<office code>";
+# ticket_forwarded to "office:<new office>".
 staff:
   escalated: "SLA missed (due {sla_due_at}): priority raised from {old} to {new}."
+  review_assigned: "A request from your student {alias} needs your review: {category} ({priority}) was a guess."
+  review_queued: "A request needs review in your office queue: {category} ({priority}) was a guess."
+  ticket_forwarded: "Ticket \"{title}\" was forwarded to your office from {from_office}. {note}"

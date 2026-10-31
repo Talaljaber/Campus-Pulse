@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     # Supabase (service role is server-side only)
     supabase_url: str | None = None
     supabase_service_role_key: SecretStr | None = None
+    store_timeout_s: float = 30.0  # per PostgREST call of the API (repository, pgvector, memory)
 
     # Auth between Netlify route handlers and this service. Unset token = every /v1 route answers 401.
     ai_service_token: SecretStr | None = None
@@ -91,6 +92,11 @@ class Settings(BaseSettings):
     gaming_claim_ratio: float = 0.8
     gaming_high_ratio_max: float = 0.2
 
+    # Hybrid advisor routing (UD-13)
+    review_fallback_office: str = "academic"  # queue of an unsure request whose student has no advisor
+    review_list_limit: int = 50  # GET /v1/reviews items per call
+    review_email_advisor: bool = True  # also email the advisor's allow-listed demo inbox on assignment
+
     # Background loops
     sla_scan_minutes: int = 5
     incident_window_min: int = 30
@@ -98,6 +104,12 @@ class Settings(BaseSettings):
     # Artifacts and runtime
     artifact_dir: Path = Path("models/frozen")
     ort_intra_op_threads: int = 4  # Render sets 1 (ARCHITECTURE 3.17)
+    # ONNX Runtime without the CPU arena, memory patterns and weight pre-packing: ~15 MB less RSS,
+    # identical vectors (P4.13)
+    ort_low_memory: bool = True
+    # In-process cache of one live-memory neighbour query (the kNN category and priority heads ask
+    # the same question per request); 0 disables it
+    memory_query_cache_s: float = 2.0
     campuspulse_root: Path | None = None
 
     @field_validator("demo_email_allowlist", mode="before")

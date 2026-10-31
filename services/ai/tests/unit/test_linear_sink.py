@@ -7,6 +7,7 @@ Linear. The replies in `tests/fixtures/linear/` are hand-written in Linear's doc
 from __future__ import annotations
 
 import copy
+import dataclasses
 import json
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
@@ -42,6 +43,8 @@ SECRET = SecretStr("whsec-test-secret")
 TICKET_ID = "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003"
 REQUEST_ID = "7f1d2c3b-0000-4000-8000-000000000001"
 ISSUE_URL = "https://linear.app/campus-pulse/issue/CDP-43/registration-portal-error"
+CDP_TEAM_ID = "8b4300c4-0a05-4581-bd9d-b761e8b6ee70"  # teams.json
+FAC_TEAM_ID = "0e4a1b5c-0000-4000-8000-00000000f1ce"
 
 
 def fixture(name: str) -> dict[str, Any]:
@@ -98,6 +101,7 @@ NOT_FOUND = httpx.Response(200, json={"errors": [{"message": "Entity not found"}
 @pytest.fixture
 def linear() -> Iterator[FakeLinear]:
     fake = FakeLinear()
+    fake.on("CampusPulseLabels", ok("labels.json"))  # label ids are looked up once per sink
     with respx.mock(assert_all_called=False) as router:
         router.post(API_URL).mock(side_effect=fake.handler)
         yield fake
@@ -280,7 +284,11 @@ def test_update_status_moves_to_the_first_state_of_the_type(
     ticket = linked(make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.IN_PROGRESS))
     make_sink().update_status(ticket)
     op, variables = linear.calls[-1]
-    assert variables == {"id": TICKET_ID, "input": {"priority": 2, "stateId": "st-progress"}}
+    sent = variables["input"]
+    assert (op, variables["id"], sent["priority"], sent["stateId"]) == (
+        "CampusPulseIssueUpdate", TICKET_ID, 2, "st-progress")  # fmt: skip
+    # the whole ticket is mirrored: label, title and the trace in the description (UD-13 forwards)
+    assert sent["labelIds"] and sent["title"] and "office: " in sent["description"]
 
 
 def test_escalation_changes_only_the_priority(linear: FakeLinear, make_sink: SinkFactory) -> None:
@@ -289,7 +297,27 @@ def test_escalation_changes_only_the_priority(linear: FakeLinear, make_sink: Sin
         make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.ESCALATED, priority=Priority.HIGH)
     )
     make_sink().update_status(ticket)
-    assert linear.calls == [("CampusPulseIssueUpdate", {"id": TICKET_ID, "input": {"priority": 2}})]
+    assert [op for op in linear.ops() if op != "CampusPulseLabels"] == ["CampusPulseIssueUpdate"]
+    sent = linear.calls[-1][1]["input"]
+    assert sent["priority"] == 2 and "stateId" not in sent
+
+
+def test_a_forwarded_ticket_gets_its_new_label_and_office(
+    linear: FakeLinear, make_sink: SinkFactory
+) -> None:
+    linear.on("CampusPulseTeams", ok("teams.json"))
+    linear.on("CampusPulseIssueUpdate", ok("issue_update.json"))
+    ticket = linked(make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.OPEN))
+    to_it = dataclasses.replace(ticket, office="it", category=Category.IT_SUPPORT, tags=("forwarded",))
+    make_sink().update_status(to_it)
+    sent = linear.calls[-1][1]["input"]
+    assert sent["labelIds"] == ["lb-it"] and sent["teamId"] == CDP_TEAM_ID
+    assert "office: it" in sent["description"] and "tags: forwarded" in sent["description"]
+
+    to_fac = dataclasses.replace(ticket, office="facilities", category=Category.FACILITIES)
+    make_sink().update_status(to_fac)
+    sent = linear.calls[-1][1]["input"]
+    assert sent["teamId"] == FAC_TEAM_ID and "labelIds" not in sent  # no "facilities" label in the fixture
 
 
 def test_close_moves_to_completed(linear: FakeLinear, make_sink: SinkFactory) -> None:

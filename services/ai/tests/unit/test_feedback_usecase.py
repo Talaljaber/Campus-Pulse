@@ -31,7 +31,7 @@ class Reviewer:
     user_id: str | None = STAFF_ID
 
 
-STAFF = Reviewer("staff", "it", "staff-it")
+STAFF = Reviewer("staff", "academic", "staff-academic")  # unsure items queue at academic (UD-13)
 ADMIN = Reviewer("admin", alias="admin")
 
 

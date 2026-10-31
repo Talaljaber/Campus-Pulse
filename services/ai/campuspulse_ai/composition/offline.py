@@ -217,6 +217,7 @@ def _onnx_encoder(model_dir: Path, config: FrozenConfig, settings: Settings) -> 
         query_prefix=config.encoder.query_prefix,
         max_tokens=config.encoder.max_tokens,
         intra_op_threads=settings.ort_intra_op_threads,
+        low_memory=settings.ort_low_memory,
     )
     if (encoder.model_id, encoder.revision) != (config.encoder.model_id, config.encoder.revision):
         raise ArtifactVersionMismatch(

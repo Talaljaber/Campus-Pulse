@@ -8,9 +8,12 @@
 #  - pre-fetched: `python scripts/fetch_models.py` (or `--from-file <tar.gz>`) on the build machine,
 #    then `COPY models/frozen` copies it with the committed parts (local builds);
 #  - fetched at build time: when it is absent (Render builds from a clean git checkout), the RUN
-#    below downloads the GitHub Release asset MODELS_TAG. While the repo is private (UD-8) this needs
-#    GITHUB_TOKEN as a BuildKit secret, never an ARG (it would leak into the image history):
-#      docker build --secret id=GITHUB_TOKEN,env=GITHUB_TOKEN -f services/ai/Dockerfile -t campuspulse-ai .
+#    below downloads the GitHub Release asset MODELS_TAG. While the repo is private (UD-8) this needs a
+#    GitHub token as the BuildKit secret `gh_token` (exposed to that one RUN as $GITHUB_TOKEN), never an
+#    ARG or ENV: it is in no layer and not in the image history.
+#      docker build --secret id=gh_token,env=GITHUB_TOKEN -f services/ai/Dockerfile -t campuspulse-ai .
+#    Render: add a secret file named `gh_token` holding the token (docs/ops/README.md); CI passes the
+#    workflow's GITHUB_TOKEN (contents: read).
 # Either way fetch_models.py verifies every file against MANIFEST.json (sha256) and fails the build on
 # any mismatch, so the image never holds a model different from the one the reports describe.
 FROM python:3.11-slim
@@ -20,8 +23,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     ORT_INTRA_OP_THREADS=1 \
     TOKENIZERS_PARALLELISM=false \
+    MALLOC_ARENA_MAX=2 \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
     TZ=Asia/Amman \
     CAMPUSPULSE_ROOT=/app
+
+# P4.13 memory budget (512 MB on Render Starter, shared with the native models): at most two glibc
+# malloc arenas for the thread pool, and single-threaded BLAS/OpenMP (0.5 CPU; labels are identical).
 
 WORKDIR /app
 
@@ -37,7 +47,7 @@ COPY scripts/fetch_models.py scripts/fetch_models.py
 COPY models/frozen models/frozen
 
 ARG MODELS_TAG=models-v1-rc1
-RUN --mount=type=secret,id=GITHUB_TOKEN,env=GITHUB_TOKEN \
+RUN --mount=type=secret,id=gh_token,env=GITHUB_TOKEN \
     python scripts/fetch_models.py --tag "$MODELS_TAG" && rm -rf models/frozen/.cache
 
 COPY services/ai services/ai

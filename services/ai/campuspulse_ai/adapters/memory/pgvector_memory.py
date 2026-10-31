@@ -20,7 +20,7 @@ from campuspulse_ai.domain.labels import Category, Priority
 from campuspulse_ai.domain.values import Lang, MemoryStats, Neighbor, VectorItem
 
 if TYPE_CHECKING:
-    from supabase import Client
+    from campuspulse_ai.adapters.store.rest import RestApi as Client
 
 COLLECTION = "memory"
 TABLE = "memory_examples"

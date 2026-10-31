@@ -191,7 +191,7 @@
           "inserts `requests`, `predictions` and `events` rows; upserts the request embedding into the `requests` vector collection",
           "needs_clarification: inserts a `clarifications` row",
           "decided/human_review: opens a ticket (Supabase + Linear issue), may book an advisor slot, sends allow-listed email and in-app notifications (`outbox` rows), may create or attach to an incident",
-          "human_review, out_of_scope, distress: inserts a `review_queue` row",
+          "human_review, distress: inserts a `review_queue` row; human_review assigns it to the student's advisor (UD-13) or an office queue and notifies the reviewer in-app (and by allow-listed email)",
           "distress: no ticket, no email, no LLM call",
           "LLM tiers (if escalated) write `llm_calls` rows"
         ],
@@ -973,6 +973,587 @@
         "x-side-effects": [
           "updates the `tickets` row; updates the Linear issue",
           "in-app notification to the student; email on `resolved` if allow-listed"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/tickets/{ticket_id}/forward": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Forward a ticket to another office",
+        "description": "Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, keeps its status, priority and SLA, and the Linear issue is updated.",
+        "operationId": "ticket_forward",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForwardRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "updates the `tickets` row (office, category, tag `forwarded`); appends an `events` row `ticket.forwarded`",
+          "after the response: updates the Linear issue (label, title, description); one in-app `ticket_forwarded` notification for `office:<new office>`",
+          "no prediction change and no live-memory write"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/reviews": {
+      "get": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Review items for the caller",
+        "description": "The unsure requests the caller may resolve (UD-13): an advisor gets their students' items and the unassigned items of their office; other staff their office's unassigned items; admins everything. Newest first.",
+        "operationId": "list_reviews",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "open",
+                "confirmed",
+                "corrected"
+              ],
+              "type": "string",
+              "description": "Which items: open (default) or resolved ones.",
+              "default": "open",
+              "title": "Status"
+            },
+            "description": "Which items: open (default) or resolved ones."
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewItemOut"
+                  },
+                  "title": "Response List Reviews"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (read-only)"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/reviews/{review_id}/forward": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Resolve a review by forwarding it to an office",
+        "description": "The reviewer (the assigned advisor, staff of the item's office, or an admin) sends an unsure request to an office. The office's category becomes the final label, the correction enters live memory, and the ticket is finalized or opened for that office (UD-13). Forwarding to the predicted office is a confirmation. Confirming with a priority change stays `POST /v1/feedback`.",
+        "operationId": "review_forward",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Review Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForwardRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "as `POST /v1/feedback`: updates the prediction and resolves the `review_queue` row; inserts a `memory_examples` row; finalizes the ticket (office re-routed, Linear updated, deferred booking/alert fire) or opens one",
+          "one in-app `ticket_forwarded` notification for `office:<office>` when the office changed",
+          "appends `events` rows `feedback.confirmed`/`feedback.corrected` and `review.forwarded`"
         ],
         "x-optional": false
       }
@@ -3910,6 +4491,34 @@
         "title": "FeedbackResponse",
         "description": "Result of `POST /v1/feedback`."
       },
+      "ForwardRequest": {
+        "properties": {
+          "office": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Office",
+            "description": "D-005 office code: registrar, it, finance, transport, facilities or academic."
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "office"
+        ],
+        "title": "ForwardRequest",
+        "description": "Body of `POST /v1/tickets/{ticket_id}/forward` and `POST /v1/reviews/{review_id}/forward` (UD-13).\n\n`office` is a D-005 office code; the category follows it (one office per category)."
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -4676,6 +5285,200 @@
         ],
         "title": "ResolveIncidentResponse",
         "description": "Result of resolving an incident."
+      },
+      "ReviewItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "prediction_id": {
+            "type": "string",
+            "title": "Prediction Id"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "needs_review",
+              "distress"
+            ],
+            "title": "Reason"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "confirmed",
+              "corrected"
+            ],
+            "title": "Status"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office",
+            "description": "The D-005 office whose queue holds the item."
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee",
+            "description": "Profile id of the assigned advisor; null = the office queue."
+          },
+          "assigned_to_me": {
+            "type": "boolean",
+            "title": "Assigned To Me"
+          },
+          "student_alias": {
+            "type": "string",
+            "title": "Student Alias"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "The student's request as written."
+          },
+          "lang": {
+            "$ref": "#/components/schemas/Lang"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category",
+            "description": "The model's best guess (or the reviewer's correction)."
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "set_cat": {
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "type": "array",
+            "title": "Set Cat"
+          },
+          "set_pri": {
+            "items": {
+              "$ref": "#/components/schemas/Priority"
+            },
+            "type": "array",
+            "title": "Set Pri"
+          },
+          "flags": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "distress",
+                "empty_input",
+                "empty_set",
+                "explanation_failed",
+                "gibberish",
+                "injection_attempt",
+                "llm_out_of_set",
+                "needs_review",
+                "out_of_scope",
+                "priority_gaming_suspected",
+                "safety",
+                "staff_confirmed",
+                "truncated",
+                "understanding_fallback",
+                "urgency_unsupported"
+              ],
+              "title": "Flag"
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "ticket_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Id",
+            "description": "The request's own (provisional) ticket, if any."
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Requested At"
+          },
+          "corrected_category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "corrected_priority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Priority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "prediction_id",
+          "request_id",
+          "reason",
+          "status",
+          "office",
+          "assignee",
+          "assigned_to_me",
+          "student_alias",
+          "text",
+          "lang",
+          "category",
+          "priority",
+          "set_cat",
+          "set_pri",
+          "flags",
+          "ticket_id",
+          "requested_at",
+          "corrected_category",
+          "corrected_priority",
+          "note"
+        ],
+        "title": "ReviewItemOut",
+        "description": "One review item the caller may act on (UD-13): an unsure request and its best guess."
       },
       "RouterStatsOut": {
         "properties": {

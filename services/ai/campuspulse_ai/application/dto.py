@@ -57,6 +57,10 @@ UnderstandingSource = Literal["llm", "rules"]
 """Mirrors `values.Understanding.source`."""
 IncidentStatus = Literal["open", "resolved"]
 """Mirrors `entities.Incident.status`."""
+ReviewStatus = Literal["open", "confirmed", "corrected"]
+"""Mirrors `entities.ReviewItem.status`."""
+ReviewReason = Literal["needs_review", "distress"]
+"""`review_queue.reason` codes (docs/api/README.md › review reasons)."""
 
 TriageStatus = Literal[
     RequestStatus.DECIDED,
@@ -501,6 +505,54 @@ class TicketStatusRequest(_Model):
 
     status: TicketStatus
     note: str | None = None
+
+
+class ForwardRequest(_Model):
+    """Body of `POST /v1/tickets/{ticket_id}/forward` and `POST /v1/reviews/{review_id}/forward` (UD-13).
+
+    `office` is a D-005 office code; the category follows it (one office per category).
+    """
+
+    office: str = Field(
+        min_length=1,
+        description="D-005 office code: registrar, it, finance, transport, facilities or academic.",
+    )
+    note: str | None = None
+
+
+# --- advisor review (UD-13) -------------------------------------------------------------------------
+
+
+class ReviewListQuery(_Model):
+    """Query parameters of `GET /v1/reviews`."""
+
+    status: ReviewStatus = Field(default="open", description="Which items: open (default) or resolved ones.")
+
+
+class ReviewItemOut(_Model):
+    """One review item the caller may act on (UD-13): an unsure request and its best guess."""
+
+    id: str
+    prediction_id: str
+    request_id: str
+    reason: ReviewReason
+    status: ReviewStatus
+    office: str | None = Field(description="The D-005 office whose queue holds the item.")
+    assignee: str | None = Field(description="Profile id of the assigned advisor; null = the office queue.")
+    assigned_to_me: bool
+    student_alias: str
+    text: str = Field(description="The student's request as written.")
+    lang: Lang
+    category: Category = Field(description="The model's best guess (or the reviewer's correction).")
+    priority: Priority
+    set_cat: list[Category]
+    set_pri: list[Priority]
+    flags: list[Flag]
+    ticket_id: str | None = Field(description="The request's own (provisional) ticket, if any.")
+    requested_at: datetime
+    corrected_category: Category | None
+    corrected_priority: Priority | None
+    note: str | None
 
 
 # --- incidents and insights -------------------------------------------------------------------------

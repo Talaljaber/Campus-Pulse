@@ -163,6 +163,13 @@ class MemoryExample:
 
 @dataclass
 class ReviewItem:
+    """One `review_queue` row: a prediction a person must confirm (or a distress report).
+
+    `assignee` is the profile id of the advisor the item is assigned to (UD-13; None = the office
+    queue) and `office` the D-005 office whose queue holds it (None = filled by the database from
+    the prediction's category). Both are additive (D-019).
+    """
+
     id: str
     prediction_id: str
     reason: str
@@ -171,6 +178,8 @@ class ReviewItem:
     corrected_category: Category | None = None
     corrected_priority: Priority | None = None
     note: str | None = None
+    assignee: str | None = None
+    office: str | None = None
 
 
 @dataclass

@@ -45,13 +45,18 @@ class EmailTemplates:
     transport_body: str  # {ticket_id} {text}
     resolved_subject: str  # {title}
     resolved_body: str  # {title} {ticket_id} {note}
+    review_subject: str  # {category} {priority}
+    review_body: str  # {alias} {category} {priority} {text}
 
 
 @dataclass(frozen=True, slots=True)
 class StaffMessages:
-    """In-app notes for office staff (P4.9), in English."""
+    """In-app notes for office staff and advisors (P4.9, UD-13), in English."""
 
     escalated: str  # {old} {new} {sla_due_at}
+    review_assigned: str  # {alias} {category} {priority}
+    review_queued: str  # {category} {priority}
+    ticket_forwarded: str  # {title} {from_office} {note}
 
 
 T = TypeVar("T")

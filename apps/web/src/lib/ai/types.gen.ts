@@ -104,6 +104,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tickets/{ticket_id}/forward": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Forward a ticket to another office
+         * @description Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, keeps its status, priority and SLA, and the Linear issue is updated.
+         */
+        post: operations["ticket_forward"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Review items for the caller
+         * @description The unsure requests the caller may resolve (UD-13): an advisor gets their students' items and the unassigned items of their office; other staff their office's unassigned items; admins everything. Newest first.
+         */
+        get: operations["list_reviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/reviews/{review_id}/forward": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve a review by forwarding it to an office
+         * @description The reviewer (the assigned advisor, staff of the item's office, or an admin) sends an unsure request to an office. The office's category becomes the final label, the correction enters live memory, and the ticket is finalized or opened for that office (UD-13). Forwarding to the predicted office is a confirmation. Confirming with a priority change stays `POST /v1/feedback`.
+         */
+        post: operations["review_forward"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/incidents": {
         parameters: {
             query?: never;
@@ -814,6 +874,21 @@ export interface components {
             message: string;
         };
         /**
+         * ForwardRequest
+         * @description Body of `POST /v1/tickets/{ticket_id}/forward` and `POST /v1/reviews/{review_id}/forward` (UD-13).
+         *
+         *     `office` is a D-005 office code; the category follows it (one office per category).
+         */
+        ForwardRequest: {
+            /**
+             * Office
+             * @description D-005 office code: registrar, it, finance, transport, facilities or academic.
+             */
+            office: string;
+            /** Note */
+            note?: string | null;
+        };
+        /**
          * HealthResponse
          * @description `GET /health` (and `/v1/health`): liveness, artifact identity and wiring.
          */
@@ -1131,6 +1206,71 @@ export interface components {
             closed_ticket_ids: string[];
             /** Notified Reporters */
             notified_reporters: number;
+        };
+        /**
+         * ReviewItemOut
+         * @description One review item the caller may act on (UD-13): an unsure request and its best guess.
+         */
+        ReviewItemOut: {
+            /** Id */
+            id: string;
+            /** Prediction Id */
+            prediction_id: string;
+            /** Request Id */
+            request_id: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "needs_review" | "distress";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "confirmed" | "corrected";
+            /**
+             * Office
+             * @description The D-005 office whose queue holds the item.
+             */
+            office: string | null;
+            /**
+             * Assignee
+             * @description Profile id of the assigned advisor; null = the office queue.
+             */
+            assignee: string | null;
+            /** Assigned To Me */
+            assigned_to_me: boolean;
+            /** Student Alias */
+            student_alias: string;
+            /**
+             * Text
+             * @description The student's request as written.
+             */
+            text: string;
+            lang: components["schemas"]["Lang"];
+            /** @description The model's best guess (or the reviewer's correction). */
+            category: components["schemas"]["Category"];
+            priority: components["schemas"]["Priority"];
+            /** Set Cat */
+            set_cat: components["schemas"]["Category"][];
+            /** Set Pri */
+            set_pri: components["schemas"]["Priority"][];
+            /** Flags */
+            flags: ("distress" | "empty_input" | "empty_set" | "explanation_failed" | "gibberish" | "injection_attempt" | "llm_out_of_set" | "needs_review" | "out_of_scope" | "priority_gaming_suspected" | "safety" | "staff_confirmed" | "truncated" | "understanding_fallback" | "urgency_unsupported")[];
+            /**
+             * Ticket Id
+             * @description The request's own (provisional) ticket, if any.
+             */
+            ticket_id: string | null;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            corrected_category: components["schemas"]["Category"] | null;
+            corrected_priority: components["schemas"]["Priority"] | null;
+            /** Note */
+            note: string | null;
         };
         /**
          * RouterStatsOut
@@ -1792,6 +1932,261 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TicketOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ticket_forward: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForwardRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_reviews: {
+        parameters: {
+            query?: {
+                /** @description Which items: open (default) or resolved ones. */
+                status?: "open" | "confirmed" | "corrected";
+            };
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewItemOut"][];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    review_forward: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                review_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForwardRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackResponse"];
                 };
             };
             /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */

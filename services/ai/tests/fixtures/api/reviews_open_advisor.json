@@ -1,0 +1,80 @@
+{
+  "name": "reviews_open_advisor",
+  "description": "The advisor's open review items (UD-13): one request from their own student (assigned to them) and one unassigned item of the academic office queue.",
+  "method": "GET",
+  "path": "/v1/reviews",
+  "path_params": {},
+  "query": {
+    "status": "open"
+  },
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Alias": "advisor",
+    "X-CP-Office": "academic"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": [
+    {
+      "id": "9e8d7c6b-5a49-4382-9170-6f5e4d3c0021",
+      "prediction_id": "8d21f4a0-6c3e-4b7a-8e15-3c4d5e6f0021",
+      "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0021",
+      "reason": "needs_review",
+      "status": "open",
+      "office": "academic",
+      "assignee": "a1b2c3d4-0000-4000-8000-00000000ad01",
+      "assigned_to_me": true,
+      "student_alias": "talal",
+      "text": "I can't open the course page to submit my assignment, is it the system or the instructor?",
+      "lang": "en",
+      "category": "Academic Support",
+      "priority": "medium",
+      "set_cat": [
+        "IT Support",
+        "Academic Support"
+      ],
+      "set_pri": [
+        "medium"
+      ],
+      "flags": [
+        "needs_review"
+      ],
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0021",
+      "requested_at": "2026-11-05T10:15:00+03:00",
+      "corrected_category": null,
+      "corrected_priority": null,
+      "note": null
+    },
+    {
+      "id": "9e8d7c6b-5a49-4382-9170-6f5e4d3c0022",
+      "prediction_id": "8d21f4a0-6c3e-4b7a-8e15-3c4d5e6f0022",
+      "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0022",
+      "reason": "needs_review",
+      "status": "open",
+      "office": "academic",
+      "assignee": null,
+      "assigned_to_me": false,
+      "student_alias": "demo-31",
+      "text": "بدي أعرف إذا بقدر أسجل مادة زيادة هالفصل",
+      "lang": "ar",
+      "category": "Registration",
+      "priority": "low",
+      "set_cat": [
+        "Registration",
+        "Academic Support"
+      ],
+      "set_pri": [
+        "low",
+        "medium"
+      ],
+      "flags": [
+        "needs_review"
+      ],
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0022",
+      "requested_at": "2026-11-05T09:40:00+03:00",
+      "corrected_category": null,
+      "corrected_priority": null,
+      "note": null
+    }
+  ]
+}

@@ -62,8 +62,9 @@ class IncidentActions:
     `merge(decision, request, pred, plan, understanding, provisional)` -> the `ActionOut` of the
     report (type `incident_merge`), for a decision of kind `new` or `attach`:
     1. The incident ticket: on `new` one ticket (tag `incident`, priority = the incident's, title
-       "<category> reports in building X") is opened through every sink (`ActUseCase.open_ticket`);
-       on `attach` the existing one is re-prioritised (and mirrored) when the incident priority rose.
+       "<category> reports in building X", office = the incident category's, D-017) is opened through
+       every sink (`ActUseCase.open_ticket`); on `attach` the existing one follows the incident (and is
+       mirrored) when its priority rose or its majority category changed.
     2. The report's own ticket is saved in the record only (status `merged`, `incident_id` set), so
        a burst of reports makes one Linear issue, not one per student. On `new`, the earlier member
        reports' tickets are moved to `merged` too and mirrored (their Linear issues become Duplicate).
@@ -148,8 +149,19 @@ class IncidentActions:
     ) -> Ticket | None:
         if decision.kind == "attach":
             current = incident_ticket(self._repo, incident.id)
-            if current is not None and incident.priority.rank > current.priority.rank:
-                current = dataclasses.replace(current, priority=incident.priority)
+            if current is None:
+                return None
+            priority = max(current.priority, incident.priority, key=lambda p: p.rank)
+            if (priority, incident.category) != (current.priority, current.category):
+                current = dataclasses.replace(
+                    current,
+                    priority=priority,
+                    category=incident.category,
+                    office=self._act.office_for(incident.category, priority),
+                    title=f"{incident.title} ({incident.report_count} reports)"
+                    if incident.category != current.category
+                    else current.title,
+                )
                 self._repo.save_ticket(current)
                 self._mirror.push(current, skip=(RECORD_SINK,))
             return current
@@ -157,7 +169,7 @@ class IncidentActions:
             id=str(uuid.uuid4()),
             request_id=request.id,
             incident_id=incident.id,
-            office=plan.office,
+            office=self._act.office_for(incident.category, incident.priority),
             category=incident.category,
             priority=incident.priority,
             status=TicketStatus.OPEN,

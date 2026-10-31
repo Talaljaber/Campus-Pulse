@@ -24,6 +24,9 @@ Every non-2xx response has this shape:
 - [`GET /v1/explain/{request_id}/counterfactual`](#explain_counterfactual) Live counterfactual
 - [`POST /v1/feedback`](#feedback) Staff confirm or correct a prediction
 - [`POST /v1/tickets/{ticket_id}/status`](#ticket_status) Change a ticket's status from the dashboard
+- [`POST /v1/tickets/{ticket_id}/forward`](#ticket_forward) Forward a ticket to another office
+- [`GET /v1/reviews`](#list_reviews) Review items for the caller
+- [`POST /v1/reviews/{review_id}/forward`](#review_forward) Resolve a review by forwarding it to an office
 - [`GET /v1/incidents`](#list_incidents) List incidents
 - [`POST /v1/incidents/{incident_id}/resolve`](#resolve_incident) Resolve an incident and notify reporters
 - [`GET /v1/insights/recurring`](#insights_recurring) Recurring problems
@@ -276,7 +279,7 @@ Error example (`triage_error_empty_text`, 422):
 - inserts `requests`, `predictions` and `events` rows; upserts the request embedding into the `requests` vector collection
 - needs_clarification: inserts a `clarifications` row
 - decided/human_review: opens a ticket (Supabase + Linear issue), may book an advisor slot, sends allow-listed email and in-app notifications (`outbox` rows), may create or attach to an incident
-- human_review, out_of_scope, distress: inserts a `review_queue` row
+- human_review, distress: inserts a `review_queue` row; human_review assigns it to the student's advisor (UD-13) or an office queue and notifies the reviewer in-app (and by allow-listed email)
 - distress: no ticket, no email, no LLM call
 - LLM tiers (if escalated) write `llm_calls` rows
 
@@ -783,6 +786,330 @@ Response `200`:
 
 - updates the `tickets` row; updates the Linear issue
 - in-app notification to the student; email on `resolved` if allow-listed
+
+<a id="ticket_forward"></a>
+## `POST /v1/tickets/{ticket_id}/forward`
+
+**Forward a ticket to another office.** Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, keeps its status, priority and SLA, and the Linear issue is updated.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ForwardRequest](#schema-forwardrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `office` | string | yes | D-005 office code: registrar, it, finance, transport, facilities or academic; min len 1 |
+| `note` | string \| null | no |  |
+
+**Response `200`:** `application/json` [TicketOut](#schema-ticketout)
+
+**Example** (fixture `ticket_forward_facilities`): IT staff forward a ticket to Facilities (UD-13): office and category change, status, priority and SLA stay; Linear and the new office are updated after the response.
+
+`request.json`:
+
+```json
+{
+  "office": "facilities",
+  "note": "The wall socket is dead; it is not the projector."
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0023/forward" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0023",
+  "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0023",
+  "incident_id": null,
+  "office": "facilities",
+  "category": "Facilities",
+  "priority": "high",
+  "status": "in_progress",
+  "provisional": false,
+  "sla_due_at": "2026-11-06T11:30:00+03:00",
+  "escalated_at": null,
+  "resolved_at": null,
+  "title": "Projector in C 105 has no power during the lecture",
+  "links": [
+    {
+      "sink": "linear",
+      "external_id": "CP-52",
+      "url": "https://linear.app/campuspulse-demo/issue/CP-52"
+    }
+  ]
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- updates the `tickets` row (office, category, tag `forwarded`); appends an `events` row `ticket.forwarded`
+- after the response: updates the Linear issue (label, title, description); one in-app `ticket_forwarded` notification for `office:<new office>`
+- no prediction change and no live-memory write
+
+<a id="list_reviews"></a>
+## `GET /v1/reviews`
+
+**Review items for the caller.** The unsure requests the caller may resolve (UD-13): an advisor gets their students' items and the unassigned items of their office; other staff their office's unassigned items; admins everything. Newest first.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `status` | query | `open` \| `confirmed` \| `corrected` | no | Which items: open (default) or resolved ones. |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` array of [ReviewItemOut](#schema-reviewitemout)
+
+**Example** (fixture `reviews_open_advisor`): The advisor's open review items (UD-13): one request from their own student (assigned to them) and one unassigned item of the academic office queue.
+
+```powershell
+curl.exe -s -X GET "$env:AI_URL/v1/reviews?status=open" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+[
+  {
+    "id": "9e8d7c6b-5a49-4382-9170-6f5e4d3c0021",
+    "prediction_id": "8d21f4a0-6c3e-4b7a-8e15-3c4d5e6f0021",
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0021",
+    "reason": "needs_review",
+    "status": "open",
+    "office": "academic",
+    "assignee": "a1b2c3d4-0000-4000-8000-00000000ad01",
+    "assigned_to_me": true,
+    "student_alias": "talal",
+    "text": "I can't open the course page to submit my assignment, is it the system or the instructor?",
+    "lang": "en",
+    "category": "Academic Support",
+    "priority": "medium",
+    "set_cat": [
+      "IT Support",
+      "Academic Support"
+    ],
+    "set_pri": [
+      "medium"
+    ],
+    "flags": [
+      "needs_review"
+    ],
+    "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0021",
+    "requested_at": "2026-11-05T10:15:00+03:00",
+    "corrected_category": null,
+    "corrected_priority": null,
+    "note": null
+  },
+  {
+    "id": "9e8d7c6b-5a49-4382-9170-6f5e4d3c0022",
+    "prediction_id": "8d21f4a0-6c3e-4b7a-8e15-3c4d5e6f0022",
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0022",
+    "reason": "needs_review",
+    "status": "open",
+    "office": "academic",
+    "assignee": null,
+    "assigned_to_me": false,
+    "student_alias": "demo-31",
+    "text": "بدي أعرف إذا بقدر أسجل مادة زيادة هالفصل",
+    "lang": "ar",
+    "category": "Registration",
+    "priority": "low",
+    "set_cat": [
+      "Registration",
+      "Academic Support"
+    ],
+    "set_pri": [
+      "low",
+      "medium"
+    ],
+    "flags": [
+      "needs_review"
+    ],
+    "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0022",
+    "requested_at": "2026-11-05T09:40:00+03:00",
+    "corrected_category": null,
+    "corrected_priority": null,
+    "note": null
+  }
+]
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- none (read-only)
+
+<a id="review_forward"></a>
+## `POST /v1/reviews/{review_id}/forward`
+
+**Resolve a review by forwarding it to an office.** The reviewer (the assigned advisor, staff of the item's office, or an admin) sends an unsure request to an office. The office's category becomes the final label, the correction enters live memory, and the ticket is finalized or opened for that office (UD-13). Forwarding to the predicted office is a confirmation. Confirming with a priority change stays `POST /v1/feedback`.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `review_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ForwardRequest](#schema-forwardrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `office` | string | yes | D-005 office code: registrar, it, finance, transport, facilities or academic; min len 1 |
+| `note` | string \| null | no |  |
+
+**Response `200`:** `application/json` [FeedbackResponse](#schema-feedbackresponse)
+
+**Example** (fixture `review_forward_it`): The advisor forwards their student's unsure request to IT (UD-13): IT Support becomes the final label, the correction enters live memory, and the provisional ticket is finalized for office it.
+
+`request.json`:
+
+```json
+{
+  "office": "it",
+  "note": "The e-learning platform is down, not a course question."
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/reviews/9e8d7c6b-5a49-4382-9170-6f5e4d3c0021/forward" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "prediction_id": "8d21f4a0-6c3e-4b7a-8e15-3c4d5e6f0021",
+  "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0021",
+  "category": "IT Support",
+  "priority": "medium",
+  "tier": "human",
+  "flags": [
+    "staff_confirmed"
+  ],
+  "ticket": {
+    "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0021",
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0021",
+    "incident_id": null,
+    "office": "it",
+    "category": "IT Support",
+    "priority": "medium",
+    "status": "open",
+    "provisional": false,
+    "sla_due_at": "2026-11-08T10:15:00+03:00",
+    "escalated_at": null,
+    "resolved_at": null,
+    "title": "Cannot reach the e-learning page to submit the assignment",
+    "links": [
+      {
+        "sink": "linear",
+        "external_id": "CP-51",
+        "url": "https://linear.app/campuspulse-demo/issue/CP-51"
+      }
+    ]
+  },
+  "memory": {
+    "example_id": "0b7d9e1f-4a2c-4d3e-8f5a-6b7c8d9e0021",
+    "active_examples": 5
+  },
+  "actions": [],
+  "message": "Corrected. The next similar request will use this correction."
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `review_forward_error_not_yours` | 403 | Staff who cannot see the item (another office, or another advisor's student) cannot resolve it. |
+
+Error example (`review_forward_error_not_yours`, 403):
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "this review item is in another advisor's queue, not yours",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- as `POST /v1/feedback`: updates the prediction and resolves the `review_queue` row; inserts a `memory_examples` row; finalizes the ticket (office re-routed, Linear updated, deferred booking/alert fire) or opens one
+- one in-app `ticket_forwarded` notification for `office:<office>` when the office changed
+- appends `events` rows `feedback.confirmed`/`feedback.corrected` and `review.forwarded`
 
 <a id="list_incidents"></a>
 ## `GET /v1/incidents`
@@ -2244,6 +2571,16 @@ Result of `POST /v1/feedback`.
 | `actions` | array of [ActionOut](#schema-actionout) | yes | Deferred actions that fired on confirmation |
 | `message` | string | yes |  |
 
+<a id="schema-forwardrequest"></a>
+### ForwardRequest
+
+Body of `POST /v1/tickets/{ticket_id}/forward` and `POST /v1/reviews/{review_id}/forward` (UD-13).  `office` is a D-005 office code; the category follows it (one office per category).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `office` | string | yes | D-005 office code: registrar, it, finance, transport, facilities or academic; min len 1 |
+| `note` | string \| null | no |  |
+
 <a id="schema-healthresponse"></a>
 ### HealthResponse
 
@@ -2459,6 +2796,35 @@ Result of resolving an incident.
 | `incident` | [IncidentOut](#schema-incidentout) | yes |  |
 | `closed_ticket_ids` | array of string | yes |  |
 | `notified_reporters` | integer | yes | >= 0.0 |
+
+<a id="schema-reviewitemout"></a>
+### ReviewItemOut
+
+One review item the caller may act on (UD-13): an unsure request and its best guess.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `prediction_id` | string | yes |  |
+| `request_id` | string | yes |  |
+| `reason` | `needs_review` \| `distress` | yes |  |
+| `status` | `open` \| `confirmed` \| `corrected` | yes |  |
+| `office` | string \| null | yes | The D-005 office whose queue holds the item |
+| `assignee` | string \| null | yes | Profile id of the assigned advisor; null = the office queue |
+| `assigned_to_me` | boolean | yes |  |
+| `student_alias` | string | yes |  |
+| `text` | string | yes | The student's request as written |
+| `lang` | [Lang](#schema-lang) | yes |  |
+| `category` | [Category](#schema-category) | yes | The model's best guess (or the reviewer's correction) |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `set_cat` | array of [Category](#schema-category) | yes |  |
+| `set_pri` | array of [Priority](#schema-priority) | yes |  |
+| `flags` | array of `distress` \| `empty_input` \| `empty_set` \| `explanation_failed` \| `gibberish` \| `injection_attempt` \| `llm_out_of_set` \| `needs_review` \| `out_of_scope` \| `priority_gaming_suspected` \| `safety` \| `staff_confirmed` \| `truncated` \| `understanding_fallback` \| `urgency_unsupported` | yes |  |
+| `ticket_id` | string \| null | yes | The request's own (provisional) ticket, if any |
+| `requested_at` | string (date-time) | yes |  |
+| `corrected_category` | [Category](#schema-category) \| null | yes |  |
+| `corrected_priority` | [Priority](#schema-priority) \| null | yes |  |
+| `note` | string \| null | yes |  |
 
 <a id="schema-routerstatsout"></a>
 ### RouterStatsOut

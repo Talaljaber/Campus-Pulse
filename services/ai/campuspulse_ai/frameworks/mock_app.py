@@ -43,12 +43,14 @@ from campuspulse_ai.application.dto import (
     ErrorCode,
     ErrorResponse,
     FeedbackRequest,
+    ForwardRequest,
     IncidentListQuery,
     PrincipalHeaders,
     RecurringQuery,
     RedTeamRunRequest,
     ReindexRequest,
     ResolveIncidentRequest,
+    ReviewListQuery,
     SimulateRequest,
     TicketStatusRequest,
     TriageQuery,
@@ -208,6 +210,21 @@ def build_router(store: FixtureStore) -> APIRouter:
     def ticket_status(ticket_id: str, body: TicketStatusRequest, request: Request) -> Any:
         """Dashboard ticket status change (fixture-backed)."""
         return _respond(store.pick("ticket_status", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("ticket_forward"), dependencies=[Depends(_guard("ticket_forward"))])
+    def ticket_forward(ticket_id: str, body: ForwardRequest, request: Request) -> Any:
+        """Forward a ticket to another office (fixture-backed)."""
+        return _respond(store.pick("ticket_forward", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("list_reviews"), dependencies=[Depends(_guard("list_reviews"))])
+    def list_reviews(query: Annotated[ReviewListQuery, Query()], request: Request) -> Any:
+        """Review items for the caller (fixture-backed)."""
+        return _respond(store.pick("list_reviews", request, None))
+
+    @router.api_route(**route_kwargs("review_forward"), dependencies=[Depends(_guard("review_forward"))])
+    def review_forward(review_id: str, body: ForwardRequest, request: Request) -> Any:
+        """Forward a review item to an office (fixture-backed)."""
+        return _respond(store.pick("review_forward", request, body.model_dump(mode="json")))
 
     @router.api_route(**route_kwargs("list_incidents"), dependencies=[Depends(_guard("list_incidents"))])
     def list_incidents(query: Annotated[IncidentListQuery, Query()], request: Request) -> Any:
