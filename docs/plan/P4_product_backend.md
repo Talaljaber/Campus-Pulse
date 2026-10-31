@@ -199,7 +199,7 @@
      - 6 advisors with fictional names, each `demo_email` an allow-listed plus-address (`campuspulse.support+adv-reg@gmail.com` …), office hours Sun–Thu 09:00–15:00 Asia/Amman;
      - slots for the next 14 days generated with `generate_series`;
      - FAQ text: every non-`[demo]` entry quotes `docs/reference/gju_public_policies.md` with its source URL, and every other entry is `is_demo = true`, at least 24 entries EN+AR.
-  2. **`seed_demo_users.py`** uses the service key on the dev machine only. It calls `auth.admin.create_user` for `student-demo-17@demo.local`, `staff-it@demo.local` and `admin@demo.local` (§1.7), with passwords from `DEMO_USER_PASSWORD`, and inserts their `profiles`.
+  2. **`seed_demo_users.py`** uses the service key on the dev machine only. It calls `auth.admin.create_user` for `talal@demo.local`, `it@demo.local` and `admin@demo.local` (§1.7), with passwords from `DEMO_USER_PASSWORD`, and inserts their `profiles`.
   3. **`seed_faq.py`** embeds FAQ questions with the frozen `OnnxEncoder` and upserts them with `PgVectorStore`. It refuses to run if `config.json.encoder.dim != vector_dim()`.
   4. **Repository** maps PostgREST errors to `StoreError`/`NotFound`, uses no SDK exceptions outside the adapter, and stores datetimes as ISO UTC.
 - Acceptance:
