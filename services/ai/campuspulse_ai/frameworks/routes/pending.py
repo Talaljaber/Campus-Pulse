@@ -2,7 +2,6 @@
 then answer `501 not_implemented`, so the real app already exports the full contract (the same
 OpenAPI document as the mock app) and clients get a typed error instead of a 404.
 
-- `GET /v1/incidents`, `POST /v1/incidents/{id}/resolve`: Pulse (P4.10).
 - `GET /v1/insights/recurring`: Recurring problems (P4.21).
 - `POST /v1/admin/simulate`, `POST /v1/admin/reindex`: optional extras (P5.19, P4.20).
 """
@@ -14,10 +13,8 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query, Request
 
 from campuspulse_ai.application.dto import (
-    IncidentListQuery,
     RecurringQuery,
     ReindexRequest,
-    ResolveIncidentRequest,
     SimulateRequest,
 )
 from campuspulse_ai.frameworks.api_contract import route_kwargs
@@ -25,27 +22,6 @@ from campuspulse_ai.frameworks.auth import Principal, authorize
 from campuspulse_ai.frameworks.errors import not_wired
 
 router = APIRouter()
-
-
-@router.api_route(**route_kwargs("list_incidents"))
-def list_incidents(
-    query: Annotated[IncidentListQuery, Query()],
-    request: Request,
-    caller: Annotated[Principal, Depends(authorize("list_incidents"))],
-) -> Any:
-    """Pulse incidents (P4.10)."""
-    raise not_wired("incidents")
-
-
-@router.api_route(**route_kwargs("resolve_incident"))
-def resolve_incident(
-    incident_id: str,
-    body: ResolveIncidentRequest,
-    request: Request,
-    caller: Annotated[Principal, Depends(authorize("resolve_incident"))],
-) -> Any:
-    """Resolve an incident (P4.10)."""
-    raise not_wired("incidents")
 
 
 @router.api_route(**route_kwargs("insights_recurring"))

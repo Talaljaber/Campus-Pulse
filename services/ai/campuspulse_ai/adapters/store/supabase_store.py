@@ -220,6 +220,69 @@ class SupabaseRepository:
             raise NotFound(f"no ticket linked to {sink}:{external_id}")
         return self.get_ticket(str(rows[0]["ticket_id"]))
 
+    # ------------------------------------------------------------------ LifecycleReads (P3.11, P4.10)
+
+    def get_prediction(self, id: str) -> Prediction:
+        return codec.to_prediction(self._one("predictions", "id", id))
+
+    def open_review_for(self, prediction_id: str) -> ReviewItem | None:
+        rows = self._rows(
+            "open_review_for",
+            lambda: (
+                self._db.table("review_queue")
+                .select("*")
+                .eq("prediction_id", prediction_id)
+                .eq("status", "open")
+                .order("created_at")
+                .order("id")
+                .limit(1)
+                .execute()
+            ),
+        )
+        return codec.to_review_item(rows[0]) if rows else None
+
+    def tickets_for_requests(self, request_ids: Sequence[str]) -> list[Ticket]:
+        ids = list(dict.fromkeys(request_ids))
+        if not ids:
+            return []
+        rows = self._rows(
+            "tickets_for_requests",
+            lambda: (
+                self._db.table("tickets")
+                .select("*")
+                .in_("request_id", ids)
+                .order("created_at")
+                .order("id")
+                .execute()
+            ),
+        )
+        return self._tickets(rows)
+
+    def get_incident(self, id: str) -> Incident:
+        return self._incidents([self._one("incidents", "id", id)])[0]
+
+    def list_incidents(self, *, open_only: bool, limit: int) -> list[Incident]:
+        def run() -> Any:
+            q = self._db.table("incidents").select("*")
+            if open_only:
+                q = q.eq("status", "open")
+            return q.order("opened_at", desc=True).order("id", desc=True).limit(limit).execute()
+
+        return self._incidents(self._rows("list_incidents", run))
+
+    def mark_simulated(self, request_id: str) -> None:
+        self._update("requests", {"simulated": True}, "id", request_id)
+
+    def simulated(self, request_ids: Sequence[str]) -> set[str]:
+        ids = list(dict.fromkeys(request_ids))
+        if not ids:
+            return set()
+        rows = self._rows(
+            "simulated",
+            lambda: self._db.table("requests").select("id").in_("id", ids).eq("simulated", True).execute(),
+        )
+        return {str(r["id"]) for r in rows}
+
     # ------------------------------------------------------------------ outbox / signals / audit
 
     def save_outbox(self, m: OutboxMessage) -> OutboxMessage:

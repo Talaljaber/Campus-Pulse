@@ -399,6 +399,19 @@ def review_row(item: ReviewItem) -> Row:
     }
 
 
+def to_review_item(row: Mapping[str, Any]) -> ReviewItem:
+    return ReviewItem(
+        id=str(row["id"]),
+        prediction_id=str(row["prediction_id"]),
+        reason=row["reason"],
+        status=row["status"],
+        reviewer_id=row.get("reviewer_id"),
+        corrected_category=Category(row["corrected_category"]) if row.get("corrected_category") else None,
+        corrected_priority=Priority(row["corrected_priority"]) if row.get("corrected_priority") else None,
+        note=row.get("note"),
+    )
+
+
 # --------------------------------------------------------------------------- tickets / incidents
 
 

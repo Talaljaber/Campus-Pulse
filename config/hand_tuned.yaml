@@ -2,4 +2,8 @@
 # train.py reads this file and copies the values into config.json `thresholds` (train.py stays the only writer
 # of config.json). Changing a value means a re-freeze (train.py --retune, or the P6.1 final train).
 tau_faq: 0.90   # FAQ answer cosine floor; hand-tuned on the seed FAQ in P4.5
-tau_inc: 0.80   # incident clustering cosine floor; verified by the simulator in P4.10
+tau_inc: 0.92   # incident clustering cosine floor (D-015): Wi-Fi reports >= 0.926 to their centroid,
+                # unrelated same-building IT complaints <= 0.909 (v1-rc1 encoder). Thin margin:
+                # re-measure whenever the encoder changes.
+# The API (composition/online.py) reads tau_faq and tau_inc from this file at startup, so a
+# hand-tuned change reaches the live service without a re-freeze; predict.py uses neither.

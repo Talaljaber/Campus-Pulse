@@ -77,6 +77,40 @@ jobs:
       - run: mypy --strict services/ai/campuspulse_ai
       - run: pytest services/ai/tests -q -m "not train and not artifacts and not supabase"
 
+  # P1.19: run the artifact tests and an offline predict.py against the released models.
+  # The repo is private, so the release asset is fetched with gh + GITHUB_TOKEN, then installed
+  # with fetch_models.py --from-file, which verifies every file against MANIFEST.json.
+  artifacts:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_REF }}
+          cache: pip
+          cache-dependency-path: services/ai/requirements*.txt
+      - run: pip install -r services/ai/requirements-dev.txt -e services/ai
+      - name: Cache the model release
+        id: models
+        uses: actions/cache@v4
+        with:
+          path: dist/campuspulse-models-v1.tar.gz
+          key: models-${{ hashFiles('models/frozen/v1/MANIFEST.json') }}
+      - name: Download the model release
+        if: steps.models.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download models-v1-rc1 --repo "${{ github.repository }}" --pattern campuspulse-models-v1.tar.gz --dir dist
+      - run: python scripts/fetch_models.py --from-file dist/campuspulse-models-v1.tar.gz
+      - run: pytest services/ai/tests -q -m "artifacts and not slow and not train and not supabase"
+      - name: Offline predict on the validation file
+        run: |
+          python scripts/no_network.py services/ai/predict.py --input data/raw/validation.csv --output .tmp/pred_val.csv
+          python scripts/validate_predictions.py --input data/raw/validation.csv --pred .tmp/pred_val.csv
+
   data-gates:
     needs: changes
     if: needs.changes.outputs.python == 'true'

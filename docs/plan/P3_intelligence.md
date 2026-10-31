@@ -371,7 +371,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-7"></a>
 ## P3.7 — Add the MemoryStore port implementations and the memory-aware kNN merge
 
-- [ ] Done
+- [x] Done
 - Depends on: P1 (`KnnClassifier`, `ExampleIndex`, `NullMemoryStore`)
 - Est: 1.25 h · Cut: no
 - Files:
@@ -534,7 +534,7 @@ All of this is exposed through FastAPI with the full SPEC §7 contract and testa
 <a id="p3-11"></a>
 ## P3.11 — Implement FeedbackUseCase and prove the live-learning demo
 
-- [ ] Done
+- [x] Done
 - Depends on: P3.7, P3.9
 - Est: 1.5 h · Cut: no
 - Files:

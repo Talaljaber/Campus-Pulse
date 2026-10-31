@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 
 from campuspulse_ai.application import dto
-from campuspulse_ai.domain.entities import CoreResult, Explanation, Scorecard
+from campuspulse_ai.domain.entities import CoreResult, Explanation, Incident, Scorecard, Ticket
 from campuspulse_ai.domain.labels import CATEGORY_ORDER, PRIORITY_ORDER, Category, Priority
 from campuspulse_ai.domain.values import (
     FLAGS,
@@ -158,3 +158,50 @@ def scorecard_out(s: Scorecard) -> dto.ScorecardOut:
 
 def _prob(p: float) -> float:
     return min(max(p, 0.0), 1.0)
+
+
+def ticket_out(ticket: Ticket) -> dto.TicketOut:
+    """`TicketOut` of a ticket. Links that record a failed push (`error` set, D-011) are not mirrors,
+    so they are left out, as in `action.external` (same rule as `frameworks/presenters.ticket_out`)."""
+    return dto.TicketOut(
+        id=ticket.id,
+        request_id=ticket.request_id,
+        incident_id=ticket.incident_id,
+        office=ticket.office,
+        category=ticket.category,
+        priority=ticket.priority,
+        status=ticket.status,
+        provisional=ticket.provisional,
+        sla_due_at=ticket.sla_due_at,
+        escalated_at=ticket.escalated_at,
+        resolved_at=ticket.resolved_at,
+        title=ticket.title,
+        links=external_refs(ticket),
+    )
+
+
+def external_refs(ticket: Ticket) -> list[dto.ExternalRefOut]:
+    """The ticket's mirrors (links without an error)."""
+    return [
+        dto.ExternalRefOut(sink=link.sink, external_id=link.external_id, url=link.url)
+        for link in ticket.links
+        if link.error is None
+    ]
+
+
+def incident_out(incident: Incident, ticket_id: str | None, *, simulated: bool = False) -> dto.IncidentOut:
+    """`IncidentOut`; `ticket_id` is the one incident ticket (None before it exists)."""
+    return dto.IncidentOut(
+        id=incident.id,
+        building=incident.building,
+        category=incident.category,
+        title=incident.title,
+        priority=incident.priority,
+        report_count=incident.report_count,
+        status=incident.status,
+        member_ticket_ids=[t for t in incident.member_ticket_ids if t != ticket_id],
+        ticket_id=ticket_id,
+        opened_at=incident.opened_at,
+        resolved_at=incident.resolved_at,
+        simulated=simulated,
+    )

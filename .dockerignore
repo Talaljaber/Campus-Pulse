@@ -8,9 +8,15 @@
 **/*.egg-info
 apps
 node_modules
-data
+# data/ and reports/: only what the API reads at runtime (Dockerfile COPY lines); never a holdout
+data/*
+!data/clean
+data/clean/*
+!data/clean/train_clean.csv
 docs
-reports
+reports/*
+!reports/model_lab.json
+models/frozen/.cache
 .env
 .env.*
 !.env.example

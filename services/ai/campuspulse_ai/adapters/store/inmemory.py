@@ -197,6 +197,41 @@ class InMemoryRepository:
                 return self.get_ticket(row["ticket_id"])
         raise NotFound(f"no ticket linked to {sink}:{external_id}")
 
+    # ------------------------------------------------------------------ LifecycleReads (P3.11, P4.10)
+
+    def get_prediction(self, id: str) -> Prediction:
+        return codec.to_prediction(self._get("predictions", id))
+
+    def open_review_for(self, prediction_id: str) -> ReviewItem | None:
+        rows = [
+            r
+            for r in self.tables["review_queue"].values()
+            if r["prediction_id"] == prediction_id and r["status"] == "open"
+        ]
+        if not rows:
+            return None
+        return codec.to_review_item(min(rows, key=lambda r: (r["created_at"], r["_seq"])))
+
+    def tickets_for_requests(self, request_ids: Sequence[str]) -> list[Ticket]:
+        wanted = set(request_ids)
+        rows = [r for r in self.tables["tickets"].values() if r["request_id"] in wanted]
+        return [self._ticket(r) for r in sorted(rows, key=lambda r: (r["created_at"], r["_seq"]))]
+
+    def get_incident(self, id: str) -> Incident:
+        return self._incident(self._get("incidents", id))
+
+    def list_incidents(self, *, open_only: bool, limit: int) -> list[Incident]:
+        rows = [r for r in self.tables["incidents"].values() if not open_only or r["status"] == "open"]
+        rows.sort(key=lambda r: (_ts(r["opened_at"]), r["id"]), reverse=True)
+        return [self._incident(r) for r in rows[:limit]]
+
+    def mark_simulated(self, request_id: str) -> None:
+        self._get("requests", request_id)["simulated"] = True
+
+    def simulated(self, request_ids: Sequence[str]) -> set[str]:
+        rows = self.tables["requests"]
+        return {i for i in request_ids if i in rows and rows[i].get("simulated")}
+
     # ------------------------------------------------------------------ outbox / signals / audit
 
     def save_outbox(self, m: OutboxMessage) -> OutboxMessage:

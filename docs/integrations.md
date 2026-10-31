@@ -6,7 +6,15 @@ webhook, email and in-app notifications, and advisor booking. Design: [ARCHITECT
 
 Code: `services/ai/campuspulse_ai/adapters/{integrations,notify,calendar}/`. Config:
 [`config/integrations.yaml`](../config/integrations.yaml) (sinks, Linear mapping) and Settings env
-vars ([ops env table](ops/README.md#env-vars)). The wiring into `build_online` / `ActUseCase` is P4.8.
+vars ([ops env table](ops/README.md#env-vars)). The production wiring is `composition/online.py`
+`build_online` (P4.3, Backend batch 7): see [docs/api/README.md › build_online](api/README.md#build-online).
+
+**Live check (2026-10-31, local `uvicorn api:app` with the real `.env`, Backend batch 7).** Through
+`/v1/triage` with a demo student's JWT: a provisional Registration × high ticket became Linear CDP-3; a
+clarify round-trip (`cat:Registration|IT Support` → `registration`) became CDP-4; a corrected Facilities
+ticket CDP-5; Pulse incident tickets were created once per incident. All 13 issues the run created
+(CDP-3 … CDP-15) were archived and every row deleted afterwards. No email was sent (`DEMO_STUDENT_INBOX`
+and `DEMO_OFFICE_INBOX` are unset in `.env`).
 
 **Non-negotiable:** nothing here ever contacts a real person. Every email and every booking
 attendee passes `RecipientPolicy(DEMO_EMAIL_ALLOWLIST)` in code; an empty list rejects everything.
@@ -58,7 +66,14 @@ linear = RetryingSink(
 link = linear.create(ticket)          # TicketLink(ticket.id, "linear", <issue id>, <issue url>)
 ```
 
-Built only when `ENABLE_SINKS=true` and `LINEAR_API_KEY` is set.
+Built only when `ENABLE_SINKS=true` and `LINEAR_API_KEY` is set. Without `LINEAR_WEBHOOK_SECRET` the
+sink is built with an empty secret, which refuses every inbound webhook (outbound pushes still work).
+
+**Pulse incidents (P4.10).** A burst of similar located reports makes **one** Linear issue: the incident
+ticket (tag `incident`, title "<category> reports in building X (N reports)"). Reports that arrived
+before the incident formed had their own issues; they move to the Duplicate state (`merged`). Reports
+that attach later get no issue (their ticket stays in Supabase, `merged`). Resolving the incident moves
+its issue to Done (`resolved` → `completed`).
 
 **Workspace (set up 2026-10-31).** Workspace "CampusPulse" (`urlKey` `campus-pulse`). One team for
 every office: **CDP** (`8b4300c4-0a05-4581-bd9d-b761e8b6ee70`), states Backlog (`backlog`), Todo
