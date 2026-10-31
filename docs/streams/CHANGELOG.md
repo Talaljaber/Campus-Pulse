@@ -46,3 +46,12 @@
 - **Acceptance:** `vitest run src/i18n src/components` -> `10 passed`; typecheck and lint exit 0.
 - **Limitations / TODO / known issues:** the root layout reads cookies and headers, so every page renders dynamically. Chat, staff, pulse and lab strings are added by the tasks that build those pages. vitest is configured with `pool: "threads"` because forked workers timed out on this Windows machine.
 - **Affects streams:** none outside UI.
+
+### P5.3 — UI primitives and the `/dev/ui` kitchen sink  (ui, 2026-10-31, commit see git log)
+- **What now exists:** `Button, Chip/ChipGroup, Badge, Card, Tabs/TabPanel, Table, ToastProvider/useToast, Dialog, Skeleton, EmptyState, Icon, ThemeSwitch, LanguageSwitch` in `src/components/ui` (exported from `index.ts`), each with a props type and TSDoc, keyboard support (arrows mirrored in RTL) and focus states. `/dev/ui` shows every primitive in English and Arabic side by side with a theme switch. A minimal `playwright.config.ts` and `e2e/devui.spec.ts` exist (P5.13 will extend the config).
+- **Public interfaces added or changed:** see the catalog in [docs/ui/README.md](../ui/README.md#component-catalog-srccomponentsui-all-in-indexts). Tones are `cat-*`, `pri-*`, `ok|warn|danger|info|neutral` (`CATEGORY_TONE` / `PRIORITY_TONE` map exact backend labels).
+- **How to use it:** `import { Button, Badge, CATEGORY_TONE } from "@/components/ui"`; `<Badge tone={CATEGORY_TONE["IT Support"]}>...</Badge>`.
+- **Config / env added:** none.
+- **Acceptance:** `vitest run` -> `4 files, 38 tests passed` (`src/components/ui`: 18, `src/i18n`+`src/design`: 20); `playwright test e2e/devui.spec.ts` -> `1 passed` (every Tab stop reachable, no horizontal overflow at 390px, theme forcing); typecheck, lint, build exit 0.
+- **Limitations / TODO / known issues:** `ProbBar` and `SetBadge` (named in ARCHITECTURE 1.7) are P5.4. `ThemeSwitch` applies the saved theme after hydration (brief flash possible for a saved dark choice; an inline pre-paint script is a P5.17 polish item). `Dialog` is hand-rolled (not native `<dialog>`) because jsdom lacks `showModal`.
+- **Affects streams:** none outside UI.
