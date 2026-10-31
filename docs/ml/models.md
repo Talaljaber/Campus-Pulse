@@ -35,6 +35,7 @@ with `utf-8-sig`) and are never edited.
 | `scenarios.csv` | `scripts/clean_data.py` | 42 | `scenario_id,split,lang,core,category,priority,n_variants,translation_of` |
 | `label_flags.csv` | hand-written (label debate) | 9 | `scenario_id,core,field,official_label,decision,soft_target,rationale,app_behaviour` |
 | `cv_folds.csv` | `scripts/make_folds.py` (P0.3a) | 30 | `cv_group,cv_fold` |
+| `train_val_features.csv` | `scripts/add_derived_columns.py` (P0.3b) | 432 | `request_id,lang_script,is_arabizi,stated_urgency` |
 
 Column meanings (`train_val_combined.csv`):
 - `text`: the raw official text. `prefix`/`suffix`: the stripped wrapper strings (empty when none).
@@ -67,7 +68,18 @@ python scripts/make_folds.py --out .tmp/f.csv  # write elsewhere (used by the au
 Knobs (`config/train.yaml`): `seed: 42`, `cv.k: 5`, `cv.search_iterations: 20000`,
 `cv.min_arabic_groups_per_fold: 2`.
 
-### 2.2 Holdout and augmentation folders
+### 2.2 Derived features: `train_val_features.csv` (P0.3b, LD-33)
+
+Join on `request_id`. `lang_script` = the CSV `lang` (script-only `ar`/`en`); `is_arabizi` = `False` for all
+432 rows (the script asserts no Latin letter touches a digit 2/3/5/6/7/8/9); `stated_urgency` =
+`has_urgent_marker` (27 `True`). The fairness slice key is `lang_script` + `is_arabizi`; for new text both come
+from the package `LangIdentifier` (§4.2). `stated_urgency` is a gaming signal only, never a model feature.
+
+```bash
+python scripts/add_derived_columns.py   # -> wrote data/clean/train_val_features.csv: 432 rows, is_arabizi=0, stated_urgency=27
+```
+
+### 2.3 Holdout and augmentation folders
 
 - `data/our_test/` (P1.0, hand-written by the developer) and `data/robustness/` (P2.5) are **never trained on**;
   only `evaluate.py` reads them. Their READMEs state the schema.
@@ -82,6 +94,7 @@ Knobs (`config/train.yaml`): `seed: 42`, `cv.k: 5`, `cv.search_iterations: 20000
 | `python scripts/clean_data.py` | regenerates `data/clean/{train_clean,val_clean,train_val_combined,scenarios}.csv` and `cleaning_report.md` from `data/raw` |
 | `python scripts/test_clean.py` | regenerates, then asserts structure; last line `ALL TESTS PASSED` |
 | `python scripts/make_folds.py` | writes `data/clean/cv_folds.csv` (§2.1) |
+| `python scripts/add_derived_columns.py` | writes `data/clean/train_val_features.csv` (§2.2) |
 
 `pytest services/ai/tests/unit/test_clean_pipeline.py` runs `test_clean.py` in a subprocess and checks the
 combined file's shape (432 rows, 30 groups).

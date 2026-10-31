@@ -37,3 +37,12 @@
 - **Acceptance:** `python scripts/make_folds.py` → `wrote data/clean/cv_folds.csv: 30 groups, 5 folds, categories 6/6 and priorities 3/3 in every fold, rows/fold 84/84/84/89/91`; `python -c "...;print(len(d),d.cv_fold.nunique())"` → `30 5`; a second run with `--out .tmp/folds2.csv` is byte-identical (`cmp` silent).
 - **Limitations / TODO / known issues:** the search requires exactly k groups per category (true for the official data). New augmentation groups are placed by `--include-augmented` only; they never move an official group.
 - **Affects streams:** ML (P1.8 `group_folds`, every OOF computation).
+
+### P0.3b — Add derived columns `lang_script`, `is_arabizi`, `stated_urgency`  (ML, 2026-10-31)
+- **What now exists:** `data/clean/train_val_features.csv` (432 rows, `request_id,lang_script,is_arabizi,stated_urgency`) from `scripts/add_derived_columns.py`, plus `data/clean/README.md` stating that `lang` in the CSVs is script-only and that the package `LangIdentifier` owns the Arabizi label (LD-33, audit F2). No existing CSV was rewritten.
+- **Public interfaces added:** `python scripts/add_derived_columns.py`; `derive(combined) -> DataFrame` ([docs/ml/models.md §2.2](../ml/models.md#22-derived-features-train_val_featurescsv-p03b-ld-33)).
+- **How to use it:** `feats = pd.read_csv("data/clean/train_val_features.csv"); pool = combined.merge(feats, on="request_id")`
+- **Config / env added:** none.
+- **Acceptance:** `python -c "import pandas as pd; d=pd.read_csv('data/clean/train_val_features.csv'); print(d.is_arabizi.sum(), d.stated_urgency.sum())"` → `0 27`.
+- **Limitations / TODO / known issues:** `stated_urgency` here is the case-sensitive `URGENT` marker; the package `WrapperStripper` (P1.1) also flags lowercase/variant forms on new text, and agrees with this column on all 432 rows.
+- **Affects streams:** ML (P1.8 pool, P2.8 fairness slices).
