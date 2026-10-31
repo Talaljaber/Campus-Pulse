@@ -88,6 +88,7 @@ NEEDS_REVIEW = "needs_review"
 SAFETY = "safety"
 LLM_OUT_OF_SET = "llm_out_of_set"
 EXPLANATION_FAILED = "explanation_failed"
+GAMING_SUSPECTED = "priority_gaming_suspected"
 REVIEW_DISTRESS = "distress"
 REVIEW_NEEDS_REVIEW = "needs_review"
 
@@ -403,6 +404,8 @@ class DecisionFlow:
                 "status": str(status),
                 "action": str(action.type),
                 "tier": str(core.tier),
+                # staff read events (RLS), so the admin-only gaming flag stays on the prediction row
+                "flags": sorted(set(out.flags_out(flags)) - {GAMING_SUSPECTED}),
             },
         )
 
