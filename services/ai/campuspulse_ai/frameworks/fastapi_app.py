@@ -33,6 +33,7 @@ from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.frameworks.api_contract import API_DESCRIPTION, API_TITLE, ENDPOINTS
 from campuspulse_ai.frameworks.background import SECONDS_PER_MINUTE, sla_loop
 from campuspulse_ai.frameworks.errors import install_error_handlers
+from campuspulse_ai.frameworks.heap import trim_heap
 from campuspulse_ai.frameworks.routes import (
     explain,
     feedback,
@@ -81,6 +82,7 @@ def create_app(
         if services is None and build is not None:
             app.state.services = build(resolved)
             log.info("services built: %s", _wired(app.state.services))
+            trim_heap()  # the model load's temporary buffers go back to the OS (P4.13)
         wired: ApiServices = app.state.services
         task: asyncio.Task[None] | None = None
         if wired.sla is not None and wired.clock is not None and resolved.sla_scan_minutes > 0:

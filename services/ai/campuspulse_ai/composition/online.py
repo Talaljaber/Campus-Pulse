@@ -100,7 +100,7 @@ from campuspulse_ai.domain.routing import ActionsConfig, TableActionPlanner
 from campuspulse_ai.domain.values import Tier
 
 if TYPE_CHECKING:
-    from supabase import Client
+    from campuspulse_ai.adapters.store.rest import RestApi as Client
 
 log = logging.getLogger(__name__)
 
@@ -214,15 +214,18 @@ def load_offline(settings: Settings) -> OfflineContainer:
 
 
 def supabase_client(settings: Settings) -> Client:
-    """The service-role Supabase client. Raises `StoreError` when it is not configured."""
+    """The service-role PostgREST client (`adapters/store/rest.PostgrestRest`: the PostgREST half of
+    supabase-py, without the SDK's other modules, P4.13). Raises `StoreError` when it is not
+    configured or the URL is malformed."""
     key = settings.supabase_service_role_key
     if not settings.supabase_url or key is None:
         raise StoreError("the API needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (server-side only)")
-    from supabase import create_client  # online only: predict.py never imports this module
+    from campuspulse_ai.adapters.store.rest import PostgrestRest  # online only
 
     try:
-        return create_client(settings.supabase_url, key.get_secret_value())
-    except Exception as exc:  # the SDK validates the URL and key format here
+        secret = key.get_secret_value()
+        return PostgrestRest(settings.supabase_url, secret, timeout_s=settings.store_timeout_s)
+    except Exception as exc:  # a malformed URL; the key is never part of the message
         raise StoreError(f"cannot create the Supabase client: {type(exc).__name__}") from exc
 
 
@@ -230,6 +233,7 @@ def supabase_adapters(
     settings: Settings, client: Client, offline: OfflineContainer, clock: Clock
 ) -> OnlineAdapters:
     """The production adapters over one Supabase client (module docstring, steps 2-5)."""
+    from campuspulse_ai.adapters.memory.cached import QueryCachingMemoryStore
     from campuspulse_ai.adapters.memory.pgvector_memory import PgVectorMemoryStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
@@ -242,7 +246,9 @@ def supabase_adapters(
         reads=repo,
         marks=repo,
         vectors=vectors,
-        memory=PgVectorMemoryStore(vectors, client),
+        memory=QueryCachingMemoryStore(
+            PgVectorMemoryStore(vectors, client), clock, settings.memory_query_cache_s
+        ),
         sinks=(SupabaseSink(repo), *mirror_sinks(settings, clock)),
         channels=notifier_channels(settings, repo, policy, clock),
         calendars=(SlotsTableCalendar(repo, clock, policy),),

@@ -16,7 +16,7 @@ from campuspulse_ai.domain.errors import ArtifactVersionMismatch, NotFound, Stor
 from campuspulse_ai.domain.values import Lang, MetaValue, VectorHit, VectorItem
 
 if TYPE_CHECKING:
-    from supabase import Client
+    from campuspulse_ai.adapters.store.rest import RestApi as Client
 
 T = TypeVar("T")
 
@@ -122,7 +122,8 @@ class PgVectorStore:
                     q = q.eq(key, str(f[key]))
             if "since" in FILTER_KEYS[collection] and f.get("since") is not None:
                 q = q.gte("created_at", _jsonable_value(f["since"]))
-            return q.execute().count
+            count: int | None = q.execute().count
+            return count
 
         return store_call(f"count {collection}", run) or 0
 

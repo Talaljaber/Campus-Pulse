@@ -368,10 +368,13 @@ class ActUseCase:
     def open_ticket(self, ticket: Ticket) -> Ticket:
         """Save `ticket` (the record), then create it in every sink in order; returns it with its
         mirror links. A `SinkError` becomes a link with `error` and the next sink still runs. Also
-        used for the one ticket of a Pulse incident (`IncidentActions`)."""
-        self._save_record(ticket)
+        used for the one ticket of a Pulse incident (`IncidentActions`). The record sink is skipped
+        when the record was just saved (the same row; one round trip less, P4.13)."""
+        saved = self._save_record(ticket)
         links: list[TicketLink] = []
         for sink in self._sinks:
+            if saved and sink.name == RECORD_SINK:
+                continue
             try:
                 link = sink.create(ticket)
             except SinkError as exc:
@@ -537,11 +540,14 @@ class ActUseCase:
         except (RecipientNotAllowed, NotificationError, StoreError) as exc:
             log.warning("%s message to %s not sent: %s", msg.kind, msg.to_address, exc)
 
-    def _save_record(self, ticket: Ticket) -> None:
+    def _save_record(self, ticket: Ticket) -> bool:
+        """Save the ticket row; False (logged) when the store failed."""
         try:
             self._repo.save_ticket(ticket)
         except StoreError as exc:
             log.error("ticket %s not saved: %s", ticket.id, exc)
+            return False
+        return True
 
     def _save_link(self, link: TicketLink) -> None:
         try:

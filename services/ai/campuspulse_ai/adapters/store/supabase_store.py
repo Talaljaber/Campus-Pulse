@@ -39,7 +39,7 @@ from campuspulse_ai.domain.ports import Clock
 from campuspulse_ai.domain.values import Advisor, RequestStatus, RouterStats, Slot, StudentSignals, TicketLink
 
 if TYPE_CHECKING:
-    from supabase import Client
+    from campuspulse_ai.adapters.store.rest import RestApi as Client
 
 PAGE = 1000  # PostgREST default max-rows
 
