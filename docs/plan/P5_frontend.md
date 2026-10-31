@@ -358,7 +358,7 @@
 <a id="p5-12"></a>
 ## P5.12 — Model lab `/lab` (admin)
 
-- [ ] Done
+- [x] Done
 - Depends on: P5.6; [P4.11](P4_product_backend.md#p4-11), [P4.12](P4_product_backend.md#p4-12) (`/metrics`, `/redteam/run`); P2 reports
 - Est: 2 h · Cut: no. The sandbox is P5.16 (cut).
 - Files:

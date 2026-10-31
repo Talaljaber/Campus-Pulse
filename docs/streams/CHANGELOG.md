@@ -999,6 +999,7 @@
 - **Acceptance:** committed size `0.3`; fresh-tree fetch and offline predict as above; P1 exit checks in the batch report.
 - **Limitations / TODO / known issues:** GitHub pre-release `models-v1-rc1` and the CI `artifacts` job are left to the lead.
 - **Affects streams:** Foundation (CI job, Docker fetch), Lead (release).
+
 ### P4.9 — office notifications, Realtime for reviews and links, admin-only distress items  (db, 2026-10-31, commits a03e57c, c226c3d and the docs follow-up)
 - **What now exists:** migrations `0010_office_notifications` and `0011_distress_reviews_admin_only`, applied to the linked project (history repaired to `0010` and `0011`).
   - `notifications_read` is altered in place: staff also read alias `office:<their profiles.office>` (escalation notes); students keep their own alias and admins everything.
@@ -1048,3 +1049,79 @@
   - `services/ai/evaluate.py` and `frameworks/cli/evaluate.py` are new with `--redteam` only; ML adds the P2.8 modes there.
   - Reply-text attacks ("make the reply promise a refund", P3.3a note) are not generated: the red team scores labels and flags only.
 - **Affects streams:** Lead (`build_online` sets `ApiServices.redteam`; D-013 numbering), ML (`evaluate.py` entry point exists; `build_offline` contract used: `.core`, `.config.thresholds.tau_ood`), UI (the Model lab red-team runner gets real scorecards and `/v1/metrics` history; the `redteam_run` 503 description now names `store_unavailable`), Foundation (`REDTEAM_SEED_CSV` and `config/` must be in the image for the online route), DB (no DDL needed).
+### P5.12 and P5.15 — Model lab `/lab` and outbox `/outbox`  (UI, 2026-10-31)
+- **What now exists:** the admin lands on a working model lab: benchmark per target with CV and our_test columns (set 1, 2, 3, pooled when the report has them), ablations, confusion matrices, conformal coverage and set size, calibration, per-language fairness, router and memory stats, a red-team runner and scorecard history. `/outbox` lists every outbox row with status filters and SIMULATED/REJECTED badges. A role-aware nav links `/lab`, `/staff`, `/pulse`, `/outbox`.
+- **Public interfaces added or changed:** `components/lab/*`, `components/outbox/*`, `components/shell/RoleNav`, `hooks/useLab`, `hooks/useOutbox`, `lib/lab/{metrics,redteam,service}`, `lib/outbox/view`, `formatDateTime` in `lib/time`; `PulseScreen` takes `role`; `lab.*`, `outbox.*`, `nav.*` i18n areas (`staff.pulseLink`, `pulse.back` removed). See [docs/ui/README.md](../ui/README.md#model-lab-lab-p512).
+- **How to use it:** sign in as `admin@demo.local` (lab) or any staff login (`/outbox`); with the mock API, metrics and the red-team run come from the fixtures.
+- **Config / env added:** none.
+- **Acceptance:** vitest, typecheck, lint and `e2e/admin-basic.spec.ts` (6 tests) pass; see the batch report for outputs.
+- **Limitations / TODO / known issues:** the metrics contract has no per-set dataset names (see ui README), so set 1, 2, 3 columns appear only if the ML report uses `our_test:set1`-style names; `MetricsResponse.redteam` is `[]` from the backend so history is session-only; the proxy's 20 s timeout can cut a large red-team run. Batch CSV upload (P5.18) and the sandbox (P5.16) are not built.
+- **Affects streams:** ML (name per-set datasets `our_test:set1` etc. or ask for a contract change), Backend (fill `redteam`; consider a longer proxy timeout for `redteam/run`), Lead (new Arabic strings need native review).
+
+### P4.5 — FAQ embedded with the v1-rc1 encoder, `tau_faq` tuned  (db, 2026-10-31)
+- **What now exists:** the 28 live `faq` rows carry embeddings from the frozen `OnnxEncoder` (models v1-rc1, tarball sha256 e9c57de6…532617, 29 files verified). `config/hand_tuned.yaml` `tau_faq` changes from 0.75 to **0.90**. Reference: [db/schema.md › FAQ retrieval](../db/schema.md#faq-retrieval).
+- **Public interfaces added or changed:**
+  - `OnnxEncoder(model_dir / "encoder")` is confirmed as the constructor `seed_faq.py` and `tune_faq.py` use (dim 384, unit-norm output, `query: ` prefix added inside).
+  - `tune_faq.py` now writes `hand_tuned.yaml` with LF and prints UTF-8 on cp1252 consoles.
+- **How to use it:**
+  - `python scripts/seed_faq.py` re-embeds the FAQ after any change to its question text.
+  - `python scripts/tune_faq.py [--dry-run]`.
+  - `train.py` copies `tau_faq` into `config.json` at the next freeze (LD-11).
+- **Config / env added:** none.
+- **Acceptance:**
+  - `seed_faq.py` → `embedded 28 faq rows (dim=384)`.
+  - `tune_faq.py` → `chosen tau_faq=0.90 precision=1.00 recall=0.47 -> config\hand_tuned.yaml`. Sweep: τ 0.85 p=0.73 r=0.73; 0.88 p=0.89 r=0.53; 0.89 p=0.88 r=0.47; 0.90 p=1.00 r=0.47; 0.91 p=1.00 r=0.33.
+  - Also reviewed ML's `local_numpy.save` LF change: correct (`newline="\n"`; `load` is unaffected).
+- **Limitations / TODO / known issues:**
+  - The margin is thin: the CE-hours paraphrase hits the CS-hours entry at 0.896, and the top uncovered question scores 0.874.
+  - Arabizi paraphrases (0.73–0.74) are never answered.
+  - The `config.json` in the frozen v1-rc1 still has the old `tau_faq` until the next freeze.
+  - `tau_inc` measured on the same encoder (offline, `config/simulation/wifi_m.yaml` against other IT complaints in building M):
+    - same-incident pairs 0.821–0.929, and every report ≥ 0.926 to the incident centroid;
+    - other IT problems in M score 0.856–0.909 to that centroid.
+    - The current 0.80 therefore clusters unrelated problems; reported to the lead (decision pending).
+- **Affects streams:** Backend (ActUseCase reads `tau_faq` from config), ML (re-freeze picks up 0.90), Lead (`tau_inc`).
+### P2.3 (part) — 78 new scenarios with a Finance focus  (data, 2026-10-31)
+- **What now exists:** `data/augmented/new_scenarios.csv`: 78 new situations, 390 rows (`AUG-NC-0001`..`0390`, groups `NEW-C01`..`NEW-C78`). Finance 18 (6/6/6), and 12 (4/4/4) each for Registration, IT Support, Transportation, Facilities and Academic Support. Each situation has 5 rows: en, ar (Jordanian), arabizi, en paraphrase, ar paraphrase (156 en / 156 ar / 78 arabizi). `data/augmented/new_scenarios_notes.md` has one review line per situation (labels, deciding rule, sub-topic). `data/augmented/README.md` describes the file.
+- **Public interfaces added or changed:** none (schema exactly as ARCHITECTURE §4.2).
+- **How to use it:** review the rows, set `needs_human_check=False` (P2.4), then run `python scripts/make_folds.py --include-augmented` to give the `NEW-C` groups a fold before training. Until then `load_pool` drops every row.
+- **Config / env added:** none.
+- **Acceptance:** `validate_dataset.py --kind augmented data/augmented/new_scenarios.csv` → `OK augmented: 390 rows; 0 reviewed; cv_groups all known; labels match source scenarios; cells covered 18/18`. `check_leakage.py --official` → `0 identical text_norm across groups; 0 cross-group pairs >= 0.8 (max 0.375)`. A scratch run of the same char 3-5-gram check over official + new rows gives 0 identical, 0 pairs ≥ 0.8 (max 0.471, new vs official max 0.430), 0 overlaps with an official `text_norm`, and 0 duplicate texts. `LangIdentifier` calls 156/156 en, 156/156 ar and 78/78 arabizi correctly. Safety and injection lexicons: 0 danger hits on non-high rows, 0 distress hits, 0 injection hits. `make_folds.py --include-augmented --out <scratch>` → `108 groups, 5 folds, categories 6/6 and priorities 3/3 in every fold`, 0 official groups moved.
+- **Limitations / TODO / known issues:**
+  - All rows are unreviewed (`author_method=llm`). The Arabic and Arabizi rows need a native check.
+  - `data/clean/cv_folds.csv` is not updated here: the rows cannot train yet, and P2.4 step 2b appends the folds after review.
+  - `check_leakage.py` only has `--official` mode, so the augmented check above is a scratch run of its functions.
+  - `LangIdentifier` reads the common Arabizi progressive particle `3am` ("عم") as a clock time (the guard pattern `^\d{1,2}(:\d{2})?(am|pm)$`), so a row containing it is called English. The 8 affected rows were reworded. The ML stream may want to drop bare `3am` from that guard.
+  - Not done in this part of P2.3: `paraphrases.csv`.
+- **Affects streams:** ML (training pool after review; the `3am` guard note), Lead (review queue for P2.4).
+
+
+### UD-13 (DB part) — advisor links and per-office review routing  (db, 2026-10-31)
+- **What now exists:** migration `0012_advisor_routing`, applied to the linked project (history repaired to `0012`). Reference: [db/schema.md › RLS policies](../db/schema.md#rls-policies-in-plain-words).
+  - New columns: `profiles.advisor_id` → advisors, `advisors.profile_id` → profiles (unique), `review_queue.assignee` → profiles, and `review_queue.office`, with indexes on all three.
+  - Trigger `review_queue_fill_office` fills `office` from the prediction's category (`private.cp_category_office`, the D-005 one-to-one table) unless it is set.
+  - `review_queue_read` narrowed: staff read their own office's non-distress items that are unassigned or assigned to them; admins everything. This removes the 0011 cross-office widening.
+  - Demo login `advisor@demo.local` (staff, `academic`) is linked to the fictional advisor a…0001 (allow-listed `demo_email`), which is now `talal@demo.local`'s advisor.
+- **Public interfaces added or changed:**
+  - The four columns above (generated types updated).
+  - `seed_demo_users.py` now seeds 4 users plus the two links (`ADVISOR_LOGINS`, `STUDENT_ADVISORS`).
+  - The domain `ReviewItem` has no `assignee`/`office` yet. SupabaseRepository writes neither, and the trigger fills `office`. Exposing them in the domain is a change request for Backend's UD-13 batch.
+- **How to use it:**
+  - Backend assigns an academic item: `review_queue.assignee = advisors.profile_id` of the student's `profiles.advisor_id`.
+  - UI: `.from("review_queue").select()` already returns only what the signed-in staff member may see.
+- **Config / env added:** none.
+- **Acceptance:**
+  - Live `rls.sql` → `RLS: 13/13 checks passed`. Check 12: `own_or_queue=2 other_advisor=0`. Check 13: `rows=0`.
+  - Live anon-key sign-in check (rows cleaned up, `0 test rows left`):
+    - the trigger filled `academic` and `it`;
+    - `advisor@demo.local` sees `academic:mine` and `academic:queue`, not an item assigned to someone else;
+    - `it@demo.local` sees only `it:queue`;
+    - `talal@demo.local` sees no review items and reads only their own profile, with `advisor_id` set;
+    - `admin@demo.local` sees all 4.
+  - `seed_demo_users.py` → `created: advisor@demo.local …`, `linked: …`, `4 users ready`.
+  - `pytest -m supabase` → `59 passed, 1 skipped`. One earlier run showed 3 transient errors that did not recur in two reruns.
+  - Advisors: only `unused_index` INFO notes for the three new indexes.
+- **Limitations / TODO / known issues:**
+  - Items whose prediction has no category (null `office`) are admin-only.
+  - Academic staff who are not advisors see only the unassigned academic queue, not advisors' assigned items.
+- **Affects streams:** Backend (assignment and `ReviewItem` fields), UI (advisor view; staff now see only their office's queue), Lead (the X4.4 acceptance text now reads `RLS: 13/13`).

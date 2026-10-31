@@ -1,5 +1,16 @@
 /** Small time helpers shared by the staff and pulse pages. */
 
+/**
+ * A timestamp in Amman time, in the page language (Latin digits in Arabic too, like the rest of the UI).
+ * An unparseable value is returned as written, so a bad row never renders blank.
+ */
+export function formatDateTime(iso: string, lang: "en" | "ar"): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const locale = lang === "ar" ? "ar-JO-u-nu-latn" : "en-GB";
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Amman" }).format(date);
+}
+
 /** A span split into a whole number and a unit, so the UI picks the right translated unit. */
 export function durationParts(ms: number): { unit: "minutes" | "hours" | "days"; n: number } {
   const abs = Math.abs(ms);

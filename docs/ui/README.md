@@ -1,6 +1,6 @@
 # UI (apps/web): as-built
 
-Owner: UI stream. Covers what exists after P0.8, P5.1 to P5.11 (design system, data layer, auth, student chat, voice, staff dashboard, Pulse). Later pages (lab, outbox) are appended by their tasks.
+Owner: UI stream. Covers what exists after P0.8, P5.1 to P5.12 and P5.15 (design system, data layer, auth, student chat, voice, staff dashboard, Pulse, model lab, outbox). Later pages are appended by their tasks.
 
 ## Run it
 
@@ -335,6 +335,34 @@ Dictation for the student chat, through the browser's Web Speech API. It is offe
 - **States:** loading skeleton, a retry alert on a failed snapshot, empty states for incidents and the feed. The map stays `dir="ltr"` in Arabic; everything else mirrors.
 - **Tests:** `src/lib/pulse/__tests__` (reducer and view), `src/components/pulse/__tests__`, `src/hooks/__tests__/usePulse.test.tsx` (fake channels: live request, prediction, bump, resolve), `e2e/pulse-basic.spec.ts` (dots, ring, feed, SIMULATED, building filter, resolve, RTL, student blocked). The live half of moment 2 is covered by the reducer and hook tests because the e2e Supabase double does not speak Realtime.
 
+## Model lab `/lab` (P5.12)
+
+- **Route and roles:** `/lab`, admin only (the proxy sends staff to `/staff`, students to `/`; the page re-checks; the API checks the role again). The admin login lands here.
+- **Data:** `GET /v1/metrics` (`MetricsResponse`) and `POST /v1/redteam/run` through the proxy (`src/lib/lab/service.ts`; hooks `useLabMetrics`, `useRedTeam` in `src/hooks/useLab.ts`). `refresh()` re-reads quietly after a run.
+- **Composition:** `LabScreen` (not in the barrel) with four tabs. Charts are numbers in tables with a thin repeat bar; no chart library was added.
+
+| Tab | Components (`components/lab`, typed slices of `MetricsResponse`) |
+| --- | --- |
+| Benchmark | `BenchmarkTable` (one table per target; model rows by dataset column: CV official, CV all, Set 1, Set 2, Set 3, Pooled, Probes; every cell has macro-F1, accuracy, rows and groups, "Small sample" under 30 groups, Cut and Not available as words; a legend of the columns and how to read them), `AblationTable`, `ConfusionMatrix` (counts and row shares, diagonal bold and outlined, tint is a repeat only) |
+| Calibration and fairness | `CoverageChart` (coverage, mean set size, single-label rate per dataset and language, counts, the "approximate, about 30 groups" caveat), `CalibrationTable` (ECE and bins), `FairnessChart` (macro-F1 per language, gap to the best in points, counts) |
+| Live system | `RouterStats` (requests, tier 0 share, cost, cost per 1,000, cached, tier table), `MemoryStats` |
+| Red team | `RedTeamRunner` (ten styles, n 1 to 200, seed; validates itself; all styles are sent as `styles: null`), `ScorecardHistory` (newest first; pass rate by style and language weakest first; failures folded in a `<details>`) |
+
+- **Per-set columns:** the contract's `dataset` enum has only `oof_official`, `oof_all`, `our_test` (pooled) and `probes`. The page also reads `our_test:set1`, `our_test_set1`, `our_test/set1` or `set1` (same for set2, set3) into their own columns (`datasetKeyOf`, `src/lib/lab/metrics.ts`). Until the report has such rows only Pooled shows, with a note saying so.
+- **Empty report:** with no `model_lab.json` (`generated_at` null and every offline section empty) the Benchmark and Calibration tabs show "No model metrics yet"; the live system and the red team still work. A failed read shows the shared retry alert.
+- **Red-team history:** `MetricsResponse.redteam` merged with this session's runs by `run_id` (the service's copy wins). While the backend leaves `redteam` empty, only runs started on this page show, and they are lost on reload.
+- **Tests:** `src/lib/lab/__tests__`, `src/components/lab/__tests__` (components, and `LabScreen` with the service mocked), `e2e/admin-basic.spec.ts`.
+
+## Outbox `/outbox` (P5.15)
+
+- **Route and roles:** `/outbox`, staff and admin (as `/staff`). Row-level security decides the rows (staff and admin read all).
+- **Composition:** `OutboxScreen` (not in the barrel) wires `useOutbox` (`listOutbox` limit 200 plus `subscribeOutbox`, merged by id so a status change updates in place) to `OutboxTable`. A "Demo accounts only" banner, status chips with counts (`ChipGroup`; All, Sent, SIMULATED, Deferred, REJECTED, Failed, Queued, plus any unknown status present), a folded "What the statuses mean", and the table: when (Amman time), kind, channel, to, subject, status badge, reason or error. Rejected and failed rows also get a heavier edge, so colour is never the only cue.
+- **Logic:** `src/lib/outbox/view.ts` (tones, merge, counts, filters; pure, tested).
+
+## Navigation between the staff-side pages
+
+`components/shell/RoleNav({ role, current })` is in the header of `/lab`, `/staff`, `/pulse` and `/outbox`: staff get Staff desk, Pulse map, Outbox; an admin gets Model lab first, then the same three. The current page has `aria-current="page"` and a bold underline. It replaced the single ad hoc links (`staff.pulseLink`, `pulse.back`, now removed). `PulseScreen` takes a `role` prop.
+
 ## Routes
 
 | Route | Roles | Status |
@@ -345,4 +373,5 @@ Dictation for the student chat, through the browser's Web Speech API. It is offe
 | `/dev/ui` | dev only | kitchen sink; `notFound()` when `NODE_ENV === "production"` |
 | `/staff` | staff, admin | staff dashboard (P5.10) |
 | `/pulse` | staff, admin | live map, incidents and feed (P5.11) |
-| `/outbox`, `/lab` | staff/admin, admin | guarded by `src/proxy.ts`; the pages arrive in P5.12 and later (404 until then) |
+| `/outbox` | staff, admin | outbox list with status filters (P5.15) |
+| `/lab` | admin | model lab (P5.12); the admin login lands here |
