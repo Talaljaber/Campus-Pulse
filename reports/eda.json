@@ -1,0 +1,202 @@
+{
+  "artifact_version": "v1",
+  "augmented": {
+    "arabizi.csv": {
+      "by_category": {
+        "Academic Support": 4,
+        "Facilities": 6,
+        "Finance": 4,
+        "IT Support": 4,
+        "Registration": 6,
+        "Transportation": 6
+      },
+      "by_lang": {
+        "arabizi": 30
+      },
+      "by_priority": {
+        "high": 12,
+        "low": 8,
+        "medium": 10
+      },
+      "by_source": {
+        "arabizi_rule": 30
+      },
+      "groups": 15,
+      "reviewed": 0,
+      "rows": 30
+    },
+    "new_scenarios.csv": {
+      "by_category": {
+        "Academic Support": 60,
+        "Facilities": 60,
+        "Finance": 90,
+        "IT Support": 60,
+        "Registration": 60,
+        "Transportation": 60
+      },
+      "by_lang": {
+        "ar": 156,
+        "arabizi": 78,
+        "en": 156
+      },
+      "by_priority": {
+        "high": 130,
+        "low": 130,
+        "medium": 130
+      },
+      "by_source": {
+        "new_scenario": 390
+      },
+      "groups": 78,
+      "reviewed": 0,
+      "rows": 390
+    },
+    "paraphrases.csv": {
+      "by_category": {
+        "Academic Support": 11,
+        "Facilities": 15,
+        "Finance": 10,
+        "IT Support": 6,
+        "Registration": 12,
+        "Transportation": 10
+      },
+      "by_lang": {
+        "ar": 27,
+        "arabizi": 11,
+        "en": 26
+      },
+      "by_priority": {
+        "high": 17,
+        "low": 20,
+        "medium": 27
+      },
+      "by_source": {
+        "llm_arabizi": 11,
+        "llm_paraphrase": 53
+      },
+      "groups": 27,
+      "reviewed": 0,
+      "rows": 64
+    },
+    "translations.csv": {
+      "by_category": {
+        "Academic Support": 5,
+        "Facilities": 4,
+        "Finance": 2,
+        "IT Support": 1,
+        "Registration": 3,
+        "Transportation": 2
+      },
+      "by_lang": {
+        "ar": 3,
+        "arabizi": 13,
+        "en": 1
+      },
+      "by_priority": {
+        "high": 2,
+        "low": 8,
+        "medium": 7
+      },
+      "by_source": {
+        "llm_translate": 17
+      },
+      "groups": 16,
+      "reviewed": 0,
+      "rows": 17
+    }
+  },
+  "generated_at": "2026-10-31T19:55:03+00:00",
+  "official": {
+    "by_category": {
+      "Academic Support": 73,
+      "Facilities": 71,
+      "Finance": 73,
+      "IT Support": 73,
+      "Registration": 71,
+      "Transportation": 71
+    },
+    "by_cell": {
+      "Academic Support x high": 20,
+      "Academic Support x low": 22,
+      "Academic Support x medium": 31,
+      "Facilities x high": 31,
+      "Facilities x low": 20,
+      "Facilities x medium": 20,
+      "Finance x high": 20,
+      "Finance x low": 22,
+      "Finance x medium": 31,
+      "IT Support x high": 31,
+      "IT Support x low": 20,
+      "IT Support x medium": 22,
+      "Registration x high": 31,
+      "Registration x low": 20,
+      "Registration x medium": 20,
+      "Transportation x high": 9,
+      "Transportation x low": 20,
+      "Transportation x medium": 42
+    },
+    "by_lang": {
+      "ar": 135,
+      "en": 297
+    },
+    "by_priority": {
+      "high": 142,
+      "low": 124,
+      "medium": 166
+    },
+    "by_split": {
+      "train": 370,
+      "val": 62
+    },
+    "distinct_texts": 42,
+    "groups": 30,
+    "rows": 432,
+    "scenarios": 42,
+    "wrappers": {
+      "distinct_prefixes": 16,
+      "distinct_suffixes": 2,
+      "with_prefix": 348,
+      "with_suffix": 42
+    }
+  },
+  "our_test": {
+    "by_cell": {
+      "Academic Support x high": 8,
+      "Academic Support x low": 17,
+      "Academic Support x medium": 8,
+      "Facilities x high": 8,
+      "Facilities x low": 8,
+      "Facilities x medium": 19,
+      "Finance x high": 8,
+      "Finance x low": 17,
+      "Finance x medium": 8,
+      "IT Support x high": 8,
+      "IT Support x low": 8,
+      "IT Support x medium": 17,
+      "Registration x high": 8,
+      "Registration x low": 8,
+      "Registration x medium": 19,
+      "Transportation x high": 19,
+      "Transportation x low": 8,
+      "Transportation x medium": 8
+    },
+    "by_lang": {
+      "ar": 75,
+      "arabizi": 32,
+      "en": 97
+    },
+    "by_set": {
+      "set1": 60,
+      "set2": 72,
+      "set3": 72
+    },
+    "families": 38,
+    "rows": 204
+  },
+  "probes": {
+    "note": "P2.5 probes not written yet",
+    "rows": 0
+  },
+  "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
+  "sha": "9a379d97c0cd"
+}

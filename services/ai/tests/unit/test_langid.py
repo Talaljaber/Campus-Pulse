@@ -63,6 +63,14 @@ def test_english_with_digits_stays_en(langid: LangIdentifier) -> None:
     assert wrong == []
 
 
+def test_3am_is_the_arabizi_particle_not_a_clock_time(langid: LangIdentifier) -> None:
+    """Bare "3am" is عم (progressive) in Arabizi; English clock times keep their English guards."""
+    assert langid.identify("fi may 3am tenzel janb el fisheh el kahraba b el mukhtabar") is Lang.ARABIZI
+    assert langid.identify("ma 3am ba2dar asajjel ay madde") is Lang.ARABIZI
+    assert langid.identify("The server went down at 3am") is Lang.EN
+    assert langid.identify("Exam moved to 3pm") is Lang.EN
+
+
 def test_arabizi_detection_on_augmentation(langid: LangIdentifier) -> None:
     """>= `augmented.arabizi_min_detection` of the REVIEWED Arabizi augmentation is detected (P1.9, §3.7)."""
     import yaml

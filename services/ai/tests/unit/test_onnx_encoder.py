@@ -34,6 +34,8 @@ def _need_encoder() -> None:
 @pytest.mark.train
 def test_parity_with_fp32() -> None:
     _need_encoder()
+    pytest.importorskip("torch", reason="train-machine test: needs requirements-train.txt")
+    pytest.importorskip("sentence_transformers", reason="train-machine test: needs requirements-train.txt")
     from sentence_transformers import SentenceTransformer
 
     meta = json.loads((ENCODER_DIR / ENCODER_META).read_text(encoding="utf-8"))

@@ -100,8 +100,14 @@ class LACConformal:
         if math.isnan(self.q):
             raise ValueError("LACConformal is not calibrated")
         Path(dir).mkdir(parents=True, exist_ok=True)
-        data = {"method": METHOD, "target": self.target, "alpha": self.alpha, "q": self.q,
-                "n_calib": self.n_calib, "n_groups": self.n_groups}
+        data = {
+            "method": METHOD,
+            "target": self.target,
+            "alpha": self.alpha,
+            "q": self.q,
+            "n_calib": self.n_calib,
+            "n_groups": self.n_groups,
+        }
         with (Path(dir) / FILE_NAME).open("w", encoding="utf-8", newline="\n") as fh:
             fh.write(json.dumps(data, indent=2, sort_keys=True) + "\n")
 
@@ -119,7 +125,84 @@ class LACConformal:
             data = json.loads(path.read_text(encoding="utf-8"))
             if data["method"] != METHOD or data["target"] not in ("category", "priority"):
                 raise ValueError(f"not an LAC file: method={data['method']!r} target={data['target']!r}")
-            return cls.from_quantile(data["target"], float(data["alpha"]), float(data["q"]),
-                                     int(data["n_calib"]), int(data.get("n_groups", 0)))
+            return cls.from_quantile(
+                data["target"],
+                float(data["alpha"]),
+                float(data["q"]),
+                int(data["n_calib"]),
+                int(data.get("n_groups", 0)),
+            )
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             raise ArtifactVersionMismatch(f"{path}: {exc}") from exc
+
+
+MONDRIAN_FILE = "mondrian.json"
+
+
+class MondrianByLang:
+    """Per-language LAC quantiles (P2.10, §3.5): a `ConformalPredictor` wrapper.
+
+    Built only when the P2.10 rule fires (AR or Arabizi coverage on our test set below
+    `mondrian.min_cov_minority` while EN >= `mondrian.min_cov_en`). `predict_set_for(p, lang)` uses the
+    language's own quantile, calibrated on that language's OOF scores; a language without its own
+    quantile (too few calibration groups, e.g. Arabizi before reviewed augmentation exists) and the
+    language-free `predict_set(p)` use `fallback`, the global quantile. The guarantee becomes per
+    language, which is what the fairness rule asks for; with ~15 Arabic groups it is even more
+    approximate than the global one (LD-32).
+    """
+
+    def __init__(self, inner_by_lang: dict[str, LACConformal], fallback: LACConformal) -> None:
+        if any(c.target != fallback.target for c in inner_by_lang.values()):
+            raise ValueError("every per-language predictor must have the fallback's target")
+        self.inner_by_lang = dict(inner_by_lang)
+        self.fallback = fallback
+        self.target: Target = fallback.target
+        self.alpha = fallback.alpha
+
+    def _for(self, lang: str | None) -> LACConformal:
+        return self.inner_by_lang.get(str(lang), self.fallback) if lang is not None else self.fallback
+
+    def calibrate(self, probs: Sequence[ProbVector], y: Sequence[str], groups: Sequence[str]) -> None:
+        raise ValueError("MondrianByLang is built from per-language quantiles (train.py stage B)")
+
+    def predict_set(self, p: ProbVector) -> PredictionSet:
+        return self.fallback.predict_set(p)
+
+    def predict_set_with_flag(self, p: ProbVector) -> tuple[PredictionSet, bool]:
+        return self.fallback.predict_set_with_flag(p)
+
+    def predict_set_for(self, p: ProbVector, lang: str | None) -> PredictionSet:
+        return self._for(lang).predict_set_with_flag(p)[0]
+
+    def predict_set_with_flag_for(self, p: ProbVector, lang: str | None) -> tuple[PredictionSet, bool]:
+        """(set, was_empty) with the quantile of `lang` (the fallback for an unknown language)."""
+        return self._for(lang).predict_set_with_flag(p)
+
+    def save(self, dir: Path) -> None:
+        """`<dir>/conformal.json` (the fallback) and `<dir>/mondrian.json` ({lang: {q, n_calib, ...}})."""
+        self.fallback.save(dir)
+        data = {
+            lang: {"q": c.q, "n_calib": c.n_calib, "n_groups": c.n_groups}
+            for lang, c in sorted(self.inner_by_lang.items())
+        }
+        with (Path(dir) / MONDRIAN_FILE).open("w", encoding="utf-8", newline="\n") as fh:
+            fh.write(json.dumps(data, indent=2, sort_keys=True) + "\n")
+
+    @classmethod
+    def load(cls, dir: Path) -> MondrianByLang:
+        """Read a directory written by `save`. Raises ArtifactMissing / ArtifactVersionMismatch."""
+        fallback = LACConformal.load(dir)
+        path = Path(dir) / MONDRIAN_FILE
+        if not path.is_file():
+            raise ArtifactMissing(f"{path} not found")
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            inner = {
+                lang: LACConformal.from_quantile(
+                    fallback.target, fallback.alpha, float(v["q"]), int(v["n_calib"]), int(v["n_groups"])
+                )
+                for lang, v in data.items()
+            }
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise ArtifactVersionMismatch(f"{path}: {exc}") from exc
+        return cls(inner, fallback)

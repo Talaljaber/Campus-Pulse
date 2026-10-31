@@ -1177,6 +1177,49 @@
 - **Limitations / TODO / known issues:** a `GET /v1/explain/{request_id}` returning `ExplanationOut` is a contract change request (not built).
 - **Affects streams:** UI.
 
+### P2 (ML batch 4) — data rigor: leakage gate, LLM drafts + review sheet, D-016 stage B with `m2proto`, Mondrian, evaluate.py, bake-off, v1-rc2  (ml, 2026-10-31, branch worktree-agent-a2b3ccdca1c497c24)
+- **What now exists:** P2.1, P2.2, P2.3, P2.6, P2.7, P2.8, P2.9, P2.10 and P2.12 are done, plus the D-014 and D-016 additions and the live rc1 findings (memory floor, trapped-in-lift danger, the `3am` Arabizi bug). v1-rc2 is frozen locally (`models/frozen/v1`, sha `9a379d97c0cd`, no release, encoder unchanged). The P2.4 review and P2.5 probes are prepared for the developer (`data/augmented/REVIEW.md`). See [models.md §18–§25](../ml/models.md) and [reports/results_v2.md](../../reports/results_v2.md).
+- **Public interfaces added or changed:**
+  - **New member `m2proto`** (`adapters/models/prototype.py`, `PrototypeClassifier`), category only. `FrozenConfig`: `Member` gains `m2proto`; there are new optional `prototype {parts, mix, temperature}`, `priority_head.temperature`, `conformal.calibration`, `conformal.q_category_by_lang` and `q_priority_by_lang` (rc1 configs still load). `m2proto` must have priority weight 0.
+  - **`MondrianByLang`** (`adapters/uncertainty/conformal.py`). **Shared-interface change:** `TriageCore._set` passes `req.lang` to a predictor that offers `predict_set_with_flag_for` (backward compatible), and `build_offline` uses `conformal_predictor(config, target)`.
+  - `load_pool(..., include_unreviewed=False)`: only `check_leakage` and the labelled evaluation arm pass True.
+  - `LogisticPriorityHead.temperature`, `probs.temperature_scale`.
+  - `train.py --retune` and `--encoder-dir`; `--fast` now skips the grids.
+  - `evaluate.py --all|--benchmark|--coverage|--fairness|--ablations|--robustness|--errors|--eda` (`--redteam` is unchanged).
+  - `model_lab.json` now carries `our_test_set1..3` rows.
+  - Scripts: `check_leakage.py` pool mode, `draft_augmentation.py paraphrase|translate|precheck|prune|apply-review`, `encoder_bakeoff.py`, `measure_memory_threshold.py`, `diff_reports.py`, `run_notebooks.py`, `results_v2.py`.
+  - Exporter: `--per-channel`, `--reduce-range` and `--op-types`.
+- **How to use it:** `python services/ai/train.py --out models/frozen/v1 --report reports/cv_p2.json && python services/ai/evaluate.py --all && python scripts/run_notebooks.py`.
+- **Config / env added:**
+  - `config/train.yaml`: `stage_b` (D-016 fixed), `grids.proto_temperature` and `grids.head_temperature`, `conformal_calibration: group`, `prototype`, `conformal.mondrian_by_lang: true`, `mondrian.targets` and `mondrian.min_groups`, `knn.memory_min_sim: 0.91`, `memory_threshold`, `eval`.
+  - `config/datasets.yaml`: `leakage.holdout_fail_on`, `augmented.{drafting, paraphrase, translate, precheck}`, source `llm_translate`.
+  - New `config/office_descriptions.yaml`.
+  - `config/lexicons/safety.yaml`: trapped-in-lift patterns. `arabizi.yaml`: a bare `3am` no longer vetoes Arabizi.
+  - No new env vars. It reads the existing `OPENROUTER_API_KEY`, `LLM_DAILY_BUDGET_USD` and `LLM_CACHE_PATH`.
+- **Acceptance:**
+  - `froze v1: … cat_macroF1_oof_official=0.806 pri_macroF1_oof_official=0.904 nested_cat=0.806 …`
+  - `wrote reports/{metrics.json,…,confusions/} (artifact v1 sha=9a379d97c0cd)`; `test_reports_schema.py` → `9 passed`
+  - `5/5 executed`
+  - `check_leakage` exit 0 (`augmented 0 failing`)
+  - `predict.py` under `no_network.py` → `wrote 62 rows`; `validate_predictions` OK
+  - P2.6 parity line prints **False** (int8 0.777 vs fp32 0.746; in int8's favour)
+- **Results:**
+  - OOF category is 0.490 → 0.806; priority stays 0.904.
+  - our_test pooled category is 0.710 → 0.789. But set2 is 0.746 → 0.674 and Arabizi is 0.696 → 0.530.
+  - Priority and its conformal sets are unchanged on our_test.
+  - The unreviewed-drafts arm reaches OOF category 0.895 (+0.089, 90 % CI [+0.027, +0.174]) and our_test priority 0.908.
+  - LLM spend: 0.347 USD.
+- **Limitations / TODO / known issues:**
+  - Nothing reviewed trains yet (P2.4).
+  - Mondrian gives Arabic category sets of about 6 labels (human review), and English under-covers on our_test (0.856).
+  - The first office-description version was tainted by our_test exposure. It was replaced (results_v2 reports both).
+  - Ridge beats LR at head level (+0.126). It was not swapped in.
+  - No `models-v1-rc2` release and no CI run.
+- **Affects streams:**
+  - Backend: the TriageCore Mondrian hook and `knn.memory_min_sim` 0.91. Arabic requests now mostly go to `human_review`.
+  - UI: new `M2-proto` benchmark rows and per-set datasets.
+  - Lead: the D-014 row, results_v2, the review package.
+  - Foundation: README disclosures added.
 ### UI batch 6 — GJU-style visual redesign  (ui, 2026-10-31)
 - **What now exists:** new blue / orange-yellow / warm-grey tokens with a contrast test over named shell pairs; portal tabs, `IconTile`, `InfoPanel`/`InfoGrid`, an orange `accent` button; an `AppShell` (blue band, icon bar, uppercase nav row, language switch, Help dialog), a dark bilingual "not an official GJU service" footer in the root layout, an original CampusPulse mark; every page on the shell; Pulse dots carry a per-category shape. See [ui/README](../ui/README.md#design-tokens).
 - **Public interfaces added or changed:** `AppShell`, `SiteHeader`, `SiteFooter`, `PageHeader`, `Brand`, `CampusPulseMark`, `IconTile`, `InfoPanel`, `InfoGrid`; `RoleNav` accepts `student`; `StaffScreen`/`PulseScreen`/`OutboxScreen`/`LabScreen` take an optional `alias`; `Button` variant `accent`; `TabPanel` `className`.

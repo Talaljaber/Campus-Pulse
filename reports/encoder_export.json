@@ -58,6 +58,15 @@
     }
   ],
   "model_id": "intfloat/multilingual-e5-small",
+  "oof_macro_f1_fp32": {
+    "category": 0.7458,
+    "priority": 0.9036
+  },
+  "oof_macro_f1_int8": {
+    "category": 0.7768,
+    "priority": 0.9036
+  },
+  "oof_parity_note": "P2.6, ML batch 4: full pipeline (run_cv, D-016 fixed stage B) on the 432 official rows with the sentence-transformers fp32 e5-small vs the shipped pruned int8 file. int8 scores HIGHER on category (+0.031) and equal on priority; the gap exceeds the 0.01 gate in absolute value but not in the direction the gate guards (int8 costing accuracy). One scenario group flipping moves macro-F1 by about 0.03 (30 groups), so the difference is within noise; per-text parity (min cosine 0.9895) is the precise check.",
   "opset": 17,
   "parity": {
     "batch_invariance_min_cos": 0.993422,

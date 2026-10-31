@@ -65,6 +65,7 @@ class WeightedEnsemble:
         index: ExampleIndex,
         weights_category: Mapping[str, float],
         weights_priority: Mapping[str, float],
+        memory_weight_category: float = 0.0,
     ) -> None:
         if not members:
             raise ArtifactVersionMismatch("the ensemble needs at least one member")
@@ -84,6 +85,9 @@ class WeightedEnsemble:
         self._encoder = encoder
         self._index = index
         self._weights = {"category": dict(weights_category), "priority": dict(weights_priority)}
+        if not 0.0 <= memory_weight_category <= 1.0:
+            raise ArtifactVersionMismatch("ensemble.memory_weight_category must be in [0, 1]")
+        self._memory_weight = float(memory_weight_category)
 
     @property
     def index(self) -> ExampleIndex:
@@ -112,12 +116,21 @@ class WeightedEnsemble:
                 else:
                     per_member[key] = clf.predict_proba(list(texts))
         outputs: list[EnsembleOutput] = []
+        knn_names = [n for n, pair in self._members.items() if isinstance(pair[0], KnnClassifier)]
         for i in range(len(texts)):
             per_model = {key: vectors[i] for key, vectors in per_member.items()}
             p = {}
             for target in TARGETS:
                 weights = self._weights[target]
                 p[target] = weighted_average({m: per_model[f"{m}.{target}"] for m in weights}, weights)
+            if self._memory_weight > 0 and knn_names and any(n.source == "memory" for n in neighbors[i]):
+                # a staff correction is among the neighbours: let the memory-aware kNN vote on the category
+                # (D-016 gives kNN no category weight offline; live learning must still move the label)
+                w = self._memory_weight
+                p["category"] = weighted_average(
+                    {"base": p["category"], "memory": per_model[f"{knn_names[0]}.category"]},
+                    {"base": 1.0 - w, "memory": w},
+                )
             outputs.append(EnsembleOutput(
                 p_cat=p["category"],
                 p_pri_model=p["priority"],

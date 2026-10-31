@@ -12,6 +12,13 @@ leakage:
   char_cosine: 0.8
   # P2.1 (encoder mode): print cross-group pairs with encoder cosine >= this for a manual merge decision.
   cosine_merge: 0.90
+  # P2.1: which holdout measures FAIL the gate for an augmented row (the others are listed for review).
+  # Measured with the int8 e5 encoder (ML batch 4): different official scenarios reach cosine 0.919
+  # (median 0.804), and true EN<->AR translations of one scenario have a median of 0.845, so an encoder
+  # cosine of 0.90 marks a shared topic, not a duplicate. exact and char (char_cosine) identify real copies.
+  # scripts/draft_augmentation.py is stricter: it drops any LLM draft with encoder cosine >= cosine_merge
+  # (or char >= char_cosine) to any holdout row before writing it.
+  holdout_fail_on: [exact, char]
 
 # ---- scripts/validate_dataset.py (P1.0): one block per --kind ----------------------------------------------
 # Labels are checked against campuspulse_ai.domain.labels (the only place label strings live).
@@ -33,11 +40,61 @@ augmented:                      # data/augmented/*.csv (ARCHITECTURE §4.2 schem
             category, priority]
   id_pattern: '^AUG-[A-Z]+-\d{4}$'
   langs: [en, ar, arabizi]
-  sources: [arabizi_rule, llm_paraphrase, llm_arabizi, new_scenario, hand]
+  sources: [arabizi_rule, llm_paraphrase, llm_arabizi, llm_translate, new_scenario, hand]
   author_method_pattern: '^(rule|hand|llm(:\S+)?)$'   # P2.2 writes llm:<model_id>
   new_group_pattern: '^(NEW|MEM)-[A-Za-z0-9-]+$'      # groups/scenarios that are not official
   arabizi_variants: 2           # scripts/draft_augmentation.py arabizi-rule: spellings per Arabic scenario
   arabizi_min_detection: 0.95   # share of reviewed lang=arabizi rows LangIdentifier must call ARABIZI (§3.7)
+  # P2.2 LLM drafting (scripts/draft_augmentation.py paraphrase | new-scenarios). Every drafted row is
+  # needs_human_check=True; labels are the source scenario's (paraphrase) or the requested cell's (new).
+  drafting:
+    # Pinned drafting model (decision, ML batch 4): the tier-2 pin from Appendix B for Jordanian-dialect and
+    # Arabizi quality, as P2.2 prescribes. Drafting is offline data work, not the runtime tier 2 (UD-3).
+    model: anthropic/claude-sonnet-5.5
+    request:                    # pinned request parameters (CLAUDE.md: temperature 0, cached)
+      temperature: 0
+      top_p: 1
+      seed: 42
+      max_tokens: 2000
+    timeout_s: 90
+    retries_on_invalid_json: 1  # schema-invalid output: retry once, then skip and log
+    cache_table: draft_responses  # table in Settings.llm_cache_path (SQLite)
+    log: data/augmented/draft_log.jsonl
+    prompts_dir: scripts/prompts
+  paraphrase:
+    per_scenario: 3
+    forms: [same_lang, other_lang, arabizi]
+    id_prefix: AUG-PA-
+  new_scenarios:
+    target: 60
+    per_cell_min: 3
+    # cells beyond the minimum: the 4 cells empty in the official data first (data audit F3; each new
+    # scenario gets both an en and an ar form), then one more high cell without a "today" deadline (LD-34)
+    extra_per_cell:
+      "Transportation|high": 2
+      "Academic Support|low": 1
+      "Finance|low": 1
+      "IT Support|medium": 1
+      "Facilities|high": 1
+    forms: [en, ar]
+    arabizi_every: 3            # the 1st, 4th, 7th ... scenario of a cell also gets an Arabizi form
+    id_prefix: AUG-NS-
+    group_prefix: NEW-S
+  translate:                    # D-014: faithful EN<->AR translations of the official scenarios + Arabizi
+    # a translation is written only when the scenario has no official translation (otherwise it would be
+    # a near copy of an official row); the Arabizi form is written from each scenario's Arabic side once
+    id_prefix: AUG-TR-
+  precheck:                     # D-014: an independent LLM labels every drafted row to focus the review
+    model: anthropic/claude-haiku-5.5   # the tier-1 pin: a different model from the drafter
+    rows_per_call: 10
+    # extra pinned request parameters: with reasoning on, the first run spent the token budget thinking and
+    # returned empty or truncated JSON for 32 of 43 calls
+    request_extra:
+      reasoning: {enabled: false}
+      max_tokens: 3000
+    sample_agreements: 0.2      # share of agreeing rows (seeded) the developer still reads in full
+    seed: 42
+    sheet: data/augmented/review/review_sheet.csv  # subfolder: the pool loader globs data/augmented/*.csv
 
 probes:                         # data/robustness/probes.csv (P2.5)
   columns: [request_id, text, lang, style, base_request_id, intended_category, intended_priority,

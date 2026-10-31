@@ -99,7 +99,9 @@ def test_triage_over_http_classifies_with_the_real_core(offline: OfflineContaine
     w = wire(offline)
     r = w.client.post(
         "/v1/triage",
-        json={"text": "The Wi-Fi in building M keeps dropping", "location": {"building": "M"}},
+        # a tiny-model training sentence, so the sets are singletons and the request is decided (the
+        # rc2 category vote asks a question for the old free-text sentence, which stores no prediction)
+        json={"text": "The campus Wi-Fi disconnects every few minutes", "location": {"building": "M"}},
         headers=auth("student", "demo-17"),
     )
     assert r.status_code == 200, r.text

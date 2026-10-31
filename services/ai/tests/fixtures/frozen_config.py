@@ -21,13 +21,16 @@ def valid_config_dict() -> dict[str, Any]:
     hand = yaml.safe_load((CONFIG_DIR / "hand_tuned.yaml").read_text(encoding="utf-8"))
     members = list(train["ensemble"]["members"])
     even = {m: 1.0 / len(members) for m in members}
+    # category-only members (m2proto, D-014) carry no priority weight
+    pri_members = [m for m in members if m != "m2proto"]
+    even_pri = {m: (1.0 / len(pri_members) if m in pri_members else 0.0) for m in members}
     config: dict[str, Any] = {
         "schema_version": 1,
         "artifact_version": train["artifact_version"],
         "trained_at": "2026-11-01T10:00:00+00:00",
         "seed": train["seed"],
         "encoder": {**train["encoder"], "revision": "test-revision"},
-        "ensemble": {"members": members, "weights_category": even, "weights_priority": dict(even)},
+        "ensemble": {"members": members, "weights_category": even, "weights_priority": even_pri},
         "m1": {**train["m1"], "C": train["grids"]["m1_C"][0]},
         "m2lr": {"C": train["grids"]["m2lr_C"][0]},
         "knn": dict(train["knn"]),
@@ -64,5 +67,8 @@ def valid_config_dict() -> dict[str, Any]:
             "oof_macro_f1_priority": 0.8,
         },
     }
+    if "m2proto" in members:
+        proto = train["prototype"]
+        config["prototype"] = {"parts": list(proto["parts"]), "mix": proto["mix"], "temperature": 0.02}
     assert set(config["priors"]["priority"]) == set(PRIORITY_LABELS)
     return copy.deepcopy(config)

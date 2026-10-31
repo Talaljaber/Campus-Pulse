@@ -225,8 +225,9 @@ def export(model_id: str, revision: str, out_dir: Path, work_dir: Path, *, max_t
                           input_names=list(INPUT_NAMES), output_names=[OUTPUT_NAME],
                           dynamic_axes=axes, opset_version=int(knobs["opset"]), dynamo=False)
     q = knobs["quantization"]
+    extra = {"op_types_to_quantize": list(q["op_types"])} if q.get("op_types") else {}
     quantize_dynamic(str(fp32_path), str(int8_path), weight_type=getattr(QuantType, q["weight_type"]),
-                     per_channel=bool(q["per_channel"]), reduce_range=bool(q["reduce_range"]))
+                     per_channel=bool(q["per_channel"]), reduce_range=bool(q["reduce_range"]), **extra)
     tokenizer_src = local / TOKENIZER_FILE
     if not tokenizer_src.is_file():
         raise SystemExit(f"{model_id}@{revision} has no {TOKENIZER_FILE}")
@@ -305,6 +306,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--work-dir", type=Path, default=DEFAULT_WORK)
     parser.add_argument("--parity-file", type=Path, default=PARITY_FILE)
+    parser.add_argument("--per-channel", choices=("yes", "no"), default=None,
+                        help="override encoder_export.quantization.per_channel (D-016 parity trials)")
+    parser.add_argument("--reduce-range", choices=("yes", "no"), default=None,
+                        help="override encoder_export.quantization.reduce_range (D-016 parity trials)")
+    parser.add_argument("--op-types", default=None,
+                        help="comma list of ONNX op types to quantize, e.g. MatMul (default: all)")
     parser.add_argument("--measure", type=Path, default=None, help=argparse.SUPPRESS)
     parser.add_argument("--threads", type=int, default=1, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -320,6 +327,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.out is None:
         parser.error("--out is required")
 
+    q = dict(knobs["quantization"])
+    if args.per_channel is not None:
+        q["per_channel"] = args.per_channel == "yes"
+    if args.reduce_range is not None:
+        q["reduce_range"] = args.reduce_range == "yes"
+    if args.op_types:
+        q["op_types"] = [t.strip() for t in args.op_types.split(",") if t.strip()]
+    knobs = {**knobs, "quantization": q}
     revision = resolve_revision(args.model, args.revision, encoder_cfg)
     prefix = args.query_prefix
     if prefix is None:

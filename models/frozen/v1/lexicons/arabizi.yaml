@@ -32,7 +32,9 @@ guard_tokens: [
 # A token fully matching one of these also vetoes (ordinals, clock times, units, versions).
 guard_patterns: [
   "^\\d+(st|nd|rd|th)$",
-  "^\\d{1,2}(:\\d{2})?(am|pm)$",
+  # clock times veto Arabizi, except a bare "3am": in Jordanian Arabizi it is the progressive particle عم
+  # ("3am ba2dar", "may 3am tenzel"); an English "at 3am" still has English guard words around it
+  "^(?!3am$)\\d{1,2}(:\\d{2})?(am|pm)$",
   "^\\d+(gb|mb|kb|tb|ghz|mhz|km|kg|cm|mm|jd|jod|usd|min|mins|hr|hrs|sec|secs|pcs)$",
   "^(mp|ipv|win|windows|ios|android|covid|python|java|office|excel|html|css)\\d+$"
 ]

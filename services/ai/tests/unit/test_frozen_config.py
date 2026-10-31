@@ -53,6 +53,21 @@ def test_weights_sum_to_one(tmp_path: Path) -> None:
     assert sum(config.ensemble.weights_category.values()) == pytest.approx(1.0, abs=1e-6)
     assert sum(config.ensemble.weights_priority.values()) == pytest.approx(1.0, abs=1e-6)
     data = valid_config_dict()
-    data["ensemble"]["weights_priority"] = {"m1": 0.5, "m2lr": 0.5, "m2knn": 0.5}
+    data["ensemble"]["weights_priority"] = dict.fromkeys(data["ensemble"]["members"], 0.5)
     with pytest.raises(ArtifactVersionMismatch, match="sum to 1"):
         FrozenConfig.load(_write(tmp_path / "bad.json", data))
+
+
+def test_prototype_member_rules(tmp_path: Path) -> None:
+    """m2proto (D-014) has no priority opinion and needs its `prototype` section."""
+    data = valid_config_dict()
+    data["ensemble"] = {"members": ["m1", "m2proto"], "weights_category": {"m1": 0.5, "m2proto": 0.5},
+                        "weights_priority": {"m1": 0.5, "m2proto": 0.5}}
+    data["prototype"] = {"parts": ["learned", "office"], "mix": 0.5, "temperature": 0.02}
+    with pytest.raises(ArtifactVersionMismatch, match="no priority opinion"):
+        FrozenConfig.load(_write(tmp_path / "pri.json", data))
+    data["ensemble"]["weights_priority"] = {"m1": 1.0, "m2proto": 0.0}
+    assert FrozenConfig.load(_write(tmp_path / "ok.json", data)).prototype is not None
+    del data["prototype"]
+    with pytest.raises(ArtifactVersionMismatch, match="prototype"):
+        FrozenConfig.load(_write(tmp_path / "missing.json", data))

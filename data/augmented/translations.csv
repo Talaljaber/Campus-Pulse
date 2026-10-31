@@ -1,0 +1,18 @@
+request_id,text,lang,source,source_scenario_id,cv_group,needs_human_check,author_method,category,priority
+AUG-TR-0003,bedi noskha 3an eisal el daf3 tab3i,arabizi,llm_translate,TR-S02,TR-S02,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-TR-0006,النظام شال المادة المسجلة عندي بدون أي تنبيه,ar,llm_translate,TR-S04,TR-S04,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-TR-0011,wein bala2i mawa3eed el as7b wel idafe?,arabizi,llm_translate,TR-S08,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-TR-0013,wein b2dar e2abel el murshed el akademi tab3i?,arabizi,llm_translate,TR-S09,TR-S09,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-TR-0014,kif baghayyer kelmet el ser?,arabizi,llm_translate,TR-S10,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
+AUG-TR-0021,wein jadwal el basat?,arabizi,llm_translate,TR-S15,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-TR-0025,wein b2dar ashoof mawa3eed a2sat el rusoom el jam3eyye?,arabizi,llm_translate,TR-S17,TR-S17,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-TR-0026,ما بقدر أفتح الفيدباك تبع الواجب تبعي,ar,llm_translate,TR-S18,TR-S18,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-TR-0027,ma ba2dar afta7 el feedback tab3 el wajeb tab3i,arabizi,llm_translate,TR-S18,TR-S18,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-TR-0029,el mukayyif wa2af yeshtighil fi 2a3et el muhadarat,arabizi,llm_translate,TR-S20,TR-S20,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-TR-0032,خط الباص تغيّر وما حدا أعلن عن هالشي,ar,llm_translate,TR-S23,TR-S23,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-TR-0037,bdi naseeha bkhsoos ikhtiyar madde ikhtiyariyye,arabizi,llm_translate,TR-S28,TR-S28,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-TR-0038,fi may btsarrib jamb kahraba el mukhtabar,arabizi,llm_translate,TR-S29,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-TR-0039,The registration page is frozen for me.,en,llm_translate,TR-S30,TR-S30,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-TR-0043,el daw bel mamar kharbaan,arabizi,llm_translate,TR-S33,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-TR-0044,3indi imte7anein b nafs el wa2et,arabizi,llm_translate,TR-S34,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-TR-0048,el projector bel ghorfe mesh shaghal,arabizi,llm_translate,VA-S04,VA-S04,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
