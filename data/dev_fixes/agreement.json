@@ -1,0 +1,30 @@
+{
+  "en": {
+    "rows": 72,
+    "agree_cat": 0.9857,
+    "agree_pri": 0.9,
+    "agreed_high": 26,
+    "implicit_with_agreed_priority": 14
+  },
+  "ar": {
+    "rows": 72,
+    "agree_cat": 0.9857,
+    "agree_pri": 0.9429,
+    "agreed_high": 23,
+    "implicit_with_agreed_priority": 16
+  },
+  "az": {
+    "rows": 72,
+    "agree_cat": 0.9855,
+    "agree_pri": 0.9565,
+    "agreed_high": 25,
+    "implicit_with_agreed_priority": 17
+  },
+  "all": {
+    "rows": 216,
+    "agree_cat": 0.9856,
+    "agree_pri": 0.933,
+    "agreed_high": 74,
+    "implicit_with_agreed_priority": 47
+  }
+}
