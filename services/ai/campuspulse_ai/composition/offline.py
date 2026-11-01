@@ -54,6 +54,7 @@ from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.application.use_cases.batch import read_batch_csv, write_predictions_csv
 from campuspulse_ai.application.use_cases.batch_predict import BatchPredictUseCase, BatchRow
 from campuspulse_ai.composition.arabizi_llm import has_key, llm_arabizi_requested, wrap_llm_arabizi
+from campuspulse_ai.composition.llm_frontend import llm_frontend_requested, wrap_llm_frontend
 from campuspulse_ai.composition.translation import make_translator, wrap_encoder
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.settings import Settings
@@ -154,7 +155,10 @@ def build_offline(
         if encoder_override is not None
         else wrap_encoder(raw_encoder, make_translator(model_dir, config.translate), config.translate)
     )
-    if encoder_override is None and llm_arabizi_requested(settings, use_llm):
+    if encoder_override is None and llm_frontend_requested(settings, use_llm):
+        # P7.4 (D-050): optional LLM front end (translate Arabic and Arabizi), in front of the encoder only.
+        encoder = wrap_llm_frontend(encoder, settings)
+    elif encoder_override is None and llm_arabizi_requested(settings, False):
         # P2.20 (D-025): optional LLM Arabizi translation, in front of the encoder only; off by default.
         encoder = wrap_llm_arabizi(encoder, settings)
     if encoder.dim != config.encoder.dim:

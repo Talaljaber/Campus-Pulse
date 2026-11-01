@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     llm_arabizi_model: str = "openai/gpt-4o-mini-2024-07-18"
     llm_arabizi_timeout_s: float = 6.0
     llm_arabizi_cache_path: Path = Path(".cache/llm_arabizi.sqlite")
+    # Optional LLM front end: translate Arabic and Arabizi, plus an internal explanation (P7.4, D-050).
+    llm_frontend: bool = False
+    llm_frontend_config: Path = Path("config/llm_frontend.yaml")
+    llm_frontend_model: str | None = None  # overrides the pinned model of the yaml (measurements only)
+    llm_frontend_cache_path: Path | None = None  # overrides the yaml cache (scratch caches)
 
     # Supabase (service role is server-side only)
     supabase_url: str | None = None
