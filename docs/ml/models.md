@@ -1353,3 +1353,49 @@ quantile, so remove the key from `train.yaml` then). EN and AR slices are bit-id
 `q_lang_alias` into `config.json`, regenerates `conformal/` and `MANIFEST.json`), then `evaluate.py --all`, and
 rebuild the tarball. If the other streams retrain the model, `train.py` stage B writes the key from `train.yaml`.
 The frozen `models/frozen/v1` is deliberately unchanged here (MANIFEST untouched).
+
+## 28. Arabizi training data, arm B (P2.16, D-022 proposed: rejected)
+
+`python scripts/arabizi_arms.py --folds reports/arabizi_folds.csv --leakage reports/arabizi_leakage.json`
+-> `reports/arabizi_arms.json` (B = 2000, seed 42, 90 % CI). Question: does training on Arabizi rows (encoded as
+today, untranslated; the translator is unchanged) lift the Arabizi slice that rc3 leaves at 0.52?
+
+**Data.** `data/augmented/arabizi_from_official.csv` (new, 126 rows, LLM-written, `needs_human_check=True`):
+three Jordanian Arabizi spellings of each of the 42 official cores (the official data has only 42 distinct
+cores, so this is all the official content there is), label, `source_scenario_id` and `cv_group` inherited, so
+scenario-held-out CV stays valid. The Arabizi pool is these plus every existing `lang=arabizi` draft:
+`arabizi.csv` 30, `new_scenarios.csv` 78, `paraphrases.csv` 11, `translations.csv` 13 = 258 rows.
+`check_leakage.py` gate: 0 failing rows (exact/char); 69 of the 258 have an e5 cosine >= 0.90 to an our_test row
+(encoder-only, "shared topic"), so **B1** trains on the other 189 and **B2** on all 258. Unreviewed rows are
+trained on only inside this measurement arm (`include_unreviewed`), never in a frozen model. Folds:
+`make_folds.py --include-augmented` (official groups unchanged).
+
+**Arm A on the Arabizi rows**: the same folds with Arabizi rows scored but never in a training fold, so A and B
+are scored on identical rows. A on our_test and official OOF is the plain rc3 pipeline (reproduces 0.935 / 0.864).
+
+**Category macro-F1** (A -> B1; Delta, 90 % group-bootstrap CI):
+
+| measurement | rows / groups | A | B1 | Delta [CI] | B2 | Delta [CI] |
+| --- | ---: | ---: | ---: | --- | ---: | --- |
+| (a) our_test Arabizi | 32 / 8 | 0.523 | 0.522 | 0.000 [-0.079, +0.051] | 0.386 | -0.137 [-0.185, +0.052] |
+| (b) OOF, arabizi_from_official | 123 / 30 | 0.429 | 0.474 | +0.045 [-0.034, +0.105] | 0.496 | +0.067 [-0.020, +0.127] |
+| (c) OOF, new scenarios + arabizi.csv (kept) | 39 / 32 | 0.480 | 0.503 | +0.023 [-0.152, +0.173] | 0.575 | +0.095 [-0.057, +0.211] |
+| (c) all 108 rows incl. near-dups | 108 / 93 | 0.489 | (not in B1) | | 0.528 | +0.040 [-0.028, +0.112] |
+| slices (B1): our_test EN / AR / pooled | | 0.926 / 0.886 / 0.864 | 0.926 / 0.854 / 0.856 | 0 / -0.033 [-0.156, +0.060] / -0.007 | | |
+| slices (B1): OOF official EN / AR / all | | 0.966 / 0.833 / 0.935 | 0.966 / 0.911 / 0.954 | 0 / +0.078 [0, +0.25] / +0.019 | | |
+
+Category coverage (set size) of our_test Arabizi: A 0.563 (1.0), B1 0.844 (4.1), B2 0.906 (4.0): the sets widen
+because Arabizi OOF rows now exist, so `MondrianByLang` fits an Arabizi quantile itself (>= 10 groups); the
+coverage is bought with a set of ~4 of 6 labels, i.e. no information. OOF coverage on the Arabizi rows is
+circular (calibrated on them). our_test priority 0.847 -> 0.833 (B1) / 0.838 (B2).
+
+**D-016 verdict: B is rejected.** Gain >= +0.05 with CI lower bound > 0 on a measurement that is not our_test
+alone: none (best (b) +0.045 / +0.067, lower bounds -0.034 / -0.020); our_test Arabizi is flat (B1) or worse (B2);
+B1 AR on our_test -0.033 is just past the -0.03 slice limit. Nothing is refrozen. The near-duplicate rows do not
+help our_test (B2 is worse than B1), so the flat result is not a leakage artefact. Reading: Arabizi F1 in
+scenario-held-out CV is ~0.43-0.50 whether or not Arabizi rows are in training, so a scenario's Arabizi
+rendering is hard because the encoder (e5-small) embeds untranslated Latin Arabizi poorly, not because it has
+never seen Arabizi; training rows cover 30 scenario groups only. (The OOF AR +0.078, CI lower bound 0.000, is
+unexplained and not claimed.) Arms C (translate the Arabic-letter transliteration), D (dual) and the
+calibration floor are measured elsewhere (P2.16 split). `arabizi_from_official.csv` stays in the repo for
+review (`REVIEW.md`) and for those arms.

@@ -19,6 +19,7 @@ Rows here **are** training data (unlike `data/our_test/` and `data/robustness/`)
 | `priority` | `low`, `medium` or `high` |
 
 ## Files
+- `arabizi_from_official.csv` (P2.16): 126 LLM-written Arabizi renderings (3 spellings of each of the 42 official cores, so the official data has an Arabizi view); labels, `source_scenario_id` and `cv_group` come from the source scenario. All `needs_human_check=True`; used only by the Arabizi experiment (unreviewed arm), not by `train.py`.
 - `new_scenarios.csv` (P2.3): 78 new situations that are not in the official data (not paraphrases or
   translations of the 42 official cores), 390 rows. Finance has 18 situations; Registration, IT Support,
   Transportation, Facilities and Academic Support have 12 each, and each category splits evenly across

@@ -1255,3 +1255,7 @@
 
 ### P2.18 — Arabizi conformal coverage: borrowed Arabic-script quantile  (ML, 2026-11-01)
 - **What now exists:** optional `conformal.q_lang_alias` (`{arabizi: ar}` in `config/train.yaml`): a language with no calibration rows uses its donor's category quantile. On rc3, our_test Arabizi category coverage 0.516 -> 0.839 (Wilson [0.67, 0.93]), set size 1.0 -> 3.35, 81 % of Arabizi requests to human review; EN and AR unchanged. Frozen v1 not refrozen; the rc4 refreeze must run `train.py --retune` (docs/ml/models.md 28).
+
+## P2.16 (ML, Arabizi arm B)
+- Added `data/augmented/arabizi_from_official.csv` (126 LLM-written, unreviewed Arabizi renderings of the 42 official cores; listed in `data/augmented/REVIEW.md`).
+- Added `scripts/arabizi_arms.py` and `reports/arabizi_arms.json`: training on Arabizi rows does not pass D-016 (docs/ml/models.md 28, D-022 proposed, rejected). No model refrozen.

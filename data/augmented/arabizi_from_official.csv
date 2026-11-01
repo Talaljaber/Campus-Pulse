@@ -1,0 +1,127 @@
+request_id,text,lang,source,source_scenario_id,cv_group,needs_human_check,author_method,category,priority
+AUG-AO-0001,7esabi el jam3e tsakkar w 3ndi exam online el yom,arabizi,llm_arabizi,TR-S01,TR-S01,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0002,account el jame3a sakkar 3alay w 3indi emt7an online elyom,arabizi,llm_arabizi,TR-S01,TR-S01,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0003,hesabi bel jam3a mseker!! w 3ndi online exam lyom,arabizi,llm_arabizi,TR-S01,TR-S01,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0004,bde noskha men el receipt tab3 el daf3,arabizi,llm_arabizi,TR-S02,TR-S02,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-AO-0005,keef bakhod copy 3an ishaar el dafe3 ta3i?,arabizi,llm_arabizi,TR-S02,TR-S02,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-AO-0006,"biddi wasel el daf3 tani, wein bala2ee",arabizi,llm_arabizi,TR-S02,TR-S02,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-AO-0007,bab el lab 3ale2 w el tolab ma byeqdaro yetla3o,arabizi,llm_arabizi,TR-S03,TR-S03,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0008,el bab ta3 el mukhtabar mjam2ed w fi tolab jowa mish 3arfeen yokhrjo,arabizi,llm_arabizi,TR-S03,TR-S03,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0009,door el lab stuck w el talaba 3alqeen jowwa,arabizi,llm_arabizi,TR-S03,TR-S03,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0010,el nizam shal el madde el msajjaleh 3indi bidoon ay tanbeeh,arabizi,llm_arabizi,TR-S04,TR-S04,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0011,el system 7azaf madde kent msajjelha w ma 7ada qalli shi,arabizi,llm_arabizi,TR-S04,TR-S04,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0012,"tl3at el course mn jadwali lwa7dha, el system shalha bidon ma ynabbehni",arabizi,llm_arabizi,TR-S04,TR-S04,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0013,3alamti ghalat w akher yom lal e3tirad elyom,arabizi,llm_arabizi,TR-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-AO-0014,"el 3alame ta3t el exam mshe hek, w akher yom e3tiraad lyom",arabizi,llm_arabizi,TR-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-AO-0015,3alame el imti7an masjle ghalat w el yom akher mawed lal e3teraad,arabizi,llm_arabizi,TR-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-AO-0016,bde 7ada yfahemni shu ma3na el prerequisite,arabizi,llm_arabizi,TR-S06,TR-S06,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-AO-0017,mish fahem nizam el shurut el masbaqa lal mawad (prerequisite),arabizi,llm_arabizi,TR-S06,TR-S06,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-AO-0018,shu el prerequisite w leish ma fiyi asajjel el madde?,arabizi,llm_arabizi,TR-S06,TR-S06,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-AO-0019,dafa3et el qest w lisa ma tala3 3indi w el tasjeel bysakker el yom,arabizi,llm_arabizi,TR-S07,TR-S07,True,llm:anthropic/claude-sonnet-5.5,Finance,high
+AUG-AO-0020,el daf3a ta3t el rusoom mish zahra bel system w el registration bye2fel lyom,arabizi,llm_arabizi,TR-S07,TR-S07,True,llm:anthropic/claude-sonnet-5.5,Finance,high
+AUG-AO-0021,"dfa3t el rusum bs mish 3am betban, w el tasjeel akher yom elyom",arabizi,llm_arabizi,TR-S07,TR-S07,True,llm:anthropic/claude-sonnet-5.5,Finance,high
+AUG-AO-0022,wein bala2i mawa3eed el se7b w el idafa?,arabizi,llm_arabizi,TR-S08,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-AO-0023,emta el add w drop?,arabizi,llm_arabizi,TR-S08,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-AO-0024,wein el jadwal tab3 el sa7b wel eidafe lal mawad,arabizi,llm_arabizi,TR-S08,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-AO-0025,wein fiyi ashuf el morshed el akademi?,arabizi,llm_arabizi,TR-S09,TR-S09,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-AO-0026,wein maktab el advisor ta3i?,arabizi,llm_arabizi,TR-S09,TR-S09,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-AO-0027,keef bel2a el murshed el akadimi 3shan ejtem3 ma3o,arabizi,llm_arabizi,TR-S09,TR-S09,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-AO-0028,keef baghayyer el password?,arabizi,llm_arabizi,TR-S10,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
+AUG-AO-0029,shu el tari2a la taghyeer kelmet el ser ta3t el 7esab,arabizi,llm_arabizi,TR-S10,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
+AUG-AO-0030,kif bghayer password el portal,arabizi,llm_arabizi,TR-S10,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
+AUG-AO-0031,el platform ta3 el ta3leem wa2ef w ana bel online quiz,arabizi,llm_arabizi,TR-S11,TR-S11,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0032,el learning platform ma 3am yeshta3'el w 3am bn7el quiz online,arabizi,llm_arabizi,TR-S11,TR-S11,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0033,el manassa ma btefta7 w ana 3am b7el quiz online!!,arabizi,llm_arabizi,TR-S11,TR-S11,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0034,"ma b2dar arfa3 el malaf, el portal bytl3li error",arabizi,llm_arabizi,TR-S12,TR-S12,True,llm:anthropic/claude-sonnet-5.5,IT Support,medium
+AUG-AO-0035,el portal bi3tini error lama bde a3mel upload la file,arabizi,llm_arabizi,TR-S12,TR-S12,True,llm:anthropic/claude-sonnet-5.5,IT Support,medium
+AUG-AO-0036,3am ba3mel upload lal file bel portal w btetla3li error,arabizi,llm_arabizi,TR-S12,TR-S12,True,llm:anthropic/claude-sonnet-5.5,IT Support,medium
+AUG-AO-0037,khasm el minha mish zaher bel fatoora,arabizi,llm_arabizi,TR-S13,TR-S13,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0038,el scholarship discount ma 3am yenzel bel invoice ta3i,arabizi,llm_arabizi,TR-S13,TR-S13,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0039,"el minha ta3ti ma 7asabo bel fatoura, fi khasem na2es",arabizi,llm_arabizi,TR-S13,TR-S13,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0040,el bus ta2akhar 3eshreen de2i2a,arabizi,llm_arabizi,TR-S14,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0041,bas el jam3a met2akher hawale 20 daqeeqa,arabizi,llm_arabizi,TR-S14,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0042,el bus lesa ma wasal w mt2akher 3ishreen daqiqa,arabizi,llm_arabizi,TR-S14,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0043,wein jadwal el bsat?,arabizi,llm_arabizi,TR-S15,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-AO-0044,wen bshuf timetable el bus?,arabizi,llm_arabizi,TR-S15,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-AO-0045,fi jadwal lal bassat? wein?,arabizi,llm_arabizi,TR-S15,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-AO-0046,el wifi bye2ta3 kol shwayyet daqayeq,arabizi,llm_arabizi,TR-S16,TR-S16,True,llm:anthropic/claude-sonnet-5.5,IT Support,medium
+AUG-AO-0047,el internet bel jam3a bi2ta3 kol shwai w bergha3 byerja3,arabizi,llm_arabizi,TR-S16,TR-S16,True,llm:anthropic/claude-sonnet-5.5,IT Support,medium
+AUG-AO-0048,wi-fi el campus 3am yfsel kol kam daqeeqa,arabizi,llm_arabizi,TR-S16,TR-S16,True,llm:anthropic/claude-sonnet-5.5,IT Support,medium
+AUG-AO-0049,wein bshuf mawa3eed aqsat el rusum?,arabizi,llm_arabizi,TR-S17,TR-S17,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-AO-0050,emta mawa3id el aqsat tab3et el qest?,arabizi,llm_arabizi,TR-S17,TR-S17,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-AO-0051,keef ba3raf mawa3eed daf3 el qest,arabizi,llm_arabizi,TR-S17,TR-S17,True,llm:anthropic/claude-sonnet-5.5,Finance,low
+AUG-AO-0052,ma 3am a2dar ashuf el mulahazat 3ala el wajeb,arabizi,llm_arabizi,TR-S18,TR-S18,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0053,el feedback ta3 el assignment ma 3am yeftah 3indi,arabizi,llm_arabizi,TR-S18,TR-S18,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0054,mish 3am eshuf ta3leeq el doctor 3ala el wajib tabe3i,arabizi,llm_arabizi,TR-S18,TR-S18,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0055,fi may 3am bitsarrab janb el priza bel mukhtabar,arabizi,llm_arabizi,TR-S19,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0056,"ma2 3am yenzel janeb el kahraba bel lab, khatar!",arabizi,llm_arabizi,TR-S19,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0057,tasreeb mayy 2arib men el plug el kahraba2i bel mukhtabar,arabizi,llm_arabizi,TR-S19,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0058,el mukayyef wa2af bel qa3a,arabizi,llm_arabizi,TR-S20,TR-S20,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-AO-0059,el AC ta3 el qa3a ma 3am yeshtaghel,arabizi,llm_arabizi,TR-S20,TR-S20,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-AO-0060,el takyeef bel ghurfa ta3 el muhadara 3atlan,arabizi,llm_arabizi,TR-S20,TR-S20,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-AO-0061,"ma 3am a2dar adeef mawad, el portal bye3tezer el talab",arabizi,llm_arabizi,TR-S21,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0062,el tasjeel bi rfod talabi lama bde adeef el mawad,arabizi,llm_arabizi,TR-S21,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0063,"ma fiyi a3mel add lal course, el portal brfod",arabizi,llm_arabizi,TR-S21,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0064,el kart tab3 el bus wa2af 3an el shughol hal-sabah,arabizi,llm_arabizi,TR-S22,TR-S22,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0065,bitaqet el bus ma 3adat teshtaghel hal sabeh,arabizi,llm_arabizi,TR-S22,TR-S22,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0066,el pass ta3 el bus mish 3am yemshi el yom el sob7,arabizi,llm_arabizi,TR-S22,TR-S22,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0067,ghayyaru khat el bus bidoon e3lan,arabizi,llm_arabizi,TR-S23,TR-S23,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0068,masar el bus etghayyar w ma had a3lan 3an shi,arabizi,llm_arabizi,TR-S23,TR-S23,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0069,el route tab3 el bus tghayyar w ma fi ayy announcement,arabizi,llm_arabizi,TR-S23,TR-S23,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0070,fi imti7anein bnafs el wa2t bel jadwal,arabizi,llm_arabizi,TR-S24,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0071,el exam schedule fih test-ein bnafs el sa3a,arabizi,llm_arabizi,TR-S24,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0072,"3indi emte7anen bnafs el mi3ad, shu a3mel?",arabizi,llm_arabizi,TR-S24,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0073,mish 2ader asajel mawad w el nizam byeTle3li error,arabizi,llm_arabizi,TR-S25,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0074,"ma fiyi asajjel mawad, el system 3am yeb3atli khata2",arabizi,llm_arabizi,TR-S25,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0075,"el tasjeel ma 3am yeshtaghel, btetla3li resalet error kol ma bjarreb",arabizi,llm_arabizi,TR-S25,TR-S21,True,llm:anthropic/claude-sonnet-5.5,Registration,high
+AUG-AO-0076,dafa3t el qest w lessa mish zaher bel daf3 w el tasjeel byesaker el yom,arabizi,llm_arabizi,TR-S26,TR-S07,True,llm:anthropic/claude-sonnet-5.5,Finance,high
+AUG-AO-0077,"khallast el daf3 bs ma etsajjal, w el registration bye2fel elyom",arabizi,llm_arabizi,TR-S26,TR-S07,True,llm:anthropic/claude-sonnet-5.5,Finance,high
+AUG-AO-0078,"dafa3t el aqsat w ma tl3et bel nizam, el yom akher yom lal tasjeel",arabizi,llm_arabizi,TR-S26,TR-S07,True,llm:anthropic/claude-sonnet-5.5,Finance,high
+AUG-AO-0079,lamba bel mamarr kharbaneh,arabizi,llm_arabizi,TR-S27,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-AO-0080,lamba bel corridor ma 3am tdawwi,arabizi,llm_arabizi,TR-S27,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-AO-0081,fi lamba mkaserra bel mamar,arabizi,llm_arabizi,TR-S27,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-AO-0082,bde nasi7a b ekhtiyar madet ekhtiyariyye,arabizi,llm_arabizi,TR-S28,TR-S28,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-AO-0083,shu el elective el monaseb? bde ra2i el morshed,arabizi,llm_arabizi,TR-S28,TR-S28,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-AO-0084,ayya madde ekhtiyariyye ekhtar? me7tar,arabizi,llm_arabizi,TR-S28,TR-S28,True,llm:anthropic/claude-sonnet-5.5,Academic Support,low
+AUG-AO-0085,fi mayy btsarrab janb kahraba el mukhtabar,arabizi,llm_arabizi,TR-S29,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0086,fi tasreeb ma2 janb el kahrabaa bel lab,arabizi,llm_arabizi,TR-S29,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0087,el may 3am btenzel 3a el plug bel mukhtabar!,arabizi,llm_arabizi,TR-S29,TR-S19,True,llm:anthropic/claude-sonnet-5.5,Facilities,high
+AUG-AO-0088,safhet el tasjeel m3allaqa 3indi,arabizi,llm_arabizi,TR-S30,TR-S30,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-AO-0089,el registration page 3am ta3laq w ma btefta7,arabizi,llm_arabizi,TR-S30,TR-S30,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-AO-0090,safhet el tasjeel wa2fa w ma btetharrak,arabizi,llm_arabizi,TR-S30,TR-S30,True,llm:anthropic/claude-sonnet-5.5,Registration,medium
+AUG-AO-0091,akher bus etlaghaa w el tolab dallo bidoon muwasalat,arabizi,llm_arabizi,TR-S31,TR-S31,True,llm:anthropic/claude-sonnet-5.5,Transportation,high
+AUG-AO-0092,el bus el akheer enlaghaa w fi tolab 3alqeen ma 3ando keef yerj3o,arabizi,llm_arabizi,TR-S31,TR-S31,True,llm:anthropic/claude-sonnet-5.5,Transportation,high
+AUG-AO-0093,last bus etlaghaa w el talaba 3alqeen bel jam3a,arabizi,llm_arabizi,TR-S31,TR-S31,True,llm:anthropic/claude-sonnet-5.5,Transportation,high
+AUG-AO-0094,7esabi bel jam3a mseker w 3indi online exam el yom,arabizi,llm_arabizi,TR-S32,TR-S01,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0095,"el account ta3i etqafal w 3indi emt7an online elyom, please 7elooha",arabizi,llm_arabizi,TR-S32,TR-S01,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0096,account el uni msakkar w el exam online lyom,arabizi,llm_arabizi,TR-S32,TR-S01,True,llm:anthropic/claude-sonnet-5.5,IT Support,high
+AUG-AO-0097,el daw bel mamar kharban,arabizi,llm_arabizi,TR-S33,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-AO-0098,dawa el corridor ma betshta3'el,arabizi,llm_arabizi,TR-S33,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-AO-0099,el lamba bel mamar 3atlaneh,arabizi,llm_arabizi,TR-S33,TR-S27,True,llm:anthropic/claude-sonnet-5.5,Facilities,low
+AUG-AO-0100,3indi emte7anen bnafs el wa2et,arabizi,llm_arabizi,TR-S34,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0101,emtihanein bnafs el mi3ad w ma fiyi a7dar el etnein,arabizi,llm_arabizi,TR-S34,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0102,"fi tadarob bel jadwal, emte7anein bnafs el yom wel sa3a",arabizi,llm_arabizi,TR-S34,TR-S24,True,llm:anthropic/claude-sonnet-5.5,Academic Support,medium
+AUG-AO-0103,el mablagh el zaher 3ala 7esabi mish sa7i7,arabizi,llm_arabizi,TR-S35,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0104,el rasid bel finance portal ghalat,arabizi,llm_arabizi,TR-S35,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0105,el mablegh el matloob mn 3indi mish mazbout,arabizi,llm_arabizi,TR-S35,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0106,wein bshuf jadwal el shuttle bus?,arabizi,llm_arabizi,TR-S36,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-AO-0107,wen fiyi eshuf mawa3eed el shuttle,arabizi,llm_arabizi,TR-S36,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-AO-0108,fi timetable lal shuttle? wein?,arabizi,llm_arabizi,TR-S36,TR-S15,True,llm:anthropic/claude-sonnet-5.5,Transportation,low
+AUG-AO-0109,wein mawa3eed fatret el add/drop?,arabizi,llm_arabizi,VA-S01,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-AO-0110,emta bel dabt fatret el sa7b wel idafa?,arabizi,llm_arabizi,VA-S01,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-AO-0111,wen lage mawa3eed el drop w el add,arabizi,llm_arabizi,VA-S01,TR-S08,True,llm:anthropic/claude-sonnet-5.5,Registration,low
+AUG-AO-0112,el finance portal 3am yeb2ayyen rasid mish sa7i7,arabizi,llm_arabizi,VA-S02,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0113,el mablagh el mestahe2 3alay ghalat bel portal,arabizi,llm_arabizi,VA-S02,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0114,el balance el baqi bel portal mish ma3 el hesab,arabizi,llm_arabizi,VA-S02,TR-S35,True,llm:anthropic/claude-sonnet-5.5,Finance,medium
+AUG-AO-0115,bas el jam3a met2akher 3an mi3ado,arabizi,llm_arabizi,VA-S03,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0116,el bus etakhar 3an wa2to,arabizi,llm_arabizi,VA-S03,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0117,"el bus mesh 3al wa2et el yom, mt2akher",arabizi,llm_arabizi,VA-S03,TR-S14,True,llm:anthropic/claude-sonnet-5.5,Transportation,medium
+AUG-AO-0118,el projector bel ghurfa ma 3am yeshtaghel,arabizi,llm_arabizi,VA-S04,VA-S04,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-AO-0119,el brojektor 3atlan bel qa3a,arabizi,llm_arabizi,VA-S04,VA-S04,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-AO-0120,el projector bel room mish shaghal,arabizi,llm_arabizi,VA-S04,VA-S04,True,llm:anthropic/claude-sonnet-5.5,Facilities,medium
+AUG-AO-0121,3alamet el exam masjale ghalat w akher mawed lal e3tiraad elyom,arabizi,llm_arabizi,VA-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-AO-0122,"el 3alame etsajjalet ghalat, w el yom akher yom lal appeal",arabizi,llm_arabizi,VA-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-AO-0123,markati bel imti7an ghalat w deadline el e3tiraad el yom,arabizi,llm_arabizi,VA-S05,TR-S05,True,llm:anthropic/claude-sonnet-5.5,Academic Support,high
+AUG-AO-0124,keef fiyi a3mel reset lal password ta3 el jam3a?,arabizi,llm_arabizi,VA-S06,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
+AUG-AO-0125,kif bghayyer kelmet el ser?,arabizi,llm_arabizi,VA-S06,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low
+AUG-AO-0126,"nseet el password, keef ba3mel reset",arabizi,llm_arabizi,VA-S06,TR-S10,True,llm:anthropic/claude-sonnet-5.5,IT Support,low

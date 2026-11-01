@@ -14,6 +14,7 @@ P2.4 and **1.5 h** for P2.5.
 | `new_scenarios.csv` | 390 (78 situations × 5 forms) | LLM writer agent (NEW-C01…C78) | 136 | 70 checker disagreements + 66 sampled agreements |
 | `paraphrases.csv` | 64 | claude-sonnet-5.5 (P2.3) | 18 | 12 disagreements + 6 sampled agreements |
 | `translations.csv` | 17 | claude-sonnet-5.5 (D-014) | 8 | 3 disagreements + 5 sampled agreements |
+| `arabizi_from_official.csv` | 126 | claude-sonnet-5.5 (P2.16, 3 Arabizi renderings of each of the 42 official cores, labels and cv_group inherited) | 0 so far | spelling and meaning check; added for the Arabizi experiment (models.md 28); never in a frozen model until reviewed |
 | **total** | **501** | | **187** (+5 Arabizi) | |
 
 An independent checker model (`anthropic/claude-haiku-5.5`, a different model from the drafter) labelled
