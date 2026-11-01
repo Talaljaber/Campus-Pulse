@@ -10,7 +10,7 @@ import { IconTile } from "../ui/IconTile";
 import { InfoPanel } from "../ui/InfoPanel";
 import { TextField } from "../ui/TextField";
 
-const ROLE_ICON: Record<string, IconName> = { student: "graduation", staff: "briefcase", admin: "shield" };
+const ROLE_ICON: Record<string, IconName> = { student: "graduation", staff: "briefcase", advisor: "user", admin: "shield" };
 
 const ERROR_KEY: Record<SignInError, DictKey> = {
   invalid: "auth.errorInvalid",
@@ -80,13 +80,13 @@ export function LoginForm({ next }: LoginFormProps) {
       <InfoPanel title={t("auth.demoTitle")}>
         <p className="text-sm text-fg-2">{t("auth.demoHelp")}</p>
         {hint && <p className="text-sm text-fg-3">{t("auth.hint", { hint })}</p>}
-        <ul className="grid gap-2 sm:grid-cols-3">
+        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {DEMO_ACCOUNTS.map((a) => (
-            <li key={a.role}>
+            <li key={a.id}>
               <IconTile
-                icon={ROLE_ICON[a.role] ?? "user"}
+                icon={ROLE_ICON[a.id] ?? "user"}
                 tone={a.role === "student" ? "orange" : "grey"}
-                data-demo-role={a.role}
+                data-demo-role={a.id}
                 label={t("auth.signInAs", { name: t(a.labelKey) })}
                 onClick={() => {
                   setEmail(a.email);

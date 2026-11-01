@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { TicketStatus } from "@/lib/ai/types";
 import { listTicketLinks, listTickets, subscribeTickets } from "@/lib/repos/tickets";
-import { setTicketStatus, staffErrorKind, type StaffErrorKind } from "@/lib/staff/service";
-import { applyTicketOut, mergeLive, withLinks, type TicketView } from "@/lib/staff/tickets";
+import { forwardErrorKind, forwardTicket, setTicketStatus, staffErrorKind, type StaffErrorKind } from "@/lib/staff/service";
+import { applyForward, applyTicketOut, mergeLive, withLinks, type TicketView } from "@/lib/staff/tickets";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 export type LoadState = "loading" | "ready" | "error";
@@ -79,5 +79,19 @@ export function useTicketQueue(office: string | null) {
     return null;
   }, []);
 
-  return { tickets, load, pending, reload, changeStatus };
+  /** Forwards a ticket to another office (UD-13). Resolves to an error kind, or `null` on success. */
+  const forward = useCallback(async (id: string, toOffice: string, note: string): Promise<StaffErrorKind | null> => {
+    setPending((p) => new Set(p).add(id));
+    const res = await forwardTicket(id, toOffice, note);
+    setPending((p) => {
+      const next = new Set(p);
+      next.delete(id);
+      return next;
+    });
+    if (!res.ok) return forwardErrorKind(res);
+    setTickets((cur) => cur.map((t) => (t.id === id ? applyForward(t, res.data, toOffice) : t)));
+    return null;
+  }, []);
+
+  return { tickets, load, pending, reload, changeStatus, forward };
 }

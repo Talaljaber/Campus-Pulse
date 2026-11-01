@@ -27,7 +27,7 @@ export async function signIn(sb: Sb, email: string, password: string, next?: str
     await sb.auth.signOut();
     return { ok: false, reason: "no_profile" };
   }
-  return { ok: true, role: profile.role, destination: safeNext(next, homeFor(profile.role)) };
+  return { ok: true, role: profile.role, destination: safeNext(next, homeFor(profile.role, profile.office)) };
 }
 
 /** Ends the session (clears the cookies through the browser client). */

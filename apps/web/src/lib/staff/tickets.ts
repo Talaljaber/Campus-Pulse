@@ -105,3 +105,15 @@ export function applyTicketOut<T extends TicketRow>(
     sla_due_at: out.sla_due_at,
   };
 }
+
+/**
+ * Like {@link applyTicketOut}, after a forward: the ticket now belongs to `office` (the code the
+ * staff member picked, not the API's wording) and carries the category that follows it.
+ */
+export function applyForward<T extends TicketRow>(
+  row: T,
+  out: Pick<TicketRow, "status" | "resolved_at" | "escalated_at" | "provisional" | "priority" | "sla_due_at" | "category">,
+  office: string,
+): T {
+  return { ...applyTicketOut(row, out), office, category: out.category };
+}

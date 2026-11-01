@@ -57,7 +57,7 @@ describe("LabScreen", () => {
     expect(screen.getByText(/Report written/)).toBeInTheDocument();
     expect(screen.getByText("Questions asked back: 22%, Proxy estimate")).toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Staff pages" });
-    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Model lab", "Staff desk", "Pulse map", "Outbox"]);
+    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Model lab", "Staff desk", "Review queue", "Pulse map", "Outbox"]);
     expect(within(nav).getByRole("link", { name: "Model lab" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("tab", { name: "Benchmark", selected: true })).toBeInTheDocument();
   });

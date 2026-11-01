@@ -9,6 +9,9 @@ describe("homeFor", () => {
     expect(homeFor("student")).toBe("/");
     expect(homeFor("staff")).toBe("/staff");
     expect(homeFor("admin")).toBe("/lab");
+    expect(homeFor("staff", "it")).toBe("/staff");
+    expect(homeFor("staff", "academic")).toBe("/staff/reviews");
+    expect(homeFor("student", "academic")).toBe("/");
   });
 });
 
@@ -32,6 +35,9 @@ describe("decideRoute matrix", () => {
     ["/", "staff", NEXT],
     ["/login", "staff", to("/staff")],
     ["/staff", "staff", NEXT],
+    ["/staff/reviews", "staff", NEXT],
+    ["/staff/reviews", "student", to("/")],
+    ["/staff/reviews", null, to("/login?next=%2Fstaff%2Freviews")],
     ["/pulse", "staff", NEXT],
     ["/outbox", "staff", NEXT],
     ["/lab", "staff", to("/staff")],

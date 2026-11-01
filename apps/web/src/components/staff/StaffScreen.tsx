@@ -4,14 +4,17 @@ import { useState } from "react";
 import { useFlagEvents } from "@/hooks/useFlagEvents";
 import { useIncidents } from "@/hooks/useIncidents";
 import { useMapBuildings } from "@/hooks/useMapBuildings";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useTicketDetail } from "@/hooks/useTicketDetail";
 import { useTicketQueue } from "@/hooks/useTicketQueue";
 import { useT, type DictKey } from "@/i18n";
 import type { Category, Priority } from "@/lib/ai/types";
+import type { NoticeData } from "@/lib/chat/types";
 import { incidentView } from "@/lib/incidents";
 import type { StaffErrorKind } from "@/lib/staff/service";
 import { filterTickets, type QueueFilter } from "@/lib/staff/tickets";
+import { useNoticeText } from "../chat/ChatThread";
 import { useNow } from "../explain/useNow";
 import { AppShell } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
@@ -59,6 +62,15 @@ export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
   const flags = useFlagEvents();
   const buildings = useMapBuildings();
 
+  // UD-13: a ticket forwarded to this office, and an item landing in the advisor's or the office's review queue.
+  const noticeText = useNoticeText();
+  const onNotice = (n: NoticeData) => {
+    if (n.type === "ticket_forwarded" || n.type === "review_assigned") toast.show(noticeText(n), "info");
+    if (n.type === "review_assigned") review.reload();
+  };
+  useNotifications(alias, onNotice);
+  useNotifications(office ? `office:${office}` : null, onNotice);
+
   const [tab, setTab] = useState<TabId>("tickets");
   const [filter, setFilter] = useState<QueueFilter>("active");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -72,6 +84,14 @@ export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
     const kind = await queue.changeStatus(id, status);
     if (kind) fail(kind);
     else toast.show(t("staff.toast.statusChanged", { status: t(`staff.status.${status}` as DictKey) }), "ok");
+  };
+
+  const [forwardError, setForwardError] = useState<{ id: string; kind: StaffErrorKind } | null>(null);
+  const onForward = async (id: string, to: string, note: string) => {
+    setForwardError(null);
+    const kind = await queue.forward(id, to, note);
+    if (kind) setForwardError({ id, kind });
+    else toast.show(t("forward.toast", { office: officeLabel(to) }), "ok");
   };
 
   const decide = async (run: () => ReturnType<typeof review.confirm>) => {
@@ -139,7 +159,11 @@ export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
           <aside aria-label={t("staff.detail.title")}>
             {selected ? (
               <RequestDetail
+                key={`${selected.id}:${selected.office}`}
                 ticket={selected}
+                onForward={(to, note) => void onForward(selected.id, to, note)}
+                forwardBusy={queue.pending.has(selected.id)}
+                forwardError={forwardError?.id === selected.id ? t(`staff.error.${forwardError.kind}` as DictKey) : null}
                 detail={detail.detail}
                 load={detail.load}
                 audience={role}

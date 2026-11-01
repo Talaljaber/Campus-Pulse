@@ -5,7 +5,7 @@ import { useT, type DictKey } from "@/i18n";
 import { cn } from "../ui/cn";
 
 /** The pages a signed-in user moves between. `request` is the student's chat at `/`. */
-export type NavPage = "request" | "staff" | "pulse" | "outbox" | "lab";
+export type NavPage = "request" | "staff" | "reviews" | "pulse" | "outbox" | "lab";
 
 /** Props for {@link RoleNav}. */
 export interface RoleNavProps {
@@ -16,10 +16,17 @@ export interface RoleNavProps {
   className?: string;
 }
 
-const HREF: Record<NavPage, string> = { request: "/", staff: "/staff", pulse: "/pulse", outbox: "/outbox", lab: "/lab" };
+const HREF: Record<NavPage, string> = {
+  request: "/",
+  staff: "/staff",
+  reviews: "/staff/reviews",
+  pulse: "/pulse",
+  outbox: "/outbox",
+  lab: "/lab",
+};
 const STUDENT_PAGES: readonly NavPage[] = ["request"];
-const STAFF_PAGES: readonly NavPage[] = ["staff", "pulse", "outbox"];
-const ADMIN_PAGES: readonly NavPage[] = ["lab", "staff", "pulse", "outbox"];
+const STAFF_PAGES: readonly NavPage[] = ["staff", "reviews", "pulse", "outbox"];
+const ADMIN_PAGES: readonly NavPage[] = ["lab", "staff", "reviews", "pulse", "outbox"];
 
 /**
  * The portal nav row: uppercase bold blue links separated by thin vertical bars, in the same order

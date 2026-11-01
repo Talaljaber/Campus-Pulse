@@ -7,6 +7,10 @@ export type ChatErrorKind = "generic" | "waking" | "session" | "nothingToAnswer"
 export type NoticeData =
   | { type: "ticket_status"; title: string; status: string }
   | { type: "message"; message: string }
+  /** UD-13, for staff: a review item landed in the advisor's own queue (`assigned`) or an office queue. */
+  | { type: "review_assigned"; assigned: boolean }
+  /** UD-13, for staff: a ticket was forwarded to the office from another one. */
+  | { type: "ticket_forwarded"; title: string; fromOffice: string }
   | { type: "generic" };
 
 /** One entry of the conversation. `id` is local and stable, used as the React key. */

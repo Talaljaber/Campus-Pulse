@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useT, type DictKey } from "@/i18n";
 import type { CounterfactualView } from "@/lib/ai/types";
 import type { ChatErrorKind, ChatItem, NoticeData } from "@/lib/chat/types";
+import { useOfficeLabel } from "../staff/office";
 import { ClarificationBubble } from "./ClarificationBubble";
 import { DistressCard } from "./DistressCard";
 import { ResultCard } from "./ResultCard";
@@ -29,10 +30,18 @@ const ERROR_KEY: Record<ChatErrorKind, DictKey> = {
 };
 
 /** Translated sentence for a live notice. Values are rendered as text only. */
-function useNoticeText(): (n: NoticeData) => string {
+export function useNoticeText(): (n: NoticeData) => string {
   const t = useT();
+  const officeLabel = useOfficeLabel();
   return (n) => {
     if (n.type === "message") return n.message;
+    if (n.type === "review_assigned") return t(n.assigned ? "notice.reviewAssigned" : "notice.reviewQueued");
+    if (n.type === "ticket_forwarded") {
+      const from = n.fromOffice ? officeLabel(n.fromOffice) : "";
+      return n.title && from
+        ? t("notice.ticketForwarded", { title: n.title, office: from })
+        : t("notice.ticketForwardedNoTitle");
+    }
     if (n.type === "generic") return t("chat.updateGeneric");
     const known = ["open", "in_progress", "resolved", "closed", "escalated", "merged"];
     const status = known.includes(n.status) ? t(`chat.status.${n.status}` as DictKey) : n.status;

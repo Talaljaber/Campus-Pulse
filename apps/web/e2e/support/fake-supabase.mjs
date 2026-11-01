@@ -15,6 +15,7 @@ const JWT_SECRET = "fake-supabase-e2e-secret-not-used-anywhere-else";
 const USERS = {
   "talal@demo.local": { id: "00000000-0000-4000-8000-000000000001", role: "student", office: null, alias: "talal" },
   "it@demo.local": { id: "00000000-0000-4000-8000-000000000002", role: "staff", office: "it", alias: "staff-it" },
+  "advisor@demo.local": { id: "00000000-0000-4000-8000-000000000004", role: "staff", office: "academic", alias: "advisor" },
   "admin@demo.local": { id: "00000000-0000-4000-8000-000000000003", role: "admin", office: null, alias: "admin" },
 };
 const byId = (id) => Object.entries(USERS).find(([, u]) => u.id === id);

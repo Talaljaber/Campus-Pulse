@@ -6,10 +6,11 @@ import { RoleNav } from "../RoleNav";
 const links = () => within(screen.getByRole("navigation")).getAllByRole("link");
 
 describe("RoleNav", () => {
-  it("gives staff the desk, the map and the outbox, in that order, and no model lab", () => {
+  it("gives staff the desk, the review queue, the map and the outbox, in that order, and no model lab", () => {
     render(<RoleNav role="staff" current="staff" />);
     expect(links().map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
       ["Staff desk", "/staff"],
+      ["Review queue", "/staff/reviews"],
       ["Pulse map", "/pulse"],
       ["Outbox", "/outbox"],
     ]);
@@ -17,7 +18,7 @@ describe("RoleNav", () => {
 
   it("gives an admin the model lab first, then the same pages", () => {
     render(<RoleNav role="admin" current="lab" />);
-    expect(links().map((a) => a.getAttribute("href"))).toEqual(["/lab", "/staff", "/pulse", "/outbox"]);
+    expect(links().map((a) => a.getAttribute("href"))).toEqual(["/lab", "/staff", "/staff/reviews", "/pulse", "/outbox"]);
   });
 
   it("marks exactly the current page", () => {
