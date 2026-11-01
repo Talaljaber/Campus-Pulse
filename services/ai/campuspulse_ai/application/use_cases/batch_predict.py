@@ -90,8 +90,9 @@ class BatchPredictUseCase:
             "artifact_version": core.artifact.name,
             "p_cat": core.p_cat.as_dict(),
             "p_pri": core.p_pri.as_dict(),
-            "set_cat": core.set_cat.size,
-            "set_pri": core.set_pri.size,
+            # 0 when the conformal set was empty (the labels are the argmax singleton, P7.1)
+            "set_cat": 0 if "empty_set_cat" in core.flags else core.set_cat.size,
+            "set_pri": 0 if "empty_set_pri" in core.flags else core.set_pri.size,
             "ood_score": core.ood_score,
             "lang": str(req.lang),
         }

@@ -64,6 +64,7 @@ class Case:
 
 
 FULL = ("a_gibberish", "b_ood")
+EMPTY = (*FULL, "b2_empty")
 CASES = (
     Case(
         "a_gibberish",
@@ -80,17 +81,17 @@ CASES = (
         SPENT,
         False,
         Outcome.ACCEPT,
-        (*FULL, "c_accept"),
+        (*EMPTY, "c_accept"),
     ),
-    Case("d_ask_category_pair", core(2, 1), FRESH, True, Outcome.ASK, (*FULL, "c_accept", "d_ask")),
-    Case("d_ask_priority_pair", core(1, 2), FRESH, False, Outcome.ASK, (*FULL, "c_accept", "d_ask")),
+    Case("d_ask_category_pair", core(2, 1), FRESH, True, Outcome.ASK, (*EMPTY, "c_accept", "d_ask")),
+    Case("d_ask_priority_pair", core(1, 2), FRESH, False, Outcome.ASK, (*EMPTY, "c_accept", "d_ask")),
     Case(
         "e_escalate_pair_budget_spent",
         core(2, 1),
         SPENT,
         True,
         Outcome.ESCALATE,
-        (*FULL, "c_accept", "d_ask", "e_escalate"),
+        (*EMPTY, "c_accept", "d_ask", "e_escalate"),
     ),
     Case(
         "e_escalate_wide_set_in_distribution",
@@ -98,7 +99,7 @@ CASES = (
         FRESH,
         True,
         Outcome.ESCALATE,
-        (*FULL, "c_accept", "d_ask", "e_escalate"),
+        (*EMPTY, "c_accept", "d_ask", "e_escalate"),
     ),
     Case(
         "f_human_pair_budget_spent_llm_off",
@@ -106,15 +107,48 @@ CASES = (
         SPENT,
         False,
         Outcome.HUMAN_REVIEW,
-        (*FULL, "c_accept", "d_ask", "e_escalate", "f_human"),
+        (*EMPTY, "c_accept", "d_ask", "e_escalate", "f_human"),
     ),
     Case(
-        "empty_set_already_replaced_by_argmax_singleton",
+        "empty_set_with_singleton_sets_goes_to_review",
+        core(1, 1, flags=frozenset({"empty_set", "empty_set_cat"})),
+        FRESH,
+        True,
+        Outcome.HUMAN_REVIEW,
+        EMPTY,
+    ),
+    Case(
+        "empty_set_priority_goes_to_review_even_with_budget",
+        core(1, 1, flags=frozenset({"empty_set", "empty_set_pri"})),
+        FRESH,
+        False,
+        Outcome.HUMAN_REVIEW,
+        EMPTY,
+    ),
+    Case(
+        "gibberish_beats_empty_set",
+        core(1, 1, flags=frozenset({"empty_set", "gibberish"})),
+        FRESH,
+        True,
+        Outcome.OUT_OF_SCOPE,
+        ("a_gibberish",),
+    ),
+    Case(
+        "ood_wide_set_beats_empty_set",
+        core(3, 1, ood=BELOW, flags=frozenset({"empty_set"})),
+        FRESH,
+        True,
+        Outcome.OUT_OF_SCOPE,
+        FULL,
+    ),
+    Case(
+        "after_escalation_empty_set_goes_to_review",
         core(1, 1, flags=frozenset({"empty_set"})),
         FRESH,
         True,
-        Outcome.ACCEPT,
-        (*FULL, "c_accept"),
+        Outcome.HUMAN_REVIEW,
+        ("b2_empty",),
+        after_escalation=True,
     ),
     Case(
         "gibberish_beats_ood",
@@ -130,7 +164,7 @@ CASES = (
         FRESH,
         False,
         Outcome.HUMAN_REVIEW,
-        (*FULL, "c_accept", "d_ask", "e_escalate", "f_human"),
+        (*EMPTY, "c_accept", "d_ask", "e_escalate", "f_human"),
     ),
     Case(
         "ood_below_tau_but_pair_is_not_out_of_scope",
@@ -138,7 +172,7 @@ CASES = (
         FRESH,
         True,
         Outcome.ASK,
-        (*FULL, "c_accept", "d_ask"),
+        (*EMPTY, "c_accept", "d_ask"),
     ),
     Case(
         "after_escalation_singletons_accept",
@@ -146,7 +180,7 @@ CASES = (
         FRESH,
         True,
         Outcome.ACCEPT,
-        ("c_accept",),
+        ("b2_empty", "c_accept"),
         after_escalation=True,
     ),
     Case(
@@ -155,7 +189,7 @@ CASES = (
         FRESH,
         True,
         Outcome.HUMAN_REVIEW,
-        ("c_accept", "f_human"),
+        ("b2_empty", "c_accept", "f_human"),
         after_escalation=True,
     ),
 )

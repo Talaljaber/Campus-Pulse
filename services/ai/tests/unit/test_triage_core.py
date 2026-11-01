@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from fixtures.tiny_core import build_tiny_core
 
+from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
 from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.application.use_cases.ports import TriageClassifier
 from campuspulse_ai.domain.errors import InvalidInput
@@ -77,3 +78,24 @@ def test_classify_many_equals_classify(core: TriageCore) -> None:
         assert got[0] == req
         assert (got[1].p_cat, got[1].p_pri, got[1].flags, got[1].set_cat, got[1].set_pri) == (
             one.p_cat, one.p_pri, one.flags, one.set_cat, one.set_pri)
+
+
+def test_empty_conformal_set_keeps_argmax_label_and_flags_it() -> None:
+    """P7.1: q = 0 admits no label, so the set is empty; the label stays the argmax singleton."""
+    normal = build_tiny_core()
+    forced = build_tiny_core()
+    forced.conformal_cat = LACConformal.from_quantile("category", 0.1, 0.0, 100)
+    text = "the bus is late again"
+    _, base = normal.classify(text)
+    _, result = forced.classify(text)
+    assert {"empty_set", "empty_set_cat"} <= result.flags and "empty_set_pri" not in result.flags
+    assert result.set_cat.size == 1 and result.p_cat.argmax() == base.p_cat.argmax()
+    assert result.p_pri.argmax() == base.p_pri.argmax()
+    assert not {"empty_set", "empty_set_cat"} & base.flags
+
+
+def test_floor_override_is_not_an_empty_set() -> None:
+    forced = build_tiny_core()
+    forced.conformal_pri = LACConformal.from_quantile("priority", 0.1, 0.0, 100)
+    _, safety = forced.classify("water is leaking near the socket and there is smoke")
+    assert safety.floors_applied and "empty_set_pri" not in safety.flags
