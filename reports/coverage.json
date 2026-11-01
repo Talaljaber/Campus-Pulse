@@ -1,7 +1,7 @@
 {
   "artifact_version": "v1",
   "ask_proxy_is_proxy": true,
-  "ask_proxy_rate": 0.0588,
+  "ask_proxy_rate": 0.1225,
   "calibration_oof_official": [
     {
       "bins": [
@@ -21,36 +21,36 @@
         },
         {
           "accuracy": 0.0,
-          "confidence": 0.2523,
-          "count": 27,
+          "confidence": 0.0,
+          "count": 0,
           "lower": 0.2,
           "upper": 0.3
         },
         {
-          "accuracy": 0.6882,
-          "confidence": 0.3467,
-          "count": 93,
+          "accuracy": 0.0,
+          "confidence": 0.3015,
+          "count": 9,
           "lower": 0.3,
           "upper": 0.4
         },
         {
-          "accuracy": 0.7313,
-          "confidence": 0.4398,
-          "count": 67,
+          "accuracy": 0.8167,
+          "confidence": 0.4478,
+          "count": 60,
           "lower": 0.4,
           "upper": 0.5
         },
         {
-          "accuracy": 0.9286,
-          "confidence": 0.5559,
-          "count": 126,
+          "accuracy": 1.0,
+          "confidence": 0.5614,
+          "count": 93,
           "lower": 0.5,
           "upper": 0.6
         },
         {
-          "accuracy": 1.0,
-          "confidence": 0.634,
-          "count": 119,
+          "accuracy": 0.9667,
+          "confidence": 0.6403,
+          "count": 270,
           "lower": 0.6,
           "upper": 0.7
         },
@@ -76,7 +76,7 @@
           "upper": 1.0
         }
       ],
-      "ece": 0.344,
+      "ece": 0.3559,
       "target": "category"
     },
     {
@@ -111,48 +111,48 @@
         },
         {
           "accuracy": 0.0,
-          "confidence": 0.4779,
+          "confidence": 0.483,
           "count": 11,
           "lower": 0.4,
           "upper": 0.5
         },
         {
-          "accuracy": 0.0,
-          "confidence": 0.0,
-          "count": 0,
+          "accuracy": 1.0,
+          "confidence": 0.5862,
+          "count": 9,
           "lower": 0.5,
           "upper": 0.6
         },
         {
-          "accuracy": 1.0,
-          "confidence": 0.6051,
-          "count": 9,
+          "accuracy": 0.0,
+          "confidence": 0.0,
+          "count": 0,
           "lower": 0.6,
           "upper": 0.7
         },
         {
           "accuracy": 0.6452,
-          "confidence": 0.764,
+          "confidence": 0.7575,
           "count": 31,
           "lower": 0.7,
           "upper": 0.8
         },
         {
-          "accuracy": 0.8693,
-          "confidence": 0.8812,
-          "count": 153,
+          "accuracy": 0.8925,
+          "confidence": 0.8822,
+          "count": 186,
           "lower": 0.8,
           "upper": 0.9
         },
         {
           "accuracy": 1.0,
-          "confidence": 0.9657,
-          "count": 228,
+          "confidence": 0.9765,
+          "count": 195,
           "lower": 0.9,
           "upper": 1.0
         }
       ],
-      "ece": 0.0512,
+      "ece": 0.044,
       "target": "priority"
     }
   ],
@@ -174,44 +174,44 @@
           "upper": 0.2
         },
         {
-          "accuracy": 0.6667,
-          "confidence": 0.281,
-          "count": 21,
+          "accuracy": 0.5,
+          "confidence": 0.2559,
+          "count": 2,
           "lower": 0.2,
           "upper": 0.3
         },
         {
-          "accuracy": 0.5185,
-          "confidence": 0.3538,
-          "count": 27,
+          "accuracy": 0.4211,
+          "confidence": 0.3475,
+          "count": 19,
           "lower": 0.3,
           "upper": 0.4
         },
         {
-          "accuracy": 0.7377,
-          "confidence": 0.4482,
-          "count": 61,
+          "accuracy": 0.6,
+          "confidence": 0.4498,
+          "count": 15,
           "lower": 0.4,
           "upper": 0.5
         },
         {
-          "accuracy": 0.9,
-          "confidence": 0.5596,
-          "count": 40,
+          "accuracy": 0.8222,
+          "confidence": 0.5708,
+          "count": 45,
           "lower": 0.5,
           "upper": 0.6
         },
         {
-          "accuracy": 0.9636,
-          "confidence": 0.6519,
-          "count": 55,
+          "accuracy": 0.9813,
+          "confidence": 0.6574,
+          "count": 107,
           "lower": 0.6,
           "upper": 0.7
         },
         {
-          "accuracy": 0.0,
-          "confidence": 0.0,
-          "count": 0,
+          "accuracy": 1.0,
+          "confidence": 0.732,
+          "count": 16,
           "lower": 0.7,
           "upper": 0.8
         },
@@ -230,7 +230,7 @@
           "upper": 1.0
         }
       ],
-      "ece": 0.2989,
+      "ece": 0.2667,
       "target": "category"
     },
     {
@@ -271,42 +271,42 @@
           "upper": 0.5
         },
         {
-          "accuracy": 0.4286,
-          "confidence": 0.5846,
-          "count": 14,
+          "accuracy": 0.3077,
+          "confidence": 0.59,
+          "count": 26,
           "lower": 0.5,
           "upper": 0.6
         },
         {
-          "accuracy": 0.45,
-          "confidence": 0.6231,
-          "count": 20,
+          "accuracy": 0.875,
+          "confidence": 0.6291,
+          "count": 8,
           "lower": 0.6,
           "upper": 0.7
         },
         {
           "accuracy": 1.0,
-          "confidence": 0.7613,
+          "confidence": 0.7671,
           "count": 20,
           "lower": 0.7,
           "upper": 0.8
         },
         {
-          "accuracy": 1.0,
-          "confidence": 0.8699,
-          "count": 29,
+          "accuracy": 0.7714,
+          "confidence": 0.876,
+          "count": 35,
           "lower": 0.8,
           "upper": 0.9
         },
         {
-          "accuracy": 0.8926,
-          "confidence": 0.9656,
-          "count": 121,
+          "accuracy": 0.9565,
+          "confidence": 0.9698,
+          "count": 115,
           "lower": 0.9,
           "upper": 1.0
         }
       ],
-      "ece": 0.1129,
+      "ece": 0.0939,
       "target": "priority"
     }
   ],
@@ -315,10 +315,10 @@
     "alpha_priority": 0.1,
     "calibration": "group",
     "mondrian_by_lang": true,
-    "q_category": 0.7790927690988252,
-    "q_priority": 0.573965738999578
+    "q_category": 0.5433181498815092,
+    "q_priority": 0.5860262237476455
   },
-  "generated_at": "2026-10-31T19:55:03+00:00",
+  "generated_at": "2026-11-01T09:00:22+00:00",
   "note": "coverage is approximate: effective n ~ groups (LD-32); counts beside every number",
   "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
   "rows": [
@@ -326,30 +326,30 @@
       "coverage": 0.9745,
       "dataset": "oof_official",
       "lang": "all",
-      "mean_set_size": 2.5301,
+      "mean_set_size": 1.5,
       "n_groups": 30,
       "n_rows": 432,
-      "singleton_rate": 0.6366,
+      "singleton_rate": 0.7917,
       "target": "category"
     },
     {
       "coverage": 0.963,
       "dataset": "oof_official",
       "lang": "en",
-      "mean_set_size": 1.0741,
+      "mean_set_size": 1.0,
       "n_groups": 27,
       "n_rows": 297,
-      "singleton_rate": 0.9259,
+      "singleton_rate": 1.0,
       "target": "category"
     },
     {
       "coverage": 1.0,
       "dataset": "oof_official",
       "lang": "ar",
-      "mean_set_size": 5.7333,
+      "mean_set_size": 2.6,
       "n_groups": 15,
       "n_rows": 135,
-      "singleton_rate": 0.0,
+      "singleton_rate": 0.3333,
       "target": "category"
     },
     {
@@ -386,30 +386,30 @@
       "coverage": 0.9745,
       "dataset": "oof_all",
       "lang": "all",
-      "mean_set_size": 2.5301,
+      "mean_set_size": 1.5,
       "n_groups": 30,
       "n_rows": 432,
-      "singleton_rate": 0.6366,
+      "singleton_rate": 0.7917,
       "target": "category"
     },
     {
       "coverage": 0.963,
       "dataset": "oof_all",
       "lang": "en",
-      "mean_set_size": 1.0741,
+      "mean_set_size": 1.0,
       "n_groups": 27,
       "n_rows": 297,
-      "singleton_rate": 0.9259,
+      "singleton_rate": 1.0,
       "target": "category"
     },
     {
       "coverage": 1.0,
       "dataset": "oof_all",
       "lang": "ar",
-      "mean_set_size": 5.7333,
+      "mean_set_size": 2.6,
       "n_groups": 15,
       "n_rows": 135,
-      "singleton_rate": 0.0,
+      "singleton_rate": 0.3333,
       "target": "category"
     },
     {
@@ -443,43 +443,43 @@
       "target": "priority"
     },
     {
-      "coverage": 0.8873,
+      "coverage": 0.8971,
       "dataset": "our_test",
       "lang": "all",
-      "mean_set_size": 2.8284,
+      "mean_set_size": 1.5882,
       "n_groups": 38,
       "n_rows": 204,
-      "singleton_rate": 0.5735,
+      "singleton_rate": 0.6863,
       "target": "category"
     },
     {
-      "coverage": 0.8557,
+      "coverage": 0.9381,
       "dataset": "our_test",
       "lang": "en",
-      "mean_set_size": 1.0412,
+      "mean_set_size": 1.0,
       "n_groups": 15,
       "n_rows": 97,
-      "singleton_rate": 0.9588,
+      "singleton_rate": 1.0,
       "target": "category"
     },
     {
       "coverage": 1.0,
       "dataset": "our_test",
       "lang": "ar",
-      "mean_set_size": 5.8133,
+      "mean_set_size": 2.6,
       "n_groups": 15,
       "n_rows": 75,
-      "singleton_rate": 0.0,
+      "singleton_rate": 0.1467,
       "target": "category"
     },
     {
-      "coverage": 0.7188,
+      "coverage": 0.5312,
       "dataset": "our_test",
       "lang": "arabizi",
-      "mean_set_size": 1.25,
+      "mean_set_size": 1.0,
       "n_groups": 8,
       "n_rows": 32,
-      "singleton_rate": 0.75,
+      "singleton_rate": 1.0,
       "target": "category"
     },
     {
@@ -526,7 +526,7 @@
       "coverage": 1.0,
       "dataset": "our_test_set1",
       "lang": "all",
-      "mean_set_size": 3.25,
+      "mean_set_size": 1.6,
       "n_groups": 6,
       "n_rows": 60,
       "singleton_rate": 0.55,
@@ -546,7 +546,7 @@
       "coverage": 1.0,
       "dataset": "our_test_set1",
       "lang": "ar",
-      "mean_set_size": 6.0,
+      "mean_set_size": 2.3333,
       "n_groups": 3,
       "n_rows": 27,
       "singleton_rate": 0.0,
@@ -583,43 +583,43 @@
       "target": "priority"
     },
     {
-      "coverage": 0.8056,
+      "coverage": 0.8889,
       "dataset": "our_test_set2",
       "lang": "all",
-      "mean_set_size": 2.6806,
+      "mean_set_size": 1.5556,
       "n_groups": 16,
       "n_rows": 72,
-      "singleton_rate": 0.5972,
+      "singleton_rate": 0.7778,
       "target": "category"
     },
     {
-      "coverage": 0.75,
+      "coverage": 1.0,
       "dataset": "our_test_set2",
       "lang": "en",
-      "mean_set_size": 1.125,
+      "mean_set_size": 1.0,
       "n_groups": 6,
       "n_rows": 32,
-      "singleton_rate": 0.875,
+      "singleton_rate": 1.0,
       "target": "category"
     },
     {
       "coverage": 1.0,
       "dataset": "our_test_set2",
       "lang": "ar",
-      "mean_set_size": 5.8333,
+      "mean_set_size": 2.6667,
       "n_groups": 6,
       "n_rows": 24,
-      "singleton_rate": 0.0,
+      "singleton_rate": 0.3333,
       "target": "category"
     },
     {
-      "coverage": 0.625,
+      "coverage": 0.5,
       "dataset": "our_test_set2",
       "lang": "arabizi",
-      "mean_set_size": 1.0625,
+      "mean_set_size": 1.0,
       "n_groups": 4,
       "n_rows": 16,
-      "singleton_rate": 0.9375,
+      "singleton_rate": 1.0,
       "target": "category"
     },
     {
@@ -663,13 +663,13 @@
       "target": "priority"
     },
     {
-      "coverage": 0.875,
+      "coverage": 0.8194,
       "dataset": "our_test_set3",
       "lang": "all",
-      "mean_set_size": 2.625,
+      "mean_set_size": 1.6111,
       "n_groups": 16,
       "n_rows": 72,
-      "singleton_rate": 0.5694,
+      "singleton_rate": 0.7083,
       "target": "category"
     },
     {
@@ -686,20 +686,20 @@
       "coverage": 1.0,
       "dataset": "our_test_set3",
       "lang": "ar",
-      "mean_set_size": 5.5833,
+      "mean_set_size": 2.8333,
       "n_groups": 6,
       "n_rows": 24,
-      "singleton_rate": 0.0,
+      "singleton_rate": 0.125,
       "target": "category"
     },
     {
-      "coverage": 0.8125,
+      "coverage": 0.5625,
       "dataset": "our_test_set3",
       "lang": "arabizi",
-      "mean_set_size": 1.4375,
+      "mean_set_size": 1.0,
       "n_groups": 4,
       "n_rows": 16,
-      "singleton_rate": 0.5625,
+      "singleton_rate": 1.0,
       "target": "category"
     },
     {
@@ -743,5 +743,5 @@
       "target": "priority"
     }
   ],
-  "sha": "9a379d97c0cd"
+  "sha": "722d78d18004"
 }

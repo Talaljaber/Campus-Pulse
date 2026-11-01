@@ -7,12 +7,12 @@
     "method": "lac",
     "mondrian_by_lang": true,
     "n_calib": 432,
-    "q_category": 0.7790927690988252,
+    "q_category": 0.5433181498815092,
     "q_category_by_lang": {
-      "ar": 0.938463701970837,
-      "en": 0.6680956599023797
+      "ar": 0.9160564318117187,
+      "en": 0.5432329524271617
     },
-    "q_priority": 0.573965738999578,
+    "q_priority": 0.5860262237476455,
     "q_priority_by_lang": {}
   },
   "cv": {
@@ -20,7 +20,7 @@
     "folds_file": "data/clean/cv_folds.csv",
     "group_col": "cv_group",
     "k": 5,
-    "oof_macro_f1_category": 0.8064124766324584,
+    "oof_macro_f1_category": 0.9350862452482439,
     "oof_macro_f1_priority": 0.9035605549726888
   },
   "encoder": {
@@ -41,6 +41,7 @@
       "m2knn",
       "m2proto"
     ],
+    "memory_weight_category": 0.3333333333333333,
     "weights_category": {
       "m1": 0.0,
       "m2knn": 0.0,
@@ -125,17 +126,24 @@
       "learned",
       "office"
     ],
-    "temperature": 0.005
+    "temperature": 0.003
   },
   "schema_version": 1,
   "seed": 42,
   "thresholds": {
-    "human_review_maxprob": 0.5343080708227717,
+    "human_review_maxprob": 0.4623637165724713,
     "tau_faq": 0.9,
     "tau_inc": 0.92,
-    "tau_injection": 0.910022387031824,
-    "tau_ood": 0.8362285315990448,
-    "tau_safety": 0.9197773647907549
+    "tau_injection": 0.8807224845744388,
+    "tau_ood": 0.8421512424945832,
+    "tau_safety": 0.9194010387999545
   },
-  "trained_at": "2026-10-31T19:54:52+00:00"
+  "trained_at": "2026-11-01T09:00:04+00:00",
+  "translate": {
+    "dir": "translator",
+    "enabled": true,
+    "min_arabic_ratio": 0.3,
+    "model": "Helsinki-NLP/opus-mt-ar-en",
+    "revision": "c5b2a50db78d6be98ae207223f8d4f63bc7a0ff1"
+  }
 }
