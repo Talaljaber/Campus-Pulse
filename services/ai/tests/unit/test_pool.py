@@ -95,3 +95,19 @@ def test_augmented_columns_match_datasets_yaml() -> None:
     cfg = yaml.safe_load((CONFIG_DIR / "datasets.yaml").read_text(encoding="utf-8"))
     assert tuple(cfg["augmented"]["columns"]) == AUGMENTED_COLUMNS
     assert (DATA_CLEAN / "cv_folds.csv").is_file()
+
+
+def test_model_reviewed_arm_is_separate_default_off(tmp_path: Path, normalizer: DefaultNormalizer) -> None:
+    rows = [
+        ["AUG-AZ-0001", "wein jadwal el basat", "arabizi", "arabizi_rule", "TR-S15", "TR-S15", "True", "rule",
+         "Transportation", "low"],
+        ["AUG-AZ-0002", "wein el bus", "arabizi", "arabizi_rule", "TR-S15", "TR-S15", "True", "rule",
+         "Transportation", "low"],
+    ]
+    path = _aug(tmp_path / "aug.csv", rows)
+    panel = tmp_path / "model_panel_v1.csv"
+    panel.write_text("request_id,decision,review_status\nAUG-AZ-0001,keep,model_panel_v1\nAUG-AZ-0002,,\n",
+                     encoding="utf-8")
+    assert len(load_pool([OFFICIAL_CSV, path], normalizer, model_panel_csv=panel)) == 432  # default off
+    arm = load_pool([OFFICIAL_CSV, path], normalizer, include_model_reviewed=True, model_panel_csv=panel)
+    assert len(arm) == 433 and "AUG-AZ-0001" in arm.request_id and "AUG-AZ-0002" not in arm.request_id

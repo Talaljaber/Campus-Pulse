@@ -173,3 +173,15 @@ def test_guard_refuses_when_agreements_are_changed(rq: ModuleType, env: tuple[Pa
     _decide(q, {"N1": "keep", "N4": "keep", "M1": "fix:IT Support/medium", "P1": "keep", "P2": "keep"})
     assert rq.apply(q, aug, review, accept_agreed=True) == 1
     assert rq.apply(q, aug, review, accept_agreed=True, skip_guard=True) == 0
+
+
+def test_model_panel_mode_never_sets_needs_human_check_false(rq: ModuleType, env: tuple[Path, Path]) -> None:
+    aug, review = env
+    rq.build(aug, review)
+    queue = review / "review_queue.csv"
+    _decide(queue, {"N1": "fix:Finance/high", "P1": "drop", "P2": "keep", "M1": "keep"})
+    assert rq.apply(queue, aug, review, model_panel=True, today="2026-11-01") == 0
+    new, para = _get(aug / "new_scenarios.csv"), _get(aug / "paraphrases.csv")
+    assert "P1" not in para and para["P2"]["needs_human_check"] == "True"  # drop applied, keep is not human review
+    assert new["N1"]["priority"] == "high" and new["N1"]["needs_human_check"] == "True"  # fix applied, still unreviewed
+    assert {r["needs_human_check"] for rows in (new, para) for r in rows.values()} == {"True"}

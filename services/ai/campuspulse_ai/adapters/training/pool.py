@@ -28,6 +28,8 @@ FEATURES_CSV = DATA_CLEAN / "train_val_features.csv"
 OFFICIAL_COLUMNS = ("request_id", "text", "scenario_id", "cv_group", "category", "priority")
 AUGMENTED_COLUMNS = ("request_id", "text", "lang", "source", "source_scenario_id", "cv_group",
                      "needs_human_check", "author_method", "category", "priority")
+MODEL_PANEL_CSV = DATA_AUGMENTED / "review" / "model_panel_v1.csv"  # P8.1b audit log: votes + review_status
+MODEL_PANEL_STATUS = "model_panel_v1"
 OFFICIAL_SOURCE = "official"
 NO_FOLD = -1  # cv_fold of a group missing from cv_folds.csv; `group_folds` refuses it
 _BOOLS: Mapping[str, bool] = {"true": True, "false": False}
@@ -141,6 +143,8 @@ def load_pool(
     folds_csv: Path = FOLDS_CSV,
     features_csv: Path = FEATURES_CSV,
     include_unreviewed: bool = False,
+    include_model_reviewed: bool = False,
+    model_panel_csv: Path = MODEL_PANEL_CSV,
 ) -> Pool:
     """Build the training pool from official and augmented CSVs (see the module docstring).
 
@@ -157,6 +161,9 @@ def load_pool(
             callers may pass it: `scripts/check_leakage.py` (it must see every candidate row) and the
             clearly labelled "unreviewed augmentation" ablation arm of `evaluate.py`. `train.py` never
             does, so a frozen model never trains on an unchecked row.
+        include_model_reviewed: True also keeps rows still marked `needs_human_check=True` whose id
+            has `review_status=model_panel_v1` in `model_panel_csv` (kept or fixed by the three-model panel,
+            P8.1b). These rows are NOT human-reviewed: a separate, disclosed arm (D-049), default off.
 
     Raises:
         InvalidInput: a holdout path, an unreadable file, an unknown schema or missing column, a label
@@ -170,6 +177,10 @@ def load_pool(
     fold_of = {r["cv_group"]: int(r["cv_fold"]) for r in _read(folds_csv)[1]}
     script_of = {r["request_id"]: r["lang_script"] for r in _read(features_csv)[1]}
     out: list[_Row] = []
+    panel_ok: set[str] = set()
+    if include_model_reviewed and not include_unreviewed:
+        panel = _read(model_panel_csv)[1]
+        panel_ok = {r["request_id"] for r in panel if r.get("review_status") == MODEL_PANEL_STATUS}
 
     def add(r: Mapping[str, str], *, lang_script: str, source: str, scenario_id: str, official: bool) -> None:
         rid, raw = r["request_id"], r["text"]
@@ -201,8 +212,8 @@ def load_pool(
                     raise InvalidInput(f"{path} {r['request_id']}: needs_human_check must be True/False")
                 if not r["source_scenario_id"].strip():
                     raise InvalidInput(f"{path} {r['request_id']}: source_scenario_id is required")
-                if needs_check and not include_unreviewed:  # not reviewed yet: never trained on
-                    continue
+                if needs_check and not include_unreviewed and r["request_id"] not in panel_ok:
+                    continue  # not reviewed yet: never trained on
                 add(r, lang_script=script_lang(r["text"]), source=r["source"],
                     scenario_id=r["source_scenario_id"].strip(), official=False)
         else:

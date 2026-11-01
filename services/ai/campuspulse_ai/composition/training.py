@@ -147,6 +147,7 @@ def make_pool(opts: TrainOptions, cfg: TrainCfg) -> tuple[Pool, DefaultNormalize
         folds_csv=opts.folds_csv,
         features_csv=opts.features_csv,
         include_unreviewed=opts.toggles.include_unreviewed,
+        include_model_reviewed=opts.toggles.include_model_reviewed,
     )
     return pool, normalizer
 
@@ -165,8 +166,9 @@ def run_training(
     settings = settings or Settings()
     opts = dataclasses.replace(opts, out=opts.out.resolve(), report=opts.report.resolve())
     cfg = TrainCfg.load()
-    if opts.toggles.include_unreviewed and not opts.cv_only:
-        raise InvalidInput("a frozen model never trains on unreviewed augmentation rows")
+    if (opts.toggles.include_unreviewed or opts.toggles.include_model_reviewed) and not opts.cv_only:
+        raise InvalidInput("a frozen model never trains on unreviewed or model-reviewed augmentation rows "
+                           "(the model-panel arm needs its own decision first)")
     pool, normalizer = make_pool(opts, cfg)
     if opts.retune:
         config, manifest, changed = retune(opts.out, cfg, pool, now=now)
