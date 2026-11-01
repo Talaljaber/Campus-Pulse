@@ -4,6 +4,15 @@ These are **your** tasks. Nothing here trains until you have checked it: `load_p
 `needs_human_check=True`, and no script ever sets it to `False` on its own. Budget about **1.5 h** for
 P2.4 and **1.5 h** for P2.5.
 
+> **P8.1b: model-panel review (NOT human review).** Because the 627 unreviewed rows will not be checked by hand, a
+> panel of three models (`openai/gpt-4o-mini-2024-07-18`, `qwen/qwen3.8-max-0902`, `z-ai/glm-5.3`; blind, temperature
+> 0) plus the draft and checker votes labelled every row. Rule: >= 4 of 5 votes equal the draft on category and
+> priority (4 of 4 without a checker vote). 447 rows qualify and are tagged `review_status=model_panel_v1` in
+> `data/augmented/review/model_panel_v1.csv` (the per-row votes are the audit log); 180 stay unreviewed. All 627 keep
+> `needs_human_check=True`; the rows reach training only through the separate `include_model_reviewed` switch (default
+> off). A human spot-check of a sample was NOT done. Details: `docs/plan/p7/P8.1b_report.md`. The human queue below is
+> unchanged and still the way to turn rows into human-reviewed ones.
+
 ## Part 1: P2.4 augmentation review (about 75–90 minutes)
 
 > ### HOW TO REVIEW (P8.1: use this queue instead of the sheet below)
