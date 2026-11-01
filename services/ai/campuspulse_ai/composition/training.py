@@ -57,6 +57,7 @@ class TrainOptions:
     features_csv: Path = FEATURES_CSV
     lexicon_dir: Path = LEXICONS
     toggles: PipelineToggles = field(default_factory=PipelineToggles)
+    translation_cache: Path = TRANSLATION_CACHE  # source,translation,model_id,revision (P8.1)
 
 
 @dataclass(frozen=True)
@@ -106,7 +107,7 @@ def make_encoder(
             f"{tr_cfg['model']}@{tr_cfg['revision']}"
         )
     cached = CsvCachedTranslator(
-        TRANSLATION_CACHE, Ct2Translator(translator_dir), str(tr_cfg["model"]), str(tr_cfg["revision"])
+        opts.translation_cache, Ct2Translator(translator_dir), str(tr_cfg["model"]), str(tr_cfg["revision"])
     )
     wrapped = TranslatingEncoder(
         onnx, cached, float(tr_cfg["min_arabic_ratio"]), bool(tr_cfg.get("arabizi", False))
@@ -152,6 +153,15 @@ def make_pool(opts: TrainOptions, cfg: TrainCfg) -> tuple[Pool, DefaultNormalize
     return pool, normalizer
 
 
+def _is_scratch(out: Path) -> bool:
+    """True when `out` is not under the repo's `models/` directory (a scratch candidate, never a release)."""
+    try:
+        out.resolve().relative_to((REPO_ROOT / "models").resolve())
+    except ValueError:
+        return True
+    return False
+
+
 def run_training(
     opts: TrainOptions, *, settings: Settings | None = None, now: datetime | None = None
 ) -> TrainOutcome:
@@ -166,7 +176,10 @@ def run_training(
     settings = settings or Settings()
     opts = dataclasses.replace(opts, out=opts.out.resolve(), report=opts.report.resolve())
     cfg = TrainCfg.load()
-    if (opts.toggles.include_unreviewed or opts.toggles.include_model_reviewed) and not opts.cv_only:
+    scratch = _is_scratch(opts.out)  # P8.1: only a dir outside `models/` may use the arm
+    if opts.toggles.include_unreviewed and not opts.cv_only:
+        raise InvalidInput("a frozen model never trains on unreviewed augmentation rows")
+    if opts.toggles.include_model_reviewed and not opts.cv_only and not scratch:
         raise InvalidInput("a frozen model never trains on unreviewed or model-reviewed augmentation rows "
                            "(the model-panel arm needs its own decision first)")
     pool, normalizer = make_pool(opts, cfg)

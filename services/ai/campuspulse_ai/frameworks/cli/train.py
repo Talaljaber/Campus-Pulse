@@ -18,6 +18,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from campuspulse_ai.adapters.training.oof import PipelineToggles
 from campuspulse_ai.composition.training import TrainOptions, run_training
 from campuspulse_ai.domain.errors import ArtifactError, InvalidInput
 
@@ -54,6 +55,10 @@ def _parser() -> argparse.ArgumentParser:
         default=None,
         help="training CSVs (default: data/clean/train_val_combined.csv + data/augmented/*.csv)",
     )
+    p.add_argument("--include-model-reviewed", action="store_true",
+                   help="P8.1b arm: add the model-panel-reviewed rows (scratch --out only)")
+    p.add_argument("--translation-cache", type=Path, default=d.translation_cache,
+                   help="source,translation,model_id,revision CSV for training texts (default %(default)s)")
     p.add_argument("--folds", type=Path, default=d.folds_csv, help="frozen cv_group,cv_fold table")
     return p
 
@@ -70,6 +75,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         encoder_dir=args.encoder_dir,
         data=tuple(args.data or ()),
         folds_csv=args.folds,
+        translation_cache=args.translation_cache,
+        toggles=PipelineToggles(include_model_reviewed=args.include_model_reviewed),
     )
     try:
         outcome = run_training(opts)
