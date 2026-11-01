@@ -844,7 +844,7 @@ curl.exe -s localhost:8000/health
 The image holds `config/`, `reports/model_lab.json`, `data/clean/train_clean.csv` (red-team seeds),
 `models/frozen/v1` and the encoder (`.dockerignore` lets in nothing else of `data/` or `reports/`). A
 build without a local encoder (Render, a clean clone) downloads the GitHub Release asset `MODELS_TAG`
-(`models-v1-rc1`); while the repo is private pass `--secret id=GITHUB_TOKEN,env=GITHUB_TOKEN`. Either
+(`models-v1-rc3`); while the repo is private pass `--secret id=GITHUB_TOKEN,env=GITHUB_TOKEN`. Either
 way `fetch_models.py` checks every file against `MANIFEST.json` and fails the build on a mismatch.
 `ORT_INTRA_OP_THREADS=1`, `TZ=Asia/Amman` and one uvicorn worker are set in the image.
 

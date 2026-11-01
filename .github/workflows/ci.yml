@@ -103,7 +103,7 @@ jobs:
         if: steps.models.outputs.cache-hit != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download models-v1-rc1 --repo "${{ github.repository }}" --pattern campuspulse-models-v1.tar.gz --dir dist
+        run: gh release download models-v1-rc3 --repo "${{ github.repository }}" --pattern campuspulse-models-v1.tar.gz --dir dist
       - run: python scripts/fetch_models.py --from-file dist/campuspulse-models-v1.tar.gz
       - run: pytest services/ai/tests -q -m "artifacts and not slow and not train and not supabase"
       - name: Offline predict on the validation file

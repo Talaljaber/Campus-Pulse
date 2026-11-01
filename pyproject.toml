@@ -22,7 +22,7 @@ known-first-party = ["campuspulse_ai"]
 # are absent from the dev/CI install; only the encoder export CLI imports them.
 [[tool.mypy.overrides]]
 module = ["torch", "torch.*", "sentence_transformers", "sentence_transformers.*", "onnx", "onnx.*",
-          "transformers", "transformers.*"]
+          "transformers", "transformers.*", "ctranslate2", "ctranslate2.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

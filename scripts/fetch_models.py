@@ -42,7 +42,7 @@ from pathlib import Path, PurePosixPath
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODEL_DIR = REPO_ROOT / "models" / "frozen" / "v1"
-DEFAULT_TAG = "models-v1-rc1"
+DEFAULT_TAG = "models-v1-rc3"
 ASSET = "campuspulse-models-v1.tar.gz"
 SUMS = "SHA256SUMS"
 GITHUB_REPO = "Talaljaber/Ai-Quest"
