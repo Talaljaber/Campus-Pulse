@@ -29,10 +29,15 @@ def test_scratch_dir_is_outside_models() -> None:
     assert _is_scratch(REPO_ROOT / ".tmp" / "rc5" / "C1")
 
 
-def test_score_holdout_refuses_a_file_with_another_sha(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_score_holdout_refuses_a_file_with_another_sha(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     mod = _load("score_holdout")
     holdout = tmp_path / "h.csv"
-    holdout.write_text("id,lang,text,category,priority,wrapper\nX1,en,hello,Finance,low,0\n", encoding="utf-8")
+    header = "id,lang,text,category,priority,wrapper
+"
+    holdout.write_text(header + "X1,en,hello,Finance,low,0
+", encoding="utf-8")
     monkeypatch.setattr(sys, "argv", ["score_holdout.py", "--model-dir", str(tmp_path), "--mode", "offline",
                                       "--holdout", str(holdout)])
     assert mod.main() == 2
@@ -42,8 +47,11 @@ def test_score_holdout_score_is_the_weighted_sum() -> None:
     mod = _load("score_holdout")
     rows = [{"category": "Finance", "pred_category": "Finance", "priority": "low", "pred_priority": "low"}]
     out = mod.score_rows(rows)
-    assert out["score"] == pytest.approx(0.7 * out["category_macro_f1"] + 0.3 * out["priority_macro_f1"])
-    assert mod.bucket("1", "1") == "auto" and mod.bucket("2", "1") == "ask" and mod.bucket("3", "1") == "review"
+    expected = 0.7 * out["category_macro_f1"] + 0.3 * out["priority_macro_f1"]
+    assert out["score"] == pytest.approx(expected)
+    assert mod.bucket("1", "1") == "auto"
+    assert mod.bucket("2", "1") == "ask"
+    assert mod.bucket("3", "1") == "review"
 
 
 def test_rc_compare_skips_augmented_rows(tmp_path: Path) -> None:

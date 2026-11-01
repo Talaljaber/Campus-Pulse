@@ -8,5 +8,5 @@ max_retries: 1
 max_tokens: 600
 reasoning: {enabled: false}             # sent as the OpenRouter `reasoning` parameter (off)
 workers: 8                                # parallel calls inside one batch
-explain_english: true                     # English rows also get the call (explanation only; text unchanged)
+explain_english: false                    # English goes straight to the model with no LLM call (the train-time explanations are already cached)
 cache_path: .cache/llm_frontend.sqlite
