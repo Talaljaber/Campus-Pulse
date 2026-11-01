@@ -88,6 +88,7 @@ def test_exit_4_missing_text_column(tmp_path: Path) -> None:
 
 
 def test_exit_3_use_llm_without_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)  # Settings reads ".env" from the cwd; keep a local dev key out of this test
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     args = ["--input", str(DATA_RAW / "validation.csv"), "--output", str(tmp_path / "p.csv"), "--use-llm"]
     assert main(args) == 3

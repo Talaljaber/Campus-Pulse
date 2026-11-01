@@ -46,7 +46,7 @@ COPY reports/model_lab.json reports/model_lab.json
 COPY scripts/fetch_models.py scripts/fetch_models.py
 COPY models/frozen models/frozen
 
-ARG MODELS_TAG=models-v1-rc3
+ARG MODELS_TAG=models-v1-rc4
 RUN --mount=type=secret,id=gh_token,env=GITHUB_TOKEN \
     python scripts/fetch_models.py --tag "$MODELS_TAG" && rm -rf models/frozen/.cache
 

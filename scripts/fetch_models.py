@@ -1,6 +1,6 @@
 """Fetch the frozen encoder and translator into `models/frozen/v1/` and verify them (P1.17, P2.15, §3.12).
 
-    python scripts/fetch_models.py [--tag models-v1-rc3] [--source {github,hf}] [--from-file <tar.gz>]
+    python scripts/fetch_models.py [--tag models-v1-rc4] [--source {github,hf}] [--from-file <tar.gz>]
                                    [--model-dir models/frozen/v1] [--force]
 
 The small artifacts (heads, index, config, MANIFEST.json) are committed; only the encoder (> 100 MB) is a
@@ -42,7 +42,7 @@ from pathlib import Path, PurePosixPath
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODEL_DIR = REPO_ROOT / "models" / "frozen" / "v1"
-DEFAULT_TAG = "models-v1-rc3"
+DEFAULT_TAG = "models-v1-rc4"
 ASSET = "campuspulse-models-v1.tar.gz"
 SUMS = "SHA256SUMS"
 GITHUB_REPO = "Talaljaber/Ai-Quest"
