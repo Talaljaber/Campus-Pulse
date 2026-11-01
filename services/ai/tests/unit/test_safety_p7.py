@@ -219,11 +219,9 @@ def test_tone_alone_is_never_danger(guard: SafetyGuard, normalizer: DefaultNorma
 
 
 def test_distress_wins_over_danger_when_both_match(guard: SafetyGuard, normalizer: DefaultNormalizer) -> None:
-    """Documents the known precedence gap.
-
-    `SafetyGuard` returns the first verdict, distress, so a request that is both loses `danger` (and with it
-    the safety tag). Follow-up: let the verdict carry both (see the P7.2 report).
-    """
+    """The kind stays `distress` (the support flow is unchanged); since P7.8 the verdict also carries the
+    danger matches in `danger_spans`, so `TriageCore` keeps the safety tag (see `test_p78_gaps.py`)."""
     text = "There is smoke in the lab and I feel like it's all over for me"
     verdict = guard.inspect(normalizer.normalize(text))
     assert verdict.kind == "distress"
+    assert verdict.danger_spans and verdict.lexicon
