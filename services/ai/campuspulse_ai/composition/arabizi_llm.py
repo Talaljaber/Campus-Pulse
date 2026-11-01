@@ -51,10 +51,12 @@ def make_llm_arabizi_translator(
         timeout_s=settings.llm_arabizi_timeout_s,
         max_retries=1,
         retry_backoff_s=settings.llm_retry_backoff_s,
+        provider=settings.llm_provider_preferences(),
+        reasoning_off=settings.llm_reasoning_off,
     )
     chat = CachedChat(
         client,
-        settings.llm_arabizi_model,
+        settings.llm_model or settings.llm_arabizi_model,
         cache if cache is not None else SqliteCache(settings.llm_arabizi_cache_path),
         cost if cost is not None else InMemoryCostLogger(),
         daily_budget_usd=settings.llm_daily_budget_usd,

@@ -325,6 +325,8 @@ def llm_wiring(settings: Settings, offline: OfflineContainer, clock: Clock) -> L
         timeout_s=settings.llm_timeout_s,
         max_retries=settings.llm_max_retries,
         retry_backoff_s=settings.llm_retry_backoff_s,
+        provider=settings.llm_provider_preferences(),
+        reasoning_off=settings.llm_reasoning_off,
     )
     settings.llm_cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache = SqliteCache(settings.llm_cache_path)

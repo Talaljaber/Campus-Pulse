@@ -1,0 +1,799 @@
+{
+ "tune": [
+  {
+   "model": "google/gemini-3.5-flash-lite",
+   "note": "Gemini Flash-class",
+   "price": "0.3/2.5",
+   "scores": {
+    "translation": 0.8024,
+    "extraction": 0.9365,
+    "tiebreak": 0.9362
+   },
+   "weighted": 0.8828,
+   "ci_vs_base": {
+    "ar_category": "+0.224 [+0.106, +0.373]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.200 [+0.078, +0.362]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.0,
+    "extraction_changed": 0.0093,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0,
+     "extraction": 0.0013,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.9259,
+    "deadline": 0.8611,
+    "physical_danger": 0.9231,
+    "account_compromise": 1.0,
+    "affected": 0.8981,
+    "exam_impact": 0.9722,
+    "issue_area": 0.9709
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0946,
+    "extract": 0.358,
+    "tiebreak": 0.2842
+   },
+   "cost_per_1000_mixed_usd": 0.2379,
+   "score_per_usd_per_1000": 3.711,
+   "latency_p50_ms": {
+    "translate": 894.5,
+    "extract": 1021.5,
+    "tiebreak": 1022.0
+   },
+   "latency_p95_ms": {
+    "translate": 1409,
+    "extract": 1451,
+    "tiebreak": 1161
+   },
+   "errors": 0,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.11918
+  },
+  {
+   "model": "z-ai/glm-5.3-flash",
+   "note": "GLM cheap",
+   "price": "0.029/0.092",
+   "scores": {
+    "translation": 0.797,
+    "extraction": 0.9223,
+    "tiebreak": 0.9468
+   },
+   "weighted": 0.8771,
+   "ci_vs_base": {
+    "ar_category": "+0.189 [+0.052, +0.345]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.200 [+0.078, +0.362]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.6471,
+    "extraction_changed": 0.2407,
+    "tiebreak_changed": 0.0196,
+    "score_spread": {
+     "translation": 0.0069,
+     "extraction": 0.0094,
+     "tiebreak": 0.0212
+    }
+   },
+   "per_field": {
+    "kind": 0.9352,
+    "deadline": 0.8333,
+    "physical_danger": 0.9167,
+    "account_compromise": 1.0,
+    "affected": 0.8981,
+    "exam_impact": 0.9444,
+    "issue_area": 0.9612
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.1068,
+    "extract": 0.141,
+    "tiebreak": 0.105
+   },
+   "cost_per_1000_mixed_usd": 0.1201,
+   "score_per_usd_per_1000": 7.303,
+   "latency_p50_ms": {
+    "translate": 1166.5,
+    "extract": 1638.0,
+    "tiebreak": 1394.5
+   },
+   "latency_p95_ms": {
+    "translate": 5350,
+    "extract": 6475,
+    "tiebreak": 3999
+   },
+   "errors": 0,
+   "empty": 2,
+   "reasoning_tokens": 96378,
+   "spend_usd": 0.0557
+  },
+  {
+   "model": "deepseek/deepseek-v4.1-flash",
+   "note": "DeepSeek",
+   "price": "0.045/0.5",
+   "scores": {
+    "translation": 0.7879,
+    "extraction": 0.9245,
+    "tiebreak": 0.9574
+   },
+   "weighted": 0.8764,
+   "ci_vs_base": {
+    "ar_category": "+0.164 [+0.033, +0.319]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.200 [+0.078, +0.362]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.3088,
+    "extraction_changed": 0.0926,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0013,
+     "extraction": 0.0014,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.9167,
+    "deadline": 0.8796,
+    "physical_danger": 0.8571,
+    "account_compromise": 1.0,
+    "affected": 0.9074,
+    "exam_impact": 0.9444,
+    "issue_area": 0.9612
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0271,
+    "extract": 0.0468,
+    "tiebreak": 0.0755
+   },
+   "cost_per_1000_mixed_usd": 0.0447,
+   "score_per_usd_per_1000": 19.606,
+   "latency_p50_ms": {
+    "translate": 445.0,
+    "extract": 537.5,
+    "tiebreak": 553.0
+   },
+   "latency_p95_ms": {
+    "translate": 964,
+    "extract": 1456,
+    "tiebreak": 1660
+   },
+   "errors": 0,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.02147
+  },
+  {
+   "model": "qwen/qwen3.8-flash",
+   "note": "Qwen mid",
+   "price": "0.15/0.47",
+   "scores": {
+    "translation": 0.7968,
+    "extraction": 0.9123,
+    "tiebreak": 0.9468
+   },
+   "weighted": 0.873,
+   "ci_vs_base": {
+    "ar_category": "+0.224 [+0.106, +0.373]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.189 [+0.020, +0.376]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 0.9902,
+   "determinism": {
+    "translation_changed": 0.5441,
+    "extraction_changed": 0.1111,
+    "tiebreak_changed": 0.0196,
+    "score_spread": {
+     "translation": 0.0054,
+     "extraction": 0.016,
+     "tiebreak": 0.0212
+    }
+   },
+   "per_field": {
+    "kind": 0.9352,
+    "deadline": 0.8148,
+    "physical_danger": 0.8333,
+    "account_compromise": 1.0,
+    "affected": 0.8981,
+    "exam_impact": 0.9167,
+    "issue_area": 0.932
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0352,
+    "extract": 0.05,
+    "tiebreak": 0.0587
+   },
+   "cost_per_1000_mixed_usd": 0.0458,
+   "score_per_usd_per_1000": 19.061,
+   "latency_p50_ms": {
+    "translate": 1280,
+    "extract": 1773.0,
+    "tiebreak": 1406.5
+   },
+   "latency_p95_ms": {
+    "translate": 6346,
+    "extract": 6059,
+    "tiebreak": 2311
+   },
+   "errors": 1,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.02155
+  },
+  {
+   "model": "z-ai/glm-5.3",
+   "note": "GLM flagship",
+   "price": "0.08/3.6",
+   "scores": {
+    "translation": 0.7879,
+    "extraction": 0.9258,
+    "tiebreak": 0.9362
+   },
+   "weighted": 0.8727,
+   "ci_vs_base": {
+    "ar_category": "+0.164 [+0.033, +0.319]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.200 [+0.078, +0.362]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 0.9908,
+   "json_valid_tiebreak": 0.9902,
+   "determinism": {
+    "translation_changed": 0.6324,
+    "extraction_changed": 0.1389,
+    "tiebreak_changed": 0.0392,
+    "score_spread": {
+     "translation": 0.0013,
+     "extraction": 0.0068,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.9074,
+    "deadline": 0.8704,
+    "physical_danger": 0.9231,
+    "account_compromise": 1.0,
+    "affected": 0.8796,
+    "exam_impact": 0.9444,
+    "issue_area": 0.932
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 1.2831,
+    "extract": 2.0132,
+    "tiebreak": 1.5419
+   },
+   "cost_per_1000_mixed_usd": 1.6269,
+   "score_per_usd_per_1000": 0.536,
+   "latency_p50_ms": {
+    "translate": 2309.5,
+    "extract": 2609.5,
+    "tiebreak": 1987.0
+   },
+   "latency_p95_ms": {
+    "translate": 15359,
+    "extract": 13504,
+    "tiebreak": 12383
+   },
+   "errors": 0,
+   "empty": 6,
+   "reasoning_tokens": 188597,
+   "spend_usd": 0.76661
+  },
+  {
+   "model": "qwen/qwen3.8-27b",
+   "note": "Qwen mid 27B",
+   "price": "0.15/1.875",
+   "scores": {
+    "translation": 0.7754,
+    "extraction": 0.915,
+    "tiebreak": 0.9574
+   },
+   "weighted": 0.8676,
+   "ci_vs_base": {
+    "ar_category": "+0.156 [+0.024, +0.305]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.126 [-0.034, +0.291]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.3088,
+    "extraction_changed": 0.0278,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0175,
+     "extraction": 0.004,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.9259,
+    "deadline": 0.7407,
+    "physical_danger": 0.96,
+    "account_compromise": 1.0,
+    "affected": 0.9074,
+    "exam_impact": 0.963,
+    "issue_area": 0.9223
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0532,
+    "extract": 0.1454,
+    "tiebreak": 0.1228
+   },
+   "cost_per_1000_mixed_usd": 0.104,
+   "score_per_usd_per_1000": 8.342,
+   "latency_p50_ms": {
+    "translate": 916.0,
+    "extract": 1557.5,
+    "tiebreak": 1415.0
+   },
+   "latency_p95_ms": {
+    "translate": 1722,
+    "extract": 2737,
+    "tiebreak": 2893
+   },
+   "errors": 0,
+   "empty": 1,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.05117
+  },
+  {
+   "model": "openai/gpt-4o-mini-2024-07-18",
+   "note": "baseline",
+   "price": "0.15/0.6",
+   "scores": {
+    "translation": 0.7785,
+    "extraction": 0.8815,
+    "tiebreak": 0.9149
+   },
+   "weighted": 0.847,
+   "ci_vs_base": {
+    "ar_category": "+0.129 [+0.012, +0.268]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.200 [+0.078, +0.362]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.1324,
+    "extraction_changed": 0.1111,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0,
+     "extraction": 0.0165,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.9167,
+    "deadline": 0.7222,
+    "physical_danger": 0.9091,
+    "account_compromise": 0.8571,
+    "affected": 0.8519,
+    "exam_impact": 0.9722,
+    "issue_area": 0.8835
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0367,
+    "extract": 0.0925,
+    "tiebreak": 0.0997
+   },
+   "cost_per_1000_mixed_usd": 0.0716,
+   "score_per_usd_per_1000": 11.83,
+   "latency_p50_ms": {
+    "translate": 819.0,
+    "extract": 996.0,
+    "tiebreak": 825.0
+   },
+   "latency_p95_ms": {
+    "translate": 1043,
+    "extract": 1416,
+    "tiebreak": 1010
+   },
+   "errors": 0,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.03513
+  },
+  {
+   "model": "meta-llama/llama-4-maverick",
+   "note": "Llama-class",
+   "price": "0.188/0.652",
+   "scores": {
+    "translation": 0.7703,
+    "extraction": 0.8275,
+    "tiebreak": 0.9574
+   },
+   "weighted": 0.8306,
+   "ci_vs_base": {
+    "ar_category": "+0.205 [+0.094, +0.353]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.091 [-0.065, +0.255]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.0735,
+    "extraction_changed": 0.0185,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0,
+     "extraction": 0.0026,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.8611,
+    "deadline": 0.6944,
+    "physical_danger": 0.88,
+    "account_compromise": 0.6,
+    "affected": 0.8611,
+    "exam_impact": 0.9537,
+    "issue_area": 0.9515
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0276,
+    "extract": 0.0573,
+    "tiebreak": 0.0691
+   },
+   "cost_per_1000_mixed_usd": 0.0478,
+   "score_per_usd_per_1000": 17.377,
+   "latency_p50_ms": {
+    "translate": 2024.0,
+    "extract": 3789.0,
+    "tiebreak": 2161.0
+   },
+   "latency_p95_ms": {
+    "translate": 3409,
+    "extract": 5200,
+    "tiebreak": 3194
+   },
+   "errors": 0,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.02319
+  },
+  {
+   "model": "qwen/qwen3.8-max-0902",
+   "note": "Qwen flagship (over 3x cost: reference only)",
+   "price": "2.0/6.0",
+   "scores": {
+    "translation": 0.6963,
+    "extraction": 0.0,
+    "tiebreak": 0.0
+   },
+   "weighted": 0.2785,
+   "ci_vs_base": {
+    "ar_category": "+0.000 [+0.000, +0.000]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.000 [+0.000, +0.000]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.6809,
+   "tiebreak_n": 47,
+   "json_valid_extraction": 0.0,
+   "json_valid_tiebreak": 0.0,
+   "determinism": {
+    "translation_changed": 0.0,
+    "extraction_changed": 0.0,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0,
+     "extraction": 0.0,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.0,
+    "deadline": 0.0,
+    "physical_danger": 0.0,
+    "account_compromise": 0.0,
+    "affected": 0.0,
+    "exam_impact": 0.0,
+    "issue_area": 0.0
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0,
+    "extract": 0.0,
+    "tiebreak": 0.0
+   },
+   "cost_per_1000_mixed_usd": 0.0,
+   "score_per_usd_per_1000": null,
+   "latency_p50_ms": {
+    "translate": null,
+    "extract": null,
+    "tiebreak": null
+   },
+   "latency_p95_ms": {
+    "translate": null,
+    "extract": null,
+    "tiebreak": null
+   },
+   "errors": 454,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0
+  }
+ ],
+ "check": [
+  {
+   "model": "deepseek/deepseek-v4.1-flash",
+   "note": "DeepSeek",
+   "price": "0.045/0.5",
+   "scores": {
+    "translation": 0.7323,
+    "extraction": 0.8981,
+    "tiebreak": 0.9808
+   },
+   "weighted": 0.8483,
+   "ci_vs_base": {
+    "ar_category": "+0.156 [-0.002, +0.329]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.165 [+0.058, +0.308]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.7308,
+   "tiebreak_n": 52,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.3971,
+    "extraction_changed": 0.0926,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0,
+     "extraction": 0.0001,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.8519,
+    "deadline": 0.787,
+    "physical_danger": 0.88,
+    "account_compromise": 1.0,
+    "affected": 0.8889,
+    "exam_impact": 0.9167,
+    "issue_area": 0.9619
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0352,
+    "extract": 0.046,
+    "tiebreak": 0.0854
+   },
+   "cost_per_1000_mixed_usd": 0.0496,
+   "score_per_usd_per_1000": 17.103,
+   "latency_p50_ms": {
+    "translate": 477.0,
+    "extract": 552.0,
+    "tiebreak": 536.0
+   },
+   "latency_p95_ms": {
+    "translate": 1077,
+    "extract": 1625,
+    "tiebreak": 1610
+   },
+   "errors": 0,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.04752
+  },
+  {
+   "model": "z-ai/glm-5.3-flash",
+   "note": "GLM cheap",
+   "price": "0.029/0.092",
+   "scores": {
+    "translation": 0.7015,
+    "extraction": 0.8972,
+    "tiebreak": 0.9808
+   },
+   "weighted": 0.8356,
+   "ci_vs_base": {
+    "ar_category": "+0.053 [-0.117, +0.225]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.129 [+0.033, +0.266]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.7308,
+   "tiebreak_n": 52,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.6471,
+    "extraction_changed": 0.1204,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0076,
+     "extraction": 0.0039,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.8426,
+    "deadline": 0.8519,
+    "physical_danger": 0.8889,
+    "account_compromise": 1.0,
+    "affected": 0.8796,
+    "exam_impact": 0.8981,
+    "issue_area": 0.9333
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.1068,
+    "extract": 0.1328,
+    "tiebreak": 0.0984
+   },
+   "cost_per_1000_mixed_usd": 0.1155,
+   "score_per_usd_per_1000": 7.235,
+   "latency_p50_ms": {
+    "translate": 1388.0,
+    "extract": 1700.5,
+    "tiebreak": 1363.0
+   },
+   "latency_p95_ms": {
+    "translate": 6461,
+    "extract": 7214,
+    "tiebreak": 3672
+   },
+   "errors": 0,
+   "empty": 2,
+   "reasoning_tokens": 187674,
+   "spend_usd": 0.1073
+  },
+  {
+   "model": "openai/gpt-4o-mini-2024-07-18",
+   "note": "baseline",
+   "price": "0.15/0.6",
+   "scores": {
+    "translation": 0.7208,
+    "extraction": 0.8729,
+    "tiebreak": 0.9808
+   },
+   "weighted": 0.8336,
+   "ci_vs_base": {
+    "ar_category": "+0.144 [-0.004, +0.320]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.129 [+0.033, +0.266]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.7308,
+   "tiebreak_n": 52,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.2059,
+    "extraction_changed": 0.0463,
+    "tiebreak_changed": 0.0,
+    "score_spread": {
+     "translation": 0.0008,
+     "extraction": 0.0066,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.8519,
+    "deadline": 0.6667,
+    "physical_danger": 0.9231,
+    "account_compromise": 1.0,
+    "affected": 0.8056,
+    "exam_impact": 0.9444,
+    "issue_area": 0.8952
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0421,
+    "extract": 0.0937,
+    "tiebreak": 0.1033
+   },
+   "cost_per_1000_mixed_usd": 0.075,
+   "score_per_usd_per_1000": 11.115,
+   "latency_p50_ms": {
+    "translate": 858.0,
+    "extract": 998.0,
+    "tiebreak": 805.0
+   },
+   "latency_p95_ms": {
+    "translate": 1152,
+    "extract": 1455,
+    "tiebreak": 989
+   },
+   "errors": 0,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.07384
+  },
+  {
+   "model": "qwen/qwen3.8-flash",
+   "note": "Qwen mid",
+   "price": "0.15/0.47",
+   "scores": {
+    "translation": 0.7218,
+    "extraction": 0.8546,
+    "tiebreak": 0.9808
+   },
+   "weighted": 0.8267,
+   "ci_vs_base": {
+    "ar_category": "+0.144 [-0.037, +0.337]",
+    "ar_priority": "+0.000 [+0.000, +0.000]",
+    "az_category": "+0.114 [+0.006, +0.262]",
+    "az_priority": "+0.000 [+0.000, +0.000]"
+   },
+   "tiebreak_argmax": 0.7308,
+   "tiebreak_n": 52,
+   "json_valid_extraction": 1.0,
+   "json_valid_tiebreak": 1.0,
+   "determinism": {
+    "translation_changed": 0.6176,
+    "extraction_changed": 0.1111,
+    "tiebreak_changed": 0.0182,
+    "score_spread": {
+     "translation": 0.0103,
+     "extraction": 0.0066,
+     "tiebreak": 0.0
+    }
+   },
+   "per_field": {
+    "kind": 0.8333,
+    "deadline": 0.7685,
+    "physical_danger": 0.9231,
+    "account_compromise": 0.75,
+    "affected": 0.8704,
+    "exam_impact": 0.8981,
+    "issue_area": 0.9619
+   },
+   "cost_per_1000_by_task_usd": {
+    "translate": 0.0399,
+    "extract": 0.0515,
+    "tiebreak": 0.0607
+   },
+   "cost_per_1000_mixed_usd": 0.0487,
+   "score_per_usd_per_1000": 16.975,
+   "latency_p50_ms": {
+    "translate": 1372,
+    "extract": 1725.0,
+    "tiebreak": 1422.0
+   },
+   "latency_p95_ms": {
+    "translate": 6359,
+    "extract": 6524,
+    "tiebreak": 5730
+   },
+   "errors": 1,
+   "empty": 0,
+   "reasoning_tokens": 0,
+   "spend_usd": 0.04592
+  }
+ ]
+}
