@@ -30,10 +30,11 @@ from pathlib import Path
 
 from campuspulse_ai.adapters.artifacts.io import FileArtifactStore
 from campuspulse_ai.adapters.clock import SystemClock
-from campuspulse_ai.adapters.guards.bank import compile_bank
+from campuspulse_ai.adapters.guards.bank import compile_bank, compile_optional_bank
 from campuspulse_ai.adapters.guards.gibberish import GibberishGuard
 from campuspulse_ai.adapters.guards.injection import InjectionGuard
 from campuspulse_ai.adapters.guards.safety import SafetyGuard
+from campuspulse_ai.adapters.guards.vague import VagueGuard
 from campuspulse_ai.adapters.llm.null import NullOracle
 from campuspulse_ai.adapters.memory.null import NullMemoryStore
 from campuspulse_ai.adapters.models.embed_lr import EmbedLR
@@ -59,7 +60,11 @@ from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.application.use_cases.batch import read_batch_csv, write_predictions_csv
 from campuspulse_ai.application.use_cases.batch_predict import BatchPredictUseCase, BatchRow
 from campuspulse_ai.composition.arabizi_llm import has_key, llm_arabizi_requested, wrap_llm_arabizi
-from campuspulse_ai.composition.llm_frontend import llm_frontend_requested, wrap_llm_frontend
+from campuspulse_ai.composition.llm_frontend import (
+    cue_floor_for,
+    llm_frontend_requested,
+    wrap_llm_frontend,
+)
 from campuspulse_ai.composition.translation import make_translator, wrap_encoder
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.settings import Settings
@@ -193,6 +198,7 @@ def build_offline(
     lex = model_dir / LEXICON_DIR
     g = config.guards
     translit = ArabiziTransliterator.from_yaml(lex / "arabizi.yaml")
+    queue_jump = compile_optional_bank(lex / "injection.yaml", "queue_jump")
     guards: list[Guard] = [
         GibberishGuard(g.gibberish_min_tokens, g.gibberish_min_letter_ratio),
         InjectionGuard(
@@ -200,7 +206,21 @@ def build_offline(
             "strip_regex_only",
             g.injection_sentence_strip_ratio,
             arabizi_model_text=translit.model_text,
+            steer=compile_optional_bank(lex / "injection.yaml", "steer_clause"),
         ),
+        *(
+            [
+                InjectionGuard(
+                    queue_jump,
+                    "strip_regex_only",
+                    g.injection_sentence_strip_ratio,
+                    kind="queue_jump",  # strips model_text itself: never resurrects a stripped injection
+                )
+            ]
+            if queue_jump
+            else []
+        ),
+        VagueGuard(compile_optional_bank(lex / "injection.yaml", "vague")),
         SafetyGuard(
             compile_bank(lex / "safety.yaml", "danger"), compile_bank(lex / "safety.yaml", "distress")
         ),
@@ -224,6 +244,7 @@ def build_offline(
         config=config,
         artifact=ArtifactVersion(name=config.artifact_version, sha256=manifest.sha),
         urgency_floor=UrgencyFloorRule.from_yaml(lex / "urgency.yaml"),
+        cue_floor=cue_floor_for(encoder, settings),
     )
     oracle = NullOracle()
     return OfflineContainer(

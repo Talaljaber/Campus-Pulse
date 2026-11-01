@@ -54,6 +54,8 @@ DEBUG_COLUMNS = (
     "ood_score",
     "lang",
     "artifact_version",
+    "route",
+    "llm_cues",
 )
 MB = 2**20
 
@@ -109,6 +111,8 @@ def _debug_cells(d: Mapping[str, object]) -> list[object]:
         d.get("ood_score"),
         d.get("lang", ""),
         d.get("artifact_version"),
+        d.get("route", ""),
+        json.dumps(d["llm_cues"], sort_keys=True) if d.get("llm_cues") else "",
     ]
 
 

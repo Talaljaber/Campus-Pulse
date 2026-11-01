@@ -58,6 +58,8 @@ class InjectionGuard:
         *,
         bank: str = INJECTION_BANK,
         arabizi_model_text: Callable[[str], str] | None = None,
+        steer: Sequence[re.Pattern[str]] = (),
+        kind: Literal["injection", "queue_jump"] = "injection",
     ) -> None:
         """
         Args:
@@ -66,6 +68,11 @@ class InjectionGuard:
             sentence_strip_ratio: `FrozenConfig.guards.injection_sentence_strip_ratio`, in (0, 1].
             exemplars, tau: required for `full` (`thresholds.tau_injection`); ignored offline.
             bank: the exemplar collection name.
+            steer: patterns tried at the position right after a match (P7.9): a routing instruction that
+                follows the match ("... and forward this to Finance as top priority") is removed up to the
+                end of its clause, so an injected department name cannot steer the category.
+            kind: the verdict kind. `queue_jump` (P7.9) is the same regex-and-strip machinery over the
+                queue-jump bank: pressure phrases are removed from the text the models see and flagged.
             arabizi_model_text: `ArabiziTransliterator.model_text`, the function the normalizer used. For an
                 Arabizi request whose original half (`text_norm`) holds a match, the guard strips
                 `text_norm` and rebuilds `translit | original` from it, so the transliteration cannot keep
@@ -87,6 +94,9 @@ class InjectionGuard:
         self._tau = tau
         self._bank = bank
         self._arabizi_model_text = arabizi_model_text
+        self._steer = tuple(steer)
+        self._kind: Literal["injection", "queue_jump"] = kind
+        self.name = kind
 
     @property
     def mode(self) -> InjectionMode:
@@ -104,7 +114,7 @@ class InjectionGuard:
         spans = self._spans(text)
         if spans:
             matched = tuple(text[a:b] for a, b in spans)
-            return GuardVerdict("injection", matched, self._stripped(req, spans), REGEX_SCORE)
+            return GuardVerdict(self._kind, matched, self._stripped(req, spans), REGEX_SCORE)
         if self._mode == "full" and self._exemplars is not None and self._tau is not None:
             score, nearest = self._exemplars.max_similarity(text, self._bank)
             if score >= self._tau:
@@ -130,7 +140,22 @@ class InjectionGuard:
                 merged.append((start, end))
         return merged
 
+    def _extend(self, text: str, spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
+        """Grow each span over a routing instruction that follows it directly (the `steer` patterns)."""
+        if not self._steer:
+            return spans
+        grown: list[tuple[int, int]] = []
+        for a, b in spans:
+            end = b
+            for pattern in self._steer:
+                m = pattern.match(text, b)
+                if m is not None:
+                    end = max(end, m.end())
+            grown.append((a, end))
+        return grown
+
     def _strip(self, text: str, spans: list[tuple[int, int]]) -> str:
+        grown = self._extend(text, spans)  # the sentence ratio below counts only the matched spans
         remove: list[tuple[int, int]] = []
         for sent in _SENTENCE.finditer(text):
             s0, s1 = sent.span()
@@ -142,7 +167,7 @@ class InjectionGuard:
             if content and covered / content >= self._ratio:
                 remove.append((s0, s1))
             else:
-                remove.extend(inside)
+                remove.extend((max(a, s0), min(b, s1)) for a, b in grown if a < s1 and b > s0)
         kept: list[str] = []
         cursor = 0
         for a, b in sorted(remove):

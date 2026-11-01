@@ -24,10 +24,15 @@ from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.domain.entities import CoreResult, OracleContext
 from campuspulse_ai.domain.errors import InvalidInput, LLMOutputOutOfSet, LLMUnavailable
+from campuspulse_ai.domain.policy import DefaultDecisionPolicy
 from campuspulse_ai.domain.ports import LabelOracle
-from campuspulse_ai.domain.values import NormalizedRequest, Tier
+from campuspulse_ai.domain.values import ClarificationBudget, NormalizedRequest, Outcome, Tier
 
 EMPTY_INPUT_FLAG = "empty_input"
+_ROUTE_QUESTIONS = 1  # the clarification budget the debug `route` assumes
+_ROUTES: Mapping[Outcome, str] = {
+    Outcome.ACCEPT: "auto", Outcome.ASK: "ask", Outcome.OUT_OF_SCOPE: "out_of_scope",
+}
 
 
 @dataclass(frozen=True)
@@ -58,6 +63,7 @@ class BatchPredictUseCase:
         self.oracle = oracle
         self.config = config
         self._merger = LLMMerger()
+        self._policy = DefaultDecisionPolicy(config.thresholds.tau_ood)
         self.llm_calls = 0
 
     def run(
@@ -95,8 +101,19 @@ class BatchPredictUseCase:
             "set_pri": 0 if "empty_set_pri" in core.flags else core.set_pri.size,
             "ood_score": core.ood_score,
             "lang": str(req.lang),
+            "route": self._route(core),
         }
+        cue_floor = self.core.cue_floor
+        if cue_floor is not None:  # the LLM's cue values: debug output only, never in an API response
+            debug["llm_cues"] = cue_floor.cues(req.model_text)
         return BatchPrediction(row.request_id, core.p_cat.argmax(), core.p_pri.argmax(), debug)
+
+    def _route(self, core: CoreResult) -> str:
+        """What the online decision policy would do with this row: auto, ask, review or out_of_scope.
+
+        Debug-only (batch itself never applies the policy and labels every row, §6.2 flag 13)."""
+        outcome = self._policy.decide(core, ClarificationBudget(max_questions=_ROUTE_QUESTIONS), False)
+        return _ROUTES.get(outcome, "review")
 
     @staticmethod
     def _needs_llm(core: CoreResult) -> bool:

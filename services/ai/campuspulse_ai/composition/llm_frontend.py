@@ -8,7 +8,7 @@ request text (never names, ids or labels). Settings come from `config/llm_fronte
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +19,7 @@ from campuspulse_ai.adapters.llm.cached_chat import CachedChat
 from campuspulse_ai.adapters.llm.cost import InMemoryCostLogger
 from campuspulse_ai.adapters.llm.frontend import LlmFrontend
 from campuspulse_ai.adapters.llm.openrouter import OpenRouterClient
+from campuspulse_ai.adapters.models.llm_cue_floor import Condition, LlmCueFloor, parse_rules
 from campuspulse_ai.adapters.models.llm_frontend_encoder import LlmFrontendEncoder
 from campuspulse_ai.composition.arabizi_llm import has_key
 from campuspulse_ai.config.settings import Settings
@@ -40,11 +41,16 @@ class FrontendCfg:
     workers: int
     explain_english: bool
     cache_path: Path
+    cue_floor_enabled: bool = False
+    cue_rules: dict[str, dict[str, Condition]] = field(default_factory=dict)
 
     @classmethod
     def load(cls, path: Path) -> FrontendCfg:
         raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+        cue = dict(raw.get("cue_floor") or {})
         return cls(
+            cue_floor_enabled=bool(cue.get("enabled", False)),
+            cue_rules=parse_rules(cue.get("rules") or {}),
             model=str(raw["model"]),
             prompt_version=str(raw["prompt_version"]),
             timeout_s=float(raw["timeout_s"]),
@@ -89,6 +95,16 @@ def make_frontend(
         extra_params={"reasoning": cfg.reasoning} if cfg.reasoning else None,
     )
     return LlmFrontend(chat, cfg.prompt_version, cost)
+
+
+def cue_floor_for(encoder: SentenceEncoder, settings: Settings) -> LlmCueFloor | None:
+    """The raise-only LLM-cue floor (P7.9) when `encoder` is the LLM front end and the yaml enables it."""
+    if not isinstance(encoder, LlmFrontendEncoder):
+        return None
+    cfg = FrontendCfg.load(settings.llm_frontend_config)
+    if not (cfg.cue_floor_enabled and cfg.cue_rules):
+        return None
+    return LlmCueFloor(encoder, cfg.cue_rules)
 
 
 def wrap_llm_frontend(

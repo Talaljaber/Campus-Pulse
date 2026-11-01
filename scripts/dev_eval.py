@@ -139,6 +139,20 @@ def bucket(set_cat: str, set_pri: str) -> str:
     return str(min(max(a, b), 3))
 
 
+def row_bucket(row: Mapping[str, str]) -> str:
+    """Routing bucket of a joined row. With the debug `route` column (P7.9: the policy's outcome) auto is 1,
+    ask 2, and review or out_of_scope 3, except an empty set that went to review, which stays 0; without it,
+    the set-size `bucket` of older prediction files."""
+    route = row.get("route", "")
+    if not route:
+        return bucket(row["set_cat"], row["set_pri"])
+    if route == "auto":
+        return "1"
+    if route == "ask":
+        return "2"
+    return "0" if "empty_set" in _flags(row) and route == "review" else "3"
+
+
 def _flags(row: Mapping[str, str]) -> set[str]:
     return {f for f in row.get("flags", "").split(";") if f}
 
@@ -156,6 +170,7 @@ def joined_rows(
         out.append({
             **d, "pred_category": p["category"], "pred_priority": p["priority"],
             "set_cat": p.get("set_cat", "1"), "set_pri": p.get("set_pri", "1"), "flags": p.get("flags", ""),
+            "route": p.get("route", ""),
         })
     return out
 
@@ -177,7 +192,7 @@ def _routing(rows: Sequence[Mapping[str, str]]) -> dict[str, Any]:
     counts = {"0": 0, "1": 0, "2": 0, "3": 0}
     auto_right = auto_graded = 0
     for r in rows:
-        b = bucket(r["set_cat"], r["set_pri"])
+        b = row_bucket(r)
         counts[b] += 1
         if b == "1" and r.get("category") and r.get("priority"):
             auto_graded += 1
