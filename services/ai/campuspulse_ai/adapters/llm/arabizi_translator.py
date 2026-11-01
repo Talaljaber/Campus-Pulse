@@ -2,9 +2,9 @@
 
 Implements the `Translator` port. It sits in front of the sentence encoder only (see
 `LlmArabiziEncoder`); the guards, langid, M1, priority floors and conformal quantiles keep reading the
-original text. The request text is DATA: the system prompt says translate only, and the reply is sanitised (one plain
-line, no markdown or quotes, a length-ratio check). Any failure returns None / the input unchanged, so a
-failed call means "no translation" and the request continues on the offline path.
+original text. The request text is DATA: the system prompt says translate only, and the reply is
+sanitised (one plain line, no markdown or quotes, a length-ratio check). Any failure returns None / the
+input unchanged, so a failed call means "no translation" and the request continues on the offline path.
 
 Optional campus context (arm D2): up to k example texts (no labels) from the official pool are added as a
 vocabulary glossary. The caller supplies them via `context(text)`; they are never labels.
