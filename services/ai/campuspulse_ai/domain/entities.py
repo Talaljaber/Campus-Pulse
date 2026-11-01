@@ -146,6 +146,8 @@ class IncidentDecision:
     kind: Literal["none", "new", "attach"]
     incident: Incident | None
     members: list[str] = field(default_factory=list)
+    # Incident tickets of duplicate incidents folded into `incident` (D-021); the action engine mirrors them.
+    absorbed: list[Ticket] = field(default_factory=list)
 
 
 @dataclass

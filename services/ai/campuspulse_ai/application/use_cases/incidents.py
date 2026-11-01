@@ -121,8 +121,10 @@ class IncidentActions:
         )
         self._repo.save_ticket(own)
         reporters = [request]
-        if decision.kind == "new":
+        if decision.kind == "new" or len(decision.members) > 1:  # a cluster joining an incident (D-021)
             reporters = self._merge_earlier(incident, decision.members, request) + [request]
+        for absorbed in decision.absorbed:  # duplicates folded in (D-021): Linear marks them Duplicate
+            self._mirror.push(absorbed, skip=(RECORD_SINK,))
         self._broadcast(incident, reporters)
         self._event("incident.merged", incident, {"request_id": request.id, "kind": decision.kind})
         lang = request.normalized.lang if request.normalized else Lang.EN
