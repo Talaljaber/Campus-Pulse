@@ -95,6 +95,7 @@ class PipelineToggles:
     arabizi_translit: bool = True
     proto_parts: tuple[str, ...] = PARTS
     include_unreviewed: bool = False  # the labelled "unreviewed augmentation" arm only; never train.py
+    include_model_reviewed: bool = False  # model-panel arm (P8.1b, D-049); not human review
 
 
 @dataclass(frozen=True)

@@ -211,7 +211,7 @@ def parse_decision(cell: str) -> tuple[str, str, str]:
 
 def apply(queue_path: Path | None = None, aug: Path = AUG, review: Path = REVIEW, *, dry_run: bool = False,
           accept_agreed: bool = False, include_arabizi: bool = False, skip_guard: bool = False,
-          today: str | None = None) -> int:
+          today: str | None = None, model_panel: bool = False) -> int:
     queue_path = queue_path or review / "review_queue.csv"
     queue = _read(queue_path)
     try:
@@ -310,7 +310,8 @@ def apply(queue_path: Path | None = None, aug: Path = AUG, review: Path = REVIEW
                 if q and q.get("edit_text", "").strip() and rid in decisions:
                     r["text"] = q["edit_text"].strip()
                     counts["edited_text"] += 1
-                r["needs_human_check"] = "False"
+                if not model_panel:  # model-panel mode (P8.1b): never claim human review, provenance is in model_panel_v1.csv
+                    r["needs_human_check"] = "False"
                 counts[{"inherit": "inherited", "agreed": "accepted_agreed"}.get(verb, verb)] += 1
             after = {"category": r["category"], "priority": r["priority"], "text": r["text"],
                      "needs_human_check": r["needs_human_check"]}
@@ -320,7 +321,7 @@ def apply(queue_path: Path | None = None, aug: Path = AUG, review: Path = REVIEW
             kept.append(r)
         files[name] = kept
 
-    print(f"{'dry run: ' if dry_run else ''}keep={counts['keep']} fix={counts['fix']} drop={counts['drop']} "
+    print(f"{'dry run: ' if dry_run else ''}{'model-panel mode (needs_human_check stays True): ' if model_panel else ''}keep={counts['keep']} fix={counts['fix']} drop={counts['drop']} "
           f"inherited_from_scenario={counts['inherited']} accepted_agreed={counts['accepted_agreed']} "
           f"text_edits={counts['edited_text']}")
     if dry_run:
@@ -350,12 +351,15 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--accept-agreed", action="store_true",
                    help="also accept every undecided checker-agreed row (guarded)")
     p.add_argument("--include-arabizi", action="store_true", help="fast path also covers Arabizi rows")
+    p.add_argument("--model-panel", action="store_true",
+                   help="P8.1b: apply drops and fixes from a model-panel queue but leave needs_human_check=True")
     p.add_argument("--skip-guard", action="store_true", help="fast path without the evidence guard")
     args = ap.parse_args(argv)
     if args.cmd == "build":
         return build()
     return apply(args.queue, dry_run=args.dry_run, accept_agreed=args.accept_agreed,
-                 include_arabizi=args.include_arabizi, skip_guard=args.skip_guard)
+                 include_arabizi=args.include_arabizi, skip_guard=args.skip_guard,
+                 model_panel=args.model_panel)
 
 
 if __name__ == "__main__":

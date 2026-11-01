@@ -1,0 +1,8 @@
+{
+  "usd": 1.3684,
+  "models": {
+    "gpt": "openai/gpt-4o-mini-2024-07-18",
+    "qwen": "qwen/qwen3.8-max-0902",
+    "glm": "z-ai/glm-5.3"
+  }
+}
