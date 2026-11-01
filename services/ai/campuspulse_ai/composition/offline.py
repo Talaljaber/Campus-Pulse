@@ -52,6 +52,7 @@ from campuspulse_ai.application.services.priority_finalizer import PriorityFinal
 from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.application.use_cases.batch import read_batch_csv, write_predictions_csv
 from campuspulse_ai.application.use_cases.batch_predict import BatchPredictUseCase, BatchRow
+from campuspulse_ai.composition.arabizi_llm import has_key, llm_arabizi_requested, wrap_llm_arabizi
 from campuspulse_ai.composition.translation import make_translator, wrap_encoder
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.settings import Settings
@@ -76,7 +77,7 @@ HEAD_DIR = "head"
 PROTO_TOLERANCE = 1e-9  # m2proto meta.json and config.json must carry the same temperature
 OFFLINE_COLLECTIONS = frozenset({TRAIN_COLLECTION, "injection_exemplars", "safety_exemplars"})
 USE_LLM_MESSAGE = (
-    "--use-llm is not available yet: the LLM tier (OpenRouterOracle, P3) is not built; "
+    "--use-llm needs OPENROUTER_API_KEY (the optional LLM Arabizi translator, D-025); "
     "run without --use-llm (tier 0 is fully offline)"
 )
 
@@ -134,12 +135,14 @@ def build_offline(
 
     Raises:
         ArtifactMissing, ArtifactChecksumMismatch, ArtifactVersionMismatch: an unusable model directory.
-        LLMUnavailable: `use_llm=True` (the LLM tier is not wired offline yet).
+        LLMUnavailable: `use_llm=True` without an OpenRouter key. With a key, `use_llm` (or
+            `LLM_ARABIZI_TRANSLATE=true`) puts the optional LLM Arabizi translator in front of the encoder
+            (P2.20, D-025); the offline oracle stays `NullOracle`.
     """
-    if use_llm:
+    settings = settings or Settings()
+    if use_llm and not has_key(settings):
         raise LLMUnavailable(USE_LLM_MESSAGE)
     model_dir = resolve_model_dir(model_dir)
-    settings = settings or Settings()
     manifest = FileArtifactStore().load_manifest(model_dir)
     config = FrozenConfig.load(model_dir / "config.json")
     raw_encoder = encoder_override or _onnx_encoder(model_dir, config, settings)
@@ -150,6 +153,9 @@ def build_offline(
         if encoder_override is not None
         else wrap_encoder(raw_encoder, make_translator(model_dir, config.translate), config.translate)
     )
+    if encoder_override is None and llm_arabizi_requested(settings, use_llm):
+        # P2.20 (D-025): optional LLM Arabizi translation, in front of the encoder only; off by default.
+        encoder = wrap_llm_arabizi(encoder, settings)
     if encoder.dim != config.encoder.dim:
         raise ArtifactVersionMismatch(f"encoder dim {encoder.dim} != config encoder.dim {config.encoder.dim}")
 
