@@ -50,6 +50,7 @@ class ChatResult:
     tokens_out: int
     cost_usd: float | None
     latency_ms: int
+    reasoning_tokens: int = 0
 
 
 class OpenRouterClient:
@@ -73,6 +74,8 @@ class OpenRouterClient:
         retry_backoff_s: float = RETRY_BACKOFF_S,
         sleep: Callable[[float], None] = time.sleep,
         transport: httpx.BaseTransport | None = None,
+        provider: Mapping[str, object] | None = None,
+        reasoning_off: bool = False,
     ) -> None:
         import httpx  # lazy: keeps httpx out of the offline import graph (§1.5)
 
@@ -80,6 +83,8 @@ class OpenRouterClient:
             raise LLMUnavailable("no OpenRouter API key configured")
         self._httpx = httpx
         self._max_retries = max_retries
+        self._provider = dict(provider) if provider else None  # OpenRouter provider preferences (P8.11)
+        self._reasoning_off = reasoning_off
         self._backoff_s = retry_backoff_s
         self._sleep = sleep
         self._client = httpx.Client(
@@ -104,6 +109,10 @@ class OpenRouterClient:
             **params,
             "usage": {"include": True},
         }
+        if self._provider is not None:
+            body["provider"] = self._provider
+        if self._reasoning_off:
+            body["reasoning"] = {"enabled": False}
         if response_format is not None:
             body["response_format"] = dict(response_format)
         httpx = self._httpx
@@ -150,7 +159,10 @@ class OpenRouterClient:
         usage: dict[str, object] = raw_usage if isinstance(raw_usage, dict) else {}
         cost = usage.get("cost")
         tokens_in, tokens_out = usage.get("prompt_tokens"), usage.get("completion_tokens")
+        details = usage.get("completion_tokens_details")
+        reasoning = details.get("reasoning_tokens") if isinstance(details, dict) else 0
         return ChatResult(
+            reasoning_tokens=reasoning if isinstance(reasoning, int) else 0,
             content=content if isinstance(content, str) else "",
             tokens_in=tokens_in if isinstance(tokens_in, int) else 0,
             tokens_out=tokens_out if isinstance(tokens_out, int) else 0,

@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     llm_arabizi_model: str = "openai/gpt-4o-mini-2024-07-18"
     llm_arabizi_timeout_s: float = 6.0
     llm_arabizi_cache_path: Path = Path(".cache/llm_arabizi.sqlite")
+    # Provider-agnostic LLM routing (P8.11). Model id and OpenRouter provider preferences come from config.
+    llm_model: str | None = None  # None = each feature's own pinned default (llm_arabizi_model, ...)
+    llm_provider_order: Annotated[tuple[str, ...], NoDecode] = ()  # OpenRouter provider slugs, in order
+    llm_provider_allow_fallbacks: bool = False  # False: never route outside llm_provider_order
+    llm_provider_data_collection: Literal["allow", "deny"] = "deny"  # deny: no prompt retention or training
+    llm_reasoning_off: bool = True  # send reasoning enabled=false (models that cannot are unaffected)
 
     # Supabase (service role is server-side only)
     supabase_url: str | None = None
@@ -116,6 +122,24 @@ class Settings(BaseSettings):
     # the same question per request); 0 disables it
     memory_query_cache_s: float = 2.0
     campuspulse_root: Path | None = None
+
+    @field_validator("llm_provider_order", mode="before")
+    @classmethod
+    def _split_provider_order(cls, value: object) -> object:
+        """Accept ``deepinfra, together`` and keep the order."""
+        if isinstance(value, str):
+            return tuple(p.strip() for p in value.split(",") if p.strip())
+        return value
+
+    def llm_provider_preferences(self) -> dict[str, object]:
+        """The OpenRouter ``provider`` request object built from the settings (provider-routing docs)."""
+        prefs: dict[str, object] = {
+            "allow_fallbacks": self.llm_provider_allow_fallbacks,
+            "data_collection": self.llm_provider_data_collection,
+        }
+        if self.llm_provider_order:
+            prefs["order"] = list(self.llm_provider_order)
+        return prefs
 
     @field_validator("demo_email_allowlist", mode="before")
     @classmethod
