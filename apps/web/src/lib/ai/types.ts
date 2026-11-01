@@ -45,6 +45,9 @@ export type Entities = S["EntitiesOut"];
 
 export type Incident = S["IncidentOut"];
 export type TicketOut = S["TicketOut"];
+export type ReviewItem = S["ReviewItemOut"];
+export type ReviewStatus = ReviewItem["status"];
+export type ForwardRequest = S["ForwardRequest"];
 export type TicketStatus = S["TicketStatus"];
 export type FeedbackResponse = S["FeedbackResponse"];
 export type ResolveIncidentResponse = S["ResolveIncidentResponse"];

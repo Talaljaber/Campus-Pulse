@@ -69,6 +69,19 @@ describe("noticeFromNotification", () => {
       status: "resolved",
     });
   });
+  it("rebuilds the UD-13 staff notices from their fields, not from the English prose", () => {
+    expect(
+      noticeFromNotification({ kind: "review_assigned", payload: { review_id: "r", assigned: true, message: "A request from your student" } }),
+    ).toEqual({ type: "review_assigned", assigned: true });
+    expect(noticeFromNotification({ kind: "review_assigned", payload: { review_id: "r", assigned: false } })).toEqual({
+      type: "review_assigned",
+      assigned: false,
+    });
+    expect(
+      noticeFromNotification({ kind: "ticket_forwarded", payload: { ticket_id: "t", title: "Wi-Fi", from_office: "it", office: "facilities" } }),
+    ).toEqual({ type: "ticket_forwarded", title: "Wi-Fi", fromOffice: "it" });
+    expect(noticeFromNotification({ kind: "ticket_forwarded", payload: null })).toEqual({ type: "ticket_forwarded", title: "", fromOffice: "" });
+  });
   it("follows the documented payloads: message rows, ticket_status with or without a message, incident rows", () => {
     expect(
       noticeFromNotification({ kind: "message", payload: { ref: "u", message: "We opened a ticket.", subject: "s", priority: "high", flags: [] } }),

@@ -34,6 +34,11 @@ describe("signIn", () => {
     expect(await signIn(sb, " a@demo.local ", "pw")).toEqual({ ok: true, role, destination: dest });
   });
 
+  it("sends an advisor (staff of the academic office) to the review queue", async () => {
+    const { sb } = fakeSb({ auth: ok, profile: { id: "u1", role: "staff", office: "academic", alias: "advisor" } });
+    expect(await signIn(sb, "advisor@demo.local", "pw")).toEqual({ ok: true, role: "staff", destination: "/staff/reviews" });
+  });
+
   it("honours a safe next path and ignores an unsafe one", async () => {
     const p = { id: "u1", role: "staff", office: "it", alias: "s" };
     expect(await signIn(fakeSb({ auth: ok, profile: p }).sb, "a", "b", "/pulse")).toMatchObject({ destination: "/pulse" });

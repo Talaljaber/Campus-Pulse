@@ -86,6 +86,18 @@ describe("benchmarkView", () => {
     expect(v.rows.map((r) => r.cells.oof_official?.status)).toEqual(["cut", "n/a"]);
   });
 
+  it("shows the M2-proto priority as not available, whatever the report holds, and leaves its category alone", () => {
+    const rows = [
+      bench({ model: "M2-proto", target: "priority", macro_f1: 0.6, n_rows: 300 }),
+      bench({ model: "M2-proto", target: "category", macro_f1: 0.7 }),
+      bench({ model: "M2-LR", target: "priority", macro_f1: 0.5 }),
+    ];
+    const pri = benchmarkView(rows, "priority");
+    expect(pri.rows.find((r) => r.model === "M2-proto")?.cells.oof_official).toMatchObject({ status: "n/a", macroF1: null, nRows: 0 });
+    expect(pri.rows.find((r) => r.model === "M2-LR")?.cells.oof_official?.macroF1).toBe(0.5);
+    expect(benchmarkView(rows, "category").rows[0]?.cells.oof_official?.macroF1).toBe(0.7);
+  });
+
   it("builds the benchmark of the API fixture: at least five model rows over both targets", () => {
     const total = (["category", "priority"] as const).reduce((n, t) => n + benchmarkView(METRICS.benchmark, t).rows.length, 0);
     expect(total).toBeGreaterThanOrEqual(5);

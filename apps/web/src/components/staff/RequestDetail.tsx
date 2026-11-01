@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { labelOf, useLang, useT } from "@/i18n";
 import type { CounterfactualView } from "@/lib/ai/types";
 import type { DetailView } from "@/lib/staff/detail";
@@ -13,6 +14,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { InfoGrid, InfoPanel } from "../ui/InfoPanel";
 import { Loadable } from "../ui/Loadable";
+import { ForwardForm } from "./ForwardForm";
 import { CATEGORY_TONE, PRIORITY_TONE } from "../ui/tone";
 
 /** Props for {@link RequestDetail}. */
@@ -24,6 +26,12 @@ export interface RequestDetailProps {
   audience: Exclude<Audience, "student">;
   counterfactual?: CounterfactualView | null;
   onCounterfactual?: (token: string) => void;
+  /** Forward the ticket to another office (UD-13). Without it the button is not shown. */
+  onForward?: (office: string, note: string) => void;
+  /** The forward is being sent. */
+  forwardBusy?: boolean;
+  /** A sentence for a failed forward, shown inside the form. */
+  forwardError?: string | null;
   onClose: () => void;
 }
 
@@ -31,9 +39,21 @@ export interface RequestDetailProps {
  * The request behind a ticket: what the student wrote, the badges, the flags the viewer may see,
  * and the model's explanation (collapsed until asked for). Read-only: status changes live on the queue.
  */
-export function RequestDetail({ ticket, detail, load, audience, counterfactual, onCounterfactual, onClose }: RequestDetailProps) {
+export function RequestDetail({
+  ticket,
+  detail,
+  load,
+  audience,
+  counterfactual,
+  onCounterfactual,
+  onForward,
+  forwardBusy = false,
+  forwardError = null,
+  onClose,
+}: RequestDetailProps) {
   const t = useT();
   const { lang } = useLang();
+  const [forwarding, setForwarding] = useState(false);
   const p = detail?.prediction ?? null;
   return (
     <Card
@@ -99,6 +119,23 @@ export function RequestDetail({ ticket, detail, load, audience, counterfactual, 
             </>
           )}
         </Loadable>
+        {onForward &&
+          (forwarding ? (
+            <ForwardForm
+              initialOffice={ticket.office}
+              exclude={[ticket.office]}
+              busy={forwardBusy}
+              error={forwardError}
+              onSubmit={onForward}
+              onCancel={() => setForwarding(false)}
+            />
+          ) : (
+            <div>
+              <Button variant="secondary" onClick={() => setForwarding(true)}>
+                {t("forward.ticketButton")}
+              </Button>
+            </div>
+          ))}
       </div>
     </Card>
   );

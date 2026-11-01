@@ -59,6 +59,11 @@ const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? 
  */
 export function noticeFromNotification(row: Pick<NotificationRow, "kind" | "payload">): NoticeData {
   const p = isRecord(row.payload) ? row.payload : {};
+  // Staff notices carry server prose in English only, so they are rebuilt from their fields in the page language.
+  if (row.kind === "review_assigned") return { type: "review_assigned", assigned: p.assigned === true };
+  if (row.kind === "ticket_forwarded") {
+    return { type: "ticket_forwarded", title: str(p.title) ?? "", fromOffice: str(p.from_office) ?? "" };
+  }
   const message = str(p.message);
   if (message) return { type: "message", message };
   const status = str(p.status);

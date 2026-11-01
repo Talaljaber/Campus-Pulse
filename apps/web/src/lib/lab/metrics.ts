@@ -2,12 +2,16 @@
  * Pure helpers that turn the `GET /v1/metrics` response into what the model lab renders.
  * No fetching and no React: the components only lay these shapes out.
  *
- * About the `dataset` field. The API contract names four datasets (`oof_official`, `oof_all`,
- * `our_test`, `probes`), where `our_test` is the pooled own test set. The own test set has three
- * hand-built parts (`set1`, `set2`, `set3`) and the plan wants each shown next to the pooled
- * numbers, so any row whose dataset reads `our_test:set1`, `our_test_set1`, `our_test/set1` or just
- * `set1` is placed in that set's column. Until the report carries such rows the page shows the
- * pooled column and says so. A dataset name we do not know is shown as written, never dropped.
+ * About the `dataset` field. The API contract names seven datasets (`oof_official`, `oof_all`,
+ * `our_test`, `our_test_set1`, `our_test_set2`, `our_test_set3`, `probes`), where `our_test` is the
+ * pooled own test set. The own test set has three parts (`set1` written by hand by the team, `set2`
+ * and `set3` by a language model) and each is shown next to the pooled numbers, so any row whose
+ * dataset reads `our_test_set1`, `our_test:set1`, `our_test/set1` or just `set1` is placed in that
+ * set's column. If a report carries no such rows the page shows the pooled column and says so. A
+ * dataset name we do not know is shown as written, never dropped.
+ *
+ * M2-proto is a category-only model (it has no priority head), so its priority cells read "n/a"
+ * whatever the report holds.
  */
 import type { BenchmarkRow, CoverageRow, FairnessSlice, MetricsResponse, RouterStats, Scorecard } from "@/lib/ai/types";
 
@@ -51,6 +55,9 @@ export const isOurTest = (key: DatasetKey): boolean => key === "pooled" || TEST_
 export type Target = "category" | "priority";
 export const TARGETS: readonly Target[] = ["category", "priority"];
 
+/** The M2-proto model (`MEMBER_NAMES["m2proto"]`), which has no priority result. */
+export const isPrototypeModel = (model: string): boolean => model.trim().toLowerCase() === "m2-proto";
+
 /** One benchmark number with the sizes it was measured on. */
 export interface Cell {
   macroF1: number | null;
@@ -85,7 +92,10 @@ export function benchmarkView(rows: readonly BenchmarkRow[], target: Target): Be
       byModel.set(r.model, cells);
       models.push(r.model);
     }
-    cells[key] = { macroF1: r.macro_f1, accuracy: r.accuracy, nRows: r.n_rows, nGroups: r.n_groups, status: r.status };
+    cells[key] =
+      target === "priority" && isPrototypeModel(r.model)
+        ? { macroF1: null, accuracy: null, nRows: 0, nGroups: null, status: "n/a" }
+        : { macroF1: r.macro_f1, accuracy: r.accuracy, nRows: r.n_rows, nGroups: r.n_groups, status: r.status };
   }
   return {
     target,

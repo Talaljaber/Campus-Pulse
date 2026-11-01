@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 describe("LoginForm", () => {
-  it("offers the three demo accounts and each one fills only the email", async () => {
+  it("offers the four demo accounts and each one fills only the email", async () => {
     const user = userEvent.setup();
     render(<LoginForm />);
     const email = screen.getByLabelText("Email") as HTMLInputElement;
@@ -31,6 +31,8 @@ describe("LoginForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Sign in as IT staff" }));
     expect(email.value).toBe("it@demo.local");
+    await user.click(screen.getByRole("button", { name: "Sign in as Advisor" }));
+    expect(email.value).toBe("advisor@demo.local");
     await user.click(screen.getByRole("button", { name: "Sign in as Admin" }));
     expect(email.value).toBe("admin@demo.local");
     expect(password.value).toBe("");

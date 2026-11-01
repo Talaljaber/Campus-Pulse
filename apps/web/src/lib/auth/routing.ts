@@ -11,8 +11,15 @@ export function isRole(v: unknown): v is Role {
   return v === "student" || v === "staff" || v === "admin";
 }
 
-/** Where each role lands after signing in. */
-export function homeFor(role: Role): string {
+/** The office whose staff are the student-facing advisors (D-005 `academic`, UD-13). */
+export const ADVISOR_OFFICE = "academic";
+
+/**
+ * Where each role lands after signing in. An advisor (staff of the academic office) lands on the
+ * review queue; other staff on the desk. `office` is optional because the proxy knows only the role.
+ */
+export function homeFor(role: Role, office?: string | null): string {
+  if (role === "staff" && office === ADVISOR_OFFICE) return "/staff/reviews";
   return role === "admin" ? "/lab" : role === "staff" ? "/staff" : "/";
 }
 
