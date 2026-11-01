@@ -172,7 +172,8 @@ TRAIN_CLI_EXTRA: dict[Path, tuple[str, ...]] = {
         f"{PKG}.adapters.preprocess.normalizer",
     ),
     # P8.1c: the training CLI reads the one-key toggles YAML (--toggles-file). Training machine only.
-    PKG_DIR / "frameworks" / "cli" / "train.py": ("yaml",),
+    # It also passes the PipelineToggles dataclass to the training composition.
+    PKG_DIR / "frameworks" / "cli" / "train.py": ("yaml", f"{PKG}.adapters.training.oof"),
 }
 
 
