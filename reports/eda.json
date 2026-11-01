@@ -25,6 +25,30 @@
       "reviewed": 0,
       "rows": 30
     },
+    "arabizi_from_official.csv": {
+      "by_category": {
+        "Academic Support": 21,
+        "Facilities": 21,
+        "Finance": 21,
+        "IT Support": 21,
+        "Registration": 21,
+        "Transportation": 21
+      },
+      "by_lang": {
+        "arabizi": 126
+      },
+      "by_priority": {
+        "high": 42,
+        "low": 36,
+        "medium": 48
+      },
+      "by_source": {
+        "llm_arabizi": 126
+      },
+      "groups": 30,
+      "reviewed": 0,
+      "rows": 126
+    },
     "new_scenarios.csv": {
       "by_category": {
         "Academic Support": 60,
@@ -105,7 +129,7 @@
       "rows": 17
     }
   },
-  "generated_at": "2026-11-01T09:00:22+00:00",
+  "generated_at": "2026-11-01T10:45:47+00:00",
   "official": {
     "by_category": {
       "Academic Support": 73,
@@ -198,5 +222,5 @@
     "rows": 0
   },
   "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
-  "sha": "722d78d18004"
+  "sha": "05de06d266cf"
 }

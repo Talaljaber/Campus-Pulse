@@ -12,6 +12,9 @@
       "ar": 0.9160564318117187,
       "en": 0.5432329524271617
     },
+    "q_lang_alias": {
+      "arabizi": "ar"
+    },
     "q_priority": 0.5860262237476455,
     "q_priority_by_lang": {}
   },
@@ -138,8 +141,9 @@
     "tau_ood": 0.8421512424945832,
     "tau_safety": 0.9194010387999545
   },
-  "trained_at": "2026-11-01T09:00:04+00:00",
+  "trained_at": "2026-11-01T10:45:35+00:00",
   "translate": {
+    "arabizi": false,
     "dir": "translator",
     "enabled": true,
     "min_arabic_ratio": 0.3,

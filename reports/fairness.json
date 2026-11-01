@@ -1,23 +1,23 @@
 {
   "artifact_version": "v1",
-  "generated_at": "2026-11-01T09:00:22+00:00",
+  "generated_at": "2026-11-01T10:45:47+00:00",
   "max_gap": {
     "oof_all/category": 0.133,
     "oof_all/priority": 0.0295,
     "oof_official/category": 0.133,
     "oof_official/priority": 0.0295,
-    "our_test/category": 0.4259,
+    "our_test/category": 0.523,
     "our_test/priority": 0.5732,
     "our_test_set1/category": 0.0,
     "our_test_set1/priority": 0.0,
-    "our_test_set2/category": 0.6429,
+    "our_test_set2/category": 0.7778,
     "our_test_set2/priority": 0.5524,
-    "our_test_set3/category": 0.4549,
+    "our_test_set3/category": 0.2085,
     "our_test_set3/priority": 0.4344
   },
   "note": "no significance claims: effective n ~ 30 groups (LD-32, LD-33)",
   "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
-  "sha": "722d78d18004",
+  "sha": "05de06d266cf",
   "slices": [
     {
       "dataset": "oof_official",
@@ -101,7 +101,7 @@
     },
     {
       "dataset": "our_test",
-      "macro_f1": 0.5,
+      "macro_f1": 0.4029,
       "n_groups": 8,
       "n_rows": 32,
       "slice": "arabizi",
@@ -181,7 +181,7 @@
     },
     {
       "dataset": "our_test_set2",
-      "macro_f1": 0.3571,
+      "macro_f1": 0.2222,
       "n_groups": 4,
       "n_rows": 16,
       "slice": "arabizi",
@@ -229,7 +229,7 @@
     },
     {
       "dataset": "our_test_set3",
-      "macro_f1": 0.4139,
+      "macro_f1": 0.6603,
       "n_groups": 4,
       "n_rows": 16,
       "slice": "arabizi",

@@ -1,8 +1,8 @@
 {
   "artifact_version": "v1",
-  "created_at": "2026-11-01T09:00:05+00:00",
+  "created_at": "2026-11-01T10:45:35+00:00",
   "files": {
-    "config.json": "d4956c69587ae650dacc4d4ded693ac1096fa27a0107d9cf3efff4d0aba51df1",
+    "config.json": "b00d1d5d35454b62e67faf5781caa4ee1e95ce6815d5956dd3181e37e5710056",
     "conformal/category/conformal.json": "d8a5fcc0f483213c2ce0353a6daaee8e7fab5ef56943c1185596c44b158ca420",
     "conformal/category/mondrian.json": "c5a473be399f9c60f066bb2e3fb59d368f7e6794db3c890eaa6a0e3f7730f576",
     "conformal/priority/conformal.json": "69325c52b520a29f2baba77696100359cb74aedd32afb52988caa3a1a9dc5479",

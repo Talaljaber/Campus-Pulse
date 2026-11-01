@@ -168,6 +168,15 @@ def quantiles(
     return out[0], out[1]
 
 
+def _live_alias(cfg: TrainCfg, q_category: Mapping[str, float], q_priority: Mapping[str, float]) -> dict[str, str]:
+    """`conformal.q_lang_alias` without the languages that have a quantile of their own (an own OOF quantile,
+    e.g. in the unreviewed-augmentation arm, wins over the borrowed one); [] when there are no per-language
+    quantiles at all."""
+    own = {*q_category, *q_priority}
+    alias = dict(cfg.section("conformal").get("q_lang_alias", {}))
+    return {lang: d for lang, d in alias.items() if lang not in own and d in own}
+
+
 def quantiles_by_lang(
     p_cat: NDArray[np.float64],
     p_pri: NDArray[np.float64],
@@ -452,6 +461,7 @@ def build_config(
             "calibration": cfg.conformal_calibration,
             "q_category_by_lang": dict(tuned.q_category_by_lang),
             "q_priority_by_lang": dict(tuned.q_priority_by_lang),
+            "q_lang_alias": _live_alias(cfg, tuned.q_category_by_lang, tuned.q_priority_by_lang),
         },
         "thresholds": {
             "tau_ood": tuned.tau_ood,
@@ -694,7 +704,7 @@ def retune(
             "mondrian_by_lang": bool(cfg.section("conformal")["mondrian_by_lang"]),
             "q_category_by_lang": by_lang[0],
             "q_priority_by_lang": by_lang[1],
-            "q_lang_alias": dict(cfg.section("conformal").get("q_lang_alias", {})),
+            "q_lang_alias": _live_alias(cfg, by_lang[0], by_lang[1]),
         }
     )
     data["thresholds"]["human_review_maxprob"] = hr
