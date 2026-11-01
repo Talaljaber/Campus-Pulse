@@ -33,11 +33,15 @@ export async function callAi<T>(path: string, init: CallAiInit = {}): Promise<Ai
     return failFromNetwork(timedOut);
   }
   let parsed: unknown = null;
+  let unreadable = false;
   try {
     parsed = (res.headers.get("content-type") ?? "").includes("json") ? await res.json() : await res.text();
   } catch {
     parsed = null;
+    unreadable = true;
   }
   if (!res.ok) return failFromResponse(res.status, parsed);
+  // A 2xx whose body was cut off (timeout while reading) or is not JSON is not a success with data.
+  if (unreadable) return failFromNetwork(true);
   return { ok: true, data: parsed as T };
 }
