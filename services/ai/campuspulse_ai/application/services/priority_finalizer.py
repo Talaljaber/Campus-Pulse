@@ -13,8 +13,10 @@ Pure application service (domain only). Precedence, highest first (`domain.prior
   onehot(high)`, floor `"urgency_rule"`. Raise-only; it never overrides safety or a student's answer.
 - **injection**: the head already scored the stripped text, so nothing changes here (stripping can only remove
   words; it never adds a priority cue). An injection can therefore never raise a priority.
-- **distress** never changes a label: the online use case stops before labelling (§2.1 [4']), and batch
-  keeps the model's label.
+- **distress** (P7.8, decision D-B): a *lexicon* distress hit (`distress=True`) floors the priority to high,
+  floor `"distress"`. Only the priority moves: the category answer and the support flow are unchanged (the
+  online use case stops before labelling, §2.1 [4']). An exemplar-similarity hit never floors. Tone words
+  (urgent, 3ajel, CAPS) are not a cue.
 No rule ever lowers a priority: the only lowering is an explicit answer from the student.
 """
 
@@ -25,6 +27,7 @@ from collections.abc import Sequence
 from campuspulse_ai.domain.labels import Priority
 from campuspulse_ai.domain.values import ClarificationConstraint, GuardVerdict, ProbVector
 
+FLOOR_DISTRESS = "distress"
 FLOOR_SAFETY = "safety"
 FLOOR_CONSTRAINT = "clarification_constraint"
 FLOOR_URGENCY = "urgency_rule"
@@ -38,7 +41,7 @@ def onehot(p: ProbVector, label: str) -> ProbVector:
 
 
 class PriorityFinalizer:
-    """`apply(p_pri_head, safety, verdict, constraints, floor_hits=()) -> (p_pri_final, floors_applied)`.
+    """`apply(p_pri_head, safety, verdict, constraints, floor_hits=(), distress=False)` → `(p_pri, floors)`.
 
     See the module docstring.
 
@@ -53,7 +56,10 @@ class PriorityFinalizer:
         verdict: GuardVerdict,
         constraints: Sequence[ClarificationConstraint],
         floor_hits: Sequence[str] = (),
+        distress: bool = False,
     ) -> tuple[ProbVector, tuple[str, ...]]:
+        if distress:
+            return onehot(p_pri_head, Priority.HIGH.value), (FLOOR_DISTRESS,)
         if safety:
             return onehot(p_pri_head, Priority.HIGH.value), (FLOOR_SAFETY,)
         answered = [c.value for c in constraints if c.kind == "priority"]

@@ -25,7 +25,9 @@ class SafetyGuard:
 
     Inspects `req.model_text` (for Arabizi that is `transliteration | original`, so Arabic and Arabizi
     patterns both get a chance). One verdict, by precedence (the floor order in `domain/priority_rules.py`):
-      1. a `distress` pattern → `distress` (the online use case stops and shows support; batch keeps going);
+      1. a `distress` pattern → `distress` (the online use case stops and shows support; batch keeps going).
+         The verdict also carries the danger matches of the same text in `danger_spans` (P7.8), so a request
+         that is both is still tagged `safety`; `lexicon=True` marks the lexicon source (the distress floor);
       2. a `danger` pattern → `danger` (`TriageCore` sets `safety=True`; `PriorityFinalizer` floors to high);
       3. with exemplars and `tau_safety`: max similarity to the `safety_exemplars` bank ≥ tau → `distress`
          (never `danger`, LD-19);
@@ -74,9 +76,11 @@ class SafetyGuard:
 
     def _inspect(self, text: str) -> GuardVerdict:
         distress = _matches(self._distress, text)
-        if distress:
-            return GuardVerdict("distress", distress, score=LEXICON_SCORE)
         danger = _matches(self._danger, text)
+        if distress:
+            return GuardVerdict(
+                "distress", distress, score=LEXICON_SCORE, danger_spans=danger, lexicon=True
+            )
         if danger:
             return GuardVerdict("danger", danger, score=LEXICON_SCORE)
         if self._exemplars is not None and self._tau is not None:

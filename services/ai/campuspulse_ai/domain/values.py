@@ -184,6 +184,11 @@ class GuardVerdict:
     matched_spans: tuple[str, ...] = ()
     stripped_text: str = ""
     score: float = 0.0
+    # P7.8 (additive): a `distress` verdict also carries the danger-lexicon matches of the same text, so a
+    # request that is both keeps its `safety` tag; `lexicon` is True when the verdict came from a lexicon
+    # pattern (not an exemplar similarity), the only source of the distress priority floor.
+    danger_spans: tuple[str, ...] = ()
+    lexicon: bool = False
 
 
 @dataclass(frozen=True, slots=True)
