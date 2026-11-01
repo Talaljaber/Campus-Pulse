@@ -1232,3 +1232,15 @@
 - **Public interfaces added or changed:** none (script only). `requirements-train.txt` gains `ctranslate2`, `sentencepiece`, `psutil`.
 - **Limitations / TODO / known issues:** priority is identical in every arm (not investigated); no NLLB check; the RSS gate fails the 300 MB target; shipping B would need the ct2 model in the release tarball, a `fetch_models.py` entry, a config flag and a translator adapter.
 - **Affects streams:** Lead (D-019 decision on RSS), Backend (API RSS would reach ~495 MB if adopted).
+
+### P4.10 — Incident merge rule (D-021)  (Backend, 2026-11-01, commit pending)
+
+- **What now exists:** `WindowedCentroidDetector` joins a new cluster to an open incident of the building when the two centroids are >= `tau_inc` (0.92), and merges two open incidents that drift that close (smaller into larger). `IncidentDecision.absorbed` carries the folded incident tickets, which `IncidentActions.merge` mirrors; a multi-report attach also moves the cluster members tickets into the incident.
+
+- **Config / env added:** none (tau_inc unchanged).
+
+- **Acceptance:** 3 new tests in `test_incident_detector.py` (split reproduced and joined, unrelated 0.857-0.900 stay separate, drift merge); ruff and `mypy --strict` clean.
+
+- **Limitations / TODO / known issues:** the drift merge runs at the start of `detect`, so if that call then returns `none` the folded incident ticket is not mirrored to Linear until the next attach or new; not run against live Supabase (store methods used are the existing port ones).
+
+- **Affects streams:** Frontend (resolved duplicate incidents appear with status resolved).

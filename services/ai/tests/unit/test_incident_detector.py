@@ -334,7 +334,8 @@ def test_d015_unrelated_it_complaints_do_not_join_the_wifi_incident(h: Harness) 
     wifi = [report(h, det, toward(topic, 0.97, 100 + i)) for i in range(3)]
     assert [d.kind for d in wifi] == ["none", "none", "new"] and wifi[-1].incident is not None
     incident_id = wifi[-1].incident.id
-    others = [report(h, det, toward(topic, 0.89, 200 + i)) for i in range(8)]  # printer, projector, ...
+    # printer, projector, ... (cosines vary like the measured 0.856-0.909)
+    others = [report(h, det, toward(topic, 0.86 + 0.005 * i, 200 + i)) for i in range(8)]
     assert not [d for d in others if d.incident is not None and d.incident.id == incident_id]
     late = report(h, det, toward(topic, 0.97, 300))
     assert late.kind == "attach" and late.incident is not None
@@ -359,3 +360,59 @@ def test_d015_attach_picks_the_open_incident_whose_centroid_is_closest(h: Harnes
     nxt = report(h, det, toward(b, 0.97, 800))
     assert nxt.kind == "attach" and nxt.incident is not None and second[-1].incident is not None
     assert nxt.incident.id == second[-1].incident.id
+
+
+def test_d021_reports_just_under_tau_join_the_incident_instead_of_opening_a_second(h: Harness) -> None:
+    """D-021, the live Wi-Fi run: reports 6-8 scored 0.907-0.919 to the first centroid (tau 0.92) and
+    opened a second incident whose centroid was 0.959 from the first. They now join the first."""
+    det = detector(h, tau_inc=0.92)
+    topic = around(21, 0, noise=0.0)
+    first = [report(h, det, toward(topic, 0.97, 2100 + i)) for i in range(5)]
+    assert first[2].kind == "new" and first[2].incident is not None
+    incident_id = first[2].incident.id
+    late = [report(h, det, toward(topic, c, 2200 + i)) for i, c in enumerate((0.915, 0.919, 0.907))]
+    assert "new" not in [d.kind for d in late]
+    since = h.clock.now() - timedelta(hours=1)
+    opened = h.repo.open_incidents(B1, None, since)
+    assert [i.id for i in opened] == [incident_id] and opened[0].report_count == 8
+    assert {d.incident.id for d in late if d.incident is not None} == {incident_id}
+
+
+def test_d021_unrelated_reports_at_0857_to_0900_stay_separate(h: Harness) -> None:
+    det = detector(h, tau_inc=0.92)
+    topic = around(22, 0, noise=0.0)
+    for i in range(3):
+        report(h, det, toward(topic, 0.97, 2300 + i))
+    sims = (0.857, 0.88, 0.9, 0.87, 0.89, 0.86, 0.9, 0.875)
+    others = [report(h, det, toward(topic, c, 2400 + i)) for i, c in enumerate(sims)]
+    assert [d.kind for d in others] == ["none"] * len(sims)
+    opened = h.repo.open_incidents(B1, None, h.clock.now() - timedelta(hours=1))
+    assert len(opened) == 1 and opened[0].report_count == 3
+
+
+def test_d021_two_open_incidents_that_drift_together_are_merged(h: Harness) -> None:
+    topic_a = around(23, 0, noise=0.0)
+    topic_b = toward(topic_a, 0.959, 2500)  # the two centroids sit 0.959 apart
+    strict = detector(h, tau_inc=0.97)
+    ids = []
+    for topic, base in ((topic_a, 2600), (topic_b, 2700)):
+        decisions = [report(h, strict, toward(topic, 0.99, base + i)) for i in range(3)]
+        assert decisions[-1].kind == "new" and decisions[-1].incident is not None
+        ids.append(decisions[-1].incident.id)
+    assert ids[0] != ids[1]
+    marked = [dataclasses.replace(h.repo.incident_members(i)[0][0], tags=("incident",)) for i in ids]
+    for ticket in marked:
+        h.repo.save_ticket(ticket)
+
+    decision = report(h, detector(h, tau_inc=0.92), around(99, 0))  # an unrelated report triggers the check
+    assert decision.kind == "none"
+    assert len(decision.absorbed) == 1 and decision.absorbed[0].id in {t.id for t in marked}
+    assert decision.absorbed[0].status == TicketStatus.MERGED and "incident" not in decision.absorbed[0].tags
+    open_now = h.repo.open_incidents(B1, None, h.clock.now() - timedelta(hours=1))
+    assert len(open_now) == 1 and open_now[0].id in ids and open_now[0].report_count == 6
+    keep, gone = (ids[0], ids[1]) if open_now[0].id == ids[0] else (ids[1], ids[0])
+    assert h.repo.get_incident(gone).status == "resolved"
+    assert len(h.repo.incident_members(keep)) == 6 and h.repo.incident_members(gone) == []
+    if isinstance(h.repo, InMemoryRepository):
+        actions = [e["action"] for e in h.repo.tables["events"].values()]
+        assert "incident.absorbed" in actions
