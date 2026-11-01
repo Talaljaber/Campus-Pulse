@@ -19,7 +19,8 @@ only the `MemoryStore` differs (§3.11).
  4. `EvidenceExtractor.extract` on the (stripped) request; never `stated_urgency`.
  5. `PriorityHead.predict(p_pri_model, evidence, constraints)`.
  6. `PriorityFinalizer.apply` → `p_pri` (safety → high; a priority answer → one-hot), `floors_applied`.
- 7. Conformal sets on `p_cat` and the final `p_pri` (empty → argmax + flag `empty_set`). A category answer
+ 7. Conformal sets on `p_cat` and the final `p_pri` (empty → argmax + flags `empty_set`,
+    `empty_set_cat` / `empty_set_pri`, P7.1). A category answer
     makes `p_cat` one-hot on it and `S_cat = {answer}`; a priority floor makes `S_pri = {floor label}`.
  8. `CoreResult(..., tier=TIER0)`. The core always returns both probability vectors.
 """
@@ -218,6 +219,13 @@ class TriageCore:
             set_cat = PredictionSet(frozenset({answered_cat[-1]}))
         if floors:
             set_pri = PredictionSet(frozenset({p_pri.argmax()}))
+        # A set that a floor or an answer replaced is a real singleton, not an empty one (P7.1).
+        cat_empty = cat_empty and not answered_cat
+        pri_empty = pri_empty and not floors
+        if cat_empty:
+            flags.add("empty_set_cat")
+        if pri_empty:
+            flags.add("empty_set_pri")
         if cat_empty or pri_empty:
             flags.add("empty_set")
 

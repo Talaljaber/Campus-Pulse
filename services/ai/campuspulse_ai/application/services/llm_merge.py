@@ -99,7 +99,8 @@ class LLMMerger:
         for target, label, p in (("category", cat, core.p_cat), ("priority", pri, core.p_pri)):
             if label is not None:
                 per_model[f"{member}.{target}"] = _onehot(p, label)
-        flags = core.flags | ({"empty_set"} if cat_empty or pri_empty else set())
+        extra = {f for f, hit in (("empty_set_cat", cat_empty), ("empty_set_pri", pri_empty)) if hit}
+        flags = core.flags | extra | ({"empty_set"} if extra else set())
         return dataclasses.replace(
             core,
             p_cat=p_cat,
