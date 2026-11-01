@@ -1,0 +1,13 @@
+{
+  "rows_in": 216,
+  "dropped": 0,
+  "dropped_ids": [],
+  "reasons": {
+    "exact_official": 0,
+    "char_official": 0,
+    "exact_our_test": 0,
+    "char_our_test": 0
+  },
+  "e5_ge_0.95_to_our_test_reported_not_dropped": 2,
+  "char_threshold": 0.8
+}
