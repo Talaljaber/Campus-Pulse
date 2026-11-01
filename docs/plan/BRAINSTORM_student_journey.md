@@ -125,3 +125,13 @@ Plain, humane, short, bilingual where the student's language is known. Every tem
 - **Closed, no comment:** "Your request was closed." Short, no blame, how to reopen.
 - **Reopened:** "Thanks, we reopened your request."
 - Open points: subject line pattern (for example "[#<n>] <status>: <short title>"), an Arabic version of each, plain text first with a simple HTML version, and where the templates live (files in the repo so they are reviewable and testable).
+
+## 15. Every comment on a ticket is also an email (user, 2026-11-01)
+- Not only status changes: **each comment on a ticket is sent as an email** to the other side, so the thread works from the inbox as well as from the app (section 5).
+  - Staff comment on a ticket: the student gets it by email (the "staff replied" template, section 14.2).
+  - Student comment or email reply: the staff member who handles the ticket, and the admin if the ticket was forwarded, get it by email.
+  - A comment that also changes the status uses one email (the status template with the comment inside), not two.
+- Every email is also stored on the ticket thread with its time and sender, so the app and the inbox always show the same conversation.
+- Internal staff notes (staff to staff) are a separate kind: not emailed to the student. Decide whether we want them at all.
+- Rules that still apply: allow-listed demo addresses only (enforced in code), a "demo, no real department contacted" line, the ticket number in the subject for threading, and no more than one email per comment (no duplicates when a comment and a status change happen together).
+- Open points: what the staff-side email looks like, whether staff can reply by email too or only in the app, a rate limit to avoid email floods, and what happens when an address is not on the allow-list (the comment stays in the app and a log line is written).
