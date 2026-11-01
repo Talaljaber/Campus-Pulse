@@ -1252,3 +1252,7 @@
 - **Acceptance:** OOF category 0.806 -> 0.935, our_test 0.789 -> 0.864 (priority unchanged 0.904 / 0.847); predict.py under `no_network.py` + `validate_predictions.py` OK; RSS 459 MB, English p50 ~15 ms, Arabic p50 ~175 ms uncached (models.md §27).
 - **Limitations / TODO / known issues:** the release asset `campuspulse-models-v1.tar.gz` must be rebuilt (`encoder/` + `translator/`) and `DEFAULT_TAG` in `scripts/fetch_models.py` bumped when it is published; Arabizi (not translated) category coverage 0.53 on our_test; API RSS is ~460 MB against Render's 512 MB.
 - **Affects streams:** Backend (API RSS, `OfflineContainer.raw_encoder`), DevOps (tarball, image build needs the new asset).
+
+## P2.16 (ML, Arabizi arm B)
+- Added `data/augmented/arabizi_from_official.csv` (126 LLM-written, unreviewed Arabizi renderings of the 42 official cores; listed in `data/augmented/REVIEW.md`).
+- Added `scripts/arabizi_arms.py` and `reports/arabizi_arms.json`: training on Arabizi rows does not pass D-016 (docs/ml/models.md 28, D-022 proposed, rejected). No model refrozen.

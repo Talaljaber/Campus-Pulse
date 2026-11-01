@@ -65,6 +65,7 @@ components are added.
 - `data/augmented/arabizi.csv`: rule-based Arabizi transliterations (`author_method=rule`).
 - `data/augmented/new_scenarios.csv`: 78 new scenarios (390 rows), written by an LLM (`author_method=llm`).
   They are used for training only after human review (`needs_human_check`).
+- `data/augmented/arabizi_from_official.csv`: 126 Arabizi renderings of the official scenarios, written by `anthropic/claude-sonnet-5.5` (`author_method=llm`, unreviewed, used only in the Arabizi measurement arm, never in a frozen model).
 - `data/augmented/paraphrases.csv` and `translations.csv`: paraphrases, EN/AR translations and Arabizi versions
   of the official scenarios, drafted by `anthropic/claude-sonnet-5.5` via OpenRouter (temperature 0, cached,
   0.27 USD; `author_method=llm:<model>`). Trained on only after human review.
