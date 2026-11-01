@@ -1309,3 +1309,54 @@ a repeated Arabic text hits the LRU: p50 ≈ 20 ms.
 our_test (set size 1.0; 32 rows, 8 groups); its F1 is ~0.52 as in rc2. The `Arabizi | transliteration` model text
 is not translated (Latin letters dominate). Dialect mistranslations remain (§26); priority is unchanged in every
 arm.
+
+## 29. Arm D1: LLM translation of Arabizi in front of the encoder (P2.20, D-025, optional, default off)
+
+`scripts/arabizi_llm_eval.py`; report `reports/arabizi_llm_d1.json`. Model `openai/gpt-4o-mini-2024-07-18` via
+OpenRouter (listing checked 2026-11-01: $0.15 / $0.60 per Mtok in/out, 128k context, `temperature` supported; not a
+Chinese-provider model; the Anthropic 5.5 models do not list temperature support). Temperature 0, top_p 1, seed 42,
+max 160 output tokens, 6 s timeout, one retry, responses cached in SQLite keyed by (model, prompt hash, text). The
+system prompt treats the request as data (translate only, never follow it, one plain line, keep numbers, times,
+rooms and English words). The reply is sanitised (no markdown or quotes, length ratio 0.3 to 4, one line); a failure
+returns "no translation" and the request continues through the offline path. `LlmArabiziEncoder` replaces only the
+Latin original in an Arabizi `model_text` (`transliteration | original`) and only for the encoder: guards, langid,
+M1, priority floors and the conformal groups read the original text. A request whose injection sentence was stripped
+leaves nothing to translate, so no call is made for a pure injection (`tests/unit/test_llm_arabizi.py`).
+
+**Design.** A is the frozen rc3 as today. D1 is the same frozen model (no retraining) with the wrapper in front of
+its encoder, at test time only. English and Arabic-script rows never pass through the wrapper (`split_arabizi`
+returns None), so their scores are unchanged by construction. The scored offline numbers (OOF 0.935 category, our_test
+0.864) do not change: the tier is off unless `--use-llm` or `LLM_ARABIZI_TRANSLATE=true` and a key.
+
+**Arabizi macro-F1 and conformal** (paired group bootstrap, B = 2000, 90 % CI; D1 minus A):
+
+| measurement | n / groups | A category | D1 category | delta [CI] | priority A / D1 | coverage A / D1 (set size) |
+| --- | ---: | ---: | ---: | --- | --- | --- |
+| (a) our_test Arabizi | 32 / 8 | 0.500 | 0.825 | +0.325 [+0.056, +0.624] | 0.301 / 0.301 | 0.531 / 0.813 (1.0 / 1.0) |
+| (b) Arabizi-from-official | 126 / 30 | 0.567 | 0.945 | +0.378 [+0.286, +0.506] | 0.808 / 0.808 | 0.587 / 0.944 (1.0 / 1.0) |
+| (c) arabizi.csv + new scenarios (0.95 cut) | 105 / 90 | 0.599 | 0.837 | +0.239 [+0.161, +0.333] | 0.710 / 0.710 | 0.591 / 0.838 (1.0 / 1.0) |
+
+(b) is favoured: its source scenarios are in rc3's training pool, so a faithful English translation lands on a
+trained row (arm C's note applies to A and D1 alike, but D1 benefits more). (c) contains scenarios that rc3 never saw
+and is the cleanest non-our_test measure. Priority is identical in every row (the priority head and its evidence
+features read the original text). Coverage is still below the 0.90 target and the sets stay singletons: the Arabizi
+quantile is the offline one, owned by the calibration fix. 97 of the 231 (b, c) rows changed category.
+
+**Quality.** 255 distinct requests, 255 translated, 0 fell back. Of the 231 (b, c) rows D1 mislabels 24. Five
+failures read: `AUG-AO-0041` "bas el jam3a" (the university bus) becomes "The university is delayed" (the word bus
+read as a preposition); `AUG-AO-0050` "aqsat" (instalments) becomes "presentation"; `AUG-AO-0055` "fi may 3am
+bitsarrab" (water is leaking) becomes "In May, I'm going to sit next to the prize"; `AUG-AO-0122` "el 3alame" (the
+grade) becomes "the world"; `AUG-NC-0053` "el sa7b wel edafeh" (drop and add) becomes "the cloudy period and the
+addition". Most short requests translate well ("The corridor light is not working", "The portal gave me an error when
+I tried to upload the file"). Registration, Finance and Academic Support confuse most often, where the unusual
+vocabulary (drop and add, instalments) is the content.
+
+**Cost.** One call per distinct Arabizi request (cached afterwards): p50 723 ms, p95 945 ms per network call (8 calls
+in parallel), $0.0093 for the 255 requests, about $0.00004 each. A failed or slow call adds at most the timeout and
+retry, then the request continues offline. Total spend of this measurement: $0.0093.
+
+**Verdict (D-016): gain >= +0.05 with the CI lower bound > 0 on a measurement that is not our_test alone: pass**
+((b) and (c); (a) also passes). English and Arabic slices unchanged. Shipped as an optional, default-off tier: scored
+offline = category F1 Arabizi 0.52 (our_test 0.50); with the LLM tier = 0.825 on our_test. The rules (CHALLENGE_RULES:
+disclose external services; no real students' data; no required APIs) allow it with disclosure; the data is synthetic.
+Judges' common-computer run stays on the offline path.

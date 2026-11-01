@@ -1252,3 +1252,11 @@
 - **Acceptance:** OOF category 0.806 -> 0.935, our_test 0.789 -> 0.864 (priority unchanged 0.904 / 0.847); predict.py under `no_network.py` + `validate_predictions.py` OK; RSS 459 MB, English p50 ~15 ms, Arabic p50 ~175 ms uncached (models.md §27).
 - **Limitations / TODO / known issues:** the release asset `campuspulse-models-v1.tar.gz` must be rebuilt (`encoder/` + `translator/`) and `DEFAULT_TAG` in `scripts/fetch_models.py` bumped when it is published; Arabizi (not translated) category coverage 0.53 on our_test; API RSS is ~460 MB against Render's 512 MB.
 - **Affects streams:** Backend (API RSS, `OfflineContainer.raw_encoder`), DevOps (tarball, image build needs the new asset).
+
+### P2.20 — optional LLM Arabizi translator, arm D1 (ml, 2026-11-01)
+- **What now exists:** `LlmArabiziTranslator` (Translator port), `CachedChat`, `LlmArabiziEncoder`, `composition/arabizi_llm.py`, `scripts/arabizi_llm_eval.py`, `reports/arabizi_llm_d1.json`, `tests/unit/test_llm_arabizi.py`.
+- **Public interfaces added or changed:** `build_offline(use_llm=True)` now needs `OPENROUTER_API_KEY` (still exit 3 without) and puts the translator in front of the encoder; Settings `llm_arabizi_translate`, `llm_arabizi_model`, `llm_arabizi_timeout_s`, `llm_arabizi_cache_path`.
+- **Config / env added:** `LLM_ARABIZI_TRANSLATE`, `LLM_ARABIZI_MODEL`, `LLM_ARABIZI_TIMEOUT_S`, `LLM_ARABIZI_CACHE_PATH` (all off or defaulted; `.env.example`).
+- **Acceptance:** Arabizi category macro-F1 A to D1: our_test 0.500 to 0.825, arabizi.csv + new scenarios 0.599 to 0.837, from-official 0.567 to 0.945; priority unchanged; scored offline path unchanged (models.md 29).
+- **Limitations / TODO / known issues:** the API does not yet surface which requests used a translation (logged at debug only); a per-instance SQLite cache; the conformal quantile for Arabizi is still the offline one.
+- **Affects streams:** Backend (settings, container), DevOps (env vars on Render).

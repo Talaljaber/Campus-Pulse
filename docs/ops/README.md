@@ -109,6 +109,10 @@ Source of truth: `.env.example` (repo root) and `services/ai/campuspulse_ai/conf
 
 Not yet read by `Settings` (added by later tasks through the same test): `TZ`.
 
+## Optional LLM Arabizi translation (P2.20, D-025)
+
+Off by default. Set `LLM_ARABIZI_TRANSLATE=true` and `OPENROUTER_API_KEY` on the AI service to translate Arabizi requests into English with the pinned `LLM_ARABIZI_MODEL` before the encoder. Guards, language id, M1, priority floors and conformal read the original text. Responses are cached in `LLM_ARABIZI_CACHE_PATH` (SQLite, local to the instance; delete the file to refresh). A timeout (`LLM_ARABIZI_TIMEOUT_S`, 6 s), an HTTP error, a missing key or an implausible reply means no translation and the request goes through the offline path unchanged. Cost: about $0.00004 per uncached request (`LLM_DAILY_BUDGET_USD` caps it); added latency about 0.7 s p50 / 0.95 s p95 on a cache miss. `predict.py --use-llm` exits 3 without a key. The key never leaves the server.
+
 ## Deploy
 
 ### AI service on Render (Docker + `render.yaml`)
