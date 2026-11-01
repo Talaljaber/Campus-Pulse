@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     llm_provider_data_collection: Literal["allow", "deny"] = "deny"  # deny: no prompt retention or training
     llm_reasoning_off: bool = True  # send reasoning enabled=false (models that cannot are unaffected)
 
+    # Optional LLM front end: translate Arabic and Arabizi, plus an internal explanation (P7.4, D-050).
+    llm_frontend: bool = False
+    llm_frontend_config: Path = Path("config/llm_frontend.yaml")
+    llm_frontend_model: str | None = None  # overrides the pinned model of the yaml (measurements only)
+    llm_frontend_cache_path: Path | None = None  # overrides the yaml cache (scratch caches)
+
     # Supabase (service role is server-side only)
     supabase_url: str | None = None
     supabase_service_role_key: SecretStr | None = None

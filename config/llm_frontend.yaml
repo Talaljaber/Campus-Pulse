@@ -1,0 +1,12 @@
+# P7.4 / D-050: the optional LLM front end (translate Arabic and Arabizi to English, plus an internal
+# label-blind explanation column), behind --use-llm or LLM_FRONTEND=true with OPENROUTER_API_KEY.
+# Never part of the scored offline path. The model id is pinned; change it only with a new decision.
+model: deepseek/deepseek-v4.1-flash      # alternative: qwen/qwen3.8-flash
+prompt_version: p74-v1
+timeout_s: 8
+max_retries: 1
+max_tokens: 600
+reasoning: {enabled: false}             # sent as the OpenRouter `reasoning` parameter (off)
+workers: 8                                # parallel calls inside one batch
+explain_english: true                     # English rows also get the call (explanation only; text unchanged)
+cache_path: .cache/llm_frontend.sqlite

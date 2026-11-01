@@ -50,12 +50,17 @@ class CachedChat:
         *,
         max_tokens: int = 160,
         daily_budget_usd: float | None = None,
+        extra_params: Mapping[str, object] | None = None,
     ) -> None:
         self._client = client
         self.model_id = model_id
         self._cache = cache
         self._cost = cost
-        self._params: dict[str, object] = {**PINNED_PARAMS, "max_tokens": max_tokens}
+        self._params: dict[str, object] = {
+            **PINNED_PARAMS,
+            "max_tokens": max_tokens,
+            **(extra_params or {}),
+        }
         self._budget = daily_budget_usd
         self.cache_hits = 0
         self.failures = 0
@@ -104,5 +109,8 @@ class CachedChat:
             return None
         if self._cost is not None:
             self._cost.log(make_call(Tier.TIER1, self.model_id, key, result=result))
+        if not result.content.strip():
+            self.failures += 1
+            return None
         self._cache.put(key, result.content)
         return result.content
