@@ -88,3 +88,8 @@ Decisions:
 - Chat questions: when a cue is unclear ("my exam is soon"), the LLM asks one short question ("when is it?") and the answer is added to the text that goes to the model. This replaces the fixed clarifying-question bank in the chat, but the decision that a question is needed still comes from the model's uncertainty, not from the LLM's own feeling.
 - Guardrails: the LLM returns flags, never the priority itself; the floor stays raise-only and deterministic; flags are read from the student's original text, so injected text cannot set them; false-escalation on low and medium rows must be measured (target about 2 points or less) before adopting; offline mode keeps the lexicon rules only.
 - Still to measure: how many of the missed deadline rows the LLM flags, and how often it over-flags. P7.9 reports this.
+
+## 12. Batch scoring cannot ask questions (user, 2026-11-01)
+- The hidden test is scored row by row with no way to ask anything, so every row must get a category and priority from the text alone. Questions are a chat-only feature and are a bonus, not part of the scored path.
+- The LLM flags and the model must therefore work in one pass on the original text. In batch, "ask" and "review" are only routing columns next to a label that is always filled in. Our holdout scoring already counts every row's predicted label regardless of routing.
+- The score judges see may come from the offline path (`predict.py` with no key; LLM only behind `--use-llm`), so offline accuracy is the number that matters most. The LLM front end is an upside when a key is available, not something to depend on.
