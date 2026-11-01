@@ -34,10 +34,8 @@ def test_score_holdout_refuses_a_file_with_another_sha(
 ) -> None:
     mod = _load("score_holdout")
     holdout = tmp_path / "h.csv"
-    header = "id,lang,text,category,priority,wrapper
-"
-    holdout.write_text(header + "X1,en,hello,Finance,low,0
-", encoding="utf-8")
+    header = "id,lang,text,category,priority,wrapper\n"
+    holdout.write_text(header + "X1,en,hello,Finance,low,0\n", encoding="utf-8")
     monkeypatch.setattr(sys, "argv", ["score_holdout.py", "--model-dir", str(tmp_path), "--mode", "offline",
                                       "--holdout", str(holdout)])
     assert mod.main() == 2
