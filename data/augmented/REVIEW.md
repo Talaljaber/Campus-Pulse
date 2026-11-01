@@ -6,6 +6,20 @@ P2.4 and **1.5 h** for P2.5.
 
 ## Part 1: P2.4 augmentation review (about 75–90 minutes)
 
+> ### HOW TO REVIEW (P8.1: use this queue instead of the sheet below)
+> Open **`data/augmented/review/review_queue.csv`** in VS Code (Rainbow CSV; not Excel). 379 rows, best first:
+> **T1** (48 rows, ~20 min) checker disagreements on new EN/AR scenarios, **T2** (55 rows, ~14 min) one row per
+> other scenario, **T3** (18 rows, ~9 min) paraphrases and translations, **T4** (258 rows, ~26 min, optional)
+> Arabizi. Stop after any block; undecided rows simply stay unreviewed.
+> In the `decision` column type one of: `keep` | `fix:<Category>/<priority>` (for example `fix:Finance/high`) | `drop`.
+> A `scope=scenario` row decides the whole scenario (its other EN/AR forms are in `inherits`). Use `edit_text` to
+> fix wording while keeping the row. `fix:` is only for new scenarios; an unfaithful paraphrase is a `drop`.
+> Then run `python scripts/review_queue.py apply --dry-run`, then `python scripts/review_queue.py apply`.
+> Fast path after T1-T3: `python scripts/review_queue.py apply --accept-agreed` also accepts every undecided
+> checker-agreed row (not Arabizi), refusing unless T1-T3 are decided and at most 10% of your decisions on
+> checker-agreed rows were changes. Risk: those rows are trusted on the checker's word plus your sample.
+> Details and the audit log: `docs/plan/p7/P8.1_report.md`. The older sheet flow below still works.
+
 ### What is waiting
 
 | file | rows | made by | read in full | why those rows |
