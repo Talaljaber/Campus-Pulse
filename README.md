@@ -44,8 +44,10 @@ components are added.
   own tool (`frameworks/cli/prune_encoder.py`). The embeddings are bit-identical to the unpruned int8 model on
   981 checked texts.
 - `Helsinki-NLP/opus-mt-ar-en` at revision `c5b2a50db78d6be98ae207223f8d4f63bc7a0ff1` (Apache-2.0), converted
-  to CTranslate2 int8. Used only in the P2.14 translate-test experiment (`scripts/translate_test.py`); it is not
-  part of the shipped model or `predict.py`.
+  to CTranslate2 int8. Part of the shipped model since v1-rc3 (D-019): Arabic-script requests are translated to
+  English in front of the encoder only, locally, on CPU, with no network and no API key (`ctranslate2`,
+  `sentencepiece`; files under `models/frozen/v1/translator/`, hashed in MANIFEST.json). The guards and
+  language detection read the original text.
 
 **External services**
 - **Supabase**: Postgres with pgvector, Auth and Realtime (app data, request embeddings, FAQ vectors).

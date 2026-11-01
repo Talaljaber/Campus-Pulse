@@ -1232,3 +1232,11 @@
 - **Public interfaces added or changed:** none (script only). `requirements-train.txt` gains `ctranslate2`, `sentencepiece`, `psutil`.
 - **Limitations / TODO / known issues:** priority is identical in every arm (not investigated); no NLLB check; the RSS gate fails the 300 MB target; shipping B would need the ct2 model in the release tarball, a `fetch_models.py` entry, a config flag and a translator adapter.
 - **Affects streams:** Lead (D-019 decision on RSS), Backend (API RSS would reach ~495 MB if adopted).
+
+### P2.15 — Translate-test in front of the encoder, v1-rc3  (ML, 2026-11-01, D-019 adopted)
+- **What now exists:** `Translator` port, `Ct2Translator` (CTranslate2 int8 opus-mt-ar-en, greedy, 1 thread, LRU) and `NoopTranslator`, `TranslatingEncoder` (Arabic-script inputs only, encoder side only), `composition/translation.py`; `config.json` `translate {enabled, model, revision, min_arabic_ratio, dir}`; `models/frozen/v1/translator/` hashed in MANIFEST.json; v1 refrozen as rc3 (sha 722d78d18004).
+- **How to use it:** `python scripts/fetch_models.py` now also extracts `translator/`; `predict.py`, the API and `train.py` pick it up from `config.json`. `OfflineContainer.raw_encoder` is the untranslated ONNX encoder (FAQ vectors).
+- **Config / env added:** `config/train.yaml translate:`; `ctranslate2==4.8.4` and `sentencepiece==0.2.2` in `services/ai/requirements.txt`; no env vars.
+- **Acceptance:** OOF category 0.806 -> 0.935, our_test 0.789 -> 0.864 (priority unchanged 0.904 / 0.847); predict.py under `no_network.py` + `validate_predictions.py` OK; RSS 459 MB, English p50 ~15 ms, Arabic p50 ~175 ms uncached (models.md §27).
+- **Limitations / TODO / known issues:** the release asset `campuspulse-models-v1.tar.gz` must be rebuilt (`encoder/` + `translator/`) and `DEFAULT_TAG` in `scripts/fetch_models.py` bumped when it is published; Arabizi (not translated) category coverage 0.53 on our_test; API RSS is ~460 MB against Render's 512 MB.
+- **Affects streams:** Backend (API RSS, `OfflineContainer.raw_encoder`), DevOps (tarball, image build needs the new asset).
