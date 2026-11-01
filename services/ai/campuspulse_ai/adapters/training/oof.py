@@ -96,6 +96,7 @@ class PipelineToggles:
     proto_parts: tuple[str, ...] = PARTS
     include_unreviewed: bool = False  # the labelled "unreviewed augmentation" arm only; never train.py
     include_model_reviewed: bool = False  # model-panel arm (P8.1b, D-049); not human review
+    model_reviewed_priority: bool = True  # False: those rows teach the category side only (P8.1c, D-054)
 
 
 @dataclass(frozen=True)
@@ -205,11 +206,16 @@ def build_index(pool: Pool, rows: Sequence[int], emb: NDArray[np.float32], dim: 
     return index
 
 
+def priority_rows(pool: Pool, rows: Sequence[int]) -> list[int]:
+    """`rows` without the category-only ones (P8.1c): everything priority-side trains on these."""
+    return [i for i in rows if not pool.category_only[i]]
+
+
 def expanded(
     kit: TrainingKit, pool: Pool, target: Target, rows: Sequence[int], soft: bool
 ) -> tuple[list[int], list[str], list[float]]:
     """(row, label, weight) for `rows`: the soft-target expansion (§3.3), or the hard labels."""
-    allowed = {int(r) for r in rows}
+    allowed = {int(r) for r in (priority_rows(pool, rows) if target == "priority" else rows)}
     if soft:
         idx, labels, weights = kit.expander.expand(pool, target)
         keep = [j for j, i in enumerate(idx) if i in allowed]
@@ -333,8 +339,10 @@ def knn_oof(
     for train_idx, test_idx in folds:
         tr, te = train_idx.tolist(), test_idx.tolist()
         index = build_index(pool, tr, emb, dim)
+        pri_index = build_index(pool, priority_rows(pool, tr), emb, dim)
         for t in TARGETS:
-            out[t][test_idx] = predict_member(knn_member(t, index, knn_cfg), pool, te, emb)
+            idx = pri_index if t == "priority" else index
+            out[t][test_idx] = predict_member(knn_member(t, idx, knn_cfg), pool, te, emb)
         for i in te:
             max_sim[i] = index.max_similarity(emb[i].tolist())
     return out, max_sim
@@ -542,12 +550,14 @@ class _Selector:
         cand, cfg = self.cand, self.cfg
         head_raw = self.head(probs, w_pri)
 
-        def final(t: float) -> NDArray[np.float64]:
-            return floor_safety(temperature_scale(head_raw, t), cand.safety)[cal]
+        cal_pri: NDArray[np.bool_] = cal & ~np.asarray(self.pool.category_only, dtype=bool)  # P8.1c
 
-        head_t = best_temperature(final, cand.y_pri[cal], cfg.head_temperature_grid)
+        def final(t: float) -> NDArray[np.float64]:
+            return floor_safety(temperature_scale(head_raw, t), cand.safety)[cal_pri]
+
+        head_t = best_temperature(final, cand.y_pri[cal_pri], cfg.head_temperature_grid)
         trace["head_temperature_nll"] = {
-            str(t): round(nll(final(t), cand.y_pri[cal]), 4) for t in cfg.head_temperature_grid
+            str(t): round(nll(final(t), cand.y_pri[cal_pri]), 4) for t in cfg.head_temperature_grid
         }
         choices = StageBChoices(chosen_c["m1"], chosen_c["m2lr"], float(proto_t), w_cat, w_pri, float(head_t))
         return choices, trace

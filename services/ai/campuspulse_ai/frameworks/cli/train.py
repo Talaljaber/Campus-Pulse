@@ -2,7 +2,7 @@
 
     python services/ai/train.py [--out models/frozen/v1] [--report reports/cv_p2.json] [--cv-only] [--fast]
                                 [--encoder {onnx,hashing}] [--encoder-dir DIR] [--retune] [--data CSV ...]
-                                [--folds CSV]
+                                [--folds CSV] [--toggles-file YAML]
 
 The last line is `froze v1: members=... weights_cat={...} cat_macroF1_oof_official=x.xxx
 pri_macroF1_oof_official=x.xxx nested_cat=x.xxx nested_pri=x.xxx q_cat=x.xx q_pri=x.xx sha=<12 hex>` (or
@@ -17,6 +17,8 @@ import argparse
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+
+import yaml
 
 from campuspulse_ai.adapters.training.oof import PipelineToggles
 from campuspulse_ai.composition.training import TrainOptions, run_training
@@ -57,10 +59,20 @@ def _parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--include-model-reviewed", action="store_true",
                    help="P8.1b arm: add the model-panel-reviewed rows (scratch --out only)")
+    p.add_argument("--toggles-file", type=Path, default=None,
+                   help="YAML with pipeline toggles (P8.1c: model_reviewed_priority: false = C3)")
     p.add_argument("--translation-cache", type=Path, default=d.translation_cache,
                    help="source,translation,model_id,revision CSV for training texts (default %(default)s)")
     p.add_argument("--folds", type=Path, default=d.folds_csv, help="frozen cv_group,cv_fold table")
     return p
+
+
+def _toggles_file(path: Path | None) -> bool:
+    """`model_reviewed_priority` from a toggles YAML (default True; only that key is read)."""
+    if path is None:
+        return True
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return bool(data.get("model_reviewed_priority", True))
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -76,7 +88,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         data=tuple(args.data or ()),
         folds_csv=args.folds,
         translation_cache=args.translation_cache,
-        toggles=PipelineToggles(include_model_reviewed=args.include_model_reviewed),
+        toggles=PipelineToggles(
+            include_model_reviewed=args.include_model_reviewed,
+            model_reviewed_priority=_toggles_file(args.toggles_file),
+        ),
     )
     try:
         outcome = run_training(opts)

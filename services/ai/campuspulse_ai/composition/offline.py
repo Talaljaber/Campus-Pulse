@@ -40,7 +40,12 @@ from campuspulse_ai.adapters.models.embed_lr import EmbedLR
 from campuspulse_ai.adapters.models.encoder import OnnxEncoder
 from campuspulse_ai.adapters.models.ensemble import WeightedEnsemble
 from campuspulse_ai.adapters.models.evidence import LexiconEvidenceExtractor
-from campuspulse_ai.adapters.models.knn import TRAIN_COLLECTION, ExampleIndex, KnnClassifier
+from campuspulse_ai.adapters.models.knn import (
+    PRIORITY_COLLECTION,
+    TRAIN_COLLECTION,
+    ExampleIndex,
+    KnnClassifier,
+)
 from campuspulse_ai.adapters.models.priority_head import LogisticPriorityHead
 from campuspulse_ai.adapters.models.prototype import PrototypeClassifier
 from campuspulse_ai.adapters.models.tfidf_lr import TfidfLR
@@ -165,15 +170,17 @@ def build_offline(
         raise ArtifactVersionMismatch(f"encoder dim {encoder.dim} != config encoder.dim {config.encoder.dim}")
 
     vectors = LocalNumpyVectorStore.load(model_dir / INDEX_DIR, expected_dim=config.encoder.dim)
-    if vectors.collections() != OFFLINE_COLLECTIONS:
+    if vectors.collections() not in (OFFLINE_COLLECTIONS, OFFLINE_COLLECTIONS | {PRIORITY_COLLECTION}):
         found = sorted(vectors.collections())
         raise ArtifactVersionMismatch(
             f"{model_dir / INDEX_DIR}: collections {found}, expected {sorted(OFFLINE_COLLECTIONS)}"
         )
     index = ExampleIndex(vectors, TRAIN_COLLECTION)
+    has_pri = PRIORITY_COLLECTION in vectors.collections()
+    pri_index = ExampleIndex(vectors, PRIORITY_COLLECTION) if has_pri else index
     members: dict[str, tuple[ProbabilisticClassifier, ProbabilisticClassifier]] = {}
     for name in config.ensemble.members:
-        members[name] = _member(name, model_dir, config, encoder, index)
+        members[name] = _member(name, model_dir, config, encoder, index, pri_index)
     ensemble = WeightedEnsemble(
         members,
         encoder,
@@ -270,7 +277,8 @@ def conformal_predictor(config: FrozenConfig, target: str) -> LACConformal | Mon
 
 
 def _member(
-    name: str, model_dir: Path, config: FrozenConfig, encoder: SentenceEncoder, index: ExampleIndex
+    name: str, model_dir: Path, config: FrozenConfig, encoder: SentenceEncoder, index: ExampleIndex,
+    pri_index: ExampleIndex,
 ) -> tuple[ProbabilisticClassifier, ProbabilisticClassifier]:
     if name == "m1":
         return TfidfLR.load(model_dir / "m1" / "category"), TfidfLR.load(model_dir / "m1" / "priority")
@@ -287,7 +295,7 @@ def _member(
                 "category", index, encoder, k.k, k.memory_weight_cap, k.max_memory_neighbors, **settings
             ),
             KnnClassifier(
-                "priority", index, encoder, k.k, k.memory_weight_cap, k.max_memory_neighbors, **settings
+                "priority", pri_index, encoder, k.k, k.memory_weight_cap, k.max_memory_neighbors, **settings
             ),
         )
     if name == "m2proto":

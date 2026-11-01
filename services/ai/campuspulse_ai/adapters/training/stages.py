@@ -33,7 +33,7 @@ from numpy.typing import NDArray
 
 from campuspulse_ai.adapters.artifacts.io import FileArtifactStore
 from campuspulse_ai.adapters.guards.bank import load_texts
-from campuspulse_ai.adapters.models.knn import TRAIN_COLLECTION, ExampleIndex
+from campuspulse_ai.adapters.models.knn import PRIORITY_COLLECTION, TRAIN_COLLECTION, ExampleIndex
 from campuspulse_ai.adapters.models.priority_head import LogisticPriorityHead
 from campuspulse_ai.adapters.models.probs import to_vectors
 from campuspulse_ai.adapters.models.prototype import NAME as PROTO
@@ -48,6 +48,7 @@ from campuspulse_ai.adapters.training.oof import (
     expanded,
     fit_text_member,
     index_entries,
+    priority_rows,
 )
 from campuspulse_ai.adapters.training.pool import Pool
 from campuspulse_ai.adapters.training.train_config import TrainCfg
@@ -155,16 +156,21 @@ def quantiles(
     y_pri: Sequence[str],
     groups: Sequence[str],
     cfg: TrainCfg,
+    category_only: Sequence[bool] | None = None,
 ) -> tuple[float, float]:
-    """(q_category, q_priority) with the configured calibration rule (LAC scores 1 - p(true label))."""
+    """(q_category, q_priority) with the configured calibration rule (LAC scores 1 - p(true label)).
+    `category_only` rows (P8.1c) calibrate the category quantile but never the priority one."""
+    n = len(y_cat)
+    keep = np.ones(n, dtype=bool) if category_only is None else ~np.asarray(category_only, dtype=bool)
     out = []
-    for p, y, labels, alpha in (
-        (p_cat, y_cat, CATEGORY_LABELS, cfg.alpha_category),
-        (p_pri, y_pri, PRIORITY_LABELS, cfg.alpha_priority),
+    for p, y, labels, alpha, rows in (
+        (p_cat, y_cat, CATEGORY_LABELS, cfg.alpha_category, np.ones(len(y_cat), dtype=bool)),
+        (p_pri, y_pri, PRIORITY_LABELS, cfg.alpha_priority, keep),
     ):
         idx = np.array([labels.index(v) for v in y], dtype=np.int64)
-        scores = 1.0 - p[np.arange(len(idx)), idx]
-        out.append(conformal_quantile(scores, groups, alpha, cfg.conformal_calibration))
+        scores = (1.0 - p[np.arange(len(idx)), idx])[rows]
+        g = [x for x, k in zip(groups, rows, strict=True) if k]
+        out.append(conformal_quantile(scores, g, alpha, cfg.conformal_calibration))
     return out[0], out[1]
 
 
@@ -187,6 +193,7 @@ def quantiles_by_lang(
     groups: Sequence[str],
     langs: Sequence[str],
     cfg: TrainCfg,
+    category_only: Sequence[bool] | None = None,
 ) -> tuple[dict[str, float], dict[str, float]]:
     """Per-language quantiles for the `mondrian.targets` when `conformal.mondrian_by_lang` is on (P2.10):
     the same rule as `quantiles` on each language's rows, for languages with at least `mondrian.min_groups`
@@ -196,6 +203,8 @@ def quantiles_by_lang(
     mond = cfg.section("mondrian")
     targets, min_groups = set(mond["targets"]), int(mond["min_groups"])
     lang_arr = np.asarray([str(x) for x in langs])
+    n = len(lang_arr)
+    ok = np.ones(n, dtype=bool) if category_only is None else ~np.asarray(category_only, dtype=bool)
     out: list[dict[str, float]] = []
     for target, p, y, labels, alpha in (
         ("category", p_cat, y_cat, CATEGORY_LABELS, cfg.alpha_category),
@@ -206,7 +215,7 @@ def quantiles_by_lang(
             idx = np.array([labels.index(v) for v in y], dtype=np.int64)
             scores = 1.0 - p[np.arange(len(idx)), idx]
             for lang in sorted(set(lang_arr.tolist())):
-                rows = np.nonzero(lang_arr == lang)[0]
+                rows = np.nonzero((lang_arr == lang) & (ok if target == "priority" else True))[0]
                 g = [groups[int(i)] for i in rows]
                 if len(set(g)) >= min_groups:
                     per[lang] = conformal_quantile(scores[rows], g, alpha, cfg.conformal_calibration)
@@ -224,6 +233,7 @@ def stage_b(oof: OOFResult, cfg: TrainCfg, encoder: SentenceEncoder, lexicon_dir
         pool.priority,
         pool.cv_group,
         cfg,
+        pool.category_only,
     )
     q_cat_lang, q_pri_lang = quantiles_by_lang(
         oof.probs["ensemble.category"],
@@ -233,6 +243,7 @@ def stage_b(oof: OOFResult, cfg: TrainCfg, encoder: SentenceEncoder, lexicon_dir
         pool.cv_group,
         [str(x) for x in pool.lang],
         cfg,
+        pool.category_only,
     )
     injection, distress = exemplar_texts(lexicon_dir)
     texts = list(pool.model_text)
@@ -260,7 +271,9 @@ def stage_b(oof: OOFResult, cfg: TrainCfg, encoder: SentenceEncoder, lexicon_dir
         ),
         human_review_maxprob=human_review_maxprob(maxprob, correct, cfg.human_review_min_acc),
         priors_category=_frequencies(pool.category, CATEGORY_LABELS),
-        priors_priority=_frequencies(pool.priority, PRIORITY_LABELS),
+        priors_priority=_frequencies(
+            [p for p, c in zip(pool.priority, pool.category_only, strict=True) if not c], PRIORITY_LABELS
+        ),
         oof_macro_f1_category=macro_f1(
             y_cat, [p for p, o in zip(cat_pred, official, strict=True) if o], CATEGORY_LABELS
         ),
@@ -508,6 +521,7 @@ def save_oof(path: Path, oof: OOFResult) -> None:
             "lang": np.asarray([str(x) for x in pool.lang], dtype=str),
             "lang_script": np.asarray(pool.lang_script, dtype=str),
             "is_official": np.asarray(pool.is_official, dtype=bool),
+            "category_only": np.asarray(pool.category_only, dtype=bool),
             "fold": oof.fold,
             "max_sim": oof.max_sim,
             "safety": oof.safety,
@@ -573,6 +587,8 @@ def freeze(
 
     store = LocalNumpyVectorStore(encoder.dim)
     ExampleIndex(store, TRAIN_COLLECTION).add(index_entries(pool, all_rows, emb))
+    if any(pool.category_only):  # P8.1c: the priority kNN reads its own collection without those rows
+        ExampleIndex(store, PRIORITY_COLLECTION).add(index_entries(pool, priority_rows(pool, all_rows), emb))
     injection, distress = exemplar_texts(lexicon_dir)
     for bank, texts in ((INJECTION_BANK, injection), (SAFETY_BANK, distress)):
         vectors = encoder.encode(texts)
@@ -687,9 +703,11 @@ def retune(
     old = FrozenConfig.load(model_dir / "config.json")
     groups = [str(g) for g in z["cv_group"]]
     y_cat, y_pri = [str(v) for v in z["category"]], [str(v) for v in z["priority"]]
-    q_cat, q_pri = quantiles(z["ensemble__category"], z["final__priority"], y_cat, y_pri, groups, cfg)
+    c_only = z["category_only"] if "category_only" in z.files else None
+    q_cat, q_pri = quantiles(z["ensemble__category"], z["final__priority"], y_cat, y_pri, groups, cfg, c_only)
     by_lang = quantiles_by_lang(
-        z["ensemble__category"], z["final__priority"], y_cat, y_pri, groups, [str(v) for v in z["lang"]], cfg
+        z["ensemble__category"], z["final__priority"], y_cat, y_pri, groups, [str(v) for v in z["lang"]], cfg,
+        c_only,
     )
     p_cat = z["ensemble__category"]
     pred = _argmax(p_cat, CATEGORY_LABELS)

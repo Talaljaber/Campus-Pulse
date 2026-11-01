@@ -58,8 +58,11 @@ class Pool:
     source: tuple[str, ...]
     scenario_id: tuple[str, ...]
     is_official: tuple[bool, ...]
+    category_only: tuple[bool, ...] = ()  # P8.1c: rows that may teach the category side only (empty = none)
 
     def __post_init__(self) -> None:
+        if not self.category_only:
+            object.__setattr__(self, "category_only", (False,) * len(self.request_id))
         sizes = {len(getattr(self, f.name)) for f in fields(self)}
         if len(sizes) > 1:
             raise ValueError(f"Pool fields must have equal lengths, got {sorted(sizes)}")
@@ -114,6 +117,7 @@ class _Row:
     source: str
     scenario_id: str
     is_official: bool
+    category_only: bool = False
 
 
 def _to_pool(rows: Sequence[_Row]) -> Pool:
@@ -131,6 +135,7 @@ def _to_pool(rows: Sequence[_Row]) -> Pool:
         source=tuple(r.source for r in rows),
         scenario_id=tuple(r.scenario_id for r in rows),
         is_official=tuple(r.is_official for r in rows),
+        category_only=tuple(r.category_only for r in rows),
     )
 
 
@@ -145,6 +150,7 @@ def load_pool(
     include_unreviewed: bool = False,
     include_model_reviewed: bool = False,
     model_panel_csv: Path = MODEL_PANEL_CSV,
+    model_reviewed_priority: bool = True,
 ) -> Pool:
     """Build the training pool from official and augmented CSVs (see the module docstring).
 
@@ -164,6 +170,9 @@ def load_pool(
         include_model_reviewed: True also keeps rows still marked `needs_human_check=True` whose id
             has `review_status=model_panel_v1` in `model_panel_csv` (kept or fixed by the three-model panel,
             P8.1b). These rows are NOT human-reviewed: a separate, disclosed arm (D-049), default off.
+        model_reviewed_priority: False marks those model-panel rows `category_only` (P8.1c, D-054): training
+            keeps them out of every priority-side input (priority members, head, kNN priority index,
+            priority temperature). Default True (C1 behaviour).
 
     Raises:
         InvalidInput: a holdout path, an unreadable file, an unknown schema or missing column, a label
@@ -182,7 +191,8 @@ def load_pool(
         panel = _read(model_panel_csv)[1]
         panel_ok = {r["request_id"] for r in panel if r.get("review_status") == MODEL_PANEL_STATUS}
 
-    def add(r: Mapping[str, str], *, lang_script: str, source: str, scenario_id: str, official: bool) -> None:
+    def add(r: Mapping[str, str], *, lang_script: str, source: str, scenario_id: str, official: bool,
+            category_only: bool = False) -> None:
         rid, raw = r["request_id"], r["text"]
         try:
             req = normalizer.normalize(raw)
@@ -193,7 +203,8 @@ def load_pool(
             model_text = normalize_text(collapse_ws(raw), script_lang(raw))
         out.append(_Row(rid, raw, model_text, req.text_norm, req.lang, lang_script, r["category"],
                         r["priority"],
-                        r["cv_group"], fold_of.get(r["cv_group"], NO_FOLD), source, scenario_id, official))
+                        r["cv_group"], fold_of.get(r["cv_group"], NO_FOLD), source, scenario_id, official,
+                        category_only))
 
     for path in paths:
         columns, rows = _read(Path(path))
@@ -215,7 +226,8 @@ def load_pool(
                 if needs_check and not include_unreviewed and r["request_id"] not in panel_ok:
                     continue  # not reviewed yet: never trained on
                 add(r, lang_script=script_lang(r["text"]), source=r["source"],
-                    scenario_id=r["source_scenario_id"].strip(), official=False)
+                    scenario_id=r["source_scenario_id"].strip(), official=False,
+                    category_only=needs_check and not model_reviewed_priority)
         else:
             raise InvalidInput(f"{path}: neither the official nor the augmentation schema: {columns}")
     counts = Counter(row.request_id for row in out)

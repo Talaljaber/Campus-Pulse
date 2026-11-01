@@ -149,6 +149,7 @@ def make_pool(opts: TrainOptions, cfg: TrainCfg) -> tuple[Pool, DefaultNormalize
         features_csv=opts.features_csv,
         include_unreviewed=opts.toggles.include_unreviewed,
         include_model_reviewed=opts.toggles.include_model_reviewed,
+        model_reviewed_priority=opts.toggles.model_reviewed_priority,
     )
     return pool, normalizer
 
