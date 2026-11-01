@@ -9,7 +9,9 @@ Steps (§1.5):
  1. `FileArtifactStore.load_manifest(model_dir)`: sha256 of every listed file, encoder included.
  2. `FrozenConfig.load(model_dir / "config.json")`.
  3. encoder = `encoder_override` or `OnnxEncoder(model_dir / "encoder")`; its id, revision and width must
-    match the config (a model trained with the test `hashing` encoder needs `encoder_override`).
+    match the config (a model trained with the test `hashing` encoder needs `encoder_override`). With
+    `config.translate.enabled` the ONNX encoder is wrapped by `TranslatingEncoder` (D-019); the translator
+    files must be present (`ArtifactMissing`, never a silent fallback).
  4. vectors = `LocalNumpyVectorStore.load(model_dir / "index")`, exactly `train`, `injection_exemplars` and
     `safety_exemplars` (LD-20).
  5. members per `config.ensemble.members`: `TfidfLR.load`, `EmbedLR.load`, `KnnClassifier` over `train`,
@@ -50,6 +52,7 @@ from campuspulse_ai.application.services.priority_finalizer import PriorityFinal
 from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.application.use_cases.batch import read_batch_csv, write_predictions_csv
 from campuspulse_ai.application.use_cases.batch_predict import BatchPredictUseCase, BatchRow
+from campuspulse_ai.composition.translation import make_translator, wrap_encoder
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.domain.errors import ArtifactVersionMismatch, LLMUnavailable
@@ -102,7 +105,8 @@ class OfflineContainer:
     manifest: Manifest
     batch: BatchPredictUseCase
     vectors: LocalNumpyVectorStore
-    encoder: SentenceEncoder
+    encoder: SentenceEncoder  # translate-test + ONNX: the space of the index, members and live memory
+    raw_encoder: SentenceEncoder | None = None  # ONNX only: the FAQ vectors space (scripts/seed_faq.py)
 
     @property
     def labeler(self) -> OfflineBatchLabeler:
@@ -138,7 +142,14 @@ def build_offline(
     settings = settings or Settings()
     manifest = FileArtifactStore().load_manifest(model_dir)
     config = FrozenConfig.load(model_dir / "config.json")
-    encoder = encoder_override or _onnx_encoder(model_dir, config, settings)
+    raw_encoder = encoder_override or _onnx_encoder(model_dir, config, settings)
+    # D-019: translation sits in front of the encoder only; guards, langid, M1 and conformal never see it.
+    # An `encoder_override` is complete as given (training and ablations already wrap their own).
+    encoder = (
+        raw_encoder
+        if encoder_override is not None
+        else wrap_encoder(raw_encoder, make_translator(model_dir, config.translate), config.translate)
+    )
     if encoder.dim != config.encoder.dim:
         raise ArtifactVersionMismatch(f"encoder dim {encoder.dim} != config encoder.dim {config.encoder.dim}")
 
@@ -204,6 +215,7 @@ def build_offline(
         batch=BatchPredictUseCase(core, oracle, config),
         vectors=vectors,
         encoder=encoder,
+        raw_encoder=raw_encoder,
     )
 
 

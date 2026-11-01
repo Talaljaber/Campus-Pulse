@@ -9,3 +9,6 @@ tokenizers==0.23.3
 pyyaml==6.0.3
 pydantic==2.14.1
 pydantic-settings==2.16.0
+# P2.15 translate-test (D-019): opus-mt-ar-en int8 in front of the encoder; no torch at inference
+ctranslate2==4.8.4
+sentencepiece==0.2.2

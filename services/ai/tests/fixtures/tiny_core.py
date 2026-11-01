@@ -6,6 +6,8 @@ conformal quantiles are fixed test values. Lexicons are the live `config/lexicon
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from campuspulse_ai.adapters.clock import SystemClock
 from campuspulse_ai.adapters.guards.bank import compile_bank
 from campuspulse_ai.adapters.guards.gibberish import GibberishGuard
@@ -26,6 +28,7 @@ from campuspulse_ai.application.services.priority_finalizer import PriorityFinal
 from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.config.paths import LEXICONS
+from campuspulse_ai.domain.ports import SentenceEncoder
 from campuspulse_ai.domain.values import ArtifactVersion, Lang
 from fixtures.fakes import HashingEncoder
 from fixtures.frozen_config import valid_config_dict
@@ -50,9 +53,12 @@ Q_CATEGORY = 0.9
 Q_PRIORITY = 0.8
 
 
-def build_tiny_core() -> TriageCore:
+def build_tiny_core(wrap_encoder: Callable[[SentenceEncoder], SentenceEncoder] | None = None) -> TriageCore:
+    """`wrap_encoder`: put a decorator (e.g. `TranslatingEncoder`) in front of the hashing encoder."""
     cfg = FrozenConfig.from_dict(valid_config_dict())
-    enc = HashingEncoder()
+    enc: SentenceEncoder = HashingEncoder()
+    if wrap_encoder is not None:
+        enc = wrap_encoder(enc)
     texts = [t for t, _, _ in ROWS]
     cats, pris = [c for _, c, _ in ROWS], [p for _, _, p in ROWS]
     m1 = (TfidfLR("category", (2, 5), (1, 2), 4.0, 42), TfidfLR("priority", (2, 5), (1, 2), 4.0, 42))

@@ -115,6 +115,20 @@ class SentenceEncoder(Protocol):
 
 
 @runtime_checkable
+class Translator(Protocol):
+    """Arabic-to-English machine translation, placed in front of the sentence encoder only (D-019).
+
+    impls: Ct2Translator (CTranslate2 int8 opus-mt-ar-en), NoopTranslator. Deterministic: the same text always
+    gives the same translation, independent of the other texts in the call. Raises ArtifactMissing.
+    """
+
+    model_id: str
+    revision: str
+
+    def translate(self, texts: Sequence[str]) -> list[str]: ...
+
+
+@runtime_checkable
 class ProbabilisticClassifier(Protocol):
     """One per target.
 
@@ -500,6 +514,7 @@ ALL_PORTS: tuple[type, ...] = (
     Guard,
     ExemplarSimilarity,
     SentenceEncoder,
+    Translator,
     ProbabilisticClassifier,
     VectorStore,
     Ensemble,

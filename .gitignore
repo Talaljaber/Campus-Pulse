@@ -13,6 +13,7 @@ JUDGE_GUIDE.md
 .cache/
 dist/
 models/frozen/*/encoder/
+models/frozen/*/translator/
 models/frozen/*/m3/
 *.tar.gz
 .mypy_cache/

@@ -431,6 +431,7 @@ def build_config(
         "trained_at": trained_at,
         "seed": cfg.seed,
         "encoder": encoder,
+        "translate": cfg.section("translate") if "translate" in cfg.raw else {"enabled": False},
         "ensemble": {
             "members": list(members),
             "weights_category": {m: tuned.weights_category[m] for m in members},
