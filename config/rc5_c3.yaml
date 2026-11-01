@@ -1,0 +1,6 @@
+# P8.1c (D-054): candidate C3. Read by `train.py --toggles-file config/rc5_c3.yaml`. Scratch candidates only
+# (it is meaningful together with --include-model-reviewed, which is refused for a release dir under models/).
+# false = the model-reviewed rows teach the category side only: category members, category conformal
+# calibration, prototypes. They are kept out of every priority input (priority members, head, kNN priority
+# index, stage-B priority weights, head temperature, priority conformal calibration, priority priors).
+model_reviewed_priority: false

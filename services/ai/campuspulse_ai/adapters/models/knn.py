@@ -30,6 +30,7 @@ from campuspulse_ai.domain.ports import MemoryStore, SentenceEncoder, VectorStor
 from campuspulse_ai.domain.values import Lang, Neighbor, ProbVector, VectorItem
 
 TRAIN_COLLECTION = "train"
+PRIORITY_COLLECTION = "train_priority"  # P8.1c: only when some rows are category-only
 KIND = "knn"
 META_FILE = "knn.json"
 SOURCE_OFFICIAL = "official"

@@ -111,3 +111,35 @@ def test_model_reviewed_arm_is_separate_default_off(tmp_path: Path, normalizer: 
     assert len(load_pool([OFFICIAL_CSV, path], normalizer, model_panel_csv=panel)) == 432  # default off
     arm = load_pool([OFFICIAL_CSV, path], normalizer, include_model_reviewed=True, model_panel_csv=panel)
     assert len(arm) == 433 and "AUG-AZ-0001" in arm.request_id and "AUG-AZ-0002" not in arm.request_id
+
+
+def test_category_only_rows_stay_out_of_every_priority_input(
+    tmp_path: Path, normalizer: DefaultNormalizer
+) -> None:
+    """P8.1c (D-054): with `model_reviewed_priority=False` the priority training inputs equal the official
+    pool's (C0) and the category inputs also hold the model-reviewed row."""
+    from types import SimpleNamespace
+
+    from campuspulse_ai.adapters.models.soft_targets import SoftTargetExpander
+    from campuspulse_ai.adapters.training.oof import expanded, priority_rows
+
+    rows = [["AUG-AZ-0001", "wein jadwal el basat", "arabizi", "arabizi_rule", "TR-S15", "TR-S15", "True",
+             "rule", "Transportation", "low"]]
+    path = _aug(tmp_path / "aug.csv", rows)
+    panel = tmp_path / "model_panel_v1.csv"
+    panel.write_text("request_id,decision,review_status\nAUG-AZ-0001,keep,model_panel_v1\n", encoding="utf-8")
+    c0 = load_pool([OFFICIAL_CSV], normalizer)
+    c1 = load_pool([OFFICIAL_CSV, path], normalizer, include_model_reviewed=True, model_panel_csv=panel)
+    c3 = load_pool([OFFICIAL_CSV, path], normalizer, include_model_reviewed=True, model_panel_csv=panel,
+                   model_reviewed_priority=False)
+    assert not any(c0.category_only) and not any(c1.category_only)
+    assert [r for r, c in zip(c3.request_id, c3.category_only, strict=True) if c] == ["AUG-AZ-0001"]
+    kit = SimpleNamespace(expander=SoftTargetExpander(DATA_CLEAN / "label_flags.csv"))
+    all3, all0 = list(range(len(c3))), list(range(len(c0)))
+    pri3 = expanded(kit, c3, "priority", all3, True)  # type: ignore[arg-type]
+    pri0 = expanded(kit, c0, "priority", all0, True)  # type: ignore[arg-type]
+    pri1 = expanded(kit, c1, "priority", list(range(len(c1))), True)  # type: ignore[arg-type]
+    assert pri3 == pri0 and pri1 != pri0  # (a) identical to C0; C1 would have one more row
+    cat3 = expanded(kit, c3, "category", all3, True)  # type: ignore[arg-type]
+    assert len(c3) - 1 in cat3[0]  # (b) the reviewed row is a category input
+    assert priority_rows(c3, all3) == all0

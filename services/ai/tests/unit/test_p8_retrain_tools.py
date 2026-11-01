@@ -68,3 +68,23 @@ def test_rc_compare_skips_augmented_rows(tmp_path: Path) -> None:
     assert sorted(rows) == ["a", "b", "c"]
     res = mod.compare(rows, rows)
     assert res["all"]["category"]["delta"] == 0.0 and res["all"]["n"] == 3
+
+
+def test_category_only_rows_calibrate_category_not_priority() -> None:
+    """P8.1c: the priority conformal quantile ignores category-only rows; the category one uses them."""
+    from campuspulse_ai.adapters.training.stages import quantiles
+    from campuspulse_ai.adapters.training.train_config import TrainCfg
+
+    cfg = TrainCfg.load()
+    n = 40
+    p_cat = np.zeros((n, len(CATEGORY_LABELS)))
+    p_cat[:, 0] = 1.0
+    p_pri = np.zeros((n, len(PRIORITY_LABELS)))
+    p_pri[:, 0] = 1.0
+    y_cat = [CATEGORY_LABELS[0]] * 30 + [CATEGORY_LABELS[1]] * 10  # last 10 rows are wrong for both targets
+    y_pri = [PRIORITY_LABELS[0]] * 30 + [PRIORITY_LABELS[1]] * 10
+    groups = [f"g{i}" for i in range(n)]
+    only = [False] * 30 + [True] * 10
+    q_cat, q_pri = quantiles(p_cat, p_pri, y_cat, y_pri, groups, cfg, only)
+    assert q_cat == pytest.approx(1.0) and q_pri == pytest.approx(0.0)
+    assert quantiles(p_cat, p_pri, y_cat, y_pri, groups, cfg)[1] == pytest.approx(1.0)
