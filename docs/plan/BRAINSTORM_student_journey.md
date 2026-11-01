@@ -93,3 +93,14 @@ Decisions:
 - The hidden test is scored row by row with no way to ask anything, so every row must get a category and priority from the text alone. Questions are a chat-only feature and are a bonus, not part of the scored path.
 - The LLM flags and the model must therefore work in one pass on the original text. In batch, "ask" and "review" are only routing columns next to a label that is always filled in. Our holdout scoring already counts every row's predicted label regardless of routing.
 - The score judges see may come from the offline path (`predict.py` with no key; LLM only behind `--use-llm`), so offline accuracy is the number that matters most. The LLM front end is an upside when a key is available, not something to depend on.
+
+## 13. Staff can use the agent too (user, 2026-11-01)
+- Staff are people with problems too (an electricity cut in their office, a locked account, a broken device), so **the chat agent is available to staff accounts as well**, not only to students.
+- A staff member's request goes through the same flow: the LLM talks, calls the model, asks for confirmation, creates a ticket.
+- Open points to settle in the next brainstorm:
+  1. A staff member's own request is a ticket like any other: it lands in the right department queue (for example IT Support for a locked account), and the admin can forward it. A staff member must not see or handle their own ticket as staff by accident, and a department's staff should not be the only people who can see a request about that department's own problems.
+  2. Replies reach the staff member by email, the same thread model as students (section 5), at their demo address (allow-list only).
+  3. "My Requests" for staff shows their own tickets, separate from the department queue they work on.
+  4. The welcome page and announcements are shared, and staff can post announcements from their console.
+  5. Student-only wording in the agent (for example "your student ID") needs a neutral form for staff.
+- Data rule: no real staff data either; seeded fictional staff only.
