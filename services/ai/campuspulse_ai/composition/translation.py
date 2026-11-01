@@ -40,4 +40,4 @@ def wrap_encoder(encoder: SentenceEncoder, translator: Translator, cfg: Translat
     """`TranslatingEncoder` when translation is enabled, else the encoder itself."""
     if not cfg.enabled:
         return encoder
-    return TranslatingEncoder(encoder, translator, cfg.min_arabic_ratio)
+    return TranslatingEncoder(encoder, translator, cfg.min_arabic_ratio, cfg.arabizi)

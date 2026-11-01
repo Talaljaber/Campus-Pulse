@@ -1259,3 +1259,8 @@
 ## P2.16 (ML, Arabizi arm B)
 - Added `data/augmented/arabizi_from_official.csv` (126 LLM-written, unreviewed Arabizi renderings of the 42 official cores; listed in `data/augmented/REVIEW.md`).
 - Added `scripts/arabizi_arms.py` and `reports/arabizi_arms.json`: training on Arabizi rows does not pass D-016 (docs/ml/models.md 28, D-022 proposed, rejected). No model refrozen.
+
+### P2.17 — Arm C: Arabizi through its Arabic-letter transliteration  (ML, 2026-11-01, commit pending)
+- **What now exists:** `translate.arabizi` flag (default false) and `TranslatingEncoder(translate_arabizi=...)`; `scripts/arabizi_translit_arm.py` (study, arms, latency); `reports/arabizi_translit_{arm,control}.json`; models.md section 28.
+- **Result:** rejected by D-016. Removes decoder loops (42 of 108 on the joined route, 0 here) but no Arabizi F1 gain (our_test -0.083, grouped OOF -0.072, other rows -0.040 vs rc3; about 0 vs the same-data control) and EN OOF -0.036. Also: rc3 does translate the joined Arabizi text (correction to section 27).
+- **Affects streams:** none (defaults unchanged, model v1-rc3 not refrozen).

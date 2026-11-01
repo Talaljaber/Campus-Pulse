@@ -13,6 +13,7 @@ import re
 from collections.abc import Sequence
 from typing import Any
 
+from campuspulse_ai.adapters.preprocess.arabizi import MODEL_TEXT_SEPARATOR
 from campuspulse_ai.domain.ports import SentenceEncoder, Translator
 
 _ARABIC = re.compile("[؀-ۿݐ-ݿ]")
@@ -38,12 +39,14 @@ class TranslatingEncoder:
         inner: SentenceEncoder,
         translator: Translator,
         min_arabic_ratio: float = DEFAULT_MIN_ARABIC_RATIO,
+        translate_arabizi: bool = False,
     ) -> None:
         if not 0.0 < min_arabic_ratio <= 1.0:
             raise ValueError("min_arabic_ratio must be in (0, 1]")
         self.inner = inner
         self.translator = translator
         self.min_arabic_ratio = min_arabic_ratio
+        self.translate_arabizi = translate_arabizi
         self.dim: int = inner.dim
         self.model_id: str = inner.model_id
 
@@ -52,12 +55,31 @@ class TranslatingEncoder:
             raise AttributeError(name)
         return getattr(self.inner, name)
 
+    def _arabizi_source(self, text: str) -> str | None:
+        """The Arabic-letter half of an Arabizi `model_text` (`transliteration | original`), else None."""
+        left, sep, right = text.partition(MODEL_TEXT_SEPARATOR)
+        if not sep or arabic_ratio(right) > 0.0:
+            return None
+        return left if needs_translation(left, self.min_arabic_ratio) else None
+
     def prepare(self, texts: Sequence[str]) -> list[str]:
-        """The texts the encoder will see: Arabic-script ones translated, the rest unchanged."""
+        """The texts the encoder will see: Arabic-script ones translated, the rest unchanged.
+
+        With `translate_arabizi`, an Arabizi `model_text` is replaced by the translation of its
+        transliteration alone (never of the joined text, which derails the decoder). Without it, Arabizi
+        is passed through as before.
+        """
         out = list(texts)
-        idx = [i for i, t in enumerate(out) if needs_translation(t, self.min_arabic_ratio)]
-        if idx:
-            for i, translated in zip(idx, self.translator.translate([out[i] for i in idx]), strict=True):
+        src: dict[int, str] = {}
+        for i, t in enumerate(out):
+            arabizi = self._arabizi_source(t) if self.translate_arabizi else None
+            if arabizi is not None:
+                src[i] = arabizi
+            elif needs_translation(t, self.min_arabic_ratio):
+                src[i] = t
+        if src:
+            idx = list(src)
+            for i, translated in zip(idx, self.translator.translate([src[i] for i in idx]), strict=True):
                 out[i] = translated
         return out
 

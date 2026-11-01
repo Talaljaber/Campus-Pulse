@@ -108,7 +108,9 @@ def make_encoder(
     cached = CsvCachedTranslator(
         TRANSLATION_CACHE, Ct2Translator(translator_dir), str(tr_cfg["model"]), str(tr_cfg["revision"])
     )
-    wrapped = TranslatingEncoder(onnx, cached, float(tr_cfg["min_arabic_ratio"]))
+    wrapped = TranslatingEncoder(
+        onnx, cached, float(tr_cfg["min_arabic_ratio"]), bool(tr_cfg.get("arabizi", False))
+    )
     translator_files = tuple(sorted(p for p in translator_dir.iterdir() if p.is_file()))
     return wrapped, EncoderInfo(onnx.model_id, onnx.revision, "onnx_int8", files + translator_files)
 
