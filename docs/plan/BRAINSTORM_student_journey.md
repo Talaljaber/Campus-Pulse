@@ -65,3 +65,19 @@ Decisions:
 4. Is advisor *booking* (appointments) still a feature, now that the advisor role is the admin?
 5. Which announcements do we seed, and do they live in Supabase or a seed file?
 6. Split into packages: accounts and welcome page, chat agent, tickets and email.
+
+## 8. Interpretations to confirm
+- "Make the advisor the same as the admin and remove it" is read as: no separate advisor role; admin does the advisor's job (forwarding anywhere). Advisor booking is left open.
+- "Change and feed into the knowledge base so no misunderstanding happens again" is read as: a forward changes the department, and the change is stored as a staff correction that teaches the model.
+- "Like a support team or a GitHub PR comment on comment" is read as: an email thread where either side can reply and a status change is optional.
+
+## 9. The idea in the user's own words (2026-11-01)
+- Accounts per department (finance staff, IT staff and so on). The advisor can forward a ticket to any other department; actually all accounts can, except the student account.
+- Student info is pulled from the university account: log in with username and password (simulation). A welcome page with announcements from departments (library wifi not working, Outlook down for two hours).
+- Another page has the agent. It should be a normal agent, not "we have this confidence and those are the similar questions". Keep a button to show those, but if not pressed it is a normal agent that talks through the LLM and answers. If you have a request, or the LLM thinks it is one, it goes to the model to classify. The LLM then replies with something like "we will send the issue to ..." and waits for the user's confirmation by message. Then the request is added to his list on another page, and the ticket status (in progress or what) is tracked.
+- The reply is sent by email to the student's university email and also shown on his request in the app: the solution, solved, or no comment and just closed.
+
+## 10. My recommendation at the time
+- Build it, but after P7.9, the refreeze and the blind test; the classifier is the scored part and must not be delayed.
+- First version: in-app reply box for the student, email only outbound; add inbound email later if time allows.
+- Check what already exists (staff console, notifications, Linear sink, Supabase) before estimating.
