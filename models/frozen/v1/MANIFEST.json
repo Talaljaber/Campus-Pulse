@@ -1,6 +1,6 @@
 {
   "artifact_version": "v1",
-  "created_at": "2026-11-01T10:45:35+00:00",
+  "created_at": "2026-11-01T14:19:12+00:00",
   "files": {
     "config.json": "b00d1d5d35454b62e67faf5781caa4ee1e95ce6815d5956dd3181e37e5710056",
     "conformal/category/conformal.json": "d8a5fcc0f483213c2ce0353a6daaee8e7fab5ef56943c1185596c44b158ca420",
@@ -20,8 +20,8 @@
     "lexicons/arabizi.yaml": "4cc99b7bfbfeed490005ad38ea1d69f21633758782124f366eb57952392a363a",
     "lexicons/gazetteer.yaml": "c6ce356d231ad27adff0227dd34b933e221ce143ec41c816b95949d7f2af582f",
     "lexicons/injection.yaml": "c2116de5b7e7b23ec345eae757202e19af41a62bfde0334a383f8cfd7efa601e",
-    "lexicons/safety.yaml": "75cc313a36cdb0fc42ac94cfcf1e232b96cebb7f4017df578f1a2a3e169d6c49",
-    "lexicons/urgency.yaml": "e4d96a3e357516e8d86f34b850e67b54c5599f0826dd5903f247a618beda8212",
+    "lexicons/safety.yaml": "681ff5f0def40e5ab3169320f1c6b73367ca3450f6a0b370129c8f022c9a8e41",
+    "lexicons/urgency.yaml": "a725896e8afe600f243818090d0c6662cc82d8bf49df0e68e142fe71eaacd097",
     "lexicons/wrappers.yaml": "838948dbb8173e15321d2a6a456556904deba3bc5928b4419d15a4b89393dddc",
     "m1/category/meta.json": "e2c8d619a84dbfb592a5fbf95b4bf6d4d27d3713fe909bbf4d77908be7923007",
     "m1/category/model.joblib": "b5ec3233ee1f89033517425a801281438c096638791927051407434d7fb0973f",
