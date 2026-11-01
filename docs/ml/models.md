@@ -1460,3 +1460,56 @@ the same-data control the deltas are +0.03, -0.01, +0.03 with intervals spanning
 fixes decoder pathologies and speeds up Arabizi requests, but the translations remain wrong (digit codes, `وين`,
 LLM-style spellings). Not frozen, not shipped. Possible follow-ups: keep numerals intact in the transliterator, and
 cap decoding length for Arabizi.
+
+## 31. Results v1-rc4: original-text translation gate and the Arabizi alias (P2.19, D-024)
+
+Artifact v1 sha 05de06d266cf. rc4 = rc3 (same weights, same pool, same encoder and translator files) plus two rule
+changes: (1) the translate gate reads the Arabic-script share of the ORIGINAL request (>= 30 %), i.e. for an Arabizi
+`model_text` (`transliteration | original`) the half after the separator, so Arabic-script requests are translated and
+Arabizi is not (`TranslatingEncoder._original`; the `translate.arabizi` flag of section 30 stays off); (2) the section
+28 alias, `conformal.q_lang_alias {arabizi: ar}`, written by `train.py --retune` (nothing refitted; MANIFEST
+regenerated). Stage B and `--retune` now drop an alias for a language that gets its own OOF quantile (the
+`+unreviewed_augmentation` arm of `evaluate.py --all` trains Arabizi rows and otherwise trips the validator). The three
+experiments are merged as records: section 28 alias (adopted), 29 arm B (rejected, D-022), 30 arm C (rejected, D-023);
+the Arabizi rows stay out of the default pool (`include_unreviewed` off). `diff_reports`: identical modulo
+`generated_at`.
+
+| slice (category unless noted) | rc3 | rc4 |
+| --- | ---: | ---: |
+| OOF official category F1 / priority F1 | 0.935 / 0.904 | 0.935 / 0.904 |
+| our_test pooled category F1 / priority F1 | 0.864 / 0.847 | **0.868** / 0.847 |
+| our_test set1 / set2 / set3 category F1 | 1.000 / 0.835 / 0.770 | 1.000 / 0.800 / 0.828 |
+| F1 en / ar / arabizi, our_test | 0.926 / 0.906 / 0.500 | 0.926 / 0.906 / **0.403** |
+| priority F1 en / ar / arabizi, our_test | 0.874 / 0.585 / 0.301 | unchanged |
+| coverage (set size) OOF all / en / ar | 0.975 (1.50) / 0.963 (1.0) / 1.000 (2.6) | identical |
+| coverage (set size) our_test all | 0.897 (1.59) | 0.966 (1.98) |
+| coverage (set size) our_test en / ar | 0.938 (1.0) / 1.000 (2.6) | identical |
+| coverage (set size) our_test arabizi (32 rows) | 0.531 (1.0) | **0.969 (3.5)** |
+| priority coverage our_test (all / en / ar / arabizi) | 0.843 / 0.876 / 0.853 / 0.719 | identical |
+
+**The Arabizi expectation was not met.** The brief expected rc2-like Arabizi (coverage ~0.84, set ~3.4, F1 ~0.52).
+Measured: coverage 0.97, set 3.5, F1 0.403. The rc3 weights were fitted on embeddings of translated Arabic rows, so an
+untranslated `transliteration | Latin` text embedded by the same encoder does not land in rc2's space (rc2's head was
+fitted on untranslated Arabic); rc3's translated-joined route (which decoded badly, section 30) scored 0.50 by accident
+of what the head had seen. Arabizi requests now go almost entirely to human review (set size 3.5 of 6): the safety net
+works (coverage 0.97, wide interval, n = 32, 8 groups), the Arabizi quality is lower (-0.10 F1, within the noise of 8
+groups), and priority is unaffected. The pooled our_test F1 moves +0.004 and set2/set3 trade -0.035/+0.058 for the
+same reason (Arabizi rows are spread across sets). EN and AR slices, OOF and priority are identical to rc3.
+
+**Latency** (Windows dev laptop, `build_offline` as the API loads it, 1 thread; 60 Arabizi rows of
+`data/augmented/arabizi*.csv`, 33 Arabic and 60 English rows of the official data, one warm-up call, then one classify
+each; the timing script is not committed):
+
+| request | rc3 p50 / p95 | rc4 p50 / p95 |
+| --- | ---: | ---: |
+| Arabizi (60) | 272 / **2514** ms | 31 / **55** ms |
+| Arabic (33, uncached translation) | 42 / 302 ms | 23 / 153 ms |
+| English (60) | 22 / 31 ms | 20 / 28 ms |
+| RSS after load / after the 153 calls | 454 / 471 MB | 454 / 459 MB |
+
+(rc3 here = the rc4 code with the gate patched back to the joined text; the Arabic and English differences are run
+noise.) The Arabizi p95 falls from about 2.5 s (the decoder loops on the joined text) to near the English figure.
+
+**Shipped.** `dist/campuspulse-models-v1.tar.gz` (`encoder/` and `translator/`; contents identical to rc3, only the tar
+metadata differs): 119 950 521 bytes, sha256 `9bb79a8295b2c196432c7c21132cc81bfe3756345dd1beab3927cd181d502816`.
+No GitHub release yet; `DEFAULT_TAG`, CI and Dockerfile tags are unchanged.

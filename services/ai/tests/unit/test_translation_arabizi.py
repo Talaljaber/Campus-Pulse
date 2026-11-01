@@ -40,11 +40,11 @@ class SpyEncoder:
         return [[1.0, 0.0, 0.0, 0.0] for _ in texts]
 
 
-def test_flag_off_keeps_the_joined_text_route() -> None:
+def test_flag_off_does_not_translate_the_joined_text() -> None:
     inner, spy = SpyEncoder(), SpyTranslator()
     joined = "الطلاب عالقين | el tolab 3al2aneen"
     TranslatingEncoder(inner, spy).encode([joined])
-    assert spy.seen == [joined]  # rc3 behaviour: the joined text passes the 30 % gate
+    assert spy.seen == []  # P2.19: the gate reads the original (Latin) text, so Arabizi is not translated
 
 
 def test_flag_translates_only_the_arabic_letter_half() -> None:

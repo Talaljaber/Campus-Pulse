@@ -59,7 +59,7 @@ class TranslatingEncoder:
 
     @staticmethod
     def _joined(text: str) -> tuple[str, str] | None:
-        """(transliteration, original) of an Arabizi `model_text`: Arabic-only left half, Arabic-free right half."""
+        """(transliteration, original) of an Arabizi `model_text`: Arabic-only left, Arabic-free right."""
         left, sep, right = text.partition(MODEL_TEXT_SEPARATOR)
         if not sep or not left.strip() or arabic_ratio(right) > 0.0:
             return None

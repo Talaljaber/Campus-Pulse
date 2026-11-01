@@ -168,7 +168,9 @@ def quantiles(
     return out[0], out[1]
 
 
-def _live_alias(cfg: TrainCfg, q_category: Mapping[str, float], q_priority: Mapping[str, float]) -> dict[str, str]:
+def _live_alias(
+    cfg: TrainCfg, q_category: Mapping[str, float], q_priority: Mapping[str, float]
+) -> dict[str, str]:
     """`conformal.q_lang_alias` without the languages that have a quantile of their own (an own OOF quantile,
     e.g. in the unreviewed-augmentation arm, wins over the borrowed one); [] when there are no per-language
     quantiles at all."""

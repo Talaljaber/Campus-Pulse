@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""P2.17 arm C: translate Arabizi through its Arabic-letter transliteration (`docs/ml/models.md` §28).
+"""P2.17 arm C: translate Arabizi through its Arabic-letter transliteration (`docs/ml/models.md` §30).
 
     python scripts/arabizi_translit_arm.py study   [--out reports/arabizi_translit_study.json]
     python scripts/arabizi_translit_arm.py arms    [--boot 2000] [--out reports/arabizi_translit_arm.json]
@@ -280,7 +280,11 @@ def cmd_arms(args: argparse.Namespace) -> int:
             "base": [[r.request_id, r.group, r.category, str(r.pred[ENSEMBLE][0])] for r in base_rows],
         }
         for name, arm_rows, base_rows in (
-            ("a", [r for r in arm_test if r.lang == "arabizi"], [r for r in base_test if r.lang == "arabizi"]),
+            (
+                "a",
+                [r for r in arm_test if r.lang == "arabizi"],
+                [r for r in base_test if r.lang == "arabizi"],
+            ),
             ("b", arm_of(ids_b), base_of(ids_b)),
             ("c", arm_of(info["ids_other"]), base_of(info["ids_other"])),
         )

@@ -48,6 +48,8 @@ components are added.
   English in front of the encoder only, locally, on CPU, with no network and no API key (`ctranslate2`,
   `sentencepiece`; files under `models/frozen/v1/translator/`, hashed in MANIFEST.json). The guards and
   language detection read the original text.
+  Arabizi is not translated (v1-rc4): its category quality is the weakest (our_test F1 about 0.4) and its
+  conformal sets are wide (about 3.5 of 6 categories), so most Arabizi requests are sent to human review.
 
 **External services**
 - **Supabase**: Postgres with pgvector, Auth and Realtime (app data, request embeddings, FAQ vectors).

@@ -69,7 +69,7 @@ def test_only_arabic_script_inputs_are_translated() -> None:
 
 
 def test_gate_reads_the_original_text_not_the_joined_arabizi_model_text() -> None:
-    """P2.19: `transliteration | original` is ~45 % Arabic letters, but the request is Arabizi: not translated."""
+    """P2.19: the joined `transliteration | original` is ~45 % Arabic, but the request is Arabizi."""
     arabizi = "الباص متاخر عن الدوار | el bas met2akhar 3an eldawwar"
     arabic = "الباص متأخر عن الدوار"
     mixed_in = "the wifi الانترنت مقطوع في المبنى اليوم"  # Arabic with English words, above 30 %
