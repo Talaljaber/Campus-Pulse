@@ -411,7 +411,8 @@ def wire_online(
     sinks = adapters.sinks
     act = ActUseCase(
         planner,
-        VectorFAQRetriever(adapters.vectors, offline.encoder),
+        # FAQ vectors are seeded with the raw ONNX encoder (scripts/seed_faq.py): query in that space
+        VectorFAQRetriever(adapters.vectors, offline.raw_encoder or offline.encoder),
         sinks,
         FallbackCalendar(list(adapters.calendars), recipients),
         notifier,

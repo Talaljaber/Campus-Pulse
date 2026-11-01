@@ -1,15 +1,17 @@
-"""Fetch the frozen encoder into `models/frozen/v1/encoder/` and verify it (P1.17, ARCHITECTURE §3.12).
+"""Fetch the frozen encoder and translator into `models/frozen/v1/` and verify them (P1.17, P2.15, §3.12).
 
     python scripts/fetch_models.py [--tag models-v1-rc1] [--source {github,hf}] [--from-file <tar.gz>]
                                    [--model-dir models/frozen/v1] [--force]
 
 The small artifacts (heads, index, config, MANIFEST.json) are committed; only the encoder (> 100 MB) is a
-release asset: `campuspulse-models-v1.tar.gz` (the `encoder/` folder) plus `SHA256SUMS`.
+release asset: `campuspulse-models-v1.tar.gz` (the `encoder/` and `translator/` folders, D-019) plus
+`SHA256SUMS`.
 
 Flow: (1) if every file in MANIFEST.json already verifies, print `up to date` and exit 0 (unless `--force`);
 (2) download the tarball and SHA256SUMS (or take `--from-file`, whose SHA256SUMS is read from the same folder
 when present) into `models/frozen/.cache/`; (3) check the tarball's sha256; (4) extract with
-`tarfile` `filter="data"` (no absolute paths, `..` or links), only under `encoder/`; (5) verify every file
+`tarfile` `filter="data"` (no absolute paths, `..` or links), only under `encoder/` and
+`translator/`; (5) verify every file
 in MANIFEST.json. Success: `verified <n> files against MANIFEST.json (v1 sha=<12 hex>)`.
 
 Private repository (UD-8): with `GITHUB_TOKEN` in the environment, `--source github` downloads the release
@@ -50,7 +52,7 @@ TOKEN_ENV = "GITHUB_TOKEN"
 API_HOST = "api.github.com"
 HF_REPO_ENV = "CAMPUSPULSE_HF_REPO"  # e.g. <user>/campuspulse-models (the backup mirror, ARCHITECTURE §3.12)
 HF_URL = "https://huggingface.co/{repo}/resolve/{tag}/{name}"
-EXTRACT_PREFIX = "encoder/"
+EXTRACT_PREFIXES = ("encoder/", "translator/")  # the release asset: encoder and translator (D-019)
 CHUNK = 1 << 20
 TIMEOUT_S = 60
 EXIT_OK, EXIT_CHECKSUM, EXIT_NETWORK = 0, 2, 3
@@ -161,9 +163,9 @@ def _extract(tar_path: Path, model_dir: Path) -> None:
         members = []
         for m in tar.getmembers():
             name = PurePosixPath(m.name).as_posix().removeprefix("./")
-            if not (name == EXTRACT_PREFIX.rstrip("/") or name.startswith(EXTRACT_PREFIX)):
+            if not any(name == p.rstrip("/") or name.startswith(p) for p in EXTRACT_PREFIXES):
                 raise FetchError(
-                    f"{tar_path}: unexpected member {m.name!r} (only {EXTRACT_PREFIX} is allowed)",
+                    f"{tar_path}: unexpected member {m.name!r} (only {EXTRACT_PREFIXES} are allowed)",
                     EXIT_CHECKSUM,
                 )
             members.append(m)

@@ -25,11 +25,14 @@ from campuspulse_ai.adapters.models.hashing_encoder import HashingEncoder
 from campuspulse_ai.adapters.models.prototype import NAME as PROTO
 from campuspulse_ai.adapters.models.prototype import office_prototypes
 from campuspulse_ai.adapters.models.soft_targets import SoftTargetExpander
+from campuspulse_ai.adapters.models.translating_encoder import TranslatingEncoder
+from campuspulse_ai.adapters.models.translator import Ct2Translator, read_translator_meta
 from campuspulse_ai.adapters.preprocess.normalizer import DefaultNormalizer
 from campuspulse_ai.adapters.training.oof import PipelineToggles, TrainingKit, run_cv
 from campuspulse_ai.adapters.training.pool import FEATURES_CSV, FOLDS_CSV, Pool, default_pool_paths, load_pool
 from campuspulse_ai.adapters.training.stages import EncoderInfo, cv_report, freeze, retune, stage_b
 from campuspulse_ai.adapters.training.train_config import TrainCfg
+from campuspulse_ai.adapters.training.translation_cache import CsvCachedTranslator
 from campuspulse_ai.config.paths import DATA_CLEAN, LEXICONS, MODELS_FROZEN, REPO_ROOT, REPORTS
 from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.domain.errors import ArtifactVersionMismatch, InvalidInput
@@ -37,6 +40,7 @@ from campuspulse_ai.domain.ports import SentenceEncoder
 
 EncoderKind = Literal["onnx", "hashing"]
 LABEL_FLAGS_CSV = DATA_CLEAN / "label_flags.csv"
+TRANSLATION_CACHE = REPORTS / "translate_test" / "translations.csv"  # source, translation, model id, revision
 
 
 @dataclass(frozen=True)
@@ -90,7 +94,23 @@ def make_encoder(
         intra_op_threads=settings.ort_intra_op_threads,
     )
     files = tuple(sorted(p for p in encoder_dir.iterdir() if p.is_file()))
-    return onnx, EncoderInfo(onnx.model_id, onnx.revision, "onnx_int8", files)
+    tr_cfg = cfg.raw.get("translate") or {}
+    if not tr_cfg.get("enabled", False):
+        return onnx, EncoderInfo(onnx.model_id, onnx.revision, "onnx_int8", files)
+    # D-019: the same wrapper as inference; texts already in the cache keep their recorded translation
+    translator_dir = opts.out / str(tr_cfg.get("dir", "translator"))
+    meta = read_translator_meta(translator_dir)  # ArtifactMissing with the fetch hint if absent
+    if (meta["model_id"], meta["revision"]) != (tr_cfg["model"], tr_cfg["revision"]):
+        raise ArtifactVersionMismatch(
+            f"{translator_dir}: translator {meta['model_id']}@{meta['revision']} != train.yaml "
+            f"{tr_cfg['model']}@{tr_cfg['revision']}"
+        )
+    cached = CsvCachedTranslator(
+        TRANSLATION_CACHE, Ct2Translator(translator_dir), str(tr_cfg["model"]), str(tr_cfg["revision"])
+    )
+    wrapped = TranslatingEncoder(onnx, cached, float(tr_cfg["min_arabic_ratio"]))
+    translator_files = tuple(sorted(p for p in translator_dir.iterdir() if p.is_file()))
+    return wrapped, EncoderInfo(onnx.model_id, onnx.revision, "onnx_int8", files + translator_files)
 
 
 def make_kit(
@@ -158,9 +178,12 @@ def run_training(
         )
     base, info = make_encoder(opts, cfg, settings)
     encoder = CachingEncoder(base)
+    translator = getattr(base, "translator", None)
     kit = make_kit(cfg, opts.lexicon_dir, normalizer, encoder)
     oof = run_cv(pool, encoder, cfg, opts.toggles, kit, nested=not opts.fast, fast=opts.fast)
     tuned = stage_b(oof, cfg, encoder, opts.lexicon_dir)
+    if isinstance(translator, CsvCachedTranslator) and translator.dirty:
+        translator.save()  # new training texts join the recorded translations
     report = cv_report(oof, tuned, cfg)
     report["encoder"] = {"model_id": info.model_id, "revision": info.revision, "runtime": info.runtime}
     opts.report.parent.mkdir(parents=True, exist_ok=True)
@@ -182,6 +205,8 @@ def run_training(
         )
         return TrainOutcome(report, summary, None)
     config, manifest = freeze(opts.out, oof, tuned, cfg, kit, encoder, info, opts.lexicon_dir, now=now)
+    if isinstance(translator, CsvCachedTranslator) and translator.dirty:
+        translator.save()
     weights = ",".join(f"{m}:{w:.1f}" for m, w in config.ensemble.weights_category.items())
     summary = (
         f"froze {config.artifact_version}: members={','.join(config.ensemble.members)} "

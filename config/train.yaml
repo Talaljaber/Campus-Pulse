@@ -122,6 +122,13 @@ encoder:                        # revision pinned at P1.6 (HF commit of intfloat
   pooling: mean
   normalize: true
 
+translate:                      # P2.15, D-019 (adopted): Arabic-script encoder inputs are translated to English
+  enabled: true                 # in front of the encoder only; guards, langid, M1 and conformal read the original text
+  model: Helsinki-NLP/opus-mt-ar-en
+  revision: c5b2a50db78d6be98ae207223f8d4f63bc7a0ff1
+  min_arabic_ratio: 0.3         # share of the letters in Arabic script; Arabizi (Latin letters) is not translated
+  dir: translator               # under the model dir; its files are hashed into MANIFEST.json
+
 ensemble:
   members: [m1, m2lr, m2knn, m2proto]  # "m3" only if every LD-6 gate passes (cut, UD-4); m2proto: D-014
   # online only: the weight of the memory-aware kNN category vector when a staff correction is among a request's

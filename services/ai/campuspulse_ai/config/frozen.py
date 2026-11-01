@@ -65,6 +65,22 @@ class EncoderCfg(_Section):
     normalize: bool
 
 
+class TranslateCfg(_Section):
+    """Translate-test in front of the encoder (D-019). Disabled when absent (rc1/rc2 configs)."""
+
+    enabled: bool = False
+    model: str = ""
+    revision: str = ""
+    min_arabic_ratio: Annotated[float, Field(gt=0.0, le=1.0)] = 0.3
+    dir: NonEmptyStr = "translator"
+
+    @model_validator(mode="after")
+    def _pinned_when_enabled(self) -> TranslateCfg:
+        if self.enabled and not (self.model and self.revision):
+            raise ValueError("translate.enabled needs translate.model and translate.revision")
+        return self
+
+
 class EnsembleCfg(_Section):
     """Config-driven members and per-target weights (each a distribution over exactly the members)."""
 
@@ -242,6 +258,7 @@ class FrozenConfig(_Section):
     trained_at: NonEmptyStr
     seed: int
     encoder: EncoderCfg
+    translate: TranslateCfg = Field(default_factory=TranslateCfg)
     ensemble: EnsembleCfg
     m1: M1Cfg
     m2lr: M2LrCfg

@@ -3,6 +3,7 @@
 
     python scripts/translate_test.py fetch      # download opus-mt-ar-en at the pinned revision, convert to
                                                 # CTranslate2 int8 under .tmp/translate/ (training machine)
+    python scripts/translate_test.py export     # runtime files -> models/frozen/v1/translator/ (P2.15)
     python scripts/translate_test.py bench      # RSS and per-request latency (ct2 int8 and torch fp32)
     python scripts/translate_test.py arms [--boot 2000] [--out reports/translate_test.json]
     python scripts/translate_test.py samples    # print dialect rows next to their translations
@@ -243,6 +244,41 @@ def cmd_fetch(_: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export(args: argparse.Namespace) -> int:
+    """P2.15 / D-019: the files `Ct2Translator` loads, in `<out>` (default `models/frozen/v1/translator/`).
+
+    The CTranslate2 int8 model, the two sentencepiece models and `translator_meta.json` (model id, pinned
+    revision, licence, decoding). `train.py` hashes them into MANIFEST.json; they ship in the models tarball.
+    """
+    import shutil
+
+    if not CT2_DIR.is_dir() or not META.is_file():
+        print("run `python scripts/translate_test.py fetch` first", file=sys.stderr)
+        return 2
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    for src in sorted(CT2_DIR.iterdir()):
+        if src.is_file():
+            shutil.copyfile(src, out / src.name)
+    for name in ("source.spm", "target.spm"):
+        shutil.copyfile(HF_DIR / name, out / name)
+    mt = json.loads(META.read_text(encoding="utf-8"))
+    meta = {
+        "model_id": MT_MODEL_ID,
+        "revision": mt["revision"],
+        "license": mt.get("license", "apache-2.0"),
+        "beam": BEAM,
+        "max_len": MAX_LEN,
+        "compute_type": "int8",
+        "arabic_ratio_rule": "letters >= 30% Arabic script",
+    }
+    (out / "translator_meta.json").write_text(
+        json.dumps(meta, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
+    )
+    print(f"exported {sorted(p.name for p in out.iterdir())} to {out}")
+    return 0
+
+
 # --- bench ------------------------------------------------------------------------------------------------
 
 
@@ -442,6 +478,9 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("fetch").set_defaults(fn=cmd_fetch)
+    e = sub.add_parser("export")
+    e.add_argument("--out", default=str(MODELS_FROZEN / "v1" / "translator"))
+    e.set_defaults(fn=cmd_export)
     b = sub.add_parser("bench")
     b.add_argument("--backend", choices=("ct2", "torch", "api"), default="ct2")
     b.set_defaults(fn=cmd_bench)

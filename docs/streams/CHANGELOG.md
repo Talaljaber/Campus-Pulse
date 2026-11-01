@@ -1244,3 +1244,11 @@
 - **Limitations / TODO / known issues:** the drift merge runs at the start of `detect`, so if that call then returns `none` the folded incident ticket is not mirrored to Linear until the next attach or new; not run against live Supabase (store methods used are the existing port ones).
 
 - **Affects streams:** Frontend (resolved duplicate incidents appear with status resolved).
+
+### P2.15 — Translate-test in front of the encoder, v1-rc3  (ML, 2026-11-01, D-019 adopted)
+- **What now exists:** `Translator` port, `Ct2Translator` (CTranslate2 int8 opus-mt-ar-en, greedy, 1 thread, LRU) and `NoopTranslator`, `TranslatingEncoder` (Arabic-script inputs only, encoder side only), `composition/translation.py`; `config.json` `translate {enabled, model, revision, min_arabic_ratio, dir}`; `models/frozen/v1/translator/` hashed in MANIFEST.json; v1 refrozen as rc3 (sha 722d78d18004).
+- **How to use it:** `python scripts/fetch_models.py` now also extracts `translator/`; `predict.py`, the API and `train.py` pick it up from `config.json`. `OfflineContainer.raw_encoder` is the untranslated ONNX encoder (FAQ vectors).
+- **Config / env added:** `config/train.yaml translate:`; `ctranslate2==4.8.4` and `sentencepiece==0.2.2` in `services/ai/requirements.txt`; no env vars.
+- **Acceptance:** OOF category 0.806 -> 0.935, our_test 0.789 -> 0.864 (priority unchanged 0.904 / 0.847); predict.py under `no_network.py` + `validate_predictions.py` OK; RSS 459 MB, English p50 ~15 ms, Arabic p50 ~175 ms uncached (models.md §27).
+- **Limitations / TODO / known issues:** the release asset `campuspulse-models-v1.tar.gz` must be rebuilt (`encoder/` + `translator/`) and `DEFAULT_TAG` in `scripts/fetch_models.py` bumped when it is published; Arabizi (not translated) category coverage 0.53 on our_test; API RSS is ~460 MB against Render's 512 MB.
+- **Affects streams:** Backend (API RSS, `OfflineContainer.raw_encoder`), DevOps (tarball, image build needs the new asset).

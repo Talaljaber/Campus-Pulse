@@ -1264,3 +1264,48 @@ projector, fees, exam) usually come through.
 move although m2lr/m2kNN embeddings changed; not investigated within the time-box. OOF selection is fixed stage
 B, so there is no in-sample tuning, but the 30 groups give ±0.1 noise (D-016). Translations were produced for
 our_test rows too (inference-only, never trained on).
+
+## 27. Results v1-rc3: translate-test adopted (P2.15, D-019)
+
+Artifact v1 sha 722d78d18004 (rc3 = rc2 recipe plus the translator in front of the encoder, `memory_weight_category`
+0.333 now frozen). Official rows only; `train.py` → `train.py --retune` (no change) → `evaluate.py --all`.
+
+**Wiring.** `Translator` port (`domain/ports.py`); `Ct2Translator` (`adapters/models/translator.py`: CTranslate2
+int8, greedy beam 1, one text per runtime call so a translation never depends on its neighbours, 1 intra thread,
+256-entry LRU, lazy import) and `NoopTranslator`; `TranslatingEncoder` (`adapters/models/translating_encoder.py`)
+translates an encoder input when ≥ 30 % of its letters are Arabic script (Arabizi is unchanged). The wrapper sits
+in front of the ONNX encoder only: the injection and safety guards, priority floors, langid, M1 and
+`MondrianByLang` read the original text (`tests/unit/test_translation.py` proves it with a spy translator that
+would turn an injection and a danger report into a harmless sentence). `composition/translation.py` builds it for
+`build_offline` (predict.py, API, evaluate.py) and `train.py`. `config.json` records `translate {enabled, model,
+revision, min_arabic_ratio, dir}`; `models/frozen/v1/translator/` (77 MB: `model.bin`, vocab, two `.spm` files,
+`translator_meta.json`) is hashed into MANIFEST.json and ships in the models tarball. Enabled with missing files
+or another revision: `ArtifactMissing` / `ArtifactVersionMismatch` at startup, never a silent fallback. FAQ
+retrieval keeps the raw encoder (`OfflineContainer.raw_encoder`) because the FAQ vectors are seeded in that space.
+Training reuses `reports/translate_test/translations.csv` (111 rows from the experiment, plus new texts; 104 of
+the 111 equal the single-text runtime translation; the other 7 were decoded in batches of 16).
+
+| slice | rc2 | rc3 | arm B (experiment) |
+| --- | ---: | ---: | ---: |
+| OOF official category F1 (432 / 30 groups) | 0.806 | **0.935** (nested 0.935) | 0.935 |
+| OOF official priority F1 | 0.904 | 0.904 | 0.904 |
+| our_test pooled category F1 (204 / 38) | 0.789 | **0.864** | 0.864 |
+| our_test pooled priority F1 | 0.847 | 0.847 | 0.847 |
+| our_test set1 / set2 / set3 category | 1.000 / 0.674 / 0.719 | 1.000 / 0.835 / 0.770 | 1.000 / 0.835 / 0.773 |
+| category coverage (mean set size), OOF | 0.975 (2.53) | 0.975 (1.50) | 0.975 (1.50) |
+| category coverage (mean set size), our_test | 0.887 (2.83) | 0.897 (1.59) | 0.902 (1.59) |
+| category set size OOF AR / our_test AR | 5.7 / 5.8 | 2.6 / 2.6 | 2.6 / 2.6 |
+| priority coverage OOF / our_test | 0.928 / 0.843 | 0.928 / 0.843 | same |
+
+rc3 reproduces arm B within noise (set3 −0.003, our_test coverage −0.005 from the conformal refit on the frozen
+quantiles). Weights stay D-016's fixed `m2lr 0.5 / m2proto 0.5`.
+
+**Cost** (Windows dev laptop, `build_offline` as the API loads it, ORT and CT2 at 1 thread): RSS 454 MB after load,
+459 MB after 180 requests (the Python process before the model: 172 MB). English request p50 14–17 ms / p95 18–20 ms;
+Arabic request, uncached translation (13 distinct core texts of the first 60 pool rows): p50 ≈ 175 ms, p95 ≈ 280 ms;
+a repeated Arabic text hits the LRU: p50 ≈ 20 ms.
+
+**Open weaknesses.** Arabizi is not translated and its category coverage under the global quantile is 0.53 on
+our_test (set size 1.0; 32 rows, 8 groups); its F1 is ~0.52 as in rc2. The `Arabizi | transliteration` model text
+is not translated (Latin letters dominate). Dialect mistranslations remain (§26); priority is unchanged in every
+arm.
