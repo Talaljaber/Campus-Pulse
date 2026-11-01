@@ -1354,7 +1354,7 @@ quantile, so remove the key from `train.yaml` then). EN and AR slices are bit-id
 rebuild the tarball. If the other streams retrain the model, `train.py` stage B writes the key from `train.yaml`.
 The frozen `models/frozen/v1` is deliberately unchanged here (MANIFEST untouched).
 
-## 28. Arabizi training data, arm B (P2.16, D-022 proposed: rejected)
+## 29. Arabizi training data, arm B (P2.16, D-022 proposed: rejected)
 
 `python scripts/arabizi_arms.py --folds reports/arabizi_folds.csv --leakage reports/arabizi_leakage.json`
 -> `reports/arabizi_arms.json` (B = 2000, seed 42, 90 % CI). Question: does training on Arabizi rows (encoded as
