@@ -44,6 +44,7 @@ from campuspulse_ai.adapters.models.knn import TRAIN_COLLECTION, ExampleIndex, K
 from campuspulse_ai.adapters.models.priority_head import LogisticPriorityHead
 from campuspulse_ai.adapters.models.prototype import PrototypeClassifier
 from campuspulse_ai.adapters.models.tfidf_lr import TfidfLR
+from campuspulse_ai.adapters.models.urgency_floor import UrgencyFloorRule
 from campuspulse_ai.adapters.preprocess.arabizi import ArabiziTransliterator
 from campuspulse_ai.adapters.preprocess.normalizer import DefaultNormalizer
 from campuspulse_ai.adapters.uncertainty.conformal import LACConformal, MondrianByLang
@@ -211,6 +212,7 @@ def build_offline(
         clock=SystemClock(),
         config=config,
         artifact=ArtifactVersion(name=config.artifact_version, sha256=manifest.sha),
+        urgency_floor=UrgencyFloorRule.from_yaml(lex / "urgency.yaml"),
     )
     oracle = NullOracle()
     return OfflineContainer(

@@ -8,8 +8,10 @@ model's priority probabilities. It must equal `config/train.yaml priority_head.f
 (SPEC §5.1[9]); it only feeds the gaming detector.
 
 Floor precedence (highest first), applied outside the head by `PriorityFinalizer`:
-    distress > safety -> high > clarification constraint > injection strip > head > conformal
-Nothing ever lowers a priority by rule.
+    distress > safety -> high > clarification constraint > urgency rule -> high > injection strip > head
+    > conformal
+`urgency_rule` (P7.3) is a raise-only floor for implicit urgency (a narrow deadline-within-24h-plus-block,
+an account compromise, a building-wide outage); tone alone never fires it. Nothing ever lowers a priority.
 """
 
 from __future__ import annotations
@@ -32,7 +34,7 @@ EVIDENCE_FEATURES: tuple[str, ...] = (
 FORBIDDEN_FEATURES: frozenset[str] = frozenset({"stated_urgency"})
 
 FLOOR_PRECEDENCE: tuple[str, ...] = (
-    "distress", "safety", "clarification_constraint", "injection_strip", "head", "conformal",
+    "distress", "safety", "clarification_constraint", "urgency_rule", "injection_strip", "head", "conformal",
 )
 
 

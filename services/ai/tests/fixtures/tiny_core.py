@@ -20,6 +20,7 @@ from campuspulse_ai.adapters.models.evidence import LexiconEvidenceExtractor
 from campuspulse_ai.adapters.models.knn import ExampleIndex, IndexEntry, KnnClassifier
 from campuspulse_ai.adapters.models.priority_head import LogisticPriorityHead
 from campuspulse_ai.adapters.models.tfidf_lr import TfidfLR
+from campuspulse_ai.adapters.models.urgency_floor import UrgencyFloorRule
 from campuspulse_ai.adapters.preprocess.arabizi import ArabiziTransliterator
 from campuspulse_ai.adapters.preprocess.normalizer import DefaultNormalizer
 from campuspulse_ai.adapters.uncertainty.conformal import LACConformal
@@ -100,4 +101,5 @@ def build_tiny_core(wrap_encoder: Callable[[SentenceEncoder], SentenceEncoder] |
         conformal_pri=LACConformal.from_quantile("priority", 0.1, Q_PRIORITY, 100),
         memory=NullMemoryStore(), clock=SystemClock(), config=cfg,
         artifact=ArtifactVersion(name="tiny", sha256="0" * 64),
+        urgency_floor=UrgencyFloorRule.from_yaml(LEXICONS / "urgency.yaml"),
     )

@@ -194,6 +194,13 @@ class EvidenceExtractor(Protocol):
 
 
 @runtime_checkable
+class UrgencyFloor(Protocol):
+    """impl: UrgencyFloorRule. Raise-only: the fired high-floor families for a request (P7.3)."""
+
+    def hits(self, req: NormalizedRequest) -> tuple[str, ...]: ...
+
+
+@runtime_checkable
 class PriorityHead(Protocol):
     """impl: LogisticPriorityHead. Floors are applied outside, by PriorityFinalizer."""
 
