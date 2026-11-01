@@ -1,4 +1,4 @@
-# Benchmark (artifact v1 sha 90b41b7fed65)
+# Benchmark (artifact v1 sha e5317d41d49e)
 
 Protocol: scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data. Macro-F1 (accuracy); n/a = not available offline; cut = not built (UD-4).
 

@@ -244,6 +244,94 @@ high_floor:
             - '\b(7esab|7sab|hesab|hisab|account|acc|email|imail|portal)\w*\s+(\w+\s+){0,2}(etha?kar|ithakar|ihtara2|ekhtara2|e5tara2|et7akam|mehakkar|mhakkar|ma5tara2|mokhtara2|et?sara2|insara2|insaraq|mesrou2|hacked)\b'
             - '\b(hacked|hack|hakker|hakkar|e5tara2|ikhtara2|i5tara2)\b[^.!?|]{0,25}\b(account|email|hesab|7esab|portal|password)\b'
             - '\b(messages?|msgs?|rasa2el|rasayel|rsayel|emails?)\b[^.!?|]{0,30}\b(bismi|besmi|b3ismi|bi\s+ismi)\b'
+      # P7.12 implicit forms: a compromise signal AND an account word (never account words alone).
+      # (1) something about the account changed / went out / alerted, AND "not me".
+      - - en:
+            - '\b(changed|reset|replaced|altered|logged\s+in|log-?in\s+alert|sign-?in\s+alert|went\s+out|were\s+sent|was\s+sent|sent\s+from)\b'
+          ar:
+            - '(تغيرت|اتغيرت|انغيرت|تغيّرت|اتبدلت|تم\s+تغيير|تغيير|غيروا|بدلوا|دخول|دخلوا|طلعت|انبعثت|ارسلت|أرسلت)'
+          arabizi:
+            - '\b(changed|etghayyar\w*|tghayyar\w*|etghayar\w*|ghayyaro|ghayaro|etbaddal\w*|etbadal\w*|dakhal\w*|dakhlo|talaa?3\w*|et?ba3at\w*|entba3at\w*|tba3at\w*)\b'
+        - en:
+            - '\b(did\s*n[o'']?t|did\s+not|do\s+not|don[o'']?t|never)\s+(do|did|change|changed|make|send|sent|authori[sz]e|authori[sz]ed|request|requested|approve|approved|write|wrote)\b'
+            - '\b(not|wasn[o'']?t|isn[o'']?t)\s+me\b'
+            - '\bwithout\s+my\s+(knowledge|permission|consent)\b'
+          ar:
+            - '(مش|مو|ما)\s+(انا|أنا|اني|إني)'
+            - '(ما|لم)\s+(غيرت|غيّرت|عملت|ارسلت|أرسلت|بعت|بعثت|كتبت|طلبت|اقم|أقم|قمت)'
+            - '(بدون|من\s+غير|دون)\s+(علمي|اذني|إذني|موافقتي)'
+            - 'لحالها'
+          arabizi:
+            - '\b(mesh|mish|msh|mu|mo)\s+ana\b'
+            - '\bma\s+(ghayyart|ghayart|3melt|3mlt|3amalt|b3att|ba3att|katabt|ktabt|talabt)\b'
+            - '\b(bedoon|bdoon|min\s+gheir|men\s+gheir|min\s+gher|men\s+gher)\s+3elmi\b'
+            - '\b(la7alha|lahalha|la7alo|lahalo)\b'
+        - en:
+            - '\b(account|password|passcode|e-?mail|mailbox|portal|log-?in|sign-?in|credentials)\b'
+          ar:
+            - '(حساب|ايميل|إيميل|بريد|بوابة|بوابه|باسورد|باسوورد|كلمة\s+(ال)?سر|كلمة\s+المرور|تسجيل\s+الدخول)'
+          arabizi:
+            - '\b(account|acc|hesab|7esab|7sab|hisab|password|pass|passwrd|ba9sord|ba5sord|kelmet|kilmet|email|imail|mail|portal|bawaba|login|log\s*in)\b'
+      # (2) a login / alert from a foreign country or an unknown / another device, AND an account word.
+      - - en:
+            - '\b(another|different|foreign|other|unknown|unrecogni[sz]ed|unfamiliar|new|strange)\s+(country|countries|device|location|city|computer|browser|ip)\b'
+          ar:
+            - '(دولة|بلد|جهاز|موقع|مكان|كمبيوتر|متصفح)\s+(اخرى|أخرى|اخر|آخر|غريب|غريبة|مختلف|مختلفة|اجنبي|أجنبي|تاني|ثاني|جديد|غير\s+معروف|مش\s+معروف|ما\s+بعرفه|ما\s+بعرفها)'
+            - '(من|عن)\s+(دولة|بلد)\s+(غير|مش)'
+          arabizi:
+            - '\b(dawla|dawleh|balad|jehaz|jihaz|device|country|location|machine|computer)\s+(tanya|tani|tany|gharib|ghareeb|ghareb|ajnabi|ekhra|okhra|jdeed|jded|jadeed|mukhtalif|mokhtalef|gher\s+ma3roof|ghair\s+ma3roof|mesh\s+ma3roof|unknown|foreign|another|different|new)\b'
+            - '\b(another|different|foreign|unknown|new)\s+(country|device|location)\b'
+        - en:
+            - '\b(alerts?|notifications?|warning|notice|logged\s+in\s+from|sign-?in\s+from|log-?in\s+from|login\s+from|access\s+from|accessed\s+from|attempt)\b'
+          ar:
+            - '(تنبيه|اشعار|إشعار|تحذير|رسالة|دخول|دخل|دخلوا|دخلو|فتح|فتحوا|تسجيل\s+دخول|محاولة)'
+          arabizi:
+            - '\b(alert|notification|ish3ar|ishaar|tanbeeh|tanbih|ta7theer|warning|login|log\s*in|dakhal\w*|dakhlo|fata7\w*|fat7\w*|sign\s*in|attempt|ra7|rasala|message)\b'
+        - en:
+            - '\b(account|password|passcode|e-?mail|mailbox|portal|log-?in|sign-?in|credentials)\b'
+          ar:
+            - '(حساب|ايميل|إيميل|بريد|بوابة|بوابه|باسورد|باسوورد|كلمة\s+(ال)?سر|كلمة\s+المرور|تسجيل\s+الدخول)'
+          arabizi:
+            - '\b(account|acc|hesab|7esab|7sab|hisab|password|pass|passwrd|ba9sord|ba5sord|kelmet|kilmet|email|imail|mail|portal|bawaba|login|log\s*in)\b'
+      # (3) someone else is logged in / using the account right now.
+      - - en:
+            - '\b(someone|somebody|another\s+(person|user)|other\s+(person|user)|a\s+stranger|somebody\s+else|someone\s+else)\b[^.!?|]{0,25}\b(is|was|has\s+been|been|still)\b[^.!?|]{0,12}\b(logged|signed)\s+(in|into|on)\b'
+            - '\b(logged|signed)\s+in\b[^.!?|]{0,30}\b(by\s+)?(someone|somebody)\s+else\b'
+          ar:
+            - '(حدا|حد|شخص|احد|أحد|واحد)\s+(غريب\s+|تاني\s+|ثاني\s+|اخر\s+|آخر\s+)?(داخل|فاتح|مسجل\s+دخول|عم\s+يستخدم|عم\s+يفتح|عم\s+يدخل)'
+          arabizi:
+            - '\b(7ada|7ad|had|7ed|shakhs|wa7ad|someone)\s+(tani|tany|ghareeb|gharib|ghareb|ekhr|okhra)?\s*(daakhel|dakhel|fate7|fat7|3am\s+yestakhdem|3am\s+yed5ol|3am\s+yedkhol|3am\s+yfta7|logged\s+in)\b'
+        - en:
+            - '\b(account|password|e-?mail|mailbox|portal|log-?in|sign-?in)\b'
+          ar:
+            - '(حساب|ايميل|إيميل|بريد|بوابة|بوابه|باسورد|كلمة\s+(ال)?سر|كلمة\s+المرور)'
+          arabizi:
+            - '\b(account|acc|hesab|7esab|7sab|hisab|password|pass|kelmet|email|imail|mail|portal|bawaba)\b'
+      # (4) the recovery contact was swapped (the classic takeover step), or the password changed and the student is locked out.
+      - - en:
+            - '\b(recovery|backup|security)\s+(e-?mail|phone|number|address|question|contact)\s+(was\s+|were\s+|got\s+|has\s+been\s+|have\s+been\s+)?(changed|replaced|removed|reset|altered|updated)\b'
+            - '\b(password|passcode)\s+(was\s+|got\s+|has\s+been\s+)?(changed|reset)\b[^.!?|]{0,60}\b(cannot|can[o'']?t|unable\s+to|locked\s+out|no\s+longer)\b'
+            - '\b(cannot|can[o'']?t|unable\s+to|locked\s+out)\b[^.!?|]{0,60}\b(password|passcode)\s+(was\s+|got\s+|has\s+been\s+)?(changed|reset)\b'
+          ar:
+            - '(ايميل|إيميل|بريد|رقم)\s+(ال)?(استرداد|استعادة|الاسترجاع|استرجاع|الأمان|الامان)\S*\s+(\S+\s+)?(اتغير|تغير|اتبدل|تبدل|انغير|تغيّر|اتغيّر)'
+            - '(كلمة\s+(ال)?سر|باسورد)\s+(اتغيرت|تغيرت|انغيرت|اتبدلت)[^.؟!|]{0,50}(ما\s+(عدت|عاد)|مش\s+قادر|ما\s+بقدر|لا\s+استطيع|لا\s+أستطيع)'
+          arabizi:
+            - '\b(recovery|backup)\s+(email|imail|mail|phone)\s+(etghayyar\w*|tghayyar\w*|etbaddal\w*|changed)\b'
+            - '\b(email|imail|mail)\s+(el\s*)?(recovery|esterdad|isterdad|2istirdad)\s+(etghayyar\w*|tghayyar\w*|etbaddal\w*|changed)\b'
+      # (5) mail the student never wrote left their own account.
+      - - en:
+            - '\b(never|did\s*n[o'']?t|did\s+not|have\s+not|haven[o'']?t)\s+(sent|send|write|wrote|written|composed)\b'
+          ar:
+            - '(ما|لم)\s+(انا\s+)?(ارسل|أرسل|بعت|بعث|كتب)\w*'
+          arabizi:
+            - '\bma\s+(b3at|ba3at|b3att|ba3att|katabt|ktabt|ba3ato|b3ato)\b'
+        - en:
+            - '\bfrom\s+my\s+(account|e-?mail|mailbox|university\s+e-?mail|student\s+e-?mail)\b'
+            - '\b(went|go|goes|going|come|came|coming)\s+out\s+(of|from)\s+my\s+(account|e-?mail|mailbox)\b'
+          ar:
+            - '(من|عن)\s+(حسابي|ايميلي|إيميلي|بريدي)'
+          arabizi:
+            - '\b(min|men)\s+(7esabi|hesabi|7sabi|imaili|emaili|account\s*i)\b'
 
   # An imminent (<= 24 h) deadline AND the student is blocked from meeting it. Three cues, all required.
   deadline_24h:
