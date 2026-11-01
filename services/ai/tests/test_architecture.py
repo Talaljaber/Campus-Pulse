@@ -171,6 +171,8 @@ TRAIN_CLI_EXTRA: dict[Path, tuple[str, ...]] = {
         "onnx", "numpy", "tokenizers", f"{PKG}.adapters.models.encoder", f"{PKG}.adapters.guards.bank",
         f"{PKG}.adapters.preprocess.normalizer",
     ),
+    # P8.1c: the training CLI reads the one-key toggles YAML (--toggles-file). Training machine only.
+    PKG_DIR / "frameworks" / "cli" / "train.py": ("yaml",),
 }
 
 
