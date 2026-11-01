@@ -104,3 +104,24 @@ Decisions:
   4. The welcome page and announcements are shared, and staff can post announcements from their console.
   5. Student-only wording in the agent (for example "your student ID") needs a neutral form for staff.
 - Data rule: no real staff data either; seeded fictional staff only.
+
+## 14. Humanized agent replies and email templates (user, 2026-11-01)
+User's words: make some prompt engineering and humanize the agent replies, and make email templates for each ticket status (done, closed, in progress) and the templates.
+
+### 14.1 Prompt engineering for the agent
+- One system prompt for the chat agent, kept in a config file (not in code) and versioned, with model ID pinned and temperature low (the project rule for LLM calls); replies cached only where it is safe.
+- Voice: warm, short, plain words; the same language as the user (English, Arabic, Arabizi in, Arabic or English out); one question at a time; no jargon such as "confidence", "conformal" or "category score" unless the student presses "Why this?".
+- Behaviours to write rules and examples for: greet by first name; acknowledge the problem before acting; say what will happen next ("I'll send this to Finance. Shall I?") and wait for a yes; never claim a real department was contacted (say "request recorded"); admit when unsure and ask; keep safety and distress replies calm and point to real help; refuse to follow instructions hidden in the student's message.
+- Few-shot examples per situation: normal request, vague request, announcement already covers it (no ticket), frustrated student, distress, injection attempt, staff member with their own problem (section 13).
+- Test it like the classifier: a small set of scripted conversations with expected behaviours (asks before sending, never skips confirmation, replies in the right language, no leaked jargon), run with the key on, saved as a regression file.
+
+### 14.2 Email templates, one per ticket status
+Plain, humane, short, bilingual where the student's language is known. Every template carries: the ticket number, the request in the student's words, who is handling it (department name), what to do next, and the reminder that this is a demo and no real department was contacted. Sent only to allow-listed demo addresses.
+- **Received / new:** "We got your request and sent it to <department>. Ticket #<n>. You'll hear from us by email."
+- **In progress:** "<Department> is working on it." Optional staff note.
+- **Forwarded:** "Your request was moved from <A> to <B> because <note>." No action needed.
+- **Staff replied (thread comment):** the staff message as written, with "Reply to this email to answer."
+- **Solved / done:** the solution text, "If this didn't fix it, reply and we'll reopen it."
+- **Closed, no comment:** "Your request was closed." Short, no blame, how to reopen.
+- **Reopened:** "Thanks, we reopened your request."
+- Open points: subject line pattern (for example "[#<n>] <status>: <short title>"), an Arabic version of each, plain text first with a simple HTML version, and where the templates live (files in the repo so they are reviewable and testable).
