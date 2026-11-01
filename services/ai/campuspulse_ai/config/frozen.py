@@ -73,6 +73,7 @@ class TranslateCfg(_Section):
     revision: str = ""
     min_arabic_ratio: Annotated[float, Field(gt=0.0, le=1.0)] = 0.3
     dir: NonEmptyStr = "translator"
+    arabizi: bool = False  # P2.17 arm C: translate Arabizi's Arabic-letter transliteration (off by default)
 
     @model_validator(mode="after")
     def _pinned_when_enabled(self) -> TranslateCfg:

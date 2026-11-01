@@ -1252,3 +1252,8 @@
 - **Acceptance:** OOF category 0.806 -> 0.935, our_test 0.789 -> 0.864 (priority unchanged 0.904 / 0.847); predict.py under `no_network.py` + `validate_predictions.py` OK; RSS 459 MB, English p50 ~15 ms, Arabic p50 ~175 ms uncached (models.md §27).
 - **Limitations / TODO / known issues:** the release asset `campuspulse-models-v1.tar.gz` must be rebuilt (`encoder/` + `translator/`) and `DEFAULT_TAG` in `scripts/fetch_models.py` bumped when it is published; Arabizi (not translated) category coverage 0.53 on our_test; API RSS is ~460 MB against Render's 512 MB.
 - **Affects streams:** Backend (API RSS, `OfflineContainer.raw_encoder`), DevOps (tarball, image build needs the new asset).
+
+### P2.17 — Arm C: Arabizi through its Arabic-letter transliteration  (ML, 2026-11-01, commit pending)
+- **What now exists:** `translate.arabizi` flag (default false) and `TranslatingEncoder(translate_arabizi=...)`; `scripts/arabizi_translit_arm.py` (study, arms, latency); `reports/arabizi_translit_{arm,control}.json`; models.md section 28.
+- **Result:** rejected by D-016. Removes decoder loops (42 of 108 on the joined route, 0 here) but no Arabizi F1 gain (our_test -0.083, grouped OOF -0.072, other rows -0.040 vs rc3; about 0 vs the same-data control) and EN OOF -0.036. Also: rc3 does translate the joined Arabizi text (correction to section 27).
+- **Affects streams:** none (defaults unchanged, model v1-rc3 not refrozen).

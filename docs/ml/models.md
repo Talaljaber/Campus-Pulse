@@ -1309,3 +1309,64 @@ a repeated Arabic text hits the LRU: p50 ≈ 20 ms.
 our_test (set size 1.0; 32 rows, 8 groups); its F1 is ~0.52 as in rc2. The `Arabizi | transliteration` model text
 is not translated (Latin letters dominate). Dialect mistranslations remain (§26); priority is unchanged in every
 arm.
+
+## 28. Arm C: translate Arabizi through its Arabic-letter transliteration (P2.17, rejected)
+
+`scripts/arabizi_translit_arm.py` (`study`, `arms`, `latency`); reports `reports/arabizi_translit_arm.json` (arm C)
+and `reports/arabizi_translit_control.json` (control). Flag `translate.arabizi` (default false;
+`TranslatingEncoder(translate_arabizi=True)`): an Arabizi `model_text` (`transliteration | original`) is replaced by the
+translation of the transliteration alone, at train and test time. Guards, langid, M1 and conformal still read the
+original text (`tests/unit/test_translation_arabizi.py`). Nothing is refrozen.
+
+**Correction to 26/27.** rc3 does translate Arabizi: the joined `model_text` is about 45 % Arabic letters, so it passes
+the 30 % gate (108 of 108 rows) and the decoder is fed `transliteration | Latin`.
+
+**Quality study** (108 Arabizi rows: arabizi.csv 30 plus the Arabizi rows of new_scenarios.csv 78; greedy beam 1;
+loop = `♪`, `. . . .`, repeated tokens; copy = at least half of the Latin tokens reappear; drop = output under 40 %
+of the input length; 27 outputs read):
+
+| route | loops | copy-through | dropped | clean |
+| --- | ---: | ---: | ---: | ---: |
+| raw Arabizi | 11 | 104 | 0 | 0 |
+| joined (rc3 today) | 42 | 28 | 9 | 33 |
+| transliteration only | 0 | 0 | 3 | 105 |
+
+The loops and copy-throughs are gone, but "clean" means well-formed, not right: the translation is often wrong. Failures:
+`AUG-AZ-0021` joined route `♪ The light in the corridor is ruined ♪ ♪ the daw bell mamarr karban ♪`;
+`AUG-AZ-0001` joined `... today . . . . . . . . .`; `AUG-AZ-0009` the transliteration of `wein jadwal el baasat` comes
+out as "Wayne, the bus schedule" (`وين` read as a name); `AUG-NC-0373` the digits `45` become `4خ` in the
+transliteration (6 and 5 are letter codes), so "45 minutes" turns into "4 p.m."; `AUG-NC-0133` over-long LLM Arabizi
+is transliterated into non-words (`مونساحب`) and comes out as "Sarah ... Monsaugh is a vase". Short rows translate well
+("The progector in the room isn't working").
+
+**Training set**: arabizi.csv 30, new-scenario Arabizi rows, arabizi_from_official.csv 126. The 0.90 e5 cosine rule to
+our_test drops 77 of 78 new-scenario rows (e5 scores Latin-script dialect text close to everything), so the run uses
+0.95, which drops 3 (75 kept). New-scenario groups got folds round-robin in a scratch folds file.
+
+**Arabizi category macro-F1** (arm C = rc3 recipe + those rows + the flag; control = the same rows with the flag off, so
+only the route differs; rc3 = frozen v1 trained on official rows only, whose training set contains the source scenarios
+of the Arabizi-from-official rows, which favours it on (b)). Paired group bootstrap, B = 2000, 90 % CI:
+
+| measurement | n / groups | rc3 | control | arm C | C vs rc3 | C vs control |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| (a) our_test Arabizi | 32 / 8 | 0.500 | 0.386 | 0.417 | -0.083 [-0.195, +0.052] | +0.031 [-0.136, +0.097] |
+| (b) Arabizi-from-official, grouped OOF | 126 / 30 | 0.567 | 0.505 | 0.495 | -0.072 [-0.148, +0.011] | -0.010 [-0.090, +0.079] |
+| (c) arabizi.csv + new scenarios, OOF | 105 / 31 | 0.599 | 0.533 | 0.558 | -0.040 [-0.125, +0.040] | +0.026 [-0.071, +0.115] |
+
+Conformal (category coverage / mean set size, arm C): (a) 0.969 / 3.75, (b) 0.825 / 3.28, (c) 0.952 / 3.62, against rc3's
+0.53-0.59 at set size 1.0. The sets are large because Arabizi has its own quantile once Arabizi rows are in the
+calibration pool, so this is a calibration effect (owned by the calibration fix), not accuracy.
+
+**Other slices** (arm C minus rc3, category F1): OOF official EN -0.036, AR +0.078 (control: EN -0.037, AR +0.078, so
+both come from adding Arabizi rows, not from the route); our_test EN -0.010, AR +0.003, Arabizi -0.083. EN OOF breaks
+the 0.03 floor.
+
+**Cost** (one laptop, loaded by other jobs, so noisy): 60 Arabizi requests, rc3 route p50 472 ms / p95 1978 ms (loops
+decode 256 tokens), arm C p50 300 / p95 585 ms. RSS 471 MB (rc3) against 562 MB (arm C harness, which builds a second
+encoder; the real delta is nearer zero, since the translator is already loaded).
+
+**Verdict (D-016, arm C alone): fail.** No measurement shows a gain (all three are negative against rc3, and against
+the same-data control the deltas are +0.03, -0.01, +0.03 with intervals spanning zero); EN OOF drops 0.036. The route
+fixes decoder pathologies and speeds up Arabizi requests, but the translations remain wrong (digit codes, `وين`,
+LLM-style spellings). Not frozen, not shipped. Possible follow-ups: keep numerals intact in the transliterator, and
+cap decoding length for Arabizi.

@@ -1,0 +1,3374 @@
+{
+  "data": {
+    "arabizi_csv": 30,
+    "new_scenario_kept": 75,
+    "new_scenario_dropped_near_dup": 3,
+    "from_official": 126
+  },
+  "a_our_test_arabizi": {
+    "n": 32,
+    "groups": 8,
+    "category": {
+      "base": 0.5,
+      "arm": 0.4173,
+      "paired": {
+        "delta": -0.0827,
+        "ci_low": -0.1952,
+        "ci_high": 0.0523,
+        "p_better": 0.2245
+      },
+      "coverage_arm": 0.9688,
+      "set_size_arm": 3.75,
+      "coverage_base": 0.5312,
+      "set_size_base": 1.0
+    },
+    "priority": {
+      "base": 0.3007,
+      "arm": 0.3007,
+      "paired": {
+        "delta": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "p_better": 0.0
+      },
+      "coverage_arm": 0.9688,
+      "set_size_arm": 1.5625,
+      "coverage_base": 0.7188,
+      "set_size_base": 1.0
+    }
+  },
+  "b_from_official_oof": {
+    "n": 126,
+    "groups": 30,
+    "category": {
+      "base": 0.5667,
+      "arm": 0.4948,
+      "paired": {
+        "delta": -0.072,
+        "ci_low": -0.1476,
+        "ci_high": 0.0112,
+        "p_better": 0.0845
+      },
+      "coverage_arm": 0.8254,
+      "set_size_arm": 3.2778,
+      "coverage_base": 0.5873,
+      "set_size_base": 1.0
+    },
+    "priority": {
+      "base": 0.8082,
+      "arm": 0.7608,
+      "paired": {
+        "delta": -0.0474,
+        "ci_low": -0.1516,
+        "ci_high": 0.0282,
+        "p_better": 0.1905
+      },
+      "coverage_arm": 0.9365,
+      "set_size_arm": 1.8651,
+      "coverage_base": 0.8016,
+      "set_size_base": 1.0
+    }
+  },
+  "c_other_arabizi_oof": {
+    "n": 105,
+    "groups": 90,
+    "category": {
+      "base": 0.5987,
+      "arm": 0.5583,
+      "paired": {
+        "delta": -0.0404,
+        "ci_low": -0.1248,
+        "ci_high": 0.0398,
+        "p_better": 0.2135
+      },
+      "coverage_arm": 0.9524,
+      "set_size_arm": 3.619,
+      "coverage_base": 0.5905,
+      "set_size_base": 1.0
+    },
+    "priority": {
+      "base": 0.71,
+      "arm": 0.6913,
+      "paired": {
+        "delta": -0.0187,
+        "ci_low": -0.0658,
+        "ci_high": 0.0269,
+        "p_better": 0.263
+      },
+      "coverage_arm": 0.9143,
+      "set_size_arm": 1.8762,
+      "coverage_base": 0.7048,
+      "set_size_base": 1.0
+    }
+  },
+  "slices_category_f1": {
+    "oof_official/all": {
+      "n": 432,
+      "base": 0.9351,
+      "arm": 0.9283,
+      "delta": -0.0068,
+      "paired": {
+        "delta": -0.0068,
+        "ci_low": -0.0555,
+        "ci_high": 0.0421,
+        "p_better": 0.3745
+      }
+    },
+    "oof_official/en": {
+      "n": 297,
+      "base": 0.9663,
+      "arm": 0.9306,
+      "delta": -0.0357,
+      "paired": {
+        "delta": -0.0358,
+        "ci_low": -0.1206,
+        "ci_high": 0.0,
+        "p_better": 0.0
+      }
+    },
+    "oof_official/ar": {
+      "n": 135,
+      "base": 0.8333,
+      "arm": 0.9111,
+      "delta": 0.0778,
+      "paired": {
+        "delta": 0.0778,
+        "ci_low": 0.0,
+        "ci_high": 0.25,
+        "p_better": 0.6545
+      }
+    },
+    "our_test/all": {
+      "n": 204,
+      "base": 0.8635,
+      "arm": 0.8517,
+      "delta": -0.0118,
+      "paired": {
+        "delta": -0.0118,
+        "ci_low": -0.0704,
+        "ci_high": 0.0474,
+        "p_better": 0.329
+      }
+    },
+    "our_test/en": {
+      "n": 97,
+      "base": 0.9259,
+      "arm": 0.9156,
+      "delta": -0.0103,
+      "paired": {
+        "delta": -0.0103,
+        "ci_low": -0.0501,
+        "ci_high": 0.0,
+        "p_better": 0.0
+      }
+    },
+    "our_test/ar": {
+      "n": 75,
+      "base": 0.906,
+      "arm": 0.9089,
+      "delta": 0.0029,
+      "paired": {
+        "delta": 0.0028,
+        "ci_low": -0.2206,
+        "ci_high": 0.1894,
+        "p_better": 0.493
+      }
+    },
+    "our_test/arabizi": {
+      "n": 32,
+      "base": 0.5,
+      "arm": 0.4173,
+      "delta": -0.0827,
+      "paired": {
+        "delta": -0.0827,
+        "ci_low": -0.1952,
+        "ci_high": 0.0523,
+        "p_better": 0.2245
+      }
+    }
+  },
+  "bootstrap": {
+    "resamples": 2000,
+    "seed": 42,
+    "low_pct": 5,
+    "high_pct": 95
+  },
+  "flag_translate_arabizi": true,
+  "dup_cos": 0.95,
+  "rows": {
+    "a": {
+      "arm": [
+        [
+          "T2-0006",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "T2-0009",
+          "t2_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T2-0016",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "T2-0023",
+          "t2_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T2-0027",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "IT Support"
+        ],
+        [
+          "T2-0030",
+          "t2_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T2-0033",
+          "t2_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T2-0037",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "T2-0040",
+          "t2_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T2-0047",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T2-0054",
+          "t2_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T2-0057",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "T2-0058",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "T2-0064",
+          "t2_arabizi_Registration_0",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "T2-0068",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "T2-0071",
+          "t2_arabizi_Facilities_0",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "T3-0006",
+          "t3_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T3-0011",
+          "t3_arabizi_Academic Support_0",
+          "Academic Support",
+          "Transportation"
+        ],
+        [
+          "T3-0016",
+          "t3_arabizi_Finance_0",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "T3-0018",
+          "t3_arabizi_Transportation_0",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "T3-0021",
+          "t3_arabizi_Academic Support_0",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "T3-0023",
+          "t3_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T3-0028",
+          "t3_arabizi_Transportation_0",
+          "Transportation",
+          "IT Support"
+        ],
+        [
+          "T3-0033",
+          "t3_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T3-0042",
+          "t3_arabizi_Academic Support_0",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "T3-0047",
+          "t3_arabizi_Finance_0",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "T3-0052",
+          "t3_arabizi_Academic Support_0",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "T3-0054",
+          "t3_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T3-0057",
+          "t3_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T3-0059",
+          "t3_arabizi_Transportation_0",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "T3-0064",
+          "t3_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T3-0069",
+          "t3_arabizi_Transportation_0",
+          "Transportation",
+          "Transportation"
+        ]
+      ],
+      "base": [
+        [
+          "T2-0006",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T2-0009",
+          "t2_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T2-0016",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T2-0023",
+          "t2_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T2-0027",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "T2-0030",
+          "t2_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T2-0033",
+          "t2_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T2-0037",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "T2-0040",
+          "t2_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T2-0047",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "T2-0054",
+          "t2_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T2-0057",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T2-0058",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "T2-0064",
+          "t2_arabizi_Registration_0",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "T2-0068",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "IT Support"
+        ],
+        [
+          "T2-0071",
+          "t2_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T3-0006",
+          "t3_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T3-0011",
+          "t3_arabizi_Academic Support_0",
+          "Academic Support",
+          "Facilities"
+        ],
+        [
+          "T3-0016",
+          "t3_arabizi_Finance_0",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "T3-0018",
+          "t3_arabizi_Transportation_0",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "T3-0021",
+          "t3_arabizi_Academic Support_0",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "T3-0023",
+          "t3_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T3-0028",
+          "t3_arabizi_Transportation_0",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "T3-0033",
+          "t3_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T3-0042",
+          "t3_arabizi_Academic Support_0",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "T3-0047",
+          "t3_arabizi_Finance_0",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "T3-0052",
+          "t3_arabizi_Academic Support_0",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "T3-0054",
+          "t3_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T3-0057",
+          "t3_arabizi_Finance_0",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "T3-0059",
+          "t3_arabizi_Transportation_0",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "T3-0064",
+          "t3_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T3-0069",
+          "t3_arabizi_Transportation_0",
+          "Transportation",
+          "IT Support"
+        ]
+      ]
+    },
+    "b": {
+      "arm": [
+        [
+          "AUG-AO-0001",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0002",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0003",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0004",
+          "TR-S02",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0005",
+          "TR-S02",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0006",
+          "TR-S02",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0007",
+          "TR-S03",
+          "Facilities",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0008",
+          "TR-S03",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0009",
+          "TR-S03",
+          "Facilities",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0010",
+          "TR-S04",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0011",
+          "TR-S04",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0012",
+          "TR-S04",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0013",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0014",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0015",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0016",
+          "TR-S06",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0017",
+          "TR-S06",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0018",
+          "TR-S06",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0019",
+          "TR-S07",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0020",
+          "TR-S07",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0021",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0022",
+          "TR-S08",
+          "Registration",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0023",
+          "TR-S08",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0024",
+          "TR-S08",
+          "Registration",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0025",
+          "TR-S09",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0026",
+          "TR-S09",
+          "Academic Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0027",
+          "TR-S09",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0028",
+          "TR-S10",
+          "IT Support",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0029",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0030",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0031",
+          "TR-S11",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0032",
+          "TR-S11",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0033",
+          "TR-S11",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0034",
+          "TR-S12",
+          "IT Support",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0035",
+          "TR-S12",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0036",
+          "TR-S12",
+          "IT Support",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0037",
+          "TR-S13",
+          "Finance",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0038",
+          "TR-S13",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0039",
+          "TR-S13",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0040",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0041",
+          "TR-S14",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0042",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0043",
+          "TR-S15",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0044",
+          "TR-S15",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0045",
+          "TR-S15",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0046",
+          "TR-S16",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0047",
+          "TR-S16",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0048",
+          "TR-S16",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0049",
+          "TR-S17",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0050",
+          "TR-S17",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0051",
+          "TR-S17",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0052",
+          "TR-S18",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0053",
+          "TR-S18",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0054",
+          "TR-S18",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0055",
+          "TR-S19",
+          "Facilities",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0056",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0057",
+          "TR-S19",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0058",
+          "TR-S20",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0059",
+          "TR-S20",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0060",
+          "TR-S20",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0061",
+          "TR-S21",
+          "Registration",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0062",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0063",
+          "TR-S21",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0064",
+          "TR-S22",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0065",
+          "TR-S22",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0066",
+          "TR-S22",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0067",
+          "TR-S23",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0068",
+          "TR-S23",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0069",
+          "TR-S23",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0070",
+          "TR-S24",
+          "Academic Support",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0071",
+          "TR-S24",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0072",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0073",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0074",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0075",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0076",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0077",
+          "TR-S07",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0078",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0079",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0080",
+          "TR-S27",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0081",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0082",
+          "TR-S28",
+          "Academic Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0083",
+          "TR-S28",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0084",
+          "TR-S28",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0085",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0086",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0087",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0088",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0089",
+          "TR-S30",
+          "Registration",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0090",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0091",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0092",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0093",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0094",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0095",
+          "TR-S01",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0096",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0097",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0098",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0099",
+          "TR-S27",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0100",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0101",
+          "TR-S24",
+          "Academic Support",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0102",
+          "TR-S24",
+          "Academic Support",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0103",
+          "TR-S35",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0104",
+          "TR-S35",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0105",
+          "TR-S35",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0106",
+          "TR-S15",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0107",
+          "TR-S15",
+          "Transportation",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0108",
+          "TR-S15",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0109",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0110",
+          "TR-S08",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0111",
+          "TR-S08",
+          "Registration",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0112",
+          "TR-S35",
+          "Finance",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0113",
+          "TR-S35",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0114",
+          "TR-S35",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0115",
+          "TR-S14",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0116",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0117",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0118",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0119",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0120",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0121",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0122",
+          "TR-S05",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0123",
+          "TR-S05",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0124",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0125",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0126",
+          "TR-S10",
+          "IT Support",
+          "Transportation"
+        ]
+      ],
+      "base": [
+        [
+          "AUG-AO-0001",
+          "TR-S01",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0002",
+          "TR-S01",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0003",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0004",
+          "TR-S02",
+          "Finance",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0005",
+          "TR-S02",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0006",
+          "TR-S02",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0007",
+          "TR-S03",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0008",
+          "TR-S03",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0009",
+          "TR-S03",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0010",
+          "TR-S04",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0011",
+          "TR-S04",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0012",
+          "TR-S04",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0013",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0014",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0015",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0016",
+          "TR-S06",
+          "Registration",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0017",
+          "TR-S06",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0018",
+          "TR-S06",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0019",
+          "TR-S07",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0020",
+          "TR-S07",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0021",
+          "TR-S07",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0022",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0023",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0024",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0025",
+          "TR-S09",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0026",
+          "TR-S09",
+          "Academic Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0027",
+          "TR-S09",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0028",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0029",
+          "TR-S10",
+          "IT Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0030",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0031",
+          "TR-S11",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0032",
+          "TR-S11",
+          "IT Support",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0033",
+          "TR-S11",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0034",
+          "TR-S12",
+          "IT Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0035",
+          "TR-S12",
+          "IT Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0036",
+          "TR-S12",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0037",
+          "TR-S13",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0038",
+          "TR-S13",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0039",
+          "TR-S13",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0040",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0041",
+          "TR-S14",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0042",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0043",
+          "TR-S15",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0044",
+          "TR-S15",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0045",
+          "TR-S15",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0046",
+          "TR-S16",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0047",
+          "TR-S16",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0048",
+          "TR-S16",
+          "IT Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0049",
+          "TR-S17",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0050",
+          "TR-S17",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0051",
+          "TR-S17",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0052",
+          "TR-S18",
+          "Academic Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0053",
+          "TR-S18",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0054",
+          "TR-S18",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0055",
+          "TR-S19",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0056",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0057",
+          "TR-S19",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0058",
+          "TR-S20",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0059",
+          "TR-S20",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0060",
+          "TR-S20",
+          "Facilities",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0061",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0062",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0063",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0064",
+          "TR-S22",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0065",
+          "TR-S22",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0066",
+          "TR-S22",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0067",
+          "TR-S23",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0068",
+          "TR-S23",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0069",
+          "TR-S23",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0070",
+          "TR-S24",
+          "Academic Support",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0071",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0072",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0073",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0074",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0075",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0076",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0077",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0078",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AO-0079",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0080",
+          "TR-S27",
+          "Facilities",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0081",
+          "TR-S27",
+          "Facilities",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0082",
+          "TR-S28",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0083",
+          "TR-S28",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0084",
+          "TR-S28",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0085",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0086",
+          "TR-S19",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0087",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0088",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0089",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0090",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0091",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0092",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0093",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0094",
+          "TR-S01",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0095",
+          "TR-S01",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0096",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0097",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0098",
+          "TR-S27",
+          "Facilities",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0099",
+          "TR-S27",
+          "Facilities",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0100",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0101",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0102",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0103",
+          "TR-S35",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0104",
+          "TR-S35",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0105",
+          "TR-S35",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0106",
+          "TR-S15",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0107",
+          "TR-S15",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0108",
+          "TR-S15",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0109",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0110",
+          "TR-S08",
+          "Registration",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0111",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0112",
+          "TR-S35",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0113",
+          "TR-S35",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0114",
+          "TR-S35",
+          "Finance",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0115",
+          "TR-S14",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0116",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0117",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AO-0118",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0119",
+          "VA-S04",
+          "Facilities",
+          "Registration"
+        ],
+        [
+          "AUG-AO-0120",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AO-0121",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0122",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0123",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AO-0124",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0125",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AO-0126",
+          "TR-S10",
+          "IT Support",
+          "Transportation"
+        ]
+      ]
+    },
+    "c": {
+      "arm": [
+        [
+          "AUG-AZ-0001",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0002",
+          "TR-S01",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0003",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0004",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0005",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0006",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0007",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AZ-0008",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AZ-0009",
+          "TR-S15",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0010",
+          "TR-S15",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0011",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0012",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0013",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AZ-0014",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AZ-0015",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0016",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0017",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0018",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0019",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0020",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0021",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0022",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0023",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0024",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0025",
+          "TR-S35",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AZ-0026",
+          "TR-S35",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AZ-0027",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0028",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0029",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0030",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0003",
+          "NEW-C01",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0008",
+          "NEW-C02",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0013",
+          "NEW-C03",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0018",
+          "NEW-C04",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "AUG-NC-0023",
+          "NEW-C05",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0028",
+          "NEW-C06",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0033",
+          "NEW-C07",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0038",
+          "NEW-C08",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0043",
+          "NEW-C09",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0048",
+          "NEW-C10",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0053",
+          "NEW-C11",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0058",
+          "NEW-C12",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0063",
+          "NEW-C13",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0068",
+          "NEW-C14",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0073",
+          "NEW-C15",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0078",
+          "NEW-C16",
+          "Finance",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0083",
+          "NEW-C17",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0088",
+          "NEW-C18",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0093",
+          "NEW-C19",
+          "Registration",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0098",
+          "NEW-C20",
+          "Registration",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0103",
+          "NEW-C21",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0108",
+          "NEW-C22",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0113",
+          "NEW-C23",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0118",
+          "NEW-C24",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0128",
+          "NEW-C26",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0133",
+          "NEW-C27",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0138",
+          "NEW-C28",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0143",
+          "NEW-C29",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0148",
+          "NEW-C30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0153",
+          "NEW-C31",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0158",
+          "NEW-C32",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0163",
+          "NEW-C33",
+          "IT Support",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0168",
+          "NEW-C34",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0173",
+          "NEW-C35",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0178",
+          "NEW-C36",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0183",
+          "NEW-C37",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0188",
+          "NEW-C38",
+          "IT Support",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0193",
+          "NEW-C39",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0198",
+          "NEW-C40",
+          "IT Support",
+          "Transportation"
+        ],
+        [
+          "AUG-NC-0203",
+          "NEW-C41",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0208",
+          "NEW-C42",
+          "IT Support",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0213",
+          "NEW-C43",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0218",
+          "NEW-C44",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0223",
+          "NEW-C45",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-NC-0228",
+          "NEW-C46",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0233",
+          "NEW-C47",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-NC-0238",
+          "NEW-C48",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0243",
+          "NEW-C49",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0248",
+          "NEW-C50",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0258",
+          "NEW-C52",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0263",
+          "NEW-C53",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-NC-0268",
+          "NEW-C54",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0273",
+          "NEW-C55",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0278",
+          "NEW-C56",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0283",
+          "NEW-C57",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0288",
+          "NEW-C58",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0293",
+          "NEW-C59",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0298",
+          "NEW-C60",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0303",
+          "NEW-C61",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0308",
+          "NEW-C62",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0313",
+          "NEW-C63",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0318",
+          "NEW-C64",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0323",
+          "NEW-C65",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0328",
+          "NEW-C66",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0333",
+          "NEW-C67",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0338",
+          "NEW-C68",
+          "Academic Support",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0343",
+          "NEW-C69",
+          "Academic Support",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0348",
+          "NEW-C70",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0353",
+          "NEW-C71",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0358",
+          "NEW-C72",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0363",
+          "NEW-C73",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0368",
+          "NEW-C74",
+          "Academic Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0373",
+          "NEW-C75",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0378",
+          "NEW-C76",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0388",
+          "NEW-C78",
+          "Academic Support",
+          "Academic Support"
+        ]
+      ],
+      "base": [
+        [
+          "AUG-AZ-0001",
+          "TR-S01",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AZ-0002",
+          "TR-S01",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AZ-0003",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0004",
+          "TR-S05",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0005",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0006",
+          "TR-S08",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0007",
+          "TR-S10",
+          "IT Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0008",
+          "TR-S10",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-AZ-0009",
+          "TR-S15",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0010",
+          "TR-S15",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0011",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0012",
+          "TR-S21",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0013",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AZ-0014",
+          "TR-S07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AZ-0015",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0016",
+          "TR-S19",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0017",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0018",
+          "TR-S30",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-AZ-0019",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0020",
+          "TR-S31",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0021",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0022",
+          "TR-S27",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0023",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0024",
+          "TR-S24",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-AZ-0025",
+          "TR-S35",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AZ-0026",
+          "TR-S35",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-AZ-0027",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0028",
+          "TR-S14",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-AZ-0029",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-AZ-0030",
+          "VA-S04",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0003",
+          "NEW-C01",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0008",
+          "NEW-C02",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0013",
+          "NEW-C03",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0018",
+          "NEW-C04",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0023",
+          "NEW-C05",
+          "Finance",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0028",
+          "NEW-C06",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0033",
+          "NEW-C07",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0038",
+          "NEW-C08",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0043",
+          "NEW-C09",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0048",
+          "NEW-C10",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0053",
+          "NEW-C11",
+          "Finance",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0058",
+          "NEW-C12",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0063",
+          "NEW-C13",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0068",
+          "NEW-C14",
+          "Finance",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0073",
+          "NEW-C15",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0078",
+          "NEW-C16",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0083",
+          "NEW-C17",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0088",
+          "NEW-C18",
+          "Finance",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0093",
+          "NEW-C19",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0098",
+          "NEW-C20",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0103",
+          "NEW-C21",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0108",
+          "NEW-C22",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0113",
+          "NEW-C23",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0118",
+          "NEW-C24",
+          "Registration",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0128",
+          "NEW-C26",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0133",
+          "NEW-C27",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0138",
+          "NEW-C28",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0143",
+          "NEW-C29",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0148",
+          "NEW-C30",
+          "Registration",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0153",
+          "NEW-C31",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0158",
+          "NEW-C32",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0163",
+          "NEW-C33",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0168",
+          "NEW-C34",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0173",
+          "NEW-C35",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0178",
+          "NEW-C36",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0183",
+          "NEW-C37",
+          "IT Support",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0188",
+          "NEW-C38",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0193",
+          "NEW-C39",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0198",
+          "NEW-C40",
+          "IT Support",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0203",
+          "NEW-C41",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0208",
+          "NEW-C42",
+          "IT Support",
+          "IT Support"
+        ],
+        [
+          "AUG-NC-0213",
+          "NEW-C43",
+          "Transportation",
+          "Finance"
+        ],
+        [
+          "AUG-NC-0218",
+          "NEW-C44",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0223",
+          "NEW-C45",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0228",
+          "NEW-C46",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0233",
+          "NEW-C47",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "AUG-NC-0238",
+          "NEW-C48",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0243",
+          "NEW-C49",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0248",
+          "NEW-C50",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0258",
+          "NEW-C52",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0263",
+          "NEW-C53",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0268",
+          "NEW-C54",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0273",
+          "NEW-C55",
+          "Facilities",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0278",
+          "NEW-C56",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0283",
+          "NEW-C57",
+          "Facilities",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0288",
+          "NEW-C58",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0293",
+          "NEW-C59",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0298",
+          "NEW-C60",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0303",
+          "NEW-C61",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0308",
+          "NEW-C62",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0313",
+          "NEW-C63",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0318",
+          "NEW-C64",
+          "Facilities",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0323",
+          "NEW-C65",
+          "Facilities",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0328",
+          "NEW-C66",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "AUG-NC-0333",
+          "NEW-C67",
+          "Academic Support",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0338",
+          "NEW-C68",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0343",
+          "NEW-C69",
+          "Academic Support",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0348",
+          "NEW-C70",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0353",
+          "NEW-C71",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0358",
+          "NEW-C72",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0363",
+          "NEW-C73",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0368",
+          "NEW-C74",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0373",
+          "NEW-C75",
+          "Academic Support",
+          "Registration"
+        ],
+        [
+          "AUG-NC-0378",
+          "NEW-C76",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
+          "AUG-NC-0388",
+          "NEW-C78",
+          "Academic Support",
+          "Registration"
+        ]
+      ]
+    }
+  }
+}
