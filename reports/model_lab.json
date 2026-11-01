@@ -2215,8 +2215,8 @@
         },
         {
           "accuracy": 1.0,
-          "confidence": 0.7664,
-          "count": 20,
+          "confidence": 0.7654,
+          "count": 19,
           "lower": 0.7,
           "upper": 0.8
         },
@@ -2228,14 +2228,14 @@
           "upper": 0.9
         },
         {
-          "accuracy": 0.9565,
-          "confidence": 0.9696,
-          "count": 115,
+          "accuracy": 0.9569,
+          "confidence": 0.9738,
+          "count": 116,
           "lower": 0.9,
           "upper": 1.0
         }
       ],
-      "ece": 0.0939,
+      "ece": 0.095,
       "target": "priority"
     }
   ],
@@ -3445,5 +3445,5 @@
       "target": "priority"
     }
   ],
-  "generated_at": "2026-11-01T10:45:47+00:00"
+  "generated_at": "2026-11-01T16:29:20+00:00"
 }

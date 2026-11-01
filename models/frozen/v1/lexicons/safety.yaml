@@ -86,6 +86,11 @@ danger:
   - '\b(someone|somebody|people|students?|kids?)\s+(could|might|may|will|is\s+going\s+to|are\s+going\s+to)\s+(get\s+)?(seriously\s+)?(hurt|injured|killed|electrocuted)\b'
   # --- AR: transport, driving, power cut with people at risk, gas and fumes, weapons, structural -------------
   - '(?=[^.؟!|]*(الباص|باص|الحافله|حافله|الحافلة|حافلة|الكوستر|السرفيس|الشاتل|الميني\s*باص))(?=[^.؟!|]*((?<!م)وقف|تعطل|عطلان|عطل|خرب|علق|طفى|بنشر|ما\s+بيمشي|ما\s+عاد\s+يمشي|انفجر))(?=[^.؟!|]*(الطريق|طريق|الاوتوستراد|اوتوستراد|الصحراوي|الصحراء|الجسر|النفق|السريع))(?=[^.؟!|]*(فيه|فينا|جواه|جوا|داخل|عالقين|ركاب|راكب|ما\s*حدا\s*(اجا|إجا)|محدا\s*(اجا|إجا)|السواق\s+(نزل|راح|ترك)|ضلينا|ظلينا|[\d٠-٩]+\s+(طالب|طلاب|شخص|راكب)))[^.؟!|]+'
+  # P7.8: Modern Standard Arabic breakdown (تعطلت / توقفت / عطل) with students on board; the people cue also takes
+  # "على متنها", "يوجد" and a student noun, so spelled-out counts ("ثلاثين طالبة") work.
+  - '(?=[^.؟!|]*(الباص|باص|الحافله|حافله|الحافلة|حافلة|الكوستر|الشاتل|الميني\s*باص|المركبه|مركبه|وسيله\s+النقل))(?=[^.؟!|]*((?<!م)توقفت|(?<!م)توقف|تعطلت|تعطل|عطل|عطب|اعطال|تعطلت|(?<!م)وقفت|خرب|اشتعل|احترق|انفجر))(?=[^.؟!|]*(الطريق|طريق|الاوتوستراد|اوتوستراد|الصحراوي|الصحراء|الجسر|النفق|السريع|الخارجي|الدائري))(?=[^.؟!|]*(متنها|متنه|على\s+متن|يوجد|توجد|جواها|جواه|داخل|عالقين|عالقات|ركاب|راكب|(طالب|طلاب|طالبه|طالبات|طلبه)\s|(طالب|طلاب|طالبه|طالبات|طلبه)$|[\d٠-٩]+\s+(طالب|طلاب|شخص|راكب)))[^.؟!|]+'
+  - '(السواق|السائق|سائق\s+\S+|الشوفير|سواق)[^.؟!|]{0,40}(يقود|قاد|يسوق|قيادته|قياده)[^.؟!|]{0,25}(بتهور|متهور|بشكل\s+(خطير|متهور)|بسرعه\s+(جنونيه|عاليه|زايده|كبيره|مفرطه|خطيره))'
+  - '(السواق|السائق|سائق\s+\S+|الشوفير)[^.؟!|]{0,40}(تجاوز|تخطى|تخطي|قطع|تجاوزت|تخطت)\s+(ال)?اشاره\s+(ال)?(حمراء|حمرا|حمراء|حمره)'
   - '(السواق|السائق|الشوفير|سواق)[^.؟!|]{0,30}(بسوق|يسوق|بيسوق|سايق|عم\s+يسوق)[^.؟!|]{0,25}(بسرعه|بتهور|متهور|مجنون|بجنون|بشكل\s+خطير|زي\s+المجنون|خطير|خطر)'
   - '(بسوق|يسوق|بيسوق|عم\s+يسوق)\s+(بتهور|متهور|بجنون|زي\s+المجنون|بسرعه\s+(جنونيه|عاليه|زايده|كبيره|خطيره))'
   - '(كاد|قرب|كان\s+(رح|راح|رايح))\s+(ان\s+|انو\s+)?(يعمل\s+|يصير\s+)?(حادث|يدعس|يصدم)'
@@ -121,6 +126,12 @@ danger:
   - '\bemergency\s*(lights?|lighting|exit)\b[^.!?|]{0,25}\b(6afyeh|6afye|6afi|mish\s*sha8ale|msh\s*sha8ale|msh\s*shaghale|ma\s*bteshta3el|mkhorbane|m5arbane|mo3atale)\b'
   - '\b(sekkin|sikkin|skeen|sekeen|mdas|musaddas|msadas|slah|sila7|silah)\b[^.!?|]{0,40}\b(bihaded|bihadid|bihadded|hadad|ma3o|ma3ha|bel\s*sa7a)\b'
   - '\b(etghama|etghamet|ghama\s*3ale(h|ha)|ighma2|eghma2)\b'
+  # P7.8: Arabizi reckless driving. A driving verb (yseq / bseq / byseq / bysoo2) plus a speed or recklessness
+  # cue in one sentence, or a crossed red light. "bsor3a" (quickly) alone is tone and never matches.
+  - '\b(el\s*)?(sawwa2|sawa2|sawwaq|sayyeq|sa2e2|shofer|chauffeur|driver|sa2e2|sawe2)\b[^.!?|]{0,40}\b(3am\s*)?(b|by|bi|y|bye|bay)?(seq|soq|soo2|sou2|sooq|souq|so2)\b[^.!?|]{0,25}\b(b\s*|bi\s*)?(sor3a|sur3a|sor3at|sor3e|sor3a)\s*(kteer|kteeer|ktir|kbira|kbeera|3aliye|3aliyye|3alye|jnoon|janoon|majnoona|zyede|zyadeh|khatira|5atira|2awi)\b'
+  - '\b(3am\s*)?(b|by|bi|y|bye|bay)(seq|soq|soo2|sou2|sooq|souq|so2)\b[^.!?|]{0,25}\b(b\s*|bi\s*)?(sor3a|sur3a|sor3at)\s*(kteer|kteeer|ktir|kbira|kbeera|3aliye|3aliyye|3alye|jnoon|janoon|majnoona|zyede|zyadeh|khatira|5atira|2awi)\b'
+  - '\b(sawwa2|sawa2|sa2e2|shofer|chauffeur|driver|bus|bas)\b[^.!?|]{0,60}\b(t3adda|ta3adda|3adda|ta3ada|2ata3|qata3|2at3|qat3|2ata3o|y3adda|by3adda|ya3ber|ye2ta3|bye2ta3|byeqta3|tjawaz|tjawwaz|ytjawaz|ma\s*waqaf|ma\s*wa2af|ma\s*wa2ef)\b[^.!?|]{0,25}\b(el\s*)?(ishara|eshara|ish2ara|esharet|isharet|esh2ara)?\s*(el\s*)?7amra\b'
+  - '\b(sawwa2|sawa2|sa2e2|shofer|chauffeur|driver)\b[^.!?|]{0,40}\b(sakran|sakraan|sakran|na3es|na3san|nayem|3am\s*beno?am)\b'
 
 distress:
   # --- EN ---------------------------------------------------------------------------------------------
@@ -164,7 +175,7 @@ distress:
   - '\bwish\s+i\s+(was|were)\s+dead\b|\bwish\s+i\s+(could\s+)?disappear\b|\bwant\s+to\s+disappear\b|\bwish\s+i\s+wasn[''’]?t\s+(here|born|alive)\b'
   - '\bcan[''’]?t\s+(take|do|handle)\s+life\s+any\s*more\b'
   # --- AR ---------------------------------------------------------------------------------------------------
-  - '(حاس|حاسه|حاسة|بحس|حسيت|شاعر|شاعره|شاعرة)[^.؟!|]{0,10}(اني|انني|انو\s+انا)\s+(خلصت|انتهيت|ضعت|بلا\s+فايده|ما\s+الي\s+فايده|مش\s+نافع|عبء)'
+  - '(حاس|حاسه|حاسة|بحس|حسيت|شاعر|شاعره|شاعرة)[^.؟!|]{0,10}(اني|انني|انو\s+انا)\s+(خلصت(?!\s+(ال|من\s))|انتهيت(?!\s+(ال|من\s))|ضعت|بلا\s+فايده|ما\s+الي\s+فايده|مش\s+نافع|عبء)'
   - '(حاس|حاسه|حاسة|بحس|حسيت)\s+(ان|انو|انه)\s+(كل\s+شي|الدنيا|حياتي)\s+(خلص|انتهى|وقف|سودا|سوده|مظلمه|مظلمة)'
   - '(ما|مش|مو)\s+(بعرف|عارف|عارفه|عارفة|بدري)\s+(شو|ايش)\s+(بدي\s+)?(اعمل|اسوي)\s*(ب|في\s*)?(حياتي|عيشتي)'
   - '(مش|ما)\s+(عاد\s+)?(قادر|قادره|قادرة|بقدر)\s+(اكمل|استمر|اتحمل|اعيش)\s+(حياتي|هيك\s+حياه|هيك\s+عيشه|هالحياه|هالعيشه|بالحياه|الحياه|العيشه)'
@@ -192,6 +203,27 @@ distress:
   - '\b(ma\s*bde|ma\s*bdi|mish\s*bade)\s+(a3eesh|a3ish|a7ya|a3esh|a3eish)\b'
   - '\b(btmanna|bitmanna|batmanna|batamanna|yaret|bet?mana)\b[^.!?|]{0,15}\b(amoot|amut|ma\s*kont\s*mawjood|ma\s*kent\s*mawjood)\b'
   - '(?=[^.!?|]*\b(ta3ebt|ta3abt|ya2es|msh\s*2ader|ma\s*3ad|5alas|khalas|bdi\s*amoot|bde\s*a5tefi|zh2t)\b)[^.!?|]*\b(ma7ad|ma\s*7ada?|ma\s*7ad)\s+(7ases|ba7es|bi7es|byi7es|bihtam|byehtam)\s+(fiyy|fiy|feyye|fi|fiyi|fiyyi)\b'
+
+  # ===== P7.8 additions: "I can't go on / I feel it is over / I have no energy left to continue" families.
+  # Always first person plus a feeling or inability verb plus continue / life. A deadline that is "over"
+  # (خلص الوقت, khalas el wa2et) and "can't go on to the next page" stay silent.
+  # --- EN ---------------------------------------------------------------------------------------------------
+  - '\b(i\s+)?(have|has|got)\s+(no|nothing)\s+(more\s+)?(energy|strength|will|fight)\s+(left\s+)?(in\s+me\s+)?(to\s+)?(go\s+on|keep\s+going|carry\s+on|continue\s+living|live|keep\s+living)\b'
+  - '\b(can[''’]?t|cannot|can\s+not)\s+(keep|carry)\s+(on\s+)?(living|going\s+like\s+this|existing)\b'
+  - '\b(i\s+)?(feel|felt|am|i[''’]?m)\s+(so\s+|completely\s+|totally\s+)?(done|finished|exhausted)\s+with\s+(everything|life|living|it\s+all)\b'
+  - '\b(i\s+)?(am|i[''’]?m|feel)\s+(so\s+|completely\s+)?(tired|exhausted|drained)\b[^.!?|]{0,25}\b(can[''’]?t|cannot)\s+(go|keep\s+going|carry)\s+on\b(?!\s+(to|with|the|a|an|this\s+page)\b)'
+  # --- AR ---------------------------------------------------------------------------------------------------
+  - '(ما|مش|مو|لم|لن)\s+(عاد|عدت|عدنا|عاد\s+في)\s+(قادر|قادره|قادرة|بقدر|اقدر|فيني)\s+(اكمل|استمر|اتحمل|اواصل|كمل|اتابع|اعيش|اكمل)(?=\s*($|[.،؟!|]|هيك|اكتر|اكثر|بعد|حياتي|هالحياه|الحياه|هالدنيا|الدنيا|معاهم|كذا|هكذا))'
+  - '(تعبت|تعبانه?|تعبان|انهكت|استنزفت|مرهق\w*|منهك\w*|منهار\w*|زهقت|مليت)\s*(جدا|كتير|والله)?\s*(و|،)?\s*(ما|مش|مو)\s+(عاد|عدت)\s+(قادر|قادره|قادرة|بقدر|اقدر|فيني)(?=\s*($|[.،؟!|]|اكمل|استمر|اتحمل|اواصل|اكتر|اكثر|هيك))'
+  - '(حاس\w*|بحس|حسيت|شاعر\w*)\s*(ب)?\s*(اني|انني|انو\s+انا|اني\s+انا)\s+(خلص|خلصانه?|منتهي|منتهيه|انتهي)(?!\w)(?!\s*(ال|وقت|دوام|موعد|فصل|تسجيل|مادة|امتحان|اشي|واجب|مشروع))'
+  - '(حاس|حاسه|حاسة|بحس|حسيت)\s+(ان|انو|انه)\s+(الامر|الموضوع|هاد\s+كله|كله|كل\s+اشي)\s+(خلص|انتهي|انتهى)(?!\s*(ال|وقت|دوام|موعد|فصل|تسجيل))\s*(علي|عليي|بالنسبه\s+لي|بالنسبة\s+لي|بالنسبه\s+الي)'
+  - '(ما|مش|مو|لم)\s+(عاد\s+|عدت\s+)?(عندي|فيني|في\s+عندي|لدي|بقي\s+عندي|ضل\s+عندي|ضل\s+فيني)\s+(طاقه|طاقة|قوه|قوة|حيل|قدره|قدرة)\s+(ل|لا)?\s*(اكمل|استمر|اواصل|اتحمل|اعيش|عيش|كمل)(?=\s*($|[.،؟!|]|هيك|اكتر|اكثر|حياتي|الحياه|الدنيا|كذا))'
+  - '(خلصت|نفدت|انتهت|انتهيت|ضاعت|راحت)\s+(كل\s+)?(طاقتي|قوتي|حيلي|قدرتي)(?=\s*($|[.،؟!|]|و\s*(ما|مش)\s+(عاد|عدت)))'
+  # --- Arabizi (original half of model_text) ----------------------------------------------------------------
+  - '\b(ma|m|mesh|msh|mish)\s*(3adesh|3adish|3adeesh|3adit|3adet|3adt|3ad|3ade)\s*(2ader|2adir|2adr|a2dar|b2dar|ba2dar|fiyi|fiyy|fiyyi|fiy)\s*(a?ka?mm?[ei]l|astamer|a2ammel|a3eesh|a3ish|ata7amal|at7amal|atabe3|atabe3)\b(?=\s*($|[.!?,|]|hek|heik|aktar|akthar|ba3d|ma3hom|7ayati|el\s*7aya|hal\s*7aya|hal\s*donya|el\s*donya|hal\s*3esha))'
+  - '\b(ta3ban|ta3bane|ta3ebt|ta3abt|ta3bt|zhe2t|zhi2t|mlet|7ases\s+eni\s+mhtri2|ta3ebt\s+kteer)\b\s*(kteer|ktir|jedan|jiddan)?\s*(w|wa|,)?\s*(ma|msh|mesh|mish|m)\s*(3ad\w*)\s*(2ader|2adir|2adr|a2dar|b2dar|ba2dar|fiyi|fiyy|fiyyi|fiy)\b(?=\s*($|[.!?,|]|a?ka?mm?[ei]l|astamer|hek|heik|aktar|akthar))'
+  - '\b(7ases|b7es|ba7es|7aseet|7seet|7ass)\s+(eni|enni|inni|2ani|ani|eno|inno)\s+(5alast|khalast|5alasit|5alas|khalas)\s+(w|wa)\s+(ma|msh|mesh)\s+(3ad\w*)\b'
+  - '\b(ma|m|mesh|msh|mish)\s*(3ad\w*)\s*(3indi|3ndi|fiyi|fiyy|fiyyi|fiy)\s*(6a2a|ta2a|6a2e|ta2e|2oowe|2uwwe|7eil|7eel)\s*(a?ka?mm?[ei]l|astamer|a3eesh|ata7amal|at7amal)\b'
 
 # Exemplars. `distress` is embedded into the `safety_exemplars` collection by P1.16 (LD-20): an exemplar hit
 # only ever adds `distress` (LD-19), and tau_safety = max similarity over the pool + 0.02 (LD-18). `danger`

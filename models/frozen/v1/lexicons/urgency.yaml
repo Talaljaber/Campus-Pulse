@@ -254,12 +254,20 @@ high_floor:
             - '\bat\s+midnight\b'
             - '\b(in|within)\s+(the\s+next\s+)?(an?|one|two|three|four|five|six|eight|ten|twelve|\d|1\d|2[0-4])\s+hours?\b'
             - '\b(in|within)\s+(a\s+few|a\s+couple\s+of|couple\s+of)\s+hours\b'
+            # P7.8: "in 3 hrs", "in an hour", "this morning", "later today", "before midnight", "tmrw".
+            - '\b(in|within)\s+(the\s+next\s+)?(an?|one|two|three|four|five|six|eight|ten|twelve|\d|1\d|2[0-4])\s*(hrs?|h)\b'
+            - '\b(in|within)\s+an?\s+hour\b'
+            - '\b(this\s+morning|later\s+today|before\s+midnight|end\s+of\s+(the\s+)?day|first\s+thing\s+in\s+the\s+morning)\b'
+            - '\b(tmrw|tomorow|2morrow)\b'
           ar:
             - '(?<!\w)(و|ل|ف)?(بكرا|بكره|بكرة|غدا|غداً|الليلة|الليله|اليوم)(?!\w)'
-            - '(خلال|بعد|كمان|في\s+غضون)\s+(ساعة|ساعه|ساعتين|ساعات|\d+\s+ساعات?|نص\s+ساعة)'
+            - '(خلال|بعد|كمان|في\s+غضون)\s+(ساعة|ساعه|ساعتين|ساعات|\d+\s+ساعات?|\d+\s+ساعة|نص\s+ساعة)'
+            - '(?<!\w)(صباح\s+(ال)?غد|الغد|قبل\s+منتصف\s+الليل|هالصبح|هذا\s+الصباح|اخر\s+اليوم)(?!\w)'
           arabizi:
             - '\b(bukra|bokra|bukrah|bokrah|bkra|boukra|ghadan|ellela|elleila|ellayle|el\s*leile|el\s*lele|ellele|elyom|elyoum|elyoom|alyom|ilyom)\b'
             - '\b(5lal|khilal|ba3d|b3d|kaman)\s+(\d+\s+)?(sa3a|sa3at|sa3teen|sa3et)\b'
+            - '\b(bo?u?ka?r+a+h?|tomorrow|tmrw|tomorow|2morrow)\b'
+            - '\b(hal\s*sob7|hal\s*sobh|el\s*layle|ellayla|lel\s*layle)\b'
         - en:
             - '\b(deadline|due|closes?|closing|last\s+day|cut-?off|submission|submit(ting)?|exams?|finals?|midterm|defen[cs]e|viva|graduation|clearance)\b'
           ar:
@@ -272,13 +280,30 @@ high_floor:
             - '\b(can(no|'')?t|unable\s+to|could\s*n''?t|won''?t|not\s+able\s+to)\s+(\w+\s+){0,2}(register|submit|upload|log\s*in|login|sign\s*in|access|open|enrol+|pay|enter|sit|take|download|print|send|attend)\b'
             - '\b(portal|site|system|page|platform|moodle|link|website)\s+(is\s+)?(down|not\s+(opening|working|loading|accepting)|does\s*n.?t\s+(open|load|work|accept)|won.?t\s+(open|load|accept|work))\b'
             - '\bnot\s+(letting|allowing)\s+me\b'
+            # P7.8: wider block cue family (barred, banned, held, withheld, not allowed to sit, cannot get into
+            # the exam, the password reset email never came).
+            - '\b(banned|debarred|disqualified|ineligible|withheld|stopped\s+from|prevented\s+from|kept\s+out|flagged)\b'
+            - '\b(on|under|has\s+a|have\s+a|got\s+a|placed\s+a)\s+(financial\s+|registrar\s+|fee\s+|academic\s+)?(hold|block|restriction)\b'
+            - '\b(not|isn.?t|aren.?t|wasn.?t|am\s+not|was\s+not)\s+(allowed|permitted|eligible|cleared)\s+(to\s+)?(sit|take|enter|attend|register|submit|log|access|do)\b'
+            - '\b(can(no|'')?t|unable\s+to|could\s*n''?t|not\s+able\s+to)\s+(get|log|sign)\s+(in|into|on)\b'
+            - '\b(reset|password|verification|otp|activation)\s+(e-?mail|mail|link|code|message|sms)\b[^.!?|]{0,40}\b(never|not|didn.?t|hasn.?t|haven.?t|still\s+(not|no)|no)\s*(come|came|arrive\w*|receiv\w*|show\w*|sent|got|here)\b'
+            - '\b(never|not|didn.?t|hasn.?t|haven.?t)\s+(come|came|arrive\w*|receiv\w*|got)\b[^.!?|]{0,30}\b(reset|password|verification|otp|activation)\s+(e-?mail|mail|link|code|message)\b'
           ar:
+            - '(?<!\w)(انحجبت|انحجب|حجبوني|حجبوا|حجبت|حجبني|محجوبه|محجوبة|انمنعت|منعوني|ممنوع|ممنوعه|مانعين|محروم|محرومه|ايقاف|موقوفه)'
+            - '(ما|مش|مو|لم|لا)\s+(عاد\s+|عدت\s+)?(قدرت|قدرنا|بقدر|اقدر|عم\s+اقدر|عم\s+بقدر|بسمحوا|سمحوا|سمحولي|بخلوني|خلوني|يسمحوا)\s+(\S+\s+)?(ادخل|دخل|اسجل|اقدم|اسلم|ارفع|افتح|احضر|اجلس|الوج|اسجل\s+دخول|اوصل|ادفع)'
+            - '(ما|مش|مو|لم|لسا\s+ما|لسه\s+ما)\s+(وصل|وصلت|وصلني|اجا|اجاني|جاني|جا|وصلتني)\S*\s+(\S+\s+){0,4}(ايميل|إيميل|رساله|رسالة|رابط|كود|رمز)'
+            - '(ايميل|إيميل|رساله|رسالة|رابط|كود|رمز)\s+(\S+\s+){0,4}(اعاده|إعادة|استرجاع|تعيين|تفعيل|نسيان)[^.؟!|]{0,40}(ما|لسا\s+ما|لسه\s+ما|لم|مش)\s+(وصل|وصلت|وصلني|اجا|اجاني|جاني|جا|وصلتني)'
             - '(ما|مش|مو)\s+(بتفتح|بيفتح|عم\s+بيفتح|عم\s+تفتح|بفتح|راضي\s+يفتح|راضية\s+تفتح|بقبل|بتقبل|عم\s+يقبل|بسمح|بتسمح|بيسمح|بيخليني|بتخليني|عم\s+يخليني|عم\s+تخليني|قادر|قادرة|بقدر|عم\s+بقدر|بنقدر)'
             - '(موقوف|محظور|محجوب|مقفل|معلق|هولد|بلوك|حظر|حجز|هلد)'
             - '(على|علي|عليي|عندي)\s+(هولد|حجز|حظر|وقف)'
           arabizi:
             - '\b(mesh|msh|mish|ma|mo)\s+(byeftah|bifta7|biftah|byefta7|byfta7|yeftah|yefta7|byqbal|byeqbal|bi2bal|bisme7|bikhalini|bi5alini|2ader|qader|ader|b2dar|ba2dar|bagdar|rade|radi)\b'
             - '\b(hold|block|blocked|locked|mgfel|mwa2af|ma7zoom|m7zoom|m2fel|mseker|msakkar)\b'
+            # P7.8: wider block cue family in Arabizi (barred, "cannot enter the exam", reset email never came).
+            - '\b(ma7jo(o|u)?b|m7jo(o|u)?b|ma7goob|in7ajab\w*|et7ajab\w*|7ajab(o|u)ni|7ajboni|mamnoo?3|mamnou3|momna3|man3oni|mana3oni|3am\s*(bymn|bimn)a3\w*|mawqoof|mawqouf|mawqoof)\b'
+            - '\b(ma|m|mesh|msh|mish)\s*(2dert|2adert|2idert|2derit|2dirt|qdert|2adar(t)?|ba2dar|b2dar|a2dar|2ader|2adra)\s+(\w+\s+){0,2}(ed5ol|edkhol|ed5ul|edkhul|d5ol|dkhol|asajjel|asajel|a2added|a2dem|a2adem|a7dar|a7dor|a3mel\s+(submit|login|log\s*in)|aft7|aftah|aft(a)?7|login|log\s*in|submit)\b'
+            - '\b(ma|mesh|msh|m|lisa|lessa|lsa)\s*(ma\s+)?(wasal|wasalni|wasalet|wsel|wsal|wsalni|jani|jatni|jat|ija|ejani|wsilni)\w*\b[^.!?|]{0,30}\b(email|imail|mail|link|code|reset|password|pass)\b'
+            - '\b(email|imail|mail|link|code)\b[^.!?|]{0,30}\b(reset|password|pass|ba5sord|ba9sord|ba5sword|tafeel|activation)\b[^.!?|]{0,30}\b(ma|msh|mesh|lsa\s+ma|lessa\s+ma)\s+(wasal|wasalni|wsel|wsal|jani|jatni|jat|ija|ejani)\w*\b'
 
   # A building/floor/campus-wide power or network outage, or any outage while an exam is running.
   major_outage:
@@ -291,21 +316,38 @@ high_floor:
             - '\bblack-?out\b'
             - '\b(wi-?fi|internet|network|connection)\s+(is\s+|has\s+|just\s+|went\s+)?(down|died|dead|out|gone|offline|crashed|dropped|not\s+working)\b'
             - '\b(went|gone|plunged)\s+dark\b'
+            # P7.8: a network or internet outage with words between the noun and the verb ("the whole network
+            # in the lab building is down"), and the noun phrases "network outage / no connectivity".
+            - '\b(wi-?fi|internet|network|connectivity|connection)\b[^.!?|]{0,40}\b(is\s+|are\s+|has\s+|have\s+|just\s+|went\s+|completely\s+|totally\s+)?(down|dead|out|offline|crashed|dropped|not\s+working|isn.?t\s+working|unavailable|unreachable)\b'
+            - '\b(network|internet|wi-?fi|connectivity)\s+(outage|failure|loss|blackout)\b'
+            - '\b(no|lost|lost\s+all|without\s+any)\s+(connectivity|network\s+access|internet\s+access)\b'
           ar:
             - '(الكهربا|الكهرباء|الكهربة|الكهربه|التيار|النت|الانترنت|الإنترنت|الواي\s*فاي|الشبكة|الشبكه)\s+(\S+\s+)?(قاطع|مقطوع|انقطع|راح|طافي|طفت|واقف|وقع|مفصول|ميت|نازل|مش\s+شغال|ما\s+بشتغل)'
             - '(انقطاع|قطع)\s+(ال)?(كهربا|كهرباء|تيار|نت|انترنت|إنترنت|شبكة|شبكه)'
             - '(انقطع|انقطعت|قطع|قطعت|طفت|طفى|راح|راحت)\s+(ال)?(كهربا|كهرباء|تيار|نت|انترنت|إنترنت|واي\s*فاي|شبكة|شبكه)'
             - '(مافي|ما\s+في|مفيش)\s+(كهربا|كهرباء|تيار|نت|انترنت|إنترنت|واي\s*فاي)'
             - '(عتمة|عتمه|ظلام|معتم)'
+            # P7.8: network nouns with a qualifier before a MSA or dialect state word ("الشبكة واقعة", "الشبكة في
+            # المبنى متوقفة"), and the verb-first forms.
+            - '(الشبكة|الشبكه|النت|الانترنت|الإنترنت|الواي\s*فاي|الاتصال\s+بالانترنت)\s+(\S+\s+){0,5}(واقع|واقف|متوقف|معطل|عطلان|مقطوع|منقطع|طاير|ضايع|مش\s+شغال|ما\s+عم\s+تشتغل|لا\s+تعمل)'
+            - '(توقفت|تعطلت|انقطعت|وقعت|طارت)\s+(ال)?(شبكه|شبكة|نت|انترنت|إنترنت|واي\s*فاي)'
+            - '(انقطاع|تعطل|توقف|عطل)\s+(ال)?(شبكه|شبكة|نت|انترنت|إنترنت|واي\s*فاي)'
           arabizi:
-            - '\b(mafi|ma\s+fi|mafe|mfi|mafeesh)\s+(kahraba|kahrba|keherba|kahrabaa|electricity|current|internet|net|wifi|wi-?fi|taiyar|tayyar)\b'
-            - '\b(el\s*)?(kahraba|kahrba|keherba|taiyar|tayyar|internet|net|wifi|wi-?fi|network)\s+(\w+\s+)?(2ate3a|2atea3|qate3a|ma2too3a|maqtou3a|m2atta3a|2at3a|waqef|wa2ef|waqfe|wa2fa|tafyet|tafi|tafiyeh|met2atea3|mfsol|down|died|dead|off|out|mesh\s+sha8al|msh\s+shaghal)\b'
+            - '\b(mafi|ma\s+fi|mafe|mfi|mafeesh)\s+(kahraba|kahrba|keherba|kahrabaa|electricity|current|internet|net|wifi|wi-?fi|taiyar|tayyar|shabaka|shabake|sabake)\b'
+            - '\b(el\s*)?(kahraba|kahrba|keherba|taiyar|tayyar|internet|net|wifi|wi-?fi|network|shabaka|shabake|sabaka)\s+(\w+\s+)?(2ate3a|2atea3|qate3a|ma2too3a|maqtou3a|m2atta3a|2at3a|waqef|wa2ef|waqfe|wa2fa|tafyet|tafi|tafiyeh|met2atea3|mfsol|down|died|dead|off|out|mesh\s+sha8al|msh\s+shaghal|(2|q)ata3(at|a|et)?|(2|q)at3(at|a|et)?|(in|en)(2|q)(a|i)ta3(at|et|a)?|met(2|q)ata3a|wa(2|q)af(et|at)?|wa(2|q)fet|m3attal|3atlan|mu3attal)\b'
+            - '\b(in|en)(2|q)(a|i)ta3(at|et|a)?\s+(el\s*|l\s*)?(kahraba|kahrba|keherba|taiyar|tayyar|net|internet|wifi|shabaka|shabake)\b'
             - '\b(in2ata3at|ente2at3at|en2ata3at|in2ata3)\s+(el\s+)?(kahraba|kahrba|net|internet)\b'
+            # P7.8: verb first ("2ata3at el kahraba", "qat3 el kahraba") and the noun "2at3 / qat3 / inqita3".
+            - '\b(2|q)ata3(at|et|a)?\s+(el\s*|l\s*)?(kahraba|kahrba|keherba|taiyar|tayyar|net|internet|wifi|shabaka|shabake)\b'
+            - '\b(2|q)at3(a|at|et)?\s+(el\s*|l\s*)?(kahraba|kahrba|keherba|taiyar|tayyar|net|internet|wifi|shabaka|shabake)\b'
+            - '\b(in|en)(2|q)i?ta3\s+(el\s*|l\s*)?(kahraba|kahrba|keherba|taiyar|tayyar|net|internet|wifi|shabaka|shabake)\b'
             - '\b(dark|dalam|dalma|3atme|3atame)\b'
         - en:
-            - '\b(whole|entire)\s+(of\s+)?(the\s+)?(\w+\s+){0,2}(building|block|floor|campus|library|faculty|wing|hall|labs?|classrooms?)\b'
+            - '\b(whole|entire)\s+(of\s+)?(the\s+)?(\w+\s+){0,4}(building|block|floor|campus|library|faculty|wing|hall|labs?|classrooms?)\b'
+            - '\b(whole|entire)\s+(campus\s+|university\s+|building\s+)?(network|wi-?fi|internet)\b'
             - '\b(all|both)\s+(the\s+)?(labs|classrooms|floors|buildings|rooms)\b'
             - '\b(campus|building|floor|block|faculty)[\s-]wide\b'
+            - '\b(across|throughout|all\s+over|everywhere\s+in)\s+(the\s+)?(\w+\s+){0,2}(building|campus|floor|library|faculty|block|wing)\b'
             - '\b(hundreds|dozens|\d{2,})\s+(of\s+)?(us|students|people)\b'
           ar:
             - '(بنايه|بناية|بناي|مبنى|مبني|طابق|كليه|كلية|جامعه|جامعة|مكتبه|مكتبة|قاعات|مخابر)[^.؟!|]{0,25}(كلها|كله|كامل|كلو)'
@@ -313,7 +355,9 @@ high_floor:
             - '(مئات|عشرات|\d{2,})\s+(طالب|طلاب|طلبه|طلبة)'
           arabizi:
             - '\b(kol|kolo|kolha|kolu|kela|kamel)\s+(el\s+)?(building|binaye|bnayeh|binayeh|mabna|tabe2|tabeq|college|kolliye|jame3a|library|maktabe|labs?)\b'
-            - '\b(building|binaye|bnaye|mabna|tabe2|tabeq|kolliye|library|maktabe)\b[^.!?|]{0,25}\b(kolo|kolha|kolu|kamel|kamle|whole|entire)\b'
+            - '\b(building|binaye|bnaye|mabna|tabe2|tabeq|kolliye|library|maktabe|floor|campus|jame3a)\b[^.!?|]{0,25}\b(kolo|kolha|kolu|kollo|kolloh|kollha|kolhon|kamel|kamle|whole|entire)\b'
+            - '\b(kol|kolo|kollo|kolha|kollha|kolu)\s+(el\s*|l\s*)?(floor|campus|jame3a|building)\b'
+            - '\b(bel|fi|b)\s*(el\s*)?(jame3a|campus|building|binaye)\s+(kolha|kollha|kolo|kollo|kolu)\b'
             - '\b(whole|entire)\b[^.!?|]{0,20}\b(building|block|floor|campus|library)\b'
             - '\b(mia|miyat|me2at|\d{2,})\s+(taleb|talabe|talib)\b'
       - - *outage
@@ -331,3 +375,6 @@ high_floor:
             - '\b(online|onlain)\s+(exam|quiz|emte7an|imti7an|e5tebar|final|midterm)\b'
             - '\b(exam|quiz|emte7an|imti7an|emt7an|final|midterm)\b[^.!?|]{0,30}\b(halla2|hala2|hasa|hassa|shaghal|mashi|bda|bada2|nos|online)\b'
             - '\b(b|bn|3am\s+bn)?(emte7en|emtihen|imtihen|emt7en|nemtihen|nemte7en)\b'
+            # P7.8: "during / in the middle of the exam" in Arabizi, and the Latin-script English words.
+            - '\b(athna2|athnaa|a6na2|wa2t|bwa2t|ba2alb|bnos|b\s*nos|bwast|bwas6|w\s*ehna\s+(bel|b)|w\s*7na\s+(bel|b)|3am\s+n(7|h)all?)\s*(el\s*|l\s*)?(exam|emte7an|imti7an|emt7an|final|midterm|quiz)\b'
+            - '\b(bel|fi|b)\s+(el\s*)?(exam|emte7an|imti7an|emt7an|final|midterm|quiz)\s+(halla2|hala2|hassa|online|nos|ma3\s+el)\b'

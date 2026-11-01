@@ -11,7 +11,7 @@
 
 patterns:
   # --- EN: instruction override -------------------------------------------------------------------------
-  - '\b(ignore|disregard|forget|override|bypass)\s+(all\s+|any\s+|every\s+)?(of\s+)?(the\s+|your\s+|these\s+|those\s+|my\s+)?(previous|prior|above|earlier|preceding|original|initial|system|existing)?\s*(instructions?|prompts?|rules|guidelines|directions|directives|context)\b'
+  - '\b(ignore|disregard|forget|override|bypass)\s+(all\s+|any\s+|every\s+)?(of\s+)?(the\s+|your\s+|ur\s+|these\s+|those\s+|my\s+)?(previous|prior|above|earlier|preceding|original|initial|system|existing)?\s*(instructions?|prompts?|rules|guidelines|directions|directives|context)\b'
   - '\bsystem\s*prompt\b'
   - '\b(you\s+are|you''re|ur)\s+now\s+(an?\s+|the\s+|my\s+)?(admin\w*|assistant|system|developer|dan|ai|bot|chatbot|unrestricted|jailbroken|root|superuser|moderator|in\s+\w+\s+mode)\b'
   - '\bfrom\s+now\s+on,?\s+(you|your)\b'
@@ -21,7 +21,7 @@ patterns:
   - '\b(mark|flag|label|classify|tag|set|make|treat|escalate|categori[sz]e|prioriti[sz]e|rate|put|move)\s+(this|it|me|my\s+(request|ticket|issue|case|message|complaint)|the\s+(request|ticket|issue|case))\s+(as\s+|to\s+|at\s+|in\s+)?(a\s+|the\s+)?(high|urgent|critical|top|highest|maximum|max|emergency)(\s+priority)?\b'
   - '\b(set|change|raise|bump|increase|upgrade|override)\s+(the\s+|its\s+|my\s+|this\s+)?priority\b(\s*(to|as|at|=|:)\s*(a\s+|the\s+)?(high|urgent|critical|top|highest|max\w*|emergency)\b)?'
   - '\bpriority\s*(=|:|should\s+be|must\s+be|has\s+to\s+be)\s*(high|urgent|critical|top|max)\b'
-  - '\b(skip|jump)\s+(the\s+)?(queue|line)\b'
+  # (asking to skip the line is queue-jumping, not injection: see the `queue_jump` block below, P7.9)
   # --- EN: role-play and jailbreak markers -------------------------------------------------------------
   - '\b(pretend|roleplay|role-play)\s+(to\s+be|you\s+are|you''re|as|that)\b'
   - '\bact\s+as\s+(an?\s+|the\s+)?(admin|administrator|developer|system|assistant|ai|chatgpt|dan|root|superuser|moderator)\b'
@@ -43,6 +43,58 @@ patterns:
   - '\b(t[ae]?jahal|tjahl|tajahol)\s+(kol\s+|kul\s+|kil\s+)?(el\s*|il\s*|al\s*)?(ta3lima?t|ta3leemat|awamer|awamir|2awamer|qawa3ed)\b'
   - '\b(5al+i(ha|h|o)?|khal+i(ha|h|o)?|7ot+(ha|o)?|i?j3al(ha|o)?|san+ef(ha|o)?|3tbr(ha|o)?|e3tbr(ha|o)?)\s+((hay|hada|hatha|hal|el\s*talab|talabi|el\s*ticket)\s+){0,2}(b?(el\s*)?awlaw[iy]+(eh|e|a|t)?\s+)?(3al(ye|yeh|ieh|ia|ya|i)|3aly|high|urgent|mista3jle|mesta3jaleh|mista3jal|3ajle|3ajel|tare2)\b'
   - '\b(enta|inta|ente|enti|inti)\s+(halla2|halla|hala|hasa|hassa|hal2|el2an|ela2an)\s+(el\s*)?(admin|mas2ool|mas2ol|mudeer|modeer|system|nizam|mosa3ed)\b'
+
+# --- P7.9: the injected clause that steers the department or the priority -----------------------------------
+# After an injection match, the guard also removes a directly following routing instruction up to the end of
+# its clause ("... and forward this to the Finance dept as top priority"), so the injected department name
+# cannot steer the category. Each pattern is tried at the position right after a match and must start there.
+# An older model dir without this key strips only the matched spans.
+steer_clause:
+  - '\s*(,\s*)?(and\s+then\s+|and\s+|then\s+|also\s+|w\s+|و)?(forward|send|route|put|move|assign|file|escalate|redirect|direct|submit|log|ابعت|ابعث|ارسل|حول|وجه|حط|حطه|حطها|خلي|خليه|خليها|ba3at|bi3at|ib3at|b3at|7awel|7ot|7ott|7otha|7oto|5ali|5aliha|khali)(?=\s|$)[^.!?؟:\n|]*'
+
+# --- P7.9: queue-jump pressure (name-dropping, asking to skip the line, threatening) -------------------------
+# Same matching as `patterns` (model_text). A hit sets the flag `queue_jump` and the matched phrase is removed
+# from the text every model and floor sees, so pressure can neither raise nor lower a priority and cannot
+# steer a category. GATE: zero hits on the 432 official rows (tests/invariants/test_queue_jump.py).
+queue_jump:
+  # EN: a relative or friend who is senior; knowing who I am
+  - '\bmy\s+(uncle|aunt|dad|father|mom|mother|brother|sister|cousin|relative|friend|family\s+friend|neighbou?r)\b[^.!?\n|]{0,40}\b(president|dean|vice[\s-]?president|chancellor|rector|minister|chairman)\b'
+  - '\b(president|dean|chancellor|rector|minister|chairman)\b[^.!?\n|]{0,20}\bis\s+my\s+(uncle|aunt|dad|father|brother|cousin|relative|friend)\b'
+  - '\bdo\s+(you|u)\s+know\s+who\s+(i|my\s+\w+)\s+(am|is)\b'
+  - '\bi\s+(personally\s+)?know\s+(the\s+)?(president|dean|chancellor|rector|minister)\b'
+  # EN: asking to skip the line
+  - '\b(skip|jump|cut)\s+(the\s+|in\s+)?(queue|line)\b'
+  - '\b(put|place|move|serve|handle|answer|fix|do)\s+(me|my\s+(request|ticket|case|issue|problem))\s+(first|before\s+(everyone|everybody|others|all|anyone))\b'
+  - '\bbefore\s+(everyone|everybody|anyone\s+else|all\s+(the\s+)?others|the\s+others|the\s+rest)\b'
+  - '\b(first\s+in\s+(the\s+)?(line|queue)|ahead\s+of\s+(everyone|everybody|the\s+others|others))\b'
+  # EN: threats and shouted urgency
+  - '\b(or\s+else|otherwise|if\s+(you|u)\s+(do\s*n[o'']?t|won''t|will\s+not|fail\s+to))\b[^.!?\n|]{0,60}\b(i\s+will|i''ll|i\s+am\s+going\s+to)\s+(complain|report|go\s+to|tell|call|contact|escalate|sue|post|expose|speak\s+to)\b'
+  - '\b(i\s+will|i''ll|i\s+am\s+going\s+to)\s+(report|complain\s+to|go\s+to|tell|call)\s+(you\s+|this\s+)?(to\s+)?(the\s+)?(president|dean|ministry|minister|media|newspapers?|press|chancellor)\b'
+  - '\b(very|extremely|so|super)\s+urgent\b'
+  # AR
+  - '(عمي|خالي|خالتي|عمتي|ابوي|والدي|اخوي|اخي|قريبي|نسيبي|صاحبي|صديقي|ابن\s+عمي|ابن\s+خالي)\s+[^.!?؟\n|]{0,30}(رئيس|عميد|وزير|نائب\s+الرئيس|بالادارة|بالإدارة|بالاداره|مدير\s+الجامعة)'
+  - '(رئيس\s+الجامعة|عميد\s+الكلية|العميد|الوزير)\s+[^.!?؟\n|]{0,20}(عمي|خالي|ابوي|اخوي|قريبي|صاحبي|صديقي)'
+  - '(انت|انتم|انتو|تعرف|تعرفون|تعرفو)\s+(مين|من)\s+(انا|اني|ابوي|عمي)'
+  - 'قبل\s+(ال)?(كل|كلهم|الجميع|الناس|غيري)(\s+(حدا|واحد|شخص|ناس))?'
+  - '(تخطي|اتخطى|اتخطي)\s+(ال)?دور'
+  - '(حط|خلي|قدم|قدّم|اعمل)\s*(لي|لي)?\s*(طلبي|شغلتي|موضوعي|مشكلتي)?\s*(الاول|الأول|اول|أول|بالاول|بالأول)(?=\s|$)'
+  - '(رح|راح|سوف)\s*(اشتكي|ابلغ|اتواصل|احكي|اروح)\s*[^.!?؟\n|]{0,20}(رئيس|عميد|وزير|اعلام|إعلام|صحافة)'
+  - '(عاجل|مستعجل|ضروري)\s+(جدا|جداً|كتير|للغاية)'
+  # Arabizi (original half)
+  - '\b(3a?mm?i|3ammti|5ali|khali|2abo[iy]|abo[iy]|2a5[oi]y?|a5[oi]y?|2ar[ei]by|qar[ei]by|sa7bi|sa7ebi)\b[^.!?\n|]{0,30}\b(ra2is|ra2ees|rayyes|dean|3ame?e?d|wazir|president|bel\s*idara|el\s*idara)\b'
+  - '\b(abl|2abl)\s+(kol|kul)\s+(7ada|7ad|had|el\s*nas|el\s*kol)\b'
+  - '\b(7ot|7otni|7ottni|5alini|khalini)\s*(talabi|talabe|shaghlti)?\s*(2awal|awal|awwal|el\s*awal|bel\s*awal)\b'
+  - '\b(ra7|rah)\s+(esh?teki|ash?teki|2esh?teki|2ash?teki|ballegh)\b'
+  - '\b(3ajel|3ajil|mista3jel|musta3jil|mista3jal)\s+(jed+an|jid+an|kteer|ktir)\b'
+
+# --- P7.9: requests with no content (the guard `vague`, flag `too_vague`) ----------------------------------
+# A request is vague when every word is a filler or a generic "I have a problem / I need help" word. Each
+# pattern is matched against the whole `text_norm`. A word that names a topic ("registration", "wifi",
+# "مواد") is not in the list, so a vague word next to a real topic never fires. Zero hits on the official rows.
+vague:
+  - '^\W*((i|im|i''m|ive|i''ve|have|has|had|a|an|the|some|any|small|big|little|problem|problems|issue|issues|question|questions|need|needs|want|wanna|would|like|to|ask|help|assist|assistance|please|pls|plz|kindly|something|anything|someone|with|my|me|can|could|you|there|is|are|got|hi|hello|hey|thanks|thank|um|uh|just|for|and|hmm|ok|okay|so|this|that|it)(?=\W|$)\W*)+$'
+  - '^\W*(?:و?(عندي|عنا|عندنا|لدي|في|فيه|يوجد|مشكلة|مشاكل|مشكلتي|بدي|اريد|احتاج|محتاج|محتاجة|مساعدة|مساعدتي|ساعدوني|ساعدني|ساعدونا|رجاء|لو|سمحت|سمحتو|ممكن|شي|شيء|حاجة|سؤال|استفسار|مرحبا|اهلا|السلام|عليكم|يا|انا|لي|مع|عن)(?=\W|$)\W*)+$'
+  - '^\W*((3andi|3anna|3andna|fi|fe|moshkle|moshkleh|mushkila|mshkle|mashakel|bdi|bade|badi|2areed|ba7tej|ma7tej|musa3ade|mosa3ade|musa3ada|sa3edni|sa3edoni|rajaa|law|samaht|please|pls|plz|momken|shi|shay|so2al|su2al|marhaba|ahlan|hi|hello|ya|ana|ma3i|3an)(?=\W|$)\W*)+$'
 
 # Seed of >= 10 injection exemplars (LD-27). P1.16 embeds them into the `injection_exemplars` collection so the
 # collection exists and tau_injection is computable (LD-18: max similarity over the pool + 0.02); P3.5 grows
