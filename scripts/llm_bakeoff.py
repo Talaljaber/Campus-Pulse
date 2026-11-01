@@ -548,7 +548,7 @@ def cmd_report(args: argparse.Namespace) -> int:
                   "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for c in cells:
             d = c["determinism"]
-            lat = lambda k: "/".join(str(int(v or 0)) for v in c[k].values())  # noqa: E731
+            lat = lambda k, c=c: "/".join(str(int(v or 0)) for v in c[k].values())  # noqa: E731
             lines.append(
                 f"| {c['model']} | {c['price']} | {c['scores']['translation']} | {c['scores']['extraction']} | "
                 f"{c['scores']['tiebreak']} | {c['weighted']} | {c['cost_per_1000_mixed_usd']} | "

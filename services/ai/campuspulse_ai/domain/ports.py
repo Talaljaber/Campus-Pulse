@@ -527,6 +527,7 @@ ALL_PORTS: tuple[type, ...] = (
     Ensemble,
     EvidenceExtractor,
     PriorityHead,
+    UrgencyFloor,
     ConformalPredictor,
     DecisionPolicy,
     ClarificationStrategy,
