@@ -68,6 +68,22 @@ def test_only_arabic_script_inputs_are_translated() -> None:
     assert inner.seen == ["the bus is late", BENIGN, "mesh 3arif"]
 
 
+def test_gate_reads_the_original_text_not_the_joined_arabizi_model_text() -> None:
+    """P2.19: `transliteration | original` is ~45 % Arabic letters, but the request is Arabizi: not translated."""
+    arabizi = "الباص متاخر عن الدوار | el bas met2akhar 3an eldawwar"
+    arabic = "الباص متأخر عن الدوار"
+    mixed_in = "the wifi الانترنت مقطوع في المبنى اليوم"  # Arabic with English words, above 30 %
+    mixed_out = "the wifi is down in the building today and the bus الباص"  # below 30 %
+    inner, spy = SpyEncoder(), SpyTranslator()
+    TranslatingEncoder(inner, spy).encode([arabizi, arabic, mixed_in, mixed_out])
+    assert spy.seen == [arabic, mixed_in]
+    assert inner.seen == [arabizi, BENIGN, BENIGN, mixed_out]
+    # the arm C flag (default off) still translates only the transliteration half
+    inner, spy = SpyEncoder(), SpyTranslator()
+    TranslatingEncoder(inner, spy, translate_arabizi=True).encode([arabizi])
+    assert spy.seen == ["الباص متاخر عن الدوار"]
+
+
 def test_guards_and_language_read_the_original_text() -> None:
     spy = SpyTranslator()
     plain = build_tiny_core()

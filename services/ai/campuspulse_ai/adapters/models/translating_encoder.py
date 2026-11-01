@@ -1,7 +1,9 @@
 """`TranslatingEncoder`: translate-test in front of a `SentenceEncoder` (P2.15, D-019).
 
-Every input whose letters are at least `min_arabic_ratio` Arabic script is replaced by its English translation
-before it is embedded; everything else (English, Arabizi, whose Latin letters dominate) passes through. It
+Every input whose ORIGINAL request letters are at least `min_arabic_ratio` Arabic script is replaced by its
+English translation before it is embedded; everything else (English, Arabizi) passes through. For an Arabizi
+`model_text` (`transliteration | original`) the original is the half after the separator, so the joined text
+(about 45 % Arabic letters, which made the decoder loop in 42 of 108 rows, P2.19) is no longer translated. It
 wraps the encoder only. The injection and safety guards, priority rules, language id, M1 (TF-IDF) and the
 conformal groups read the original text in `TriageCore`, never the translation. Train and test time use the
 same wrapper, so the training pool, office descriptions, exemplar indexes and live requests share one space.
@@ -55,12 +57,27 @@ class TranslatingEncoder:
             raise AttributeError(name)
         return getattr(self.inner, name)
 
+    @staticmethod
+    def _joined(text: str) -> tuple[str, str] | None:
+        """(transliteration, original) of an Arabizi `model_text`: Arabic-only left half, Arabic-free right half."""
+        left, sep, right = text.partition(MODEL_TEXT_SEPARATOR)
+        if not sep or not left.strip() or arabic_ratio(right) > 0.0:
+            return None
+        if any(c.isascii() and c.isalpha() for c in left):
+            return None
+        return left, right
+
     def _arabizi_source(self, text: str) -> str | None:
         """The Arabic-letter half of an Arabizi `model_text` (`transliteration | original`), else None."""
-        left, sep, right = text.partition(MODEL_TEXT_SEPARATOR)
-        if not sep or arabic_ratio(right) > 0.0:
+        parts = self._joined(text)
+        if parts is None:
             return None
-        return left if needs_translation(left, self.min_arabic_ratio) else None
+        return parts[0] if needs_translation(parts[0], self.min_arabic_ratio) else None
+
+    def _original(self, text: str) -> str:
+        """The request text the gate reads: the Latin half of a joined Arabizi `model_text`, else the text."""
+        parts = self._joined(text)
+        return parts[1] if parts is not None else text
 
     def prepare(self, texts: Sequence[str]) -> list[str]:
         """The texts the encoder will see: Arabic-script ones translated, the rest unchanged.
@@ -75,7 +92,7 @@ class TranslatingEncoder:
             arabizi = self._arabizi_source(t) if self.translate_arabizi else None
             if arabizi is not None:
                 src[i] = arabizi
-            elif needs_translation(t, self.min_arabic_ratio):
+            elif needs_translation(self._original(t), self.min_arabic_ratio):
                 src[i] = t
         if src:
             idx = list(src)
