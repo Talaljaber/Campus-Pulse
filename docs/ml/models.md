@@ -1309,3 +1309,207 @@ a repeated Arabic text hits the LRU: p50 ≈ 20 ms.
 our_test (set size 1.0; 32 rows, 8 groups); its F1 is ~0.52 as in rc2. The `Arabizi | transliteration` model text
 is not translated (Latin letters dominate). Dialect mistranslations remain (§26); priority is unchanged in every
 arm.
+
+## 28. Arabizi conformal coverage: borrowed Arabic-script quantile (P2.18)
+
+**Diagnosis (rc3, category).** `MondrianByLang` is calibrated on OOF rows; the official data has no Arabizi rows, so
+`mondrian.json` holds only `ar` (q 0.916, 30 groups) and `en` (q 0.543). `TriageCore._set` passes `req.lang`
+(detected: 31 of the 32 our_test Arabizi rows are `arabizi`, one is routed `en`); `arabizi` is not a key, so
+`_for()` returns the global fallback q 0.5433, which is the English quantile (0.5432). The Arabizi model is far weaker
+than English (our_test F1 ~0.52, top-1 on the unreviewed Arabizi augmentation 0.61), so a 0.54 quantile yields
+singleton sets that are wrong half the time: coverage 0.516, size 1.00, and every row is accepted without an ASK or
+a human review. `thresholds.human_review_maxprob` (0.462) is not consulted by the policy; 42 % of Arabizi rows sit
+below it.
+
+**Fix (adopted): `conformal.q_lang_alias`**, a new optional config key (`{lang: donor}`; default `{}`, so older
+artifacts and `config.json` files without it behave exactly as before). `conformal_predictor` gives each aliased
+language its donor's `LACConformal`. Train config: `config/train.yaml conformal.q_lang_alias: {arabizi: ar}`;
+`train.py` stage B and `--retune` write it. Chosen over (b) an inflation factor (needs a made-up constant) and (c) an
+abstain rule (a new policy path); an alias is the nearest calibrated language, uses OOF-only information and is a
+one-line change.
+
+**Alternatives measured (evaluation only).** Calibrating Arabizi from the unreviewed Arabizi augmentation (83 rows
+after dropping e5 cosine >= 0.90 neighbours of our_test; 72 groups; `needs_human_check` still true) gives q 0.931,
+slightly above the Arabic one; the sweep of Arabizi q on our_test is monotone (0.54: 0.52, 0.85: 0.74, 0.90: 0.77,
+0.92: 0.84, 0.95: 1.00).
+
+| our_test category | cov before | cov after | size before | size after | singleton / ASK / >=3 (human) after |
+| --- | ---: | ---: | ---: | ---: | --- |
+| en (98 rows) | 0.939 | 0.939 | 1.00 | 1.00 | unchanged |
+| ar (75) | 1.000 | 1.000 | 2.60 | 2.60 | unchanged |
+| arabizi (31, 8 groups) | 0.516 | **0.839** | 1.00 | 3.35 | 0.03 / 0.16 / 0.81 (before: 1.00 / 0 / 0) |
+| arabizi, aug-calibrated q 0.931 | 0.516 | 0.935 | 1.00 | 5.00 | 0 / 0 / 1.00 |
+
+Wilson 95 % interval of the Arabizi coverage: before [0.35, 0.68], after [0.67, 0.93]; group bootstrap (8 groups):
+0.52 [0.28, 0.74] before, 0.84 [0.65, 1.00] after. n is small, so the claim is "about 0.85 with a wide interval".
+
+**Verdict.** Adopted as a safety net, not a quality fix: coverage reaches 0.84 only because 81 % of Arabizi requests
+now go to human review and 16 % to an ASK; set size 3.35 of 6 is nearly uninformative. The real fix is a better
+Arabizi model (more reviewed Arabizi rows); once Arabizi OOF rows exist, `quantiles_by_lang` gives `arabizi` its own
+quantile (>= `mondrian.min_groups` groups) and the alias is ignored (the validator rejects an alias over an own
+quantile, so remove the key from `train.yaml` then). EN and AR slices are bit-identical.
+
+**Refreeze (rc4, not done here).** Run `train.py --retune --out models/frozen/v1` (no refit; it writes
+`q_lang_alias` into `config.json`, regenerates `conformal/` and `MANIFEST.json`), then `evaluate.py --all`, and
+rebuild the tarball. If the other streams retrain the model, `train.py` stage B writes the key from `train.yaml`.
+The frozen `models/frozen/v1` is deliberately unchanged here (MANIFEST untouched).
+
+## 29. Arabizi training data, arm B (P2.16, D-022 proposed: rejected)
+
+`python scripts/arabizi_arms.py --folds reports/arabizi_folds.csv --leakage reports/arabizi_leakage.json`
+-> `reports/arabizi_arms.json` (B = 2000, seed 42, 90 % CI). Question: does training on Arabizi rows (encoded as
+today, untranslated; the translator is unchanged) lift the Arabizi slice that rc3 leaves at 0.52?
+
+**Data.** `data/augmented/arabizi_from_official.csv` (new, 126 rows, LLM-written, `needs_human_check=True`):
+three Jordanian Arabizi spellings of each of the 42 official cores (the official data has only 42 distinct
+cores, so this is all the official content there is), label, `source_scenario_id` and `cv_group` inherited, so
+scenario-held-out CV stays valid. The Arabizi pool is these plus every existing `lang=arabizi` draft:
+`arabizi.csv` 30, `new_scenarios.csv` 78, `paraphrases.csv` 11, `translations.csv` 13 = 258 rows.
+`check_leakage.py` gate: 0 failing rows (exact/char); 69 of the 258 have an e5 cosine >= 0.90 to an our_test row
+(encoder-only, "shared topic"), so **B1** trains on the other 189 and **B2** on all 258. Unreviewed rows are
+trained on only inside this measurement arm (`include_unreviewed`), never in a frozen model. Folds:
+`make_folds.py --include-augmented` (official groups unchanged).
+
+**Arm A on the Arabizi rows**: the same folds with Arabizi rows scored but never in a training fold, so A and B
+are scored on identical rows. A on our_test and official OOF is the plain rc3 pipeline (reproduces 0.935 / 0.864).
+
+**Category macro-F1** (A -> B1; Delta, 90 % group-bootstrap CI):
+
+| measurement | rows / groups | A | B1 | Delta [CI] | B2 | Delta [CI] |
+| --- | ---: | ---: | ---: | --- | ---: | --- |
+| (a) our_test Arabizi | 32 / 8 | 0.523 | 0.522 | 0.000 [-0.079, +0.051] | 0.386 | -0.137 [-0.185, +0.052] |
+| (b) OOF, arabizi_from_official | 123 / 30 | 0.429 | 0.474 | +0.045 [-0.034, +0.105] | 0.496 | +0.067 [-0.020, +0.127] |
+| (c) OOF, new scenarios + arabizi.csv (kept) | 39 / 32 | 0.480 | 0.503 | +0.023 [-0.152, +0.173] | 0.575 | +0.095 [-0.057, +0.211] |
+| (c) all 108 rows incl. near-dups | 108 / 93 | 0.489 | (not in B1) | | 0.528 | +0.040 [-0.028, +0.112] |
+| slices (B1): our_test EN / AR / pooled | | 0.926 / 0.886 / 0.864 | 0.926 / 0.854 / 0.856 | 0 / -0.033 [-0.156, +0.060] / -0.007 | | |
+| slices (B1): OOF official EN / AR / all | | 0.966 / 0.833 / 0.935 | 0.966 / 0.911 / 0.954 | 0 / +0.078 [0, +0.25] / +0.019 | | |
+
+Category coverage (set size) of our_test Arabizi: A 0.563 (1.0), B1 0.844 (4.1), B2 0.906 (4.0): the sets widen
+because Arabizi OOF rows now exist, so `MondrianByLang` fits an Arabizi quantile itself (>= 10 groups); the
+coverage is bought with a set of ~4 of 6 labels, i.e. no information. OOF coverage on the Arabizi rows is
+circular (calibrated on them). our_test priority 0.847 -> 0.833 (B1) / 0.838 (B2).
+
+**D-016 verdict: B is rejected.** Gain >= +0.05 with CI lower bound > 0 on a measurement that is not our_test
+alone: none (best (b) +0.045 / +0.067, lower bounds -0.034 / -0.020); our_test Arabizi is flat (B1) or worse (B2);
+B1 AR on our_test -0.033 is just past the -0.03 slice limit. Nothing is refrozen. The near-duplicate rows do not
+help our_test (B2 is worse than B1), so the flat result is not a leakage artefact. Reading: Arabizi F1 in
+scenario-held-out CV is ~0.43-0.50 whether or not Arabizi rows are in training, so a scenario's Arabizi
+rendering is hard because the encoder (e5-small) embeds untranslated Latin Arabizi poorly, not because it has
+never seen Arabizi; training rows cover 30 scenario groups only. (The OOF AR +0.078, CI lower bound 0.000, is
+unexplained and not claimed.) Arms C (translate the Arabic-letter transliteration), D (dual) and the
+calibration floor are measured elsewhere (P2.16 split). `arabizi_from_official.csv` stays in the repo for
+review (`REVIEW.md`) and for those arms.
+
+## 30. Arm C: translate Arabizi through its Arabic-letter transliteration (P2.17, rejected)
+
+`scripts/arabizi_translit_arm.py` (`study`, `arms`, `latency`); reports `reports/arabizi_translit_arm.json` (arm C)
+and `reports/arabizi_translit_control.json` (control). Flag `translate.arabizi` (default false;
+`TranslatingEncoder(translate_arabizi=True)`): an Arabizi `model_text` (`transliteration | original`) is replaced by the
+translation of the transliteration alone, at train and test time. Guards, langid, M1 and conformal still read the
+original text (`tests/unit/test_translation_arabizi.py`). Nothing is refrozen.
+
+**Correction to 26/27.** rc3 does translate Arabizi: the joined `model_text` is about 45 % Arabic letters, so it passes
+the 30 % gate (108 of 108 rows) and the decoder is fed `transliteration | Latin`.
+
+**Quality study** (108 Arabizi rows: arabizi.csv 30 plus the Arabizi rows of new_scenarios.csv 78; greedy beam 1;
+loop = `♪`, `. . . .`, repeated tokens; copy = at least half of the Latin tokens reappear; drop = output under 40 %
+of the input length; 27 outputs read):
+
+| route | loops | copy-through | dropped | clean |
+| --- | ---: | ---: | ---: | ---: |
+| raw Arabizi | 11 | 104 | 0 | 0 |
+| joined (rc3 today) | 42 | 28 | 9 | 33 |
+| transliteration only | 0 | 0 | 3 | 105 |
+
+The loops and copy-throughs are gone, but "clean" means well-formed, not right: the translation is often wrong. Failures:
+`AUG-AZ-0021` joined route `♪ The light in the corridor is ruined ♪ ♪ the daw bell mamarr karban ♪`;
+`AUG-AZ-0001` joined `... today . . . . . . . . .`; `AUG-AZ-0009` the transliteration of `wein jadwal el baasat` comes
+out as "Wayne, the bus schedule" (`وين` read as a name); `AUG-NC-0373` the digits `45` become `4خ` in the
+transliteration (6 and 5 are letter codes), so "45 minutes" turns into "4 p.m."; `AUG-NC-0133` over-long LLM Arabizi
+is transliterated into non-words (`مونساحب`) and comes out as "Sarah ... Monsaugh is a vase". Short rows translate well
+("The progector in the room isn't working").
+
+**Training set**: arabizi.csv 30, new-scenario Arabizi rows, arabizi_from_official.csv 126. The 0.90 e5 cosine rule to
+our_test drops 77 of 78 new-scenario rows (e5 scores Latin-script dialect text close to everything), so the run uses
+0.95, which drops 3 (75 kept). New-scenario groups got folds round-robin in a scratch folds file.
+
+**Arabizi category macro-F1** (arm C = rc3 recipe + those rows + the flag; control = the same rows with the flag off, so
+only the route differs; rc3 = frozen v1 trained on official rows only, whose training set contains the source scenarios
+of the Arabizi-from-official rows, which favours it on (b)). Paired group bootstrap, B = 2000, 90 % CI:
+
+| measurement | n / groups | rc3 | control | arm C | C vs rc3 | C vs control |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| (a) our_test Arabizi | 32 / 8 | 0.500 | 0.386 | 0.417 | -0.083 [-0.195, +0.052] | +0.031 [-0.136, +0.097] |
+| (b) Arabizi-from-official, grouped OOF | 126 / 30 | 0.567 | 0.505 | 0.495 | -0.072 [-0.148, +0.011] | -0.010 [-0.090, +0.079] |
+| (c) arabizi.csv + new scenarios, OOF | 105 / 31 | 0.599 | 0.533 | 0.558 | -0.040 [-0.125, +0.040] | +0.026 [-0.071, +0.115] |
+
+Conformal (category coverage / mean set size, arm C): (a) 0.969 / 3.75, (b) 0.825 / 3.28, (c) 0.952 / 3.62, against rc3's
+0.53-0.59 at set size 1.0. The sets are large because Arabizi has its own quantile once Arabizi rows are in the
+calibration pool, so this is a calibration effect (owned by the calibration fix), not accuracy.
+
+**Other slices** (arm C minus rc3, category F1): OOF official EN -0.036, AR +0.078 (control: EN -0.037, AR +0.078, so
+both come from adding Arabizi rows, not from the route); our_test EN -0.010, AR +0.003, Arabizi -0.083. EN OOF breaks
+the 0.03 floor.
+
+**Cost** (one laptop, loaded by other jobs, so noisy): 60 Arabizi requests, rc3 route p50 472 ms / p95 1978 ms (loops
+decode 256 tokens), arm C p50 300 / p95 585 ms. RSS 471 MB (rc3) against 562 MB (arm C harness, which builds a second
+encoder; the real delta is nearer zero, since the translator is already loaded).
+
+**Verdict (D-016, arm C alone): fail.** No measurement shows a gain (all three are negative against rc3, and against
+the same-data control the deltas are +0.03, -0.01, +0.03 with intervals spanning zero); EN OOF drops 0.036. The route
+fixes decoder pathologies and speeds up Arabizi requests, but the translations remain wrong (digit codes, `وين`,
+LLM-style spellings). Not frozen, not shipped. Possible follow-ups: keep numerals intact in the transliterator, and
+cap decoding length for Arabizi.
+
+## 31. Results v1-rc4: original-text translation gate and the Arabizi alias (P2.19, D-024)
+
+Artifact v1 sha 05de06d266cf. rc4 = rc3 (same weights, same pool, same encoder and translator files) plus two rule
+changes: (1) the translate gate reads the Arabic-script share of the ORIGINAL request (>= 30 %), i.e. for an Arabizi
+`model_text` (`transliteration | original`) the half after the separator, so Arabic-script requests are translated and
+Arabizi is not (`TranslatingEncoder._original`; the `translate.arabizi` flag of section 30 stays off); (2) the section
+28 alias, `conformal.q_lang_alias {arabizi: ar}`, written by `train.py --retune` (nothing refitted; MANIFEST
+regenerated). Stage B and `--retune` now drop an alias for a language that gets its own OOF quantile (the
+`+unreviewed_augmentation` arm of `evaluate.py --all` trains Arabizi rows and otherwise trips the validator). The three
+experiments are merged as records: section 28 alias (adopted), 29 arm B (rejected, D-022), 30 arm C (rejected, D-023);
+the Arabizi rows stay out of the default pool (`include_unreviewed` off). `diff_reports`: identical modulo
+`generated_at`.
+
+| slice (category unless noted) | rc3 | rc4 |
+| --- | ---: | ---: |
+| OOF official category F1 / priority F1 | 0.935 / 0.904 | 0.935 / 0.904 |
+| our_test pooled category F1 / priority F1 | 0.864 / 0.847 | **0.868** / 0.847 |
+| our_test set1 / set2 / set3 category F1 | 1.000 / 0.835 / 0.770 | 1.000 / 0.800 / 0.828 |
+| F1 en / ar / arabizi, our_test | 0.926 / 0.906 / 0.500 | 0.926 / 0.906 / **0.403** |
+| priority F1 en / ar / arabizi, our_test | 0.874 / 0.585 / 0.301 | unchanged |
+| coverage (set size) OOF all / en / ar | 0.975 (1.50) / 0.963 (1.0) / 1.000 (2.6) | identical |
+| coverage (set size) our_test all | 0.897 (1.59) | 0.966 (1.98) |
+| coverage (set size) our_test en / ar | 0.938 (1.0) / 1.000 (2.6) | identical |
+| coverage (set size) our_test arabizi (32 rows) | 0.531 (1.0) | **0.969 (3.5)** |
+| priority coverage our_test (all / en / ar / arabizi) | 0.843 / 0.876 / 0.853 / 0.719 | identical |
+
+**The Arabizi expectation was not met.** The brief expected rc2-like Arabizi (coverage ~0.84, set ~3.4, F1 ~0.52).
+Measured: coverage 0.97, set 3.5, F1 0.403. The rc3 weights were fitted on embeddings of translated Arabic rows, so an
+untranslated `transliteration | Latin` text embedded by the same encoder does not land in rc2's space (rc2's head was
+fitted on untranslated Arabic); rc3's translated-joined route (which decoded badly, section 30) scored 0.50 by accident
+of what the head had seen. Arabizi requests now go almost entirely to human review (set size 3.5 of 6): the safety net
+works (coverage 0.97, wide interval, n = 32, 8 groups), the Arabizi quality is lower (-0.10 F1, within the noise of 8
+groups), and priority is unaffected. The pooled our_test F1 moves +0.004 and set2/set3 trade -0.035/+0.058 for the
+same reason (Arabizi rows are spread across sets). EN and AR slices, OOF and priority are identical to rc3.
+
+**Latency** (Windows dev laptop, `build_offline` as the API loads it, 1 thread; 60 Arabizi rows of
+`data/augmented/arabizi*.csv`, 33 Arabic and 60 English rows of the official data, one warm-up call, then one classify
+each; the timing script is not committed):
+
+| request | rc3 p50 / p95 | rc4 p50 / p95 |
+| --- | ---: | ---: |
+| Arabizi (60) | 272 / **2514** ms | 31 / **55** ms |
+| Arabic (33, uncached translation) | 42 / 302 ms | 23 / 153 ms |
+| English (60) | 22 / 31 ms | 20 / 28 ms |
+| RSS after load / after the 153 calls | 454 / 471 MB | 454 / 459 MB |
+
+(rc3 here = the rc4 code with the gate patched back to the joined text; the Arabic and English differences are run
+noise.) The Arabizi p95 falls from about 2.5 s (the decoder loops on the joined text) to near the English figure.
+
+**Shipped.** `dist/campuspulse-models-v1.tar.gz` (`encoder/` and `translator/`; contents identical to rc3, only the tar
+metadata differs): 119 950 521 bytes, sha256 `9bb79a8295b2c196432c7c21132cc81bfe3756345dd1beab3927cd181d502816`.
+No GitHub release yet; `DEFAULT_TAG`, CI and Dockerfile tags are unchanged.

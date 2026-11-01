@@ -1,7 +1,7 @@
 {
   "artifact_version": "v1",
   "dataset": "our_test",
-  "generated_at": "2026-11-01T09:00:22+00:00",
+  "generated_at": "2026-11-01T10:45:47+00:00",
   "labels": [
     "Registration",
     "IT Support",
@@ -12,12 +12,12 @@
   ],
   "matrix": [
     [
-      23,
+      26,
       0,
       4,
       1,
       1,
-      6
+      3
     ],
     [
       0,
@@ -28,40 +28,40 @@
       1
     ],
     [
-      5,
+      6,
       0,
-      27,
-      0,
-      0,
-      1
-    ],
-    [
-      2,
+      24,
       0,
       0,
-      26,
-      4,
       3
     ],
     [
       0,
       0,
       0,
-      0,
-      34,
-      1
+      29,
+      4,
+      2
     ],
     [
-      2,
+      0,
+      0,
+      0,
+      0,
+      33,
+      2
+    ],
+    [
+      0,
       4,
       0,
       0,
       4,
-      23
+      25
     ]
   ],
   "model": "M2-LR",
   "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
-  "sha": "722d78d18004",
+  "sha": "05de06d266cf",
   "target": "category"
 }
