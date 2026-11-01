@@ -9,7 +9,8 @@ only the `MemoryStore` differs (§3.11).
  2. Guards, in the given order (Gibberish, Injection, Safety):
       gibberish → flag `gibberish` (the core still labels; the online policy decides);
       injection → `model_text := stripped_text`, flag `injection_attempt` (the LLM tiers are disabled for it);
-      distress  → flag `distress` (online stops before labelling; batch keeps the label);
+      distress  → flag `distress` (online stops before labelling; batch keeps the label); a lexicon hit also
+                  floors the priority to high (P7.8, D-B); a verdict carrying `danger_spans` also sets safety;
       danger    → `safety = True`, flag `safety`.
     Later guards see the stripped text.
  3. `Ensemble.predict([model_text], memory)` → `p_cat`, `p_pri_model`, `per_model`, `ood_score`, neighbours.
@@ -77,6 +78,7 @@ class _Prepared:
     safety: bool
     verdicts: tuple[GuardVerdict, ...]
     injection: GuardVerdict
+    distress_floor: bool = False
 
 
 def _vector(dist: Mapping[str, float], labels: tuple[str, ...]) -> ProbVector:
@@ -167,6 +169,7 @@ class TriageCore:
         req = self.normalizer.normalize(raw, picked_location)
         flags: set[str] = set()
         safety = False
+        distress_floor = False
         verdicts: list[GuardVerdict] = []
         injection = GuardVerdict(kind="none")
         for guard in self.guards:
@@ -179,9 +182,14 @@ class TriageCore:
                 req = dataclasses.replace(req, model_text=verdict.stripped_text)
             elif verdict.kind == "danger":
                 safety = True
+            elif verdict.kind == "distress":
+                distress_floor = distress_floor or verdict.lexicon  # lexicon hits only (D-B)
+                if verdict.danger_spans:  # a request that is both keeps the safety tag (P7.8)
+                    safety = True
+                    flags.add(_FLAG_FOR["danger"])
         if req.truncated:
             flags.add("truncated")
-        return _Prepared(req, flags, safety, tuple(verdicts), injection)
+        return _Prepared(req, flags, safety, tuple(verdicts), injection, distress_floor)
 
     def _ensemble(self, prepared: Sequence[_Prepared], memory: bool) -> list[EnsembleOutput | None]:
         """Step 3 for every row with text, one call per distinct text; None for a row with no text left.
@@ -214,7 +222,8 @@ class TriageCore:
             p_pri_head = self._prior_pri
         floor_hits = self.urgency_floor.hits(req) if self.urgency_floor is not None else ()
         p_pri, floors = self.finalizer.apply(
-            p_pri_head, prepared.safety, prepared.injection, constraints, floor_hits
+            p_pri_head, prepared.safety, prepared.injection, constraints, floor_hits,
+            distress=prepared.distress_floor,
         )
         if FLOOR_URGENCY in floors:
             flags.update(f"urgency_floor:{family}" for family in floor_hits)
