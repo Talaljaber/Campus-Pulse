@@ -18,7 +18,8 @@ only the `MemoryStore` differs (§3.11).
     injected text can steer a label, and the wide conformal sets mark the result as unsure.
  4. `EvidenceExtractor.extract` on the (stripped) request; never `stated_urgency`.
  5. `PriorityHead.predict(p_pri_model, evidence, constraints)`.
- 6. `PriorityFinalizer.apply` → `p_pri` (safety → high; a priority answer → one-hot), `floors_applied`.
+ 6. `PriorityFinalizer.apply` → `p_pri` (safety → high; a priority answer → one-hot; an urgency-floor
+    family on the stripped text → high, flag `urgency_floor:<family>`), `floors_applied`.
  7. Conformal sets on `p_cat` and the final `p_pri` (empty → argmax + flags `empty_set`,
     `empty_set_cat` / `empty_set_pri`, P7.1). A category answer
     makes `p_cat` one-hot on it and `S_cat = {answer}`; a priority floor makes `S_pri = {floor label}`.
@@ -32,7 +33,7 @@ import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from campuspulse_ai.application.services.priority_finalizer import PriorityFinalizer, onehot
+from campuspulse_ai.application.services.priority_finalizer import FLOOR_URGENCY, PriorityFinalizer, onehot
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.domain.entities import CoreResult
 from campuspulse_ai.domain.errors import InvalidInput
@@ -46,6 +47,7 @@ from campuspulse_ai.domain.ports import (
     MemoryStore,
     Normalizer,
     PriorityHead,
+    UrgencyFloor,
 )
 from campuspulse_ai.domain.values import (
     ArtifactVersion,
@@ -104,6 +106,7 @@ class TriageCore:
         clock: ClockPort,
         config: FrozenConfig,
         artifact: ArtifactVersion,
+        urgency_floor: UrgencyFloor | None = None,
     ) -> None:
         self.normalizer = normalizer
         self.guards: tuple[Guard, ...] = tuple(guards)
@@ -117,6 +120,7 @@ class TriageCore:
         self.clock = clock
         self.config = config
         self.artifact = artifact
+        self.urgency_floor = urgency_floor
         self._prior_cat = _vector(config.priors.category, CATEGORY_LABELS)
         self._prior_pri = _vector(config.priors.priority, PRIORITY_LABELS)
 
@@ -208,7 +212,12 @@ class TriageCore:
         else:  # the whole request was an injection: no model sees anything (module docstring, step 3)
             p_cat, per_model, ood, neighbors, embedding = self._prior_cat, {}, 0.0, (), ()
             p_pri_head = self._prior_pri
-        p_pri, floors = self.finalizer.apply(p_pri_head, prepared.safety, prepared.injection, constraints)
+        floor_hits = self.urgency_floor.hits(req) if self.urgency_floor is not None else ()
+        p_pri, floors = self.finalizer.apply(
+            p_pri_head, prepared.safety, prepared.injection, constraints, floor_hits
+        )
+        if FLOOR_URGENCY in floors:
+            flags.update(f"urgency_floor:{family}" for family in floor_hits)
 
         answered_cat = [c.value for c in constraints if c.kind == "category"]
         if answered_cat:

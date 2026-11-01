@@ -375,6 +375,7 @@ def with_memory(core: TriageCore, memory: MemoryStore) -> TriageCore:
         clock=core.clock,
         config=core.config,
         artifact=core.artifact,
+        urgency_floor=core.urgency_floor,
     )
 
 
