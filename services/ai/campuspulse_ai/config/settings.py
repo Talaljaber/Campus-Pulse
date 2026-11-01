@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     llm_max_retries: int = 2
     llm_retry_backoff_s: float = 0.5
     llm_cache_path: Path = Path(".cache/llm.sqlite")
+    # Optional LLM Arabizi->English translation in front of the encoder (P2.20, D-025). Off by default.
+    llm_arabizi_translate: bool = False
+    llm_arabizi_model: str = "openai/gpt-4o-mini-2024-07-18"
+    llm_arabizi_timeout_s: float = 6.0
+    llm_arabizi_cache_path: Path = Path(".cache/llm_arabizi.sqlite")
 
     # Supabase (service role is server-side only)
     supabase_url: str | None = None

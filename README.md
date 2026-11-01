@@ -57,6 +57,11 @@ components are added.
 - **OpenRouter**: the optional LLM tier in the live app, consulted only when the trained model is unsure
   (`ENABLE_LLM`, pinned model IDs, temperature 0, cached). Also used offline to draft training augmentation.
   `predict.py` never calls it.
+- **OpenRouter, optional Arabizi translator** (`openai/gpt-4o-mini-2024-07-18`, pinned, temperature 0, cached on
+  disk; D-025): translates a Latin-script Arabic (Arabizi) request into English in front of the encoder only.
+  Off by default, so the scored offline path is unchanged. It runs only with `predict.py --use-llm` or
+  `LLM_ARABIZI_TRANSLATE=true` plus `OPENROUTER_API_KEY`. The only text sent is the student's request text of
+  requests detected as Arabizi: no names, ids, labels or other requests. A failed call means no translation.
 - **Linear**: ticket mirroring and status sync, in a separate demo workspace.
 - **Gmail SMTP**: notifications, sent only to allow-listed demo inboxes (enforced in code).
 - **GitHub Releases**: hosts the model artifact tarball.

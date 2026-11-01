@@ -1,0 +1,2195 @@
+{
+ "model": "openai/gpt-4o-mini-2024-07-18",
+ "a_our_test_arabizi": {
+  "n": 32,
+  "groups": 8,
+  "category": {
+   "A": 0.5,
+   "D1": 0.8248,
+   "paired_D1_minus_A": {
+    "delta": 0.3248,
+    "ci_low": 0.056,
+    "ci_high": 0.6238,
+    "p_better": 0.988
+   },
+   "coverage_A": 0.5312,
+   "set_size_A": 1.0,
+   "coverage_D1": 0.8125,
+   "set_size_D1": 1.0
+  },
+  "priority": {
+   "A": 0.3007,
+   "D1": 0.3007,
+   "paired_D1_minus_A": {
+    "delta": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "p_better": 0.0
+   },
+   "coverage_A": 0.7188,
+   "set_size_A": 1.0,
+   "coverage_D1": 0.7188,
+   "set_size_D1": 1.0
+  }
+ },
+ "b_from_official": {
+  "n": 126,
+  "groups": 30,
+  "category": {
+   "A": 0.5667,
+   "D1": 0.9449,
+   "paired_D1_minus_A": {
+    "delta": 0.3782,
+    "ci_low": 0.2862,
+    "ci_high": 0.5061,
+    "p_better": 1.0
+   },
+   "coverage_A": 0.5873,
+   "set_size_A": 1.0,
+   "coverage_D1": 0.9444,
+   "set_size_D1": 1.0
+  },
+  "priority": {
+   "A": 0.8082,
+   "D1": 0.8082,
+   "paired_D1_minus_A": {
+    "delta": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "p_better": 0.0
+   },
+   "coverage_A": 0.8016,
+   "set_size_A": 1.0,
+   "coverage_D1": 0.8016,
+   "set_size_D1": 1.0
+  }
+ },
+ "c_arabizi_plus_new_scenarios": {
+  "n": 105,
+  "groups": 90,
+  "category": {
+   "A": 0.5987,
+   "D1": 0.8372,
+   "paired_D1_minus_A": {
+    "delta": 0.2385,
+    "ci_low": 0.1606,
+    "ci_high": 0.3326,
+    "p_better": 1.0
+   },
+   "coverage_A": 0.5905,
+   "set_size_A": 1.0,
+   "coverage_D1": 0.8381,
+   "set_size_D1": 1.0
+  },
+  "priority": {
+   "A": 0.71,
+   "D1": 0.71,
+   "paired_D1_minus_A": {
+    "delta": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "p_better": 0.0
+   },
+   "coverage_A": 0.7048,
+   "set_size_A": 1.0,
+   "coverage_D1": 0.7048,
+   "set_size_D1": 1.0
+  }
+ },
+ "translation": {
+  "originals": 255,
+  "used": 510,
+  "fell_back": 0,
+  "cache_hits": 255,
+  "failures": 0,
+  "network_calls": 255,
+  "latency_ms_p50": 723,
+  "latency_ms_p95": 945,
+  "spend_usd_this_run": 0.009317
+ },
+ "category_flips_b_c": {
+  "b": 54,
+  "c": 43
+ },
+ "pairs": [
+  {
+   "id": "AUG-AO-0001",
+   "set": "b",
+   "text": "7esabi el jam3e tsakkar w 3ndi exam online el yom",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "My university account is locked and I have an online exam today."
+  },
+  {
+   "id": "AUG-AO-0002",
+   "set": "b",
+   "text": "account el jame3a sakkar 3alay w 3indi emt7an online elyom",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "The university account is locked and I have an online exam today."
+  },
+  {
+   "id": "AUG-AO-0003",
+   "set": "b",
+   "text": "hesabi bel jam3a mseker!! w 3ndi online exam lyom",
+   "gold": "IT Support",
+   "A": "Academic Support",
+   "D1": "IT Support",
+   "translation": "My university account is locked!! I have an online exam today."
+  },
+  {
+   "id": "AUG-AO-0004",
+   "set": "b",
+   "text": "bde noskha men el receipt tab3 el daf3",
+   "gold": "Finance",
+   "A": "Facilities",
+   "D1": "Finance",
+   "translation": "I want a copy of the payment receipt."
+  },
+  {
+   "id": "AUG-AO-0005",
+   "set": "b",
+   "text": "keef bakhod copy 3an ishaar el dafe3 ta3i?",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Finance",
+   "translation": "How do I get a copy of my payment receipt?"
+  },
+  {
+   "id": "AUG-AO-0006",
+   "set": "b",
+   "text": "biddi wasel el daf3 tani, wein bala2ee",
+   "gold": "Finance",
+   "A": "Transportation",
+   "D1": "Finance",
+   "translation": "I want to get the second payment, where can I find it?"
+  },
+  {
+   "id": "AUG-AO-0007",
+   "set": "b",
+   "text": "bab el lab 3ale2 w el tolab ma byeqdaro yetla3o",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The lab door is locked and the students can't get out."
+  },
+  {
+   "id": "AUG-AO-0008",
+   "set": "b",
+   "text": "el bab ta3 el mukhtabar mjam2ed w fi tolab jowa mish 3arfeen yokhrjo",
+   "gold": "Facilities",
+   "A": "IT Support",
+   "D1": "Facilities",
+   "translation": "The door to the lab is locked and there are students inside who don't know how to get out."
+  },
+  {
+   "id": "AUG-AO-0009",
+   "set": "b",
+   "text": "door el lab stuck w el talaba 3alqeen jowwa",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The lab door is stuck and the students are trapped inside."
+  },
+  {
+   "id": "AUG-AO-0010",
+   "set": "b",
+   "text": "el nizam shal el madde el msajjaleh 3indi bidoon ay tanbeeh",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The system for the recorded material I have without any notification."
+  },
+  {
+   "id": "AUG-AO-0011",
+   "set": "b",
+   "text": "el system 7azaf madde kent msajjelha w ma 7ada qalli shi",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The system deleted the material I had registered and no one told me anything."
+  },
+  {
+   "id": "AUG-AO-0012",
+   "set": "b",
+   "text": "tl3at el course mn jadwali lwa7dha, el system shalha bidon ma ynabbehni",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The course appeared on my schedule by itself, the system activated it without notifying me."
+  },
+  {
+   "id": "AUG-AO-0013",
+   "set": "b",
+   "text": "3alamti ghalat w akher yom lal e3tirad elyom",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I learned wrong and the last day for objections is today."
+  },
+  {
+   "id": "AUG-AO-0014",
+   "set": "b",
+   "text": "el 3alame ta3t el exam mshe hek, w akher yom e3tiraad lyom",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "The world of the exam is like this, and today is the last day for objections."
+  },
+  {
+   "id": "AUG-AO-0015",
+   "set": "b",
+   "text": "3alame el imti7an masjle ghalat w el yom akher mawed lal e3teraad",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "The exam results are wrong and today is the last date for objections."
+  },
+  {
+   "id": "AUG-AO-0016",
+   "set": "b",
+   "text": "bde 7ada yfahemni shu ma3na el prerequisite",
+   "gold": "Registration",
+   "A": "Facilities",
+   "D1": "Registration",
+   "translation": "I want someone to explain to me what the meaning of prerequisite is."
+  },
+  {
+   "id": "AUG-AO-0017",
+   "set": "b",
+   "text": "mish fahem nizam el shurut el masbaqa lal mawad (prerequisite)",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "I don't understand the system of prerequisites for the courses."
+  },
+  {
+   "id": "AUG-AO-0018",
+   "set": "b",
+   "text": "shu el prerequisite w leish ma fiyi asajjel el madde?",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "What is the prerequisite and why can't I register for the course?"
+  },
+  {
+   "id": "AUG-AO-0019",
+   "set": "b",
+   "text": "dafa3et el qest w lisa ma tala3 3indi w el tasjeel bysakker el yom",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "I paid the fee and it still hasn't appeared for me, and registration closes today."
+  },
+  {
+   "id": "AUG-AO-0020",
+   "set": "b",
+   "text": "el daf3a ta3t el rusoom mish zahra bel system w el registration bye2fel lyom",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "The payment for the fees is not showing in the system and the registration closes today."
+  },
+  {
+   "id": "AUG-AO-0021",
+   "set": "b",
+   "text": "dfa3t el rusum bs mish 3am betban, w el tasjeel akher yom elyom",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "I paid the fees but they are not showing up, and the registration is due today."
+  },
+  {
+   "id": "AUG-AO-0022",
+   "set": "b",
+   "text": "wein bala2i mawa3eed el se7b w el idafa?",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "Where can I find the dates for the exam and the addition?"
+  },
+  {
+   "id": "AUG-AO-0023",
+   "set": "b",
+   "text": "emta el add w drop?",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "When is the add and drop?"
+  },
+  {
+   "id": "AUG-AO-0024",
+   "set": "b",
+   "text": "wein el jadwal tab3 el sa7b wel eidafe lal mawad",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "Where is the schedule for the subjects and the additional materials?"
+  },
+  {
+   "id": "AUG-AO-0025",
+   "set": "b",
+   "text": "wein fiyi ashuf el morshed el akademi?",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "Where can I find the academic advisor?"
+  },
+  {
+   "id": "AUG-AO-0026",
+   "set": "b",
+   "text": "wein maktab el advisor ta3i?",
+   "gold": "Academic Support",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "Where is my advisor's office?"
+  },
+  {
+   "id": "AUG-AO-0027",
+   "set": "b",
+   "text": "keef bel2a el murshed el akadimi 3shan ejtem3 ma3o",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "How can I find the academic advisor to meet with him?"
+  },
+  {
+   "id": "AUG-AO-0028",
+   "set": "b",
+   "text": "keef baghayyer el password?",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "How do I change the password?"
+  },
+  {
+   "id": "AUG-AO-0029",
+   "set": "b",
+   "text": "shu el tari2a la taghyeer kelmet el ser ta3t el 7esab",
+   "gold": "IT Support",
+   "A": "Registration",
+   "D1": "IT Support",
+   "translation": "What is the way to change the password under the account?"
+  },
+  {
+   "id": "AUG-AO-0030",
+   "set": "b",
+   "text": "kif bghayer password el portal",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "How do I change the portal password?"
+  },
+  {
+   "id": "AUG-AO-0031",
+   "set": "b",
+   "text": "el platform ta3 el ta3leem wa2ef w ana bel online quiz",
+   "gold": "IT Support",
+   "A": "Academic Support",
+   "D1": "IT Support",
+   "translation": "The education platform is down and I am in the online quiz."
+  },
+  {
+   "id": "AUG-AO-0032",
+   "set": "b",
+   "text": "el learning platform ma 3am yeshta3'el w 3am bn7el quiz online",
+   "gold": "IT Support",
+   "A": "Facilities",
+   "D1": "IT Support",
+   "translation": "The learning platform is not working and I am solving the quiz online."
+  },
+  {
+   "id": "AUG-AO-0033",
+   "set": "b",
+   "text": "el manassa ma btefta7 w ana 3am b7el quiz online!!",
+   "gold": "IT Support",
+   "A": "Academic Support",
+   "D1": "IT Support",
+   "translation": "The platform is not opening and I am taking an online quiz."
+  },
+  {
+   "id": "AUG-AO-0034",
+   "set": "b",
+   "text": "ma b2dar arfa3 el malaf, el portal bytl3li error",
+   "gold": "IT Support",
+   "A": "Registration",
+   "D1": "IT Support",
+   "translation": "I can't upload the file, the portal is giving me an error."
+  },
+  {
+   "id": "AUG-AO-0035",
+   "set": "b",
+   "text": "el portal bi3tini error lama bde a3mel upload la file",
+   "gold": "IT Support",
+   "A": "Registration",
+   "D1": "IT Support",
+   "translation": "The portal gave me an error when I tried to upload the file."
+  },
+  {
+   "id": "AUG-AO-0036",
+   "set": "b",
+   "text": "3am ba3mel upload lal file bel portal w btetla3li error",
+   "gold": "IT Support",
+   "A": "Academic Support",
+   "D1": "IT Support",
+   "translation": "I'm uploading the file to the portal and I'm getting an error."
+  },
+  {
+   "id": "AUG-AO-0037",
+   "set": "b",
+   "text": "khasm el minha mish zaher bel fatoora",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "The discount on the invoice is not clear."
+  },
+  {
+   "id": "AUG-AO-0038",
+   "set": "b",
+   "text": "el scholarship discount ma 3am yenzel bel invoice ta3i",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Finance",
+   "translation": "The scholarship discount is not showing up on my invoice."
+  },
+  {
+   "id": "AUG-AO-0039",
+   "set": "b",
+   "text": "el minha ta3ti ma 7asabo bel fatoura, fi khasem na2es",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Finance",
+   "translation": "My bill doesn't match what I was given, there's a missing deduction."
+  },
+  {
+   "id": "AUG-AO-0040",
+   "set": "b",
+   "text": "el bus ta2akhar 3eshreen de2i2a",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The bus is delayed by twenty minutes."
+  },
+  {
+   "id": "AUG-AO-0041",
+   "set": "b",
+   "text": "bas el jam3a met2akher hawale 20 daqeeqa",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "IT Support",
+   "translation": "The university is delayed by about 20 minutes."
+  },
+  {
+   "id": "AUG-AO-0042",
+   "set": "b",
+   "text": "el bus lesa ma wasal w mt2akher 3ishreen daqiqa",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The bus still hasn't arrived and it's delayed by twenty minutes."
+  },
+  {
+   "id": "AUG-AO-0043",
+   "set": "b",
+   "text": "wein jadwal el bsat?",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "Transportation",
+   "translation": "Where is the bus schedule?"
+  },
+  {
+   "id": "AUG-AO-0044",
+   "set": "b",
+   "text": "wen bshuf timetable el bus?",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "When will I see the bus timetable?"
+  },
+  {
+   "id": "AUG-AO-0045",
+   "set": "b",
+   "text": "fi jadwal lal bassat? wein?",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "Transportation",
+   "translation": "Is there a schedule for the buses? Where?"
+  },
+  {
+   "id": "AUG-AO-0046",
+   "set": "b",
+   "text": "el wifi bye2ta3 kol shwayyet daqayeq",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "The wifi disconnects every few minutes."
+  },
+  {
+   "id": "AUG-AO-0047",
+   "set": "b",
+   "text": "el internet bel jam3a bi2ta3 kol shwai w bergha3 byerja3",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "The internet at the university keeps cutting off every little while and then it comes back."
+  },
+  {
+   "id": "AUG-AO-0048",
+   "set": "b",
+   "text": "wi-fi el campus 3am yfsel kol kam daqeeqa",
+   "gold": "IT Support",
+   "A": "Registration",
+   "D1": "IT Support",
+   "translation": "The campus wi-fi keeps disconnecting every few minutes."
+  },
+  {
+   "id": "AUG-AO-0049",
+   "set": "b",
+   "text": "wein bshuf mawa3eed aqsat el rusum?",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "Where can I see the dates for the tuition fees?"
+  },
+  {
+   "id": "AUG-AO-0050",
+   "set": "b",
+   "text": "emta mawa3id el aqsat tab3et el qest?",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "When are the appointments for the presentation?"
+  },
+  {
+   "id": "AUG-AO-0051",
+   "set": "b",
+   "text": "keef ba3raf mawa3eed daf3 el qest",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "How do I know the payment deadlines?"
+  },
+  {
+   "id": "AUG-AO-0052",
+   "set": "b",
+   "text": "ma 3am a2dar ashuf el mulahazat 3ala el wajeb",
+   "gold": "Academic Support",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "I can't see the comments on the homework."
+  },
+  {
+   "id": "AUG-AO-0053",
+   "set": "b",
+   "text": "el feedback ta3 el assignment ma 3am yeftah 3indi",
+   "gold": "Academic Support",
+   "A": "IT Support",
+   "D1": "Academic Support",
+   "translation": "The feedback for the assignment is not opening for me."
+  },
+  {
+   "id": "AUG-AO-0054",
+   "set": "b",
+   "text": "mish 3am eshuf ta3leeq el doctor 3ala el wajib tabe3i",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I'm not seeing the doctor's comment on the assignment, of course."
+  },
+  {
+   "id": "AUG-AO-0055",
+   "set": "b",
+   "text": "fi may 3am bitsarrab janb el priza bel mukhtabar",
+   "gold": "Facilities",
+   "A": "IT Support",
+   "D1": "Registration",
+   "translation": "In May, I'm going to sit next to the prize in the lab."
+  },
+  {
+   "id": "AUG-AO-0056",
+   "set": "b",
+   "text": "ma2 3am yenzel janeb el kahraba bel lab, khatar!",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The electricity is not coming down next to the lab, it's dangerous."
+  },
+  {
+   "id": "AUG-AO-0057",
+   "set": "b",
+   "text": "tasreeb mayy 2arib men el plug el kahraba2i bel mukhtabar",
+   "gold": "Facilities",
+   "A": "IT Support",
+   "D1": "Facilities",
+   "translation": "There is a water leak close to the electrical plug in the lab."
+  },
+  {
+   "id": "AUG-AO-0058",
+   "set": "b",
+   "text": "el mukayyef wa2af bel qa3a",
+   "gold": "Facilities",
+   "A": "Academic Support",
+   "D1": "Facilities",
+   "translation": "The air conditioner stopped in the hall."
+  },
+  {
+   "id": "AUG-AO-0059",
+   "set": "b",
+   "text": "el AC ta3 el qa3a ma 3am yeshtaghel",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The AC in the room is not working."
+  },
+  {
+   "id": "AUG-AO-0060",
+   "set": "b",
+   "text": "el takyeef bel ghurfa ta3 el muhadara 3atlan",
+   "gold": "Facilities",
+   "A": "Registration",
+   "D1": "Facilities",
+   "translation": "The air conditioning in the lecture room is broken."
+  },
+  {
+   "id": "AUG-AO-0061",
+   "set": "b",
+   "text": "ma 3am a2dar adeef mawad, el portal bye3tezer el talab",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "I can't add materials, the portal is rejecting the request."
+  },
+  {
+   "id": "AUG-AO-0062",
+   "set": "b",
+   "text": "el tasjeel bi rfod talabi lama bde adeef el mawad",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The registration is rejected when I want to add the materials."
+  },
+  {
+   "id": "AUG-AO-0063",
+   "set": "b",
+   "text": "ma fiyi a3mel add lal course, el portal brfod",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "I can't add to the course, the portal is refusing."
+  },
+  {
+   "id": "AUG-AO-0064",
+   "set": "b",
+   "text": "el kart tab3 el bus wa2af 3an el shughol hal-sabah",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The bus card stopped working this morning."
+  },
+  {
+   "id": "AUG-AO-0065",
+   "set": "b",
+   "text": "bitaqet el bus ma 3adat teshtaghel hal sabeh",
+   "gold": "Transportation",
+   "A": "Academic Support",
+   "D1": "Transportation",
+   "translation": "The bus card is not working this morning."
+  },
+  {
+   "id": "AUG-AO-0066",
+   "set": "b",
+   "text": "el pass ta3 el bus mish 3am yemshi el yom el sob7",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The bus schedule is not running today in the morning."
+  },
+  {
+   "id": "AUG-AO-0067",
+   "set": "b",
+   "text": "ghayyaru khat el bus bidoon e3lan",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "They changed the bus route without announcement."
+  },
+  {
+   "id": "AUG-AO-0068",
+   "set": "b",
+   "text": "masar el bus etghayyar w ma had a3lan 3an shi",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": null
+  },
+  {
+   "id": "AUG-AO-0069",
+   "set": "b",
+   "text": "el route tab3 el bus tghayyar w ma fi ayy announcement",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The bus route has changed and there is no announcement."
+  },
+  {
+   "id": "AUG-AO-0070",
+   "set": "b",
+   "text": "fi imti7anein bnafs el wa2t bel jadwal",
+   "gold": "Academic Support",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "There are two exams at the same time in the schedule."
+  },
+  {
+   "id": "AUG-AO-0071",
+   "set": "b",
+   "text": "el exam schedule fih test-ein bnafs el sa3a",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "The exam schedule has two tests at the same time."
+  },
+  {
+   "id": "AUG-AO-0072",
+   "set": "b",
+   "text": "3indi emte7anen bnafs el mi3ad, shu a3mel?",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I have an exam at the same time, what should I do?"
+  },
+  {
+   "id": "AUG-AO-0073",
+   "set": "b",
+   "text": "mish 2ader asajel mawad w el nizam byeTle3li error",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "I can't register the materials and the system is giving me an error."
+  },
+  {
+   "id": "AUG-AO-0074",
+   "set": "b",
+   "text": "ma fiyi asajjel mawad, el system 3am yeb3atli khata2",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "I can't register materials, the system keeps sending me an error."
+  },
+  {
+   "id": "AUG-AO-0075",
+   "set": "b",
+   "text": "el tasjeel ma 3am yeshtaghel, btetla3li resalet error kol ma bjarreb",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The registration is not working, I keep getting an error message every time I try."
+  },
+  {
+   "id": "AUG-AO-0076",
+   "set": "b",
+   "text": "dafa3t el qest w lessa mish zaher bel daf3 w el tasjeel byesaker el yom",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "I paid the fee and it's still not showing in the payment, and registration closes today."
+  },
+  {
+   "id": "AUG-AO-0077",
+   "set": "b",
+   "text": "khallast el daf3 bs ma etsajjal, w el registration bye2fel elyom",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "I finished the payment but I didn't register, and the registration closes today."
+  },
+  {
+   "id": "AUG-AO-0078",
+   "set": "b",
+   "text": "dafa3t el aqsat w ma tl3et bel nizam, el yom akher yom lal tasjeel",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Registration",
+   "translation": "I paid the installments and it didn't show up in the system, today is the last day for registration."
+  },
+  {
+   "id": "AUG-AO-0079",
+   "set": "b",
+   "text": "lamba bel mamarr kharbaneh",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The lamp in the corridor is broken."
+  },
+  {
+   "id": "AUG-AO-0080",
+   "set": "b",
+   "text": "lamba bel corridor ma 3am tdawwi",
+   "gold": "Facilities",
+   "A": "Transportation",
+   "D1": "Facilities",
+   "translation": "The lamp in the corridor is not working."
+  },
+  {
+   "id": "AUG-AO-0081",
+   "set": "b",
+   "text": "fi lamba mkaserra bel mamar",
+   "gold": "Facilities",
+   "A": "Registration",
+   "D1": "Facilities",
+   "translation": "There is a broken lamp in the corridor."
+  },
+  {
+   "id": "AUG-AO-0082",
+   "set": "b",
+   "text": "bde nasi7a b ekhtiyar madet ekhtiyariyye",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": null
+  },
+  {
+   "id": "AUG-AO-0083",
+   "set": "b",
+   "text": "shu el elective el monaseb? bde ra2i el morshed",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "What is the suitable elective? I want the advisor's opinion."
+  },
+  {
+   "id": "AUG-AO-0084",
+   "set": "b",
+   "text": "ayya madde ekhtiyariyye ekhtar? me7tar",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "Which elective subject should I choose? I'm confused."
+  },
+  {
+   "id": "AUG-AO-0085",
+   "set": "b",
+   "text": "fi mayy btsarrab janb kahraba el mukhtabar",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "There is water leaking next to the electricity in the lab."
+  },
+  {
+   "id": "AUG-AO-0086",
+   "set": "b",
+   "text": "fi tasreeb ma2 janb el kahrabaa bel lab",
+   "gold": "Facilities",
+   "A": "Academic Support",
+   "D1": "Facilities",
+   "translation": "There is a leak of water next to the electricity in the lab."
+  },
+  {
+   "id": "AUG-AO-0087",
+   "set": "b",
+   "text": "el may 3am btenzel 3a el plug bel mukhtabar!",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The exam is coming down to the plug in the lab."
+  },
+  {
+   "id": "AUG-AO-0088",
+   "set": "b",
+   "text": "safhet el tasjeel m3allaqa 3indi",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The registration page is suspended for me."
+  },
+  {
+   "id": "AUG-AO-0089",
+   "set": "b",
+   "text": "el registration page 3am ta3laq w ma btefta7",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The registration page is hanging and not opening."
+  },
+  {
+   "id": "AUG-AO-0090",
+   "set": "b",
+   "text": "safhet el tasjeel wa2fa w ma btetharrak",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The registration office is closed and not moving."
+  },
+  {
+   "id": "AUG-AO-0091",
+   "set": "b",
+   "text": "akher bus etlaghaa w el tolab dallo bidoon muwasalat",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The last bus has left and the students are left without transportation."
+  },
+  {
+   "id": "AUG-AO-0092",
+   "set": "b",
+   "text": "el bus el akheer enlaghaa w fi tolab 3alqeen ma 3ando keef yerj3o",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The last bus was canceled and there are students stuck who don't know how to get back."
+  },
+  {
+   "id": "AUG-AO-0093",
+   "set": "b",
+   "text": "last bus etlaghaa w el talaba 3alqeen bel jam3a",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The last bus was canceled and the students are stuck at the university."
+  },
+  {
+   "id": "AUG-AO-0094",
+   "set": "b",
+   "text": "7esabi bel jam3a mseker w 3indi online exam el yom",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "My account at the university is locked and I have an online exam today."
+  },
+  {
+   "id": "AUG-AO-0095",
+   "set": "b",
+   "text": "el account ta3i etqafal w 3indi emt7an online elyom, please 7elooha",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": null
+  },
+  {
+   "id": "AUG-AO-0096",
+   "set": "b",
+   "text": "account el uni msakkar w el exam online lyom",
+   "gold": "IT Support",
+   "A": "Academic Support",
+   "D1": "IT Support",
+   "translation": "The university account is locked and the exam is online today."
+  },
+  {
+   "id": "AUG-AO-0097",
+   "set": "b",
+   "text": "el daw bel mamar kharban",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The light in the corridor is broken."
+  },
+  {
+   "id": "AUG-AO-0098",
+   "set": "b",
+   "text": "dawa el corridor ma betshta3'el",
+   "gold": "Facilities",
+   "A": "Registration",
+   "D1": "Facilities",
+   "translation": "The corridor light is not working."
+  },
+  {
+   "id": "AUG-AO-0099",
+   "set": "b",
+   "text": "el lamba bel mamar 3atlaneh",
+   "gold": "Facilities",
+   "A": "Registration",
+   "D1": "Facilities",
+   "translation": "The lamp in the corridor is broken."
+  },
+  {
+   "id": "AUG-AO-0100",
+   "set": "b",
+   "text": "3indi emte7anen bnafs el wa2et",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I have exams at the same time."
+  },
+  {
+   "id": "AUG-AO-0101",
+   "set": "b",
+   "text": "emtihanein bnafs el mi3ad w ma fiyi a7dar el etnein",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I have two exams at the same time and I can't attend both."
+  },
+  {
+   "id": "AUG-AO-0102",
+   "set": "b",
+   "text": "fi tadarob bel jadwal, emte7anein bnafs el yom wel sa3a",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "There is a training in the schedule, two exams on the same day and at the same time."
+  },
+  {
+   "id": "AUG-AO-0103",
+   "set": "b",
+   "text": "el mablagh el zaher 3ala 7esabi mish sa7i7",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Finance",
+   "translation": "The amount shown on my account is incorrect."
+  },
+  {
+   "id": "AUG-AO-0104",
+   "set": "b",
+   "text": "el rasid bel finance portal ghalat",
+   "gold": "Finance",
+   "A": "IT Support",
+   "D1": "Finance",
+   "translation": "The report in the finance portal is wrong."
+  },
+  {
+   "id": "AUG-AO-0105",
+   "set": "b",
+   "text": "el mablegh el matloob mn 3indi mish mazbout",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "The amount required from me is not correct."
+  },
+  {
+   "id": "AUG-AO-0106",
+   "set": "b",
+   "text": "wein bshuf jadwal el shuttle bus?",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "Where can I see the shuttle bus schedule?"
+  },
+  {
+   "id": "AUG-AO-0107",
+   "set": "b",
+   "text": "wen fiyi eshuf mawa3eed el shuttle",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "Transportation",
+   "translation": "Where can I see the shuttle schedule?"
+  },
+  {
+   "id": "AUG-AO-0108",
+   "set": "b",
+   "text": "fi timetable lal shuttle? wein?",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "Transportation",
+   "translation": "Is there a timetable for the shuttle? Where?"
+  },
+  {
+   "id": "AUG-AO-0109",
+   "set": "b",
+   "text": "wein mawa3eed fatret el add/drop?",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "Where are the add/drop appointment times?"
+  },
+  {
+   "id": "AUG-AO-0110",
+   "set": "b",
+   "text": "emta bel dabt fatret el sa7b wel idafa?",
+   "gold": "Registration",
+   "A": "Facilities",
+   "D1": "Registration",
+   "translation": "When exactly is the deadline for the attendance and the addition?"
+  },
+  {
+   "id": "AUG-AO-0111",
+   "set": "b",
+   "text": "wen lage mawa3eed el drop w el add",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "When are the drop and add deadlines?"
+  },
+  {
+   "id": "AUG-AO-0112",
+   "set": "b",
+   "text": "el finance portal 3am yeb2ayyen rasid mish sa7i7",
+   "gold": "Finance",
+   "A": "Transportation",
+   "D1": "Finance",
+   "translation": "The finance portal is showing an incorrect balance."
+  },
+  {
+   "id": "AUG-AO-0113",
+   "set": "b",
+   "text": "el mablagh el mestahe2 3alay ghalat bel portal",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "The amount that was supposed to be charged to me is wrong in the portal."
+  },
+  {
+   "id": "AUG-AO-0114",
+   "set": "b",
+   "text": "el balance el baqi bel portal mish ma3 el hesab",
+   "gold": "Finance",
+   "A": "Facilities",
+   "D1": "Finance",
+   "translation": "The remaining balance in the portal is not matching with the account."
+  },
+  {
+   "id": "AUG-AO-0115",
+   "set": "b",
+   "text": "bas el jam3a met2akher 3an mi3ado",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "IT Support",
+   "translation": "The university is delayed from its schedule."
+  },
+  {
+   "id": "AUG-AO-0116",
+   "set": "b",
+   "text": "el bus etakhar 3an wa2to",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The bus is late from its time."
+  },
+  {
+   "id": "AUG-AO-0117",
+   "set": "b",
+   "text": "el bus mesh 3al wa2et el yom, mt2akher",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The bus is not on time today, it's delayed."
+  },
+  {
+   "id": "AUG-AO-0118",
+   "set": "b",
+   "text": "el projector bel ghurfa ma 3am yeshtaghel",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The projector in the room is not working."
+  },
+  {
+   "id": "AUG-AO-0119",
+   "set": "b",
+   "text": "el brojektor 3atlan bel qa3a",
+   "gold": "Facilities",
+   "A": "Registration",
+   "D1": "Facilities",
+   "translation": "The projector is broken in the hall."
+  },
+  {
+   "id": "AUG-AO-0120",
+   "set": "b",
+   "text": "el projector bel room mish shaghal",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The projector in the room is not working."
+  },
+  {
+   "id": "AUG-AO-0121",
+   "set": "b",
+   "text": "3alamet el exam masjale ghalat w akher mawed lal e3tiraad elyom",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "The exam results were wrong and the last date for the appeal is today."
+  },
+  {
+   "id": "AUG-AO-0122",
+   "set": "b",
+   "text": "el 3alame etsajjalet ghalat, w el yom akher yom lal appeal",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Registration",
+   "translation": "The world registered wrong, and today is the last day for the appeal."
+  },
+  {
+   "id": "AUG-AO-0123",
+   "set": "b",
+   "text": "markati bel imti7an ghalat w deadline el e3tiraad el yom",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "My mark in the exam is wrong and the deadline for the appeal is today."
+  },
+  {
+   "id": "AUG-AO-0124",
+   "set": "b",
+   "text": "keef fiyi a3mel reset lal password ta3 el jam3a?",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "How can I reset the university password?"
+  },
+  {
+   "id": "AUG-AO-0125",
+   "set": "b",
+   "text": "kif bghayyer kelmet el ser?",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "How do I change the password?"
+  },
+  {
+   "id": "AUG-AO-0126",
+   "set": "b",
+   "text": "nseet el password, keef ba3mel reset",
+   "gold": "IT Support",
+   "A": "Transportation",
+   "D1": "IT Support",
+   "translation": "I forgot the password, how do I reset it?"
+  },
+  {
+   "id": "AUG-AZ-0001",
+   "set": "c",
+   "text": "7esabi el jam3i tsakkar w 3indi emte7an online elyom",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "My university account is locked and I have an online exam today."
+  },
+  {
+   "id": "AUG-AZ-0002",
+   "set": "c",
+   "text": "7esabi el jam3ee tsakar w 3ndi imti7an online elyoum",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "My university account is locked and I have an online exam today."
+  },
+  {
+   "id": "AUG-AZ-0003",
+   "set": "c",
+   "text": "3alamti ghalat w akher yom e3tirad elyom",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I made a mistake and today is the last day for objections."
+  },
+  {
+   "id": "AUG-AZ-0004",
+   "set": "c",
+   "text": "3alamti 3'alat w a5er youm e3tirad elyoum",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I learned that the last day of objections is today."
+  },
+  {
+   "id": "AUG-AZ-0005",
+   "set": "c",
+   "text": "wein bala2i mawa3eed el sa7b w el edafe",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "Where can I find the meeting times for the group and the addition?"
+  },
+  {
+   "id": "AUG-AZ-0006",
+   "set": "c",
+   "text": "wen bala2i mawa3eed el sa7b w el idafe",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "Where can I find the meeting times for the group and the additional ones?"
+  },
+  {
+   "id": "AUG-AZ-0007",
+   "set": "c",
+   "text": "keef bghayyer kelmet el sir",
+   "gold": "IT Support",
+   "A": "Academic Support",
+   "D1": "IT Support",
+   "translation": "How do I change the password?"
+  },
+  {
+   "id": "AUG-AZ-0008",
+   "set": "c",
+   "text": "kif bghayyer kalmet el sir",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "How do I change the password?"
+  },
+  {
+   "id": "AUG-AZ-0009",
+   "set": "c",
+   "text": "wein jadwal el baasat",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "Where is the bus schedule?"
+  },
+  {
+   "id": "AUG-AZ-0010",
+   "set": "c",
+   "text": "wen jadwal el basat",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "When is the bus schedule?"
+  },
+  {
+   "id": "AUG-AZ-0011",
+   "set": "c",
+   "text": "mesh 2ader asajjel mawad w el nedam bi3teeni 56a",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "I can't register the materials and the administration sent me 56a."
+  },
+  {
+   "id": "AUG-AZ-0012",
+   "set": "c",
+   "text": "msh qader asajel mawad w el nizam bya3teeni khta",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "I can't register materials and the system is sending me an error."
+  },
+  {
+   "id": "AUG-AZ-0013",
+   "set": "c",
+   "text": "dafa3t el 2est wlsa mesh dhaher bel daf3 w el tasjeel bisakker elyom",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "I paid the fees but it doesn't show in the payment and the registration is closing today."
+  },
+  {
+   "id": "AUG-AZ-0014",
+   "set": "c",
+   "text": "dfa3t el qest wlse msh daher bel daf3 w el tasjil bsakker elyoum",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "I submitted the request but it doesn't appear in the payment and registration, I'm closing it today."
+  },
+  {
+   "id": "AUG-AZ-0015",
+   "set": "c",
+   "text": "fe mayy bitsarreb jamb kahraba el mokhtabar",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "In the water, there's electricity next to the lab."
+  },
+  {
+   "id": "AUG-AZ-0016",
+   "set": "c",
+   "text": "fi mayye bitsarreb jamb kahraba el mo5tabar",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "There is water leaking next to the electricity in the lab."
+  },
+  {
+   "id": "AUG-AZ-0017",
+   "set": "c",
+   "text": "saf7a el tasjeel m3all2a 3indi",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The registration page is stuck for me."
+  },
+  {
+   "id": "AUG-AZ-0018",
+   "set": "c",
+   "text": "saf7et el tasjil m3alla2a 3ndi",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The registration page is suspended for me."
+  },
+  {
+   "id": "AUG-AZ-0019",
+   "set": "c",
+   "text": "el bus el akheer anlghi wdloa tullab bdon mwaslat",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The last bus is canceled and students should go without transportation."
+  },
+  {
+   "id": "AUG-AZ-0020",
+   "set": "c",
+   "text": "el baas el a5eer anl3'ee wdlua tolab bdun mwaslat",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The last exam is coming up and students are without transportation."
+  },
+  {
+   "id": "AUG-AZ-0021",
+   "set": "c",
+   "text": "el daw bel mamarr kharban",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The light in the corridor is broken."
+  },
+  {
+   "id": "AUG-AZ-0022",
+   "set": "c",
+   "text": "el dow bel mamarr 5arban",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The situation in the corridor is chaotic."
+  },
+  {
+   "id": "AUG-AZ-0023",
+   "set": "c",
+   "text": "3indi emte7anen b nafs el wa2t",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I have exams at the same time."
+  },
+  {
+   "id": "AUG-AZ-0024",
+   "set": "c",
+   "text": "3ndi emte7anen b nafs el wa2t",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I have exams at the same time."
+  },
+  {
+   "id": "AUG-AZ-0025",
+   "set": "c",
+   "text": "el mblgh el dhaher 3la 7esabi mesh 97i7",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "The amount showing on my account is not correct."
+  },
+  {
+   "id": "AUG-AZ-0026",
+   "set": "c",
+   "text": "el mbl3' el daher 3ala 7esabi msh s7ee7",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "The amount that was charged to my account is not correct."
+  },
+  {
+   "id": "AUG-AZ-0027",
+   "set": "c",
+   "text": "bus el jam3a ata5r 3an mo3da",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The university bus is late for the schedule."
+  },
+  {
+   "id": "AUG-AZ-0028",
+   "set": "c",
+   "text": "baas el jame3a atakhr 3an mu3de",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "The university is delayed from the schedule."
+  },
+  {
+   "id": "AUG-AZ-0029",
+   "set": "c",
+   "text": "el projector bel ghorfe mesh shaghal",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The projector in the room is not working."
+  },
+  {
+   "id": "AUG-AZ-0030",
+   "set": "c",
+   "text": "el projector bel ghurfe msh sha3'al",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The projector in the room is not working."
+  },
+  {
+   "id": "AUG-NC-0003",
+   "set": "c",
+   "text": "kif bedfa3 el rusoom 3an tari2 efawateercom? shu esm el mufawter elli b5taro b tatbee2 el bank? nawi adfa3 elyom",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Finance",
+   "translation": "How do I pay the fees through efawateercom? What is the name of the invoice that I choose in the bank application? I intend to pay today."
+  },
+  {
+   "id": "AUG-NC-0008",
+   "set": "c",
+   "text": "a5oi el zghir ra7 ybalesh bel jam3a el fasel el jay, fi 5asem lal e5weh? w kif bn2addem 3aleh?",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Registration",
+   "translation": "My little brother will start at the university next semester, is there a section for my brother? And how do we apply for it?"
+  },
+  {
+   "id": "AUG-NC-0013",
+   "set": "c",
+   "text": "bdi kashf 7esab rasmi b kol el rusoom elli dafa3tha la malaf el visa taba3 el sana el almaniyeh, min wen batlobo?",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "I want to get an official statement of all the fees I paid for the visa file for the German year, where do I request it from?"
+  },
+  {
+   "id": "AUG-NC-0018",
+   "set": "c",
+   "text": "eza ensa7abt min madeh ba3d fatret el sa7b wel edafeh, byerja3li eshi min el rusoom? 2adesh el nesbeh?",
+   "gold": "Finance",
+   "A": "IT Support",
+   "D1": "Finance",
+   "translation": "If I withdraw from the course after the withdrawal and addition period, will I get anything back from the fees? What is the percentage?"
+  },
+  {
+   "id": "AUG-NC-0023",
+   "set": "c",
+   "text": "sharikit abouy ra7 tedfa3li el rusoom min el shahr el jay, kif el sharikeh bet7awel el daf3a w shu el ktab elli bdhom eyah min el jam3a?",
+   "gold": "Finance",
+   "A": "IT Support",
+   "D1": "Finance",
+   "translation": "My father's company will pay the fees from next month, how does the company handle the payment and what is the book that I need from the university?"
+  },
+  {
+   "id": "AUG-NC-0028",
+   "set": "c",
+   "text": "el jam3a bt3ti 2rood lal tolab aw bt5allik t2ajjel joz2 min el 2eset? ma3 meen lazem a7ki?",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "Does the university give students excuses or allow you to postpone part of the semester? Who do I need to talk to?"
+  },
+  {
+   "id": "AUG-NC-0033",
+   "set": "c",
+   "text": "el bank 5asam minni el 2eset el thani marrtein, kol marra 650 dinar, w 7esabi bel jam3a mbayyen daf3a wa7deh bas. bdi traj3ouli el zyadeh",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "The bank has deducted from me the second installment twice, each time 650 dinars, and my account at the university shows only one payment. I want you to refund me the excess."
+  },
+  {
+   "id": "AUG-NC-0038",
+   "set": "c",
+   "text": "emmi mwazzafeh bel jam3a fa el mafrood a5od 5asem abna2 el mwazzafin, bas fatoret hal fasel ma7soobeh 3alay kamleh",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Finance",
+   "translation": "My mom is an employee at the university, so I should take the share of the employees' children, but the invoice for this semester is fully charged to me."
+  },
+  {
+   "id": "AUG-NC-0043",
+   "set": "c",
+   "text": "endafat 3alay gharamet ta25eer 30 dinar, ma3 enni dafa3t el 2eset 2abl el maw3ed b yomein w ma3i wasl el bank",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "I received a fine of 30 dinars for being late, even though I paid the installment two days before the due date and I have the bank receipt with me."
+  },
+  {
+   "id": "AUG-NC-0048",
+   "set": "c",
+   "text": "el visa taba3ti btenrefed kol ma a7awel adfa3 el rusoom online, ma3 enha btesht3'el b kol makan thani. b2dar aro7 3al bank bas bfaddel adfa3 bel beta2a",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Finance",
+   "translation": "My visa gets rejected every time I try to pay the fees online, even though it works everywhere else. I can go to the bank, but I prefer to pay with the card."
+  },
+  {
+   "id": "AUG-NC-0053",
+   "set": "c",
+   "text": "sa7abt mo5tabar el fizya b fatret el sa7b wel edafeh, bas rusoom el mo5tabar 40 dinar lessa mawjoodeh 3ala fatourti",
+   "gold": "Finance",
+   "A": "Facilities",
+   "D1": "Finance",
+   "translation": "I booked the physics lab during the cloudy period and the addition, but the lab fees are 40 dinars still available on my bill."
+  },
+  {
+   "id": "AUG-NC-0058",
+   "set": "c",
+   "text": "ensa7abt min el fasel el shahr el madi w 7akouli el masari byerja3o 5elal osbo3ein, sarli sett asabee3 w ma wesel eshi 3ala 7esabi",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "I withdrew from the class last month and they told me the funds will return within two weeks, it's been six weeks and nothing has arrived in my account."
+  },
+  {
+   "id": "AUG-NC-0063",
+   "set": "c",
+   "text": "mura2eb el 2a3a msh radi yda55elni 3al emte7an bsabab 7ajez mali 3ala 7esabi, wel final ba3d nos sa3a, w ana dafe3 el 2eset",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "The supervisor of the exam is not letting me in because I have a financial hold on my account, and the final is after half an hour, and I have paid the fees."
+  },
+  {
+   "id": "AUG-NC-0068",
+   "set": "c",
+   "text": "el sharikeh elli bashte3'el fiha dafa3at rusoomi mubashara, bas el daf3a ma enrabatat b 7esabi w enlagha tasjeeli bel fasel kollo",
+   "gold": "Finance",
+   "A": "Facilities",
+   "D1": "Finance",
+   "translation": "The company I work for charged my fees directly, but the payment was not linked to my account and my registration was canceled for the entire semester."
+  },
+  {
+   "id": "AUG-NC-0073",
+   "set": "c",
+   "text": "a5er maw3ed la daf3 el 2eset el thani el sa3a 2 el dohor, wel fatoura msh tal3a 3indi 3ala efawateercom fa ma b2dar adfa3 abadan",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "The last deadline to pay the second installment is at 2 PM, and the invoice didn't come up for me on efawateercom so I can't pay at all."
+  },
+  {
+   "id": "AUG-NC-0078",
+   "set": "c",
+   "text": "el da2ira el maliyeh msh m3tiyetni bara2et thimmeh lal ta5arroj 3ashan gharamet maktabeh 20 dinar dafa3tha aslan, w kashf el 5irrijin bisakker el sa3a 12",
+   "gold": "Finance",
+   "A": "Finance",
+   "D1": "Finance",
+   "translation": "The financial department hasn't given me the clearance certificate for graduation because I owe the library 20 dinars that I originally paid, and the exit clearance is closed at 12 o'clock."
+  },
+  {
+   "id": "AUG-NC-0083",
+   "set": "c",
+   "text": "ana taleb wafed w maw3ed tajdeed el e2ameh elyom el 3asr, w bdhom ktab bysabbet enni dafe3 el rusoom wel maliyeh lessa ma tala3to",
+   "gold": "Finance",
+   "A": "Registration",
+   "D1": "Finance",
+   "translation": "I am a visiting student and the appointment for renewing my residency is today in the afternoon, and I need a letter confirming that I have paid the fees and the financial obligations but I haven't received it yet."
+  },
+  {
+   "id": "AUG-NC-0088",
+   "set": "c",
+   "text": "2addamt talab ta2jeel rusoom min asabee3 w ma 7ada radd 3alay, w elyom el nizam sa7abni min el fasel bsabab 3adam el daf3 w ra7o kol mawaddi",
+   "gold": "Finance",
+   "A": "Academic Support",
+   "D1": "Registration",
+   "translation": "I submitted a request to postpone the fees three weeks ago and no one responded to me, and today the system removed me from the class due to non-payment and all the materials are gone."
+  },
+  {
+   "id": "AUG-NC-0093",
+   "set": "c",
+   "text": "2adesh aktar 3adad sa3at b2dar asajjlo bel fasel el 3adi? w b2dar azeed 3aleh eza m3addali 3ali?",
+   "gold": "Registration",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "How many more hours can I register in the regular semester? And can I add more if my average is high?"
+  },
+  {
+   "id": "AUG-NC-0098",
+   "set": "c",
+   "text": "shu 5atawat el ensi7ab min madeh wa7deh b nos el fasel? w btbayyen 3ala kashf el 3alamat?",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "What are the consequences of withdrawing from one subject in the middle of the semester? And will it show on the grade report?"
+  },
+  {
+   "id": "AUG-NC-0103",
+   "set": "c",
+   "text": "she3beh 2 min madet data structures malyaneh, fi 2a2emet entithar b2dar andam 3aleha? w kif btesht3'el?",
+   "gold": "Registration",
+   "A": "Academic Support",
+   "D1": "Registration",
+   "translation": "I have been studying data structures for 2 months, is there a waiting list I can join? And how does it work?"
+  },
+  {
+   "id": "AUG-NC-0108",
+   "set": "c",
+   "text": "sar ma3i 95 sa3a, kif basajjel madet el tadreeb el maydani lal saifi? w lazem mowaf2et ra2ees el 2esem 2abel?",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "I have 95 hours, how do I register the practical training course for the summer? And I need the approval of the department head first."
+  },
+  {
+   "id": "AUG-NC-0113",
+   "set": "c",
+   "text": "sajjalt she3bet el ethnein wel arba3a b madet el e7sa2, bas jadwali mbayyen enni b she3bet el a7ad wel thalatha",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "I registered for the two and four sessions in the Statistics department, but my schedule shows that I am in the Sunday and Tuesday sessions."
+  },
+  {
+   "id": "AUG-NC-0118",
+   "set": "c",
+   "text": "madet mo5tabar el barmajeh tal3a marrtein 3ala jadwali, fa majmoo3 sa3ati tale3 21 badal 18",
+   "gold": "Registration",
+   "A": "Facilities",
+   "D1": "Academic Support",
+   "translation": "The programming lab showed up twice on my schedule, so the total hours came out to 21 instead of 18."
+  },
+  {
+   "id": "AUG-NC-0128",
+   "set": "c",
+   "text": "el 3ameed wafa2 3ala talabi asajjel 21 sa3a, bas el nizam lessa mwa2afni 3end 18, wel sa7b wel edafeh bi5las el osbo3 el jay",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The dean approved my request to register for 21 hours, but the system is still blocking me at 18, and the withdrawal and addition will finish next week."
+  },
+  {
+   "id": "AUG-NC-0133",
+   "set": "c",
+   "text": "7alti bel nizam sarat faj2a 'monsa7eb min el fasel' ma3 enni ma talabt ansa7eb, w ma 3ad fi wala madeh btbayyen",
+   "gold": "Registration",
+   "A": "IT Support",
+   "D1": "Academic Support",
+   "translation": "I got kicked out of the system suddenly 'I didn't ask to be kicked out of the class' even though I didn't request to be kicked out, and there is no subject showing anymore."
+  },
+  {
+   "id": "AUG-NC-0138",
+   "set": "c",
+   "text": "el tasjeel el mt2a55er bisakker ba3d sa3a w 3indi 7ajez 'b7ajet mowaf2et el murshed', wel murshed taba3i b ejazeh, fa ma b2dar asajjel wala madeh",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The late registration will close after an hour and I have a reservation for 'the advisor's approval', and my advisor is on vacation, so I can't register or do anything."
+  },
+  {
+   "id": "AUG-NC-0143",
+   "set": "c",
+   "text": "el she3beh el wa7ideh la a5er madeh ejbariyeh dayletli enlaghat, w ana el mafrood at5arraj hal fasel. bedoonha ma ra7 at5arraj",
+   "gold": "Registration",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "The only thing that is preventing me from graduating is the mandatory course that I failed, and I am supposed to graduate this semester. Without it, I won't graduate."
+  },
+  {
+   "id": "AUG-NC-0148",
+   "set": "c",
+   "text": "bel 3'alat kabast ensi7ab 3ala madet el thermo badal el madeh el e5tiyariyeh, wel tasjeel 7akali btenraja3 bas la 7add el sa3a 3",
+   "gold": "Registration",
+   "A": "Facilities",
+   "D1": "Registration",
+   "translation": "In the 3rd class, I suggest withdrawing from the thermo course instead of the elective course, and the registration will be reviewed but only until 3 o'clock."
+  },
+  {
+   "id": "AUG-NC-0153",
+   "set": "c",
+   "text": "kif bdeef email el jam3a 3ala tatbee2 outlook 3al mobile?",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "How do I add the university email to the Outlook app on mobile?"
+  },
+  {
+   "id": "AUG-NC-0158",
+   "set": "c",
+   "text": "el tolab byo5do microsoft office majanan? min wen banazzlo b 7esab el jam3a?",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "Do students get Microsoft Office for free? Where do we download it with the university account?"
+  },
+  {
+   "id": "AUG-NC-0163",
+   "set": "c",
+   "text": "kif b2dar afta7 2awa3ed bayanat el maktabeh min el beit? lazem VPN?",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "How can I access the library's database from home? I need a VPN."
+  },
+  {
+   "id": "AUG-NC-0168",
+   "set": "c",
+   "text": "masa7t folder min el onedrive taba3 el jam3a bel 3'alat el osbo3 el madi, fi tari2a arja3o?",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "I deleted a folder from the university's OneDrive last week, is there a way to recover it?"
+  },
+  {
+   "id": "AUG-NC-0173",
+   "set": "c",
+   "text": "wala jehaz b mo5tabar el handaseh bi2bal 7esabi el jam3i, btetla3 eno malaf el mosta5dem ma byet7ammal. ba2i el tolab byfoto 3adi, w hassa basta5dem el laptop taba3i",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "There is no device in the engineering lab before my university account, it turns out that the user file cannot be loaded. The rest of the students are taking it normally, and now I am using my laptop."
+  },
+  {
+   "id": "AUG-NC-0178",
+   "set": "c",
+   "text": "email el jam3a ma wasalo wala resaleh min mbare7, b2dar a7ki el dakatra 3ala teams bas 5ayef yfoutni e3lanat",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "Academic Support",
+   "translation": "I haven't received the university email or any response since yesterday, I can talk to the doctor on Teams but I'm afraid I might miss announcements."
+  },
+  {
+   "id": "AUG-NC-0183",
+   "set": "c",
+   "text": "rmooz el ta7a22o2 la tasjeel el do5ool ma 3adat tewsal 3ala mobaili, sert ad5ol bel rmooz el e7tiyatiyeh bas dayel ma3i thnein",
+   "gold": "IT Support",
+   "A": "Registration",
+   "D1": "IT Support",
+   "translation": "The access codes for logging in are no longer being sent to my mobile, I started using the backup codes but I only have two left."
+  },
+  {
+   "id": "AUG-NC-0188",
+   "set": "c",
+   "text": "kol ma afta7 rabet el mu7adara el online min saf7et el madeh btetla3li 'access denied', sert afout min da3wet zamili",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "Every time I open the link to the online lecture from the subject page, I get 'access denied', I started to enter through my colleague's invitation."
+  },
+  {
+   "id": "AUG-NC-0193",
+   "set": "c",
+   "text": "fi 7ada e5tara2 7esabi el jam3i w 3'ayyar el password w sar yeb3at spam lal daf3a kollha, w ana msakkar 3alay w tasleem el mashroo3 el sa3a 12 bel leil",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "Someone hacked my university account and changed the password and is sending spam to the entire group, and I am locked out and the project submission is at 12 at night."
+  },
+  {
+   "id": "AUG-NC-0198",
+   "set": "c",
+   "text": "nizam el tasleem kol marra byerfod malaf mashroo3 el ta5arroj w btetla3 'server error', wel tasleem bisakker ba3d 40 d2i2a",
+   "gold": "IT Support",
+   "A": "Registration",
+   "D1": "IT Support",
+   "translation": "The submission system keeps rejecting the graduation project file and shows 'server error', and the submission closes after 40 minutes."
+  },
+  {
+   "id": "AUG-NC-0203",
+   "set": "c",
+   "text": "mo5tabar el 7asoob kollo fasal 3anno el net b nos emte7an el barmajeh el 3amali, thalatheen taleb wa2fin wel wa2t mashi",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "The computer lab is completely disconnected from the internet during the practical programming exam, thirty students are waiting and time is passing."
+  },
+  {
+   "id": "AUG-NC-0208",
+   "set": "c",
+   "text": "muna2ashet el resaleh taba3ti online ballashat min 3ashar da2aye2 w manasset el video kol shway bet6alle3ni, wel lajneh mestanyeh",
+   "gold": "IT Support",
+   "A": "IT Support",
+   "D1": "IT Support",
+   "translation": "My online presentation for my project started 10 minutes ago and the video platform keeps kicking me out, and the committee is waiting."
+  },
+  {
+   "id": "AUG-NC-0213",
+   "set": "c",
+   "text": "kif bashtrek b bas el jam3a lal fasel el jay? w 2adesh se3r eshterak el fasel?",
+   "gold": "Transportation",
+   "A": "Finance",
+   "D1": "Registration",
+   "translation": "How do I register for the next semester at the university? And how much is the semester registration fee?"
+  },
+  {
+   "id": "AUG-NC-0218",
+   "set": "c",
+   "text": "fi bas lal jam3a min el zar2a la 7aram el mushaqqar?",
+   "gold": "Transportation",
+   "A": "Academic Support",
+   "D1": "IT Support",
+   "translation": "There is only for the university from Al Zarqa to the cursed Mushaqqar."
+  },
+  {
+   "id": "AUG-NC-0223",
+   "set": "c",
+   "text": "wen bel zabt maw2af el bas b sweileh? awwal marra ra7 arkab el bas bukra",
+   "gold": "Transportation",
+   "A": "Academic Support",
+   "D1": "Transportation",
+   "translation": "Where exactly is the bus stop in Sweileh? It's my first time taking the bus tomorrow."
+  },
+  {
+   "id": "AUG-NC-0228",
+   "set": "c",
+   "text": "nseet jaketti b bas el jam3a mbare7, ma3 meen ba7ki 3ashan arja3ha?",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "I forgot my jacket at the university yesterday, who should I talk to in order to get it back?"
+  },
+  {
+   "id": "AUG-NC-0233",
+   "set": "c",
+   "text": "sawwa2 bas tabarbour fat 3an maw2afi marrtein hal osbo3 w edtarreit a5od taxi",
+   "gold": "Transportation",
+   "A": "Transportation",
+   "D1": "Transportation",
+   "translation": "I went to Tabarbour but I missed my stop twice this week and I had to take a taxi."
+  },
+  {
+   "id": "AUG-NC-0238",
+   "set": "c",
+   "text": "mukayyef bas sweileh 5arban min osbo3 wel taree2 bykoon shob ktir",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "Transportation",
+   "translation": "I'm just saying that Sweileh is 5 minutes away from the week and the road will be very crowded."
+  },
+  {
+   "id": "AUG-NC-0243",
+   "set": "c",
+   "text": "dafe3 eshterak el bas lal fasel kamel bas esmi msh mawjood b kashf el sawwa2, fa kol yom el sob7 badtarr awarri el wasl",
+   "gold": "Transportation",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "I paid for the subscription for the whole semester but my name is not on the driver's list, so every morning I have to show the receipt."
+  },
+  {
+   "id": "AUG-NC-0248",
+   "set": "c",
+   "text": "bas el sa3a 4:30 tele3 2abel wa2to b 5ams da2aye2 kaman marra elyom, w kam wa7ad minna ra7 3aleh w estanaina el bas elli ba3do",
+   "gold": "Transportation",
+   "A": "Academic Support",
+   "D1": "Transportation",
+   "translation": "The bus at 4:30 left 5 minutes earlier today, and a few of us missed it and we waited for the next bus."
+  },
+  {
+   "id": "AUG-NC-0258",
+   "set": "c",
+   "text": "sawwa2 el bas bektob 3al mobile w sayeg b sur3a 3ala taree2 madaba hassa, wel tolab 5ayfin",
+   "gold": "Transportation",
+   "A": "Academic Support",
+   "D1": "Transportation",
+   "translation": "The driver is writing on the mobile and speeding on the way to Madaba now, and the students are scared."
+  },
+  {
+   "id": "AUG-NC-0263",
+   "set": "c",
+   "text": "bas el masa nazzalna b maw2af 3'alat barra madaba el sa3a 9 bel leil w mashi, w ma fi mwasalat hon w e7na bentein la7alna",
+   "gold": "Transportation",
+   "A": "Academic Support",
+   "D1": "Transportation",
+   "translation": "We just got off at the bus stop outside Madaba at 9 PM and walked, and there are no transportation options here and we are two girls alone."
+  },
+  {
+   "id": "AUG-NC-0268",
+   "set": "c",
+   "text": "fi do5an tale3 min mu7arrek el bas w e7na mashyin w ri7et 7aree2, wel sawwa2 lessa ma wa2af",
+   "gold": "Transportation",
+   "A": "Facilities",
+   "D1": "Transportation",
+   "translation": "There is smoke coming out from the bus engine and we are walking and the smell is like fire, and the driver hasn't stopped yet."
+  },
+  {
+   "id": "AUG-NC-0273",
+   "set": "c",
+   "text": "kif b2dar a7joz 3'orfet derasa jama3iyeh bel maktabeh la ejtima3at el mashroo3?",
+   "gold": "Facilities",
+   "A": "Registration",
+   "D1": "Facilities",
+   "translation": "How can I reserve a study room in the library for project meetings?"
+  },
+  {
+   "id": "AUG-NC-0278",
+   "set": "c",
+   "text": "el sa3a elli fo2 bab el cafeteria wa2feh",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The clock above the cafeteria door is stopped."
+  },
+  {
+   "id": "AUG-NC-0283",
+   "set": "c",
+   "text": "la meen bballe3' 3an mushkleh siyaneh ba3d el dawam aw bel weekend?",
+   "gold": "Facilities",
+   "A": "Registration",
+   "D1": "Transportation",
+   "translation": "Who can help with a maintenance issue after work or on the weekend?"
+  },
+  {
+   "id": "AUG-NC-0288",
+   "set": "c",
+   "text": "fi 5aza2en lal tolab bel jam3a? w kif ba5od wa7deh hal fasel?",
+   "gold": "Facilities",
+   "A": "Academic Support",
+   "D1": "Finance",
+   "translation": "Are there scholarships for students at the university? And how do I get one this semester?"
+  },
+  {
+   "id": "AUG-NC-0293",
+   "set": "c",
+   "text": "nos el afyash elli 3al 7eetan b mo5tabar el 7asoob msh sh3'aleh, fa ma bn2dar nesh7an el laptopat bel mu7adara",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The laptops in the computer lab are not working, so we can't charge the laptops during the lecture."
+  },
+  {
+   "id": "AUG-NC-0298",
+   "set": "c",
+   "text": "7ammamat el tabe2 el thaleth ma fiha mai min el sob7, hassa bnesta5dem elli ta7t",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "The third floor bathroom has no water since the morning, now we are using the one downstairs."
+  },
+  {
+   "id": "AUG-NC-0303",
+   "set": "c",
+   "text": "el asanseer b mabna el handaseh m3attal min yomein, wel tolab elli ma3hom 3'rad t2ileh byetla3o 3al daraj",
+   "gold": "Facilities",
+   "A": "Academic Support",
+   "D1": "Facilities",
+   "translation": "The elevators in the engineering building have been out of order for two days, and the students who have heavy bags have to go up the stairs."
+  },
+  {
+   "id": "AUG-NC-0308",
+   "set": "c",
+   "text": "fi kaza kursi maksoor b 2a3a 104, w kam taleb bedallo wa2fin wara bel mu7adara",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "There are several broken chairs in 2a3a 104, and some students are standing behind in the lecture."
+  },
+  {
+   "id": "AUG-NC-0313",
+   "set": "c",
+   "text": "fi ri7et 3'az 2awiyeh b mo5tabar el kimya wel tolab saro ydo5o",
+   "gold": "Facilities",
+   "A": "Academic Support",
+   "D1": "Facilities",
+   "translation": "There is a very strong smell in the chemistry lab and the students started to cough."
+  },
+  {
+   "id": "AUG-NC-0318",
+   "set": "c",
+   "text": "fi do5an w sharar tale3 min lo7et el kahraba b mamar el tabe2 el thani",
+   "gold": "Facilities",
+   "A": "Registration",
+   "D1": "Facilities",
+   "translation": "There is smoke and sparks coming from the electrical panel in the second floor corridor."
+  },
+  {
+   "id": "AUG-NC-0323",
+   "set": "c",
+   "text": "wa2a3at 2et3a min el sa2f b 2a3a B w e7na bel mu7adara, welli janbha shaklha mar5iyeh",
+   "gold": "Facilities",
+   "A": "Academic Support",
+   "D1": "Facilities",
+   "translation": "A piece of the ceiling fell during the lecture, and the one next to it looks like it's going to fall too."
+  },
+  {
+   "id": "AUG-NC-0328",
+   "set": "c",
+   "text": "ba3d el 3asifeh wa2a3 3'osn shajara kbeer 3al mamsha janb el bawwabeh el ra2eesiyeh, w fi cable kahraba mtdalli janbo",
+   "gold": "Facilities",
+   "A": "Facilities",
+   "D1": "Facilities",
+   "translation": "After the storm, a large tree branch fell on the walkway next to the main gate, and there is an electric cable hanging next to it."
+  },
+  {
+   "id": "AUG-NC-0333",
+   "set": "c",
+   "text": "kif byen7seb el m3addal el tarakumi? w lamma a3eed madeh el 3alameh el jdeedeh bt7ell ma7al el 2adimeh?",
+   "gold": "Academic Support",
+   "A": "Registration",
+   "D1": "Registration",
+   "translation": "How is the cumulative average calculated? And when I redo the new world material, does it replace the old one?"
+  },
+  {
+   "id": "AUG-NC-0338",
+   "set": "c",
+   "text": "shu el shuroot 3ashan akoon m2ahhal lal sana el almaniyeh? el m3addal wel sa3at w mustawa el almani",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "What are the requirements to be accepted for the German year? The average, the hours, and the German level?"
+  },
+  {
+   "id": "AUG-NC-0343",
+   "set": "c",
+   "text": "fi 7esas ta2wiyeh aw musa3adeh la madet calculus 2 hal fasel?",
+   "gold": "Academic Support",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "Is there any tutoring or help for the subject Calculus 2 this semester?"
+  },
+  {
+   "id": "AUG-NC-0348",
+   "set": "c",
+   "text": "2adesh masmoo7 3'iyab bel madeh 2abel ma en7rem min el emte7an el niha2i?",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "It's not allowed to be absent from the subject before we are banned from the final exam."
+  },
+  {
+   "id": "AUG-NC-0353",
+   "set": "c",
+   "text": "3alamet el mid taba3ti b madet signals w systems msh tal3a, w kol el she3beh shayfin 3alamathom",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I marked my grade in Signals and Systems, it didn't come out, and everyone is seeing their grades."
+  },
+  {
+   "id": "AUG-NC-0358",
+   "set": "c",
+   "text": "jadwal el emte7anat el niha2iyeh 7atet emte7an fluid mechanics b 2a3a C-310, bas ma fi heik 2a3a b mabna C",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Facilities",
+   "translation": "The schedule for the final exams has placed the fluid mechanics exam in room c-310, but there is no such room in building c."
+  },
+  {
+   "id": "AUG-NC-0363",
+   "set": "c",
+   "text": "ba3att el 5utta el derasiyeh lal murshed el akadimi min osbo3ein 3ashan ywafe2 3aleha w lessa ma radd",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I sent the study plan to the academic advisor two weeks ago so that he approves it, and he still hasn't replied."
+  },
+  {
+   "id": "AUG-NC-0368",
+   "set": "c",
+   "text": "el doktor 7ateni 3'ayeb thalath mu7adarat ana kont 7aderha, w hassa sert 2areeb min el enthar",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "The doctor gave me a grade of three for the lectures I attended, and now I have become close to failing."
+  },
+  {
+   "id": "AUG-NC-0373",
+   "set": "c",
+   "text": "en7ramt min el emte7an el niha2i bsabab el 3'iyab ma3 enni 2addamt 3uthr tibbi, wel emte7an ba3d 45 d2i2a",
+   "gold": "Academic Support",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "I was banned from the final exam due to absence even though I submitted a medical excuse, and the exam is in 45 minutes."
+  },
+  {
+   "id": "AUG-NC-0378",
+   "set": "c",
+   "text": "ra7 3alay el final la2anni kont bel mustashfa, w talab el emte7an el ta3weedi lazem yewsal maktab el 3ameed 2abel el sa3a 2, wel murshed ma byrod",
+   "gold": "Academic Support",
+   "A": "Academic Support",
+   "D1": "Academic Support",
+   "translation": "I will miss the final because I was at the hospital, and the request for the remedial exam must reach the dean's office before 2 o'clock, and the advisor is not responding."
+  },
+  {
+   "id": "AUG-NC-0388",
+   "set": "c",
+   "text": "lazem asallem el resaleh la maktab el derasat el 3ulya 5elal sa3a, wel mushref lessa ma wa22a3 saf7et el mowaf2a",
+   "gold": "Academic Support",
+   "A": "Registration",
+   "D1": "Academic Support",
+   "translation": "I need to submit the application to the graduate studies office during the hour, and the supervisor still hasn't signed the approval form."
+  }
+ ]
+}
