@@ -19,7 +19,9 @@ from campuspulse_ai.domain.labels import Category, Priority
 PROB_SUM_TOLERANCE = 1e-6
 
 # Flag strings (ARCHITECTURE §5). `empty_input` is debug-only (LD-17);
-# `understanding_fallback` marks a rule-based understanding (UD-10).
+# `understanding_fallback` marks a rule-based understanding (UD-10). Core-internal flags such as
+# `urgency_floor:<family>`, `llm_cue:<rule>`, `queue_jump` and `too_vague` (P7.9) are not in this public enum:
+# they reach batch debug output and the policy, never an API response (`API_FLAGS` filters them).
 FLAGS: frozenset[str] = frozenset(
     {
         "injection_attempt",
@@ -180,7 +182,7 @@ class EvidenceVector:
 
 @dataclass(frozen=True, slots=True)
 class GuardVerdict:
-    kind: Literal["none", "injection", "distress", "danger", "gibberish"]
+    kind: Literal["none", "injection", "distress", "danger", "gibberish", "queue_jump", "vague"]
     matched_spans: tuple[str, ...] = ()
     stripped_text: str = ""
     score: float = 0.0

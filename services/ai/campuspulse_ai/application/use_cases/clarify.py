@@ -109,11 +109,12 @@ class ClarifyUseCase:
         path: list[str] = []
         for c in done:
             if c.question_id == TOPIC_QUESTION_ID:
-                path.append(RULE_GIBBERISH if GIBBERISH in core.flags else RULE_OOD)
+                unclear = GIBBERISH in core.flags or "too_vague" in core.flags
+                path.append(RULE_GIBBERISH if unclear else RULE_OOD)
             else:
                 path.append(RULE_ASK)
         if any(c.question_id == TOPIC_QUESTION_ID for c in done):
-            core = with_flags(core, frozenset({GIBBERISH}))
+            core = with_flags(core, frozenset({GIBBERISH, "too_vague"}))
 
         budget = ClarificationBudget(max_questions=self._budget_max(done), asked=len(done))
         return self._flow.run(

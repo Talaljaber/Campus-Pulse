@@ -33,7 +33,12 @@ import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from campuspulse_ai.application.services.priority_finalizer import FLOOR_URGENCY, PriorityFinalizer, onehot
+from campuspulse_ai.application.services.priority_finalizer import (
+    FLOOR_LLM_CUE,
+    FLOOR_URGENCY,
+    PriorityFinalizer,
+    onehot,
+)
 from campuspulse_ai.config.frozen import FrozenConfig
 from campuspulse_ai.domain.entities import CoreResult
 from campuspulse_ai.domain.errors import InvalidInput
@@ -41,6 +46,7 @@ from campuspulse_ai.domain.labels import CATEGORY_LABELS, PRIORITY_LABELS
 from campuspulse_ai.domain.ports import Clock as ClockPort
 from campuspulse_ai.domain.ports import (
     ConformalPredictor,
+    CueFloor,
     Ensemble,
     EvidenceExtractor,
     Guard,
@@ -63,9 +69,13 @@ from campuspulse_ai.domain.values import (
 
 MS_PER_S = 1000
 # Which verdict CoreResult.guard reports when several guards fire (the one the caller must act on first).
-_VERDICT_RANK: Mapping[str, int] = {"injection": 0, "distress": 1, "danger": 2, "gibberish": 3, "none": 4}
+_VERDICT_RANK: Mapping[str, int] = {
+    "injection": 0, "distress": 1, "danger": 2, "gibberish": 3, "queue_jump": 4, "vague": 5, "none": 6,
+}
 _FLAG_FOR: Mapping[str, str] = {"gibberish": "gibberish", "injection": "injection_attempt",
-                                "distress": "distress", "danger": "safety"}
+                                "distress": "distress", "danger": "safety", "queue_jump": "queue_jump",
+                                "vague": "too_vague"}
+FLAG_LLM_CUE_PREFIX = "llm_cue:"
 
 
 @dataclass(frozen=True)
@@ -77,6 +87,14 @@ class _Prepared:
     safety: bool
     verdicts: tuple[GuardVerdict, ...]
     injection: GuardVerdict
+    # P7.9: the request without its queue-jump pressure phrases. Only the priority path (model, evidence,
+    # floors, LLM cues) reads it; the category path keeps `req.model_text`, so pressure never moves a
+    # category label either way. None when no pressure phrase was found.
+    priority_text: str | None = None
+
+    @property
+    def pri_text(self) -> str:
+        return self.req.model_text if self.priority_text is None else self.priority_text
 
 
 def _vector(dist: Mapping[str, float], labels: tuple[str, ...]) -> ProbVector:
@@ -107,6 +125,7 @@ class TriageCore:
         config: FrozenConfig,
         artifact: ArtifactVersion,
         urgency_floor: UrgencyFloor | None = None,
+        cue_floor: CueFloor | None = None,
     ) -> None:
         self.normalizer = normalizer
         self.guards: tuple[Guard, ...] = tuple(guards)
@@ -121,6 +140,7 @@ class TriageCore:
         self.config = config
         self.artifact = artifact
         self.urgency_floor = urgency_floor
+        self.cue_floor = cue_floor
         self._prior_cat = _vector(config.priors.category, CATEGORY_LABELS)
         self._prior_pri = _vector(config.priors.priority, PRIORITY_LABELS)
 
@@ -169,6 +189,7 @@ class TriageCore:
         safety = False
         verdicts: list[GuardVerdict] = []
         injection = GuardVerdict(kind="none")
+        priority_text: str | None = None
         for guard in self.guards:
             verdict = guard.inspect(req)
             verdicts.append(verdict)
@@ -177,11 +198,13 @@ class TriageCore:
             if verdict.kind == "injection":
                 injection = verdict
                 req = dataclasses.replace(req, model_text=verdict.stripped_text)
+            elif verdict.kind == "queue_jump":
+                priority_text = verdict.stripped_text
             elif verdict.kind == "danger":
                 safety = True
         if req.truncated:
             flags.add("truncated")
-        return _Prepared(req, flags, safety, tuple(verdicts), injection)
+        return _Prepared(req, flags, safety, tuple(verdicts), injection, priority_text)
 
     def _ensemble(self, prepared: Sequence[_Prepared], memory: bool) -> list[EnsembleOutput | None]:
         """Step 3 for every row with text, one call per distinct text; None for a row with no text left.
@@ -190,10 +213,19 @@ class TriageCore:
         a time and every member scores rows independently), so scoring each distinct `model_text` once is
         exact: wrapper variants of one request share a `model_text` and its result.
         """
-        distinct = list(dict.fromkeys(p.req.model_text for p in prepared if p.req.model_text))
+        texts = [p.req.model_text for p in prepared] + [p.priority_text or "" for p in prepared]
+        distinct = list(dict.fromkeys(t for t in texts if t))
         outs = self.ensemble.predict(distinct, self.memory if memory else None) if distinct else []
         by_text = dict(zip(distinct, outs, strict=True))
-        return [by_text[p.req.model_text] if p.req.model_text else None for p in prepared]
+        result: list[EnsembleOutput | None] = []
+        for p in prepared:
+            out = by_text[p.req.model_text] if p.req.model_text else None
+            if out is not None and p.priority_text is not None:
+                # queue-jump pressure: the priority model reads the text without the pressure phrase
+                pri = by_text[p.priority_text].p_pri_model if p.priority_text else self._prior_pri
+                out = dataclasses.replace(out, p_pri_model=pri)
+            result.append(out)
+        return result
 
     def _finish(
         self,
@@ -204,7 +236,11 @@ class TriageCore:
     ) -> tuple[NormalizedRequest, CoreResult]:
         """Steps 4–8."""
         req, flags = prepared.req, set(prepared.flags)
-        evidence = self.evidence.extract(req)
+        # the priority path (evidence, floors, LLM cues) reads the text without queue-jump pressure
+        pri_req = req if prepared.priority_text is None else dataclasses.replace(
+            req, model_text=prepared.priority_text
+        )
+        evidence = self.evidence.extract(pri_req)
         if out is not None:
             p_cat, per_model = out.p_cat, dict(out.per_model)
             ood, neighbors, embedding = out.ood_score, out.neighbors, out.embedding
@@ -212,12 +248,17 @@ class TriageCore:
         else:  # the whole request was an injection: no model sees anything (module docstring, step 3)
             p_cat, per_model, ood, neighbors, embedding = self._prior_cat, {}, 0.0, (), ()
             p_pri_head = self._prior_pri
-        floor_hits = self.urgency_floor.hits(req) if self.urgency_floor is not None else ()
+        floor_hits = self.urgency_floor.hits(pri_req) if self.urgency_floor is not None else ()
+        cue_hits: tuple[str, ...] = ()
+        if self.cue_floor is not None and out is not None:
+            cue_hits = self.cue_floor.hits(prepared.pri_text)
         p_pri, floors = self.finalizer.apply(
-            p_pri_head, prepared.safety, prepared.injection, constraints, floor_hits
+            p_pri_head, prepared.safety, prepared.injection, constraints, floor_hits, cue_hits
         )
         if FLOOR_URGENCY in floors:
             flags.update(f"urgency_floor:{family}" for family in floor_hits)
+        if FLOOR_LLM_CUE in floors:
+            flags.update(f"{FLAG_LLM_CUE_PREFIX}{name}" for name in cue_hits)
 
         answered_cat = [c.value for c in constraints if c.kind == "category"]
         if answered_cat:

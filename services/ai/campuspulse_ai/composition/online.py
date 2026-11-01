@@ -378,6 +378,7 @@ def with_memory(core: TriageCore, memory: MemoryStore) -> TriageCore:
         config=core.config,
         artifact=core.artifact,
         urgency_floor=core.urgency_floor,
+        cue_floor=core.cue_floor,
     )
 
 

@@ -201,6 +201,19 @@ class UrgencyFloor(Protocol):
 
 
 @runtime_checkable
+class CueFloor(Protocol):
+    """impl: LlmCueFloor. Raise-only: the fired LLM-cue conditions for a request (P7.9).
+
+    `hits` is empty whenever the LLM front end is off, the call failed or the reply was invalid;
+    `cues` returns the raw cue values of the request (debug output only) or None.
+    """
+
+    def hits(self, model_text: str) -> tuple[str, ...]: ...
+
+    def cues(self, model_text: str) -> Mapping[str, object] | None: ...
+
+
+@runtime_checkable
 class PriorityHead(Protocol):
     """impl: LogisticPriorityHead. Floors are applied outside, by PriorityFinalizer."""
 
@@ -528,6 +541,7 @@ ALL_PORTS: tuple[type, ...] = (
     EvidenceExtractor,
     PriorityHead,
     UrgencyFloor,
+    CueFloor,
     ConformalPredictor,
     DecisionPolicy,
     ClarificationStrategy,
