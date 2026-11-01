@@ -157,6 +157,11 @@ features:
       arabizi:
         - '^(wein|wen|ween|wain|kif|keef|kaif|kef|emta|ematta|imta|mata|shu|sho|eish|esh|2adesh|addesh|2deh|hal|meen|min\s+wein)\b'
         - '^(bade|bdi|badi|baddi|7abeb|mumken|momken)\s+(a3ref|a3rf|e3ref|nos5a|nuskha|nasee7a|nas7a|as2al)\b'
+        # P7.3: more Arabizi question openers (how much / when / where / what / can I / is there). Each added
+        # pattern has zero hits on the 432 official rows (tests/unit/test_priority_floors.py).
+        - '^(kam|2addesh|2adesh|addeesh|2adeesh|2adde?sh|shou|shoo|shuu|shwe|wayn|amta|eimta|aymta|ayna|kefik)\b'
+        - '^(ba2dar|ba2der|b2dar|bagdar|mumken|momken|mmkn|mumkin)\b'
+        - '^(feeh|fee|fi|fe)\s+(7ada|7ad|jadwal|jadwel|bus|baas|shi|shay|tari2a|tare2a|tari2)\b'
     en:
       - '\b(a\s+copy\s+of|information\s+(about|on)|where\s+can\s+i|how\s+(can|do)\s+i|when\s+(is|does|do|will)\s+the|i\s+would\s+like\s+to\s+know|advice\s+(on|about|choosing))\b'
     ar:
@@ -203,3 +208,126 @@ features:
     arabizi:
       - '\b(ghorfe|ghurfe|ghorfa|ghurfa|2a3a|qa3a|mo5tabar|mokhtabar|mukhtabar|mudarraj|madraj|marsam)\b'
       - '\b(projector|brojektor|data\s*show|datashow|mike)\b'
+
+# ----------------------------------------------------------------------------------------------------------
+# High-priority floors for IMPLICIT urgency (P7.3, D-031). Read by adapters.models.urgency_floor.UrgencyFloorRule,
+# NOT by the evidence extractor (which only reads `features`). A raise-only rule: when a family fires, the
+# priority becomes high (floor "urgency_rule", flag urgency_floor:<family>). It never lowers a priority, and tone
+# alone never fires it (it reads the stripped text, never `stated_urgency`).
+#
+# Structure: family -> variants -> groups. A family fires when ANY variant fires; a variant fires when EVERY one of
+# its groups matches (AND of ORs). Each group lists regexes per language (all run on the whole model_text, so an
+# Arabizi "translit | original" text is searched in both halves). Written from general language knowledge as
+# narrow, multi-cue forms: "tomorrow" alone, "hacked" jokes or a plain password reset never fire.
+# Gate: zero hits on non-high official rows (tests/unit/test_priority_floors.py).
+# ----------------------------------------------------------------------------------------------------------
+high_floor:
+  # Someone else is using the student's account (not a forgotten password or a plain reset).
+  account_compromise:
+    variants:
+      - - en:
+            - '\b(someone|somebody|a\s+stranger|an?\s+unknown\s+(person|user))\b[^.!?|]{0,40}\b(logged\s+(in|into|on)|log(ged)?\s+into|got\s+into|broke\s+into|gained\s+access|accessed|hack(ed)?|(is\s+)?using|changed|took\s+over)\b[^.!?|]{0,40}\b(account|password|passcode|email|e-?mail|portal|login|mailbox)\b'
+            - '\b(account|e-?mail|mailbox|portal|login|password)\b\s+(has\s+been\s+|was\s+|got\s+|is\s+|were\s+)?(hacked|compromised|hijacked|taken\s+over|stolen|breached)\b'
+            - '\b(i\s+(got|was|been|am)\s+hacked|got\s+hacked|been\s+hacked|someone\s+hacked)\b'
+            - '\bpassword\s+(was\s+|got\s+|has\s+been\s+)?changed\s+(by\s+(someone|somebody|another)|without\s+(me|my\s+(knowledge|permission)))\b'
+            - '\b(messages?|e-?mails?|mails?)\b[^.!?|]{0,40}\b(going\s+out|being\s+sent|sent|sending)\b[^.!?|]{0,30}\b(from\s+my\s+(account|e-?mail)|in\s+my\s+name|as\s+me|without\s+me)\b'
+            - '\b(sent|sending)\b[^.!?|]{0,30}\b(messages?|e-?mails?)\b[^.!?|]{0,20}\bin\s+my\s+name\b'
+            - '\b(unknown|unrecognized|unfamiliar|suspicious)\s+(login|log-?in|sign-?in|device|location|activity)\b'
+          ar:
+            - '(اخترق|اختراق|هكر|هاكر|انهكر|اتهكر|مهكر|مخترق|انسرق|اتسرق|مسروق|سرق)\S*\s+(\S+\s+)?(حساب|ايميل|إيميل|بريد|بوابة|بوابه|باسورد|كلمة\s+(ال)?سر)'
+            - '(حساب|ايميل|إيميل|بريد|بوابة|بوابه)\S*\s+(\S+\s+)?(اخترق|اتخترق|انخترق|انهكر|اتهكر|مهكر|مخترق|انسرق|اتسرق|مسروق|متهكر)'
+            - '(حدا|حد|شخص|واحد|احد|حدى)\s+(غريب\s+)?(دخل|فات|فتح|غير|بدل|عدل|استخدم|عم\s+يستخدم|عم\s+يدخل)[^.؟!|]{0,30}(حساب|ايميل|إيميل|بريد|بوابة|بوابه|كلمة\s+(ال)?سر|باسورد|باسوورد)'
+            - '(رسايل|رسائل|ايميلات|إيميلات|ايميل|إيميل)[^.؟!|]{0,30}(باسمي|بإسمي|بأسمي|من\s+حسابي|من\s+ايميلي|من\s+إيميلي)'
+            - 'كلمة\s+(ال)?سر\s+(اتغيرت|انغيرت|تغيرت|اتبدلت)\s+(لحالها|بدون|من\s+غير)'
+          arabizi:
+            - '\b(7ada|7ad|had|hada|7ed|shakhs|wa7ad|wahed|someone)\b[^.!?|]{0,25}\b(dakhal|dakhel|daakhal|fat|ghayyar|ghayar|ghyyar|ghayer|ghaiyar|badal|baddal|ikhtara2|i5tara2|e5tara2|hakker|hacked|hakkar|3adal)\b[^.!?|]{0,35}\b(account|acc|hesab|7esab|7sab|hisab|password|pass|passwrd|ba9sord|ba5sord|kelmet|kilmet|email|imail|mail|portal|bawaba)\b'
+            - '\b(7esab|7sab|hesab|hisab|account|acc|email|imail|portal)\w*\s+(\w+\s+){0,2}(etha?kar|ithakar|ihtara2|ekhtara2|e5tara2|et7akam|mehakkar|mhakkar|ma5tara2|mokhtara2|et?sara2|insara2|insaraq|mesrou2|hacked)\b'
+            - '\b(hacked|hack|hakker|hakkar|e5tara2|ikhtara2|i5tara2)\b[^.!?|]{0,25}\b(account|email|hesab|7esab|portal|password)\b'
+            - '\b(messages?|msgs?|rasa2el|rasayel|rsayel|emails?)\b[^.!?|]{0,30}\b(bismi|besmi|b3ismi|bi\s+ismi)\b'
+
+  # An imminent (<= 24 h) deadline AND the student is blocked from meeting it. Three cues, all required.
+  deadline_24h:
+    variants:
+      - - en:
+            - '\b(tomorrow|tonight|today)\b'
+            - '\bthis\s+(evening|afternoon)\b'
+            - '\bat\s+midnight\b'
+            - '\b(in|within)\s+(the\s+next\s+)?(an?|one|two|three|four|five|six|eight|ten|twelve|\d|1\d|2[0-4])\s+hours?\b'
+            - '\b(in|within)\s+(a\s+few|a\s+couple\s+of|couple\s+of)\s+hours\b'
+          ar:
+            - '(?<!\w)(و|ل|ف)?(بكرا|بكره|بكرة|غدا|غداً|الليلة|الليله|اليوم)(?!\w)'
+            - '(خلال|بعد|كمان|في\s+غضون)\s+(ساعة|ساعه|ساعتين|ساعات|\d+\s+ساعات?|نص\s+ساعة)'
+          arabizi:
+            - '\b(bukra|bokra|bukrah|bokrah|bkra|boukra|ghadan|ellela|elleila|ellayle|el\s*leile|el\s*lele|ellele|elyom|elyoum|elyoom|alyom|ilyom)\b'
+            - '\b(5lal|khilal|ba3d|b3d|kaman)\s+(\d+\s+)?(sa3a|sa3at|sa3teen|sa3et)\b'
+        - en:
+            - '\b(deadline|due|closes?|closing|last\s+day|cut-?off|submission|submit(ting)?|exams?|finals?|midterm|defen[cs]e|viva|graduation|clearance)\b'
+          ar:
+            - '(تسليم|تسلم|موعد|اخر\s+(يوم|موعد|فرصة|فرصه|وقت)|آخر\s+(يوم|موعد|فرصة|وقت)|بسكر|بيسكر|بتسكر|يسكر|يسكّر|يغلق|بيقفل|امتحان|فاينل|ميدتيرم|ميد|مناقشة|مناقشه|تخرج|تخريج)'
+          arabizi:
+            - '\b(deadline|due|submit|submission|tasleem|taslim|ta7sleem|maw3ed|maw3id|exam|emte7an|imti7an|emt7an|final|midterm|mona2sha|munaqasha|ta5arroj|takharruj|bysakker|bisakker|bisaker)\b'
+        - en:
+            - '\b(blocked|locked|frozen|suspended|barred|denied|rejected|rejects|refuses|refused)\b'
+            - '\bhold\b(?!\s+on\b)'
+            - '\b(can(no|'')?t|unable\s+to|could\s*n''?t|won''?t|not\s+able\s+to)\s+(\w+\s+){0,2}(register|submit|upload|log\s*in|login|sign\s*in|access|open|enrol+|pay|enter|sit|take|download|print|send|attend)\b'
+            - '\b(portal|site|system|page|platform|moodle|link|website)\s+(is\s+)?(down|not\s+(opening|working|loading|accepting)|does\s*n.?t\s+(open|load|work|accept)|won.?t\s+(open|load|accept|work))\b'
+            - '\bnot\s+(letting|allowing)\s+me\b'
+          ar:
+            - '(ما|مش|مو)\s+(بتفتح|بيفتح|عم\s+بيفتح|عم\s+تفتح|بفتح|راضي\s+يفتح|راضية\s+تفتح|بقبل|بتقبل|عم\s+يقبل|بسمح|بتسمح|بيسمح|بيخليني|بتخليني|عم\s+يخليني|عم\s+تخليني|قادر|قادرة|بقدر|عم\s+بقدر|بنقدر)'
+            - '(موقوف|محظور|محجوب|مقفل|معلق|هولد|بلوك|حظر|حجز|هلد)'
+            - '(على|علي|عليي|عندي)\s+(هولد|حجز|حظر|وقف)'
+          arabizi:
+            - '\b(mesh|msh|mish|ma|mo)\s+(byeftah|bifta7|biftah|byefta7|byfta7|yeftah|yefta7|byqbal|byeqbal|bi2bal|bisme7|bikhalini|bi5alini|2ader|qader|ader|b2dar|ba2dar|bagdar|rade|radi)\b'
+            - '\b(hold|block|blocked|locked|mgfel|mwa2af|ma7zoom|m7zoom|m2fel|mseker|msakkar)\b'
+
+  # A building/floor/campus-wide power or network outage, or any outage while an exam is running.
+  major_outage:
+    variants:
+      - - &outage
+          en:
+            - '\b(no|lost|without)\s+(power|electricity|internet|wi-?fi|network)\b'
+            - '\b(power|electricity)\s+(is\s+|has\s+been\s+|was\s+)?(cut|out|off|down|gone)\b'
+            - '\b(power|electricity)\s+(cut|outage|failure|loss)\b'
+            - '\bblack-?out\b'
+            - '\b(wi-?fi|internet|network|connection)\s+(is\s+|has\s+|just\s+|went\s+)?(down|died|dead|out|gone|offline|crashed|dropped|not\s+working)\b'
+            - '\b(went|gone|plunged)\s+dark\b'
+          ar:
+            - '(الكهربا|الكهرباء|الكهربة|الكهربه|التيار|النت|الانترنت|الإنترنت|الواي\s*فاي|الشبكة|الشبكه)\s+(\S+\s+)?(قاطع|مقطوع|انقطع|راح|طافي|طفت|واقف|وقع|مفصول|ميت|نازل|مش\s+شغال|ما\s+بشتغل)'
+            - '(انقطاع|قطع)\s+(ال)?(كهربا|كهرباء|تيار|نت|انترنت|إنترنت|شبكة|شبكه)'
+            - '(انقطع|انقطعت|قطع|قطعت|طفت|طفى|راح|راحت)\s+(ال)?(كهربا|كهرباء|تيار|نت|انترنت|إنترنت|واي\s*فاي|شبكة|شبكه)'
+            - '(مافي|ما\s+في|مفيش)\s+(كهربا|كهرباء|تيار|نت|انترنت|إنترنت|واي\s*فاي)'
+            - '(عتمة|عتمه|ظلام|معتم)'
+          arabizi:
+            - '\b(mafi|ma\s+fi|mafe|mfi|mafeesh)\s+(kahraba|kahrba|keherba|kahrabaa|electricity|current|internet|net|wifi|wi-?fi|taiyar|tayyar)\b'
+            - '\b(el\s*)?(kahraba|kahrba|keherba|taiyar|tayyar|internet|net|wifi|wi-?fi|network)\s+(\w+\s+)?(2ate3a|2atea3|qate3a|ma2too3a|maqtou3a|m2atta3a|2at3a|waqef|wa2ef|waqfe|wa2fa|tafyet|tafi|tafiyeh|met2atea3|mfsol|down|died|dead|off|out|mesh\s+sha8al|msh\s+shaghal)\b'
+            - '\b(in2ata3at|ente2at3at|en2ata3at|in2ata3)\s+(el\s+)?(kahraba|kahrba|net|internet)\b'
+            - '\b(dark|dalam|dalma|3atme|3atame)\b'
+        - en:
+            - '\b(whole|entire)\s+(of\s+)?(the\s+)?(\w+\s+){0,2}(building|block|floor|campus|library|faculty|wing|hall|labs?|classrooms?)\b'
+            - '\b(all|both)\s+(the\s+)?(labs|classrooms|floors|buildings|rooms)\b'
+            - '\b(campus|building|floor|block|faculty)[\s-]wide\b'
+            - '\b(hundreds|dozens|\d{2,})\s+(of\s+)?(us|students|people)\b'
+          ar:
+            - '(بنايه|بناية|بناي|مبنى|مبني|طابق|كليه|كلية|جامعه|جامعة|مكتبه|مكتبة|قاعات|مخابر)[^.؟!|]{0,25}(كلها|كله|كامل|كلو)'
+            - '(كل|كامل)\s+(ال)?(بنايه|بناية|مبنى|مبني|طابق|كليه|كلية|جامعه|جامعة|مكتبه|مكتبة|قاعات|مخابر)'
+            - '(مئات|عشرات|\d{2,})\s+(طالب|طلاب|طلبه|طلبة)'
+          arabizi:
+            - '\b(kol|kolo|kolha|kolu|kela|kamel)\s+(el\s+)?(building|binaye|bnayeh|binayeh|mabna|tabe2|tabeq|college|kolliye|jame3a|library|maktabe|labs?)\b'
+            - '\b(building|binaye|bnaye|mabna|tabe2|tabeq|kolliye|library|maktabe)\b[^.!?|]{0,25}\b(kolo|kolha|kolu|kamel|kamle|whole|entire)\b'
+            - '\b(whole|entire)\b[^.!?|]{0,20}\b(building|block|floor|campus|library)\b'
+            - '\b(mia|miyat|me2at|\d{2,})\s+(taleb|talabe|talib)\b'
+      - - *outage
+        - en:
+            - '\b(online|live)\s+(exam|quiz|test|midterm|final)s?\b'
+            - '\b(during|in\s+the\s+middle\s+of|halfway\s+(through|into)|while\s+(taking|doing|writing|sitting))\s+(an?\s+|the\s+|our\s+|my\s+)?(\w+\s+)?(exam|quiz|midterm|final)\b'
+            - '\b(doing|taking|sitting|writing)\s+(the\s+|an?\s+|our\s+|my\s+)?(exam|midterm|final|quiz)\b'
+            - '\b(exam|quiz|midterm|final)\b[^.!?|]{0,40}\b(now|halfway|in\s+progress|ongoing|running|started|going\s+on)\b'
+          ar:
+            - '(اونلاين|أونلاين|الكتروني|إلكتروني|اثناء|أثناء|خلال|بنص|بوسط|وسط)\s+(ال)?(امتحان|كويز|اختبار|فاينل)'
+            - '(ال)?(امتحان|كويز|اختبار|فاينل)\s+(اونلاين|أونلاين|الكتروني|إلكتروني)'
+            - '(ال)?(امتحان|كويز|اختبار|فاينل|ميدتيرم)[^.؟!|]{0,25}(شغال|ماشي|بلش|بدا|بدأ|هسا|هلا|هلأ|نص)'
+            - '(وانا|وهم|وعم|عم|ونحنا)\s+(\S+\s+)?(بقدم|بحل|بنقدم|بنحل|بتقدم|يقدموا|بنمتحن|بيمتحنوا|بامتحن)'
+          arabizi:
+            - '\b(online|onlain)\s+(exam|quiz|emte7an|imti7an|e5tebar|final|midterm)\b'
+            - '\b(exam|quiz|emte7an|imti7an|emt7an|final|midterm)\b[^.!?|]{0,30}\b(halla2|hala2|hasa|hassa|shaghal|mashi|bda|bada2|nos|online)\b'
+            - '\b(b|bn|3am\s+bn)?(emte7en|emtihen|imtihen|emt7en|nemtihen|nemte7en)\b'
