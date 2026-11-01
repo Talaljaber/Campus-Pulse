@@ -99,3 +99,51 @@ def test_mondrian_uses_the_language_quantile_and_falls_back(tmp_path: Path) -> N
     assert again.predict_set_for(p, "ar") == mond.predict_set_for(p, "ar")
     # the fallback file stays readable on its own
     assert LACConformal.load(tmp_path / "category").q == pytest.approx(0.5)
+
+
+def test_lang_alias_lends_the_donor_quantile_and_defaults_to_global() -> None:
+    """P2.18: `q_lang_alias` makes Arabizi use the Arabic quantile; absent, it keeps the global q."""
+    from fixtures.frozen_config import valid_config_dict  # services/ai/tests is the rootdir on sys.path
+
+    from campuspulse_ai.composition.offline import conformal_predictor
+    from campuspulse_ai.config.frozen import FrozenConfig
+
+    data = valid_config_dict()
+    data["conformal"].update(
+        {"mondrian_by_lang": True, "q_category": 0.5, "q_category_by_lang": {"ar": 0.9, "en": 0.5}}
+    )
+    data["conformal"]["q_lang_alias"] = {}  # train.yaml now carries the alias; the old artifacts do not
+    plain = FrozenConfig.model_validate(data)
+    data["conformal"]["q_lang_alias"] = {"arabizi": "ar"}
+    aliased = FrozenConfig.model_validate(data)
+    p = ProbVector((0.6, 0.2, 0.1, 0.05, 0.03, 0.02), CATEGORY_LABELS)
+    before = conformal_predictor(plain, "category")
+    after = conformal_predictor(aliased, "category")
+    assert isinstance(before, MondrianByLang) and isinstance(after, MondrianByLang)
+    assert before.predict_set_for(p, "arabizi").size == 1
+    assert after.predict_set_for(p, "arabizi").size == 3
+    assert after.predict_set_for(p, "en").size == 1
+
+
+def test_lang_alias_validation() -> None:
+    from pydantic import ValidationError
+
+    from campuspulse_ai.config.frozen import ConformalCfg
+
+    ok = {
+        "method": "lac",
+        "alpha_category": 0.1,
+        "alpha_priority": 0.1,
+        "q_category": 0.5,
+        "q_priority": 0.5,
+        "n_calib": 10,
+        "mondrian_by_lang": True,
+        "q_category_by_lang": {"ar": 0.9},
+    }
+    aliased = ConformalCfg.model_validate({**ok, "q_lang_alias": {"arabizi": "ar"}})
+    assert aliased.q_lang_alias == {"arabizi": "ar"}
+    assert ConformalCfg.model_validate(ok).q_lang_alias == {}  # old artifacts: no key
+    with pytest.raises(ValidationError):
+        ConformalCfg.model_validate({**ok, "q_lang_alias": {"arabizi": "fr"}})  # the donor has no quantile
+    with pytest.raises(ValidationError):
+        ConformalCfg.model_validate({**ok, "q_lang_alias": {"ar": "ar"}})  # alias over an own quantile

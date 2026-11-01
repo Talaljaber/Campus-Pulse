@@ -154,6 +154,7 @@ priority_head:
 conformal:
   method: lac
   mondrian_by_lang: true        # P2.10 rule fired (see mondrian above); MondrianByLang for mondrian.targets
+  q_lang_alias: {arabizi: ar}   # P2.18: Arabizi has no OOF rows, so it borrows the Arabic-script quantile (models.md 28)
 
 guards:
   max_tokens: 256               # DefaultNormalizer truncates the core to this many whitespace tokens

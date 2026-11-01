@@ -1309,3 +1309,47 @@ a repeated Arabic text hits the LRU: p50 ≈ 20 ms.
 our_test (set size 1.0; 32 rows, 8 groups); its F1 is ~0.52 as in rc2. The `Arabizi | transliteration` model text
 is not translated (Latin letters dominate). Dialect mistranslations remain (§26); priority is unchanged in every
 arm.
+
+## 28. Arabizi conformal coverage: borrowed Arabic-script quantile (P2.18)
+
+**Diagnosis (rc3, category).** `MondrianByLang` is calibrated on OOF rows; the official data has no Arabizi rows, so
+`mondrian.json` holds only `ar` (q 0.916, 30 groups) and `en` (q 0.543). `TriageCore._set` passes `req.lang`
+(detected: 31 of the 32 our_test Arabizi rows are `arabizi`, one is routed `en`); `arabizi` is not a key, so
+`_for()` returns the global fallback q 0.5433, which is the English quantile (0.5432). The Arabizi model is far weaker
+than English (our_test F1 ~0.52, top-1 on the unreviewed Arabizi augmentation 0.61), so a 0.54 quantile yields
+singleton sets that are wrong half the time: coverage 0.516, size 1.00, and every row is accepted without an ASK or
+a human review. `thresholds.human_review_maxprob` (0.462) is not consulted by the policy; 42 % of Arabizi rows sit
+below it.
+
+**Fix (adopted): `conformal.q_lang_alias`**, a new optional config key (`{lang: donor}`; default `{}`, so older
+artifacts and `config.json` files without it behave exactly as before). `conformal_predictor` gives each aliased
+language its donor's `LACConformal`. Train config: `config/train.yaml conformal.q_lang_alias: {arabizi: ar}`;
+`train.py` stage B and `--retune` write it. Chosen over (b) an inflation factor (needs a made-up constant) and (c) an
+abstain rule (a new policy path); an alias is the nearest calibrated language, uses OOF-only information and is a
+one-line change.
+
+**Alternatives measured (evaluation only).** Calibrating Arabizi from the unreviewed Arabizi augmentation (83 rows
+after dropping e5 cosine >= 0.90 neighbours of our_test; 72 groups; `needs_human_check` still true) gives q 0.931,
+slightly above the Arabic one; the sweep of Arabizi q on our_test is monotone (0.54: 0.52, 0.85: 0.74, 0.90: 0.77,
+0.92: 0.84, 0.95: 1.00).
+
+| our_test category | cov before | cov after | size before | size after | singleton / ASK / >=3 (human) after |
+| --- | ---: | ---: | ---: | ---: | --- |
+| en (98 rows) | 0.939 | 0.939 | 1.00 | 1.00 | unchanged |
+| ar (75) | 1.000 | 1.000 | 2.60 | 2.60 | unchanged |
+| arabizi (31, 8 groups) | 0.516 | **0.839** | 1.00 | 3.35 | 0.03 / 0.16 / 0.81 (before: 1.00 / 0 / 0) |
+| arabizi, aug-calibrated q 0.931 | 0.516 | 0.935 | 1.00 | 5.00 | 0 / 0 / 1.00 |
+
+Wilson 95 % interval of the Arabizi coverage: before [0.35, 0.68], after [0.67, 0.93]; group bootstrap (8 groups):
+0.52 [0.28, 0.74] before, 0.84 [0.65, 1.00] after. n is small, so the claim is "about 0.85 with a wide interval".
+
+**Verdict.** Adopted as a safety net, not a quality fix: coverage reaches 0.84 only because 81 % of Arabizi requests
+now go to human review and 16 % to an ASK; set size 3.35 of 6 is nearly uninformative. The real fix is a better
+Arabizi model (more reviewed Arabizi rows); once Arabizi OOF rows exist, `quantiles_by_lang` gives `arabizi` its own
+quantile (>= `mondrian.min_groups` groups) and the alias is ignored (the validator rejects an alias over an own
+quantile, so remove the key from `train.yaml` then). EN and AR slices are bit-identical.
+
+**Refreeze (rc4, not done here).** Run `train.py --retune --out models/frozen/v1` (no refit; it writes
+`q_lang_alias` into `config.json`, regenerates `conformal/` and `MANIFEST.json`), then `evaluate.py --all`, and
+rebuild the tarball. If the other streams retrain the model, `train.py` stage B writes the key from `train.yaml`.
+The frozen `models/frozen/v1` is deliberately unchanged here (MANIFEST untouched).

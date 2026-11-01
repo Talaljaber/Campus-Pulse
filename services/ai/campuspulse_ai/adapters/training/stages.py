@@ -649,6 +649,7 @@ RETUNE_KEYS = (
     "conformal.mondrian_by_lang",
     "conformal.q_category_by_lang",
     "conformal.q_priority_by_lang",
+    "conformal.q_lang_alias",
     "thresholds.human_review_maxprob",
 )
 
@@ -693,6 +694,7 @@ def retune(
             "mondrian_by_lang": bool(cfg.section("conformal")["mondrian_by_lang"]),
             "q_category_by_lang": by_lang[0],
             "q_priority_by_lang": by_lang[1],
+            "q_lang_alias": dict(cfg.section("conformal").get("q_lang_alias", {})),
         }
     )
     data["thresholds"]["human_review_maxprob"] = hr

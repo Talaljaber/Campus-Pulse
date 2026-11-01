@@ -167,11 +167,20 @@ class ConformalCfg(_Section):
     # P2.10 MondrianByLang: per-language quantiles ({lang: q}); empty = the global q for every language
     q_category_by_lang: dict[str, Probability] = Field(default_factory=dict)
     q_priority_by_lang: dict[str, Probability] = Field(default_factory=dict)
+    # P2.18 borrowed quantiles: {lang: donor} makes `lang` (no calibration rows of its own, e.g. Arabizi)
+    # use the quantile `q_<target>_by_lang[donor]` holds. Empty (the default, and every older artifact) =
+    # the global q for a language without its own quantile.
+    q_lang_alias: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _mondrian_consistent(self) -> ConformalCfg:
         if (self.q_category_by_lang or self.q_priority_by_lang) and not self.mondrian_by_lang:
             raise ValueError("per-language quantiles need conformal.mondrian_by_lang = true")
+        own = {*self.q_category_by_lang, *self.q_priority_by_lang}
+        if self.q_lang_alias and own:  # no own quantiles at all (a rank-free config): the alias is inert
+            for lang, donor in self.q_lang_alias.items():
+                if lang in own or donor not in own:
+                    raise ValueError(f"q_lang_alias {lang!r}->{donor!r}: donor needs a quantile, alias none")
         return self
 
 

@@ -251,6 +251,9 @@ def conformal_predictor(config: FrozenConfig, target: str) -> LACConformal | Mon
     if not (c.mondrian_by_lang and per):
         return lac
     inner = {lang: LACConformal.from_quantile(target, alpha, v, c.n_calib) for lang, v in per.items()}  # type: ignore[arg-type]
+    for lang, donor in c.q_lang_alias.items():  # P2.18: no rows of its own: borrow the donor q
+        if donor in inner:
+            inner[lang] = inner[donor]
     return MondrianByLang(inner, lac)
 
 

@@ -1252,3 +1252,6 @@
 - **Acceptance:** OOF category 0.806 -> 0.935, our_test 0.789 -> 0.864 (priority unchanged 0.904 / 0.847); predict.py under `no_network.py` + `validate_predictions.py` OK; RSS 459 MB, English p50 ~15 ms, Arabic p50 ~175 ms uncached (models.md §27).
 - **Limitations / TODO / known issues:** the release asset `campuspulse-models-v1.tar.gz` must be rebuilt (`encoder/` + `translator/`) and `DEFAULT_TAG` in `scripts/fetch_models.py` bumped when it is published; Arabizi (not translated) category coverage 0.53 on our_test; API RSS is ~460 MB against Render's 512 MB.
 - **Affects streams:** Backend (API RSS, `OfflineContainer.raw_encoder`), DevOps (tarball, image build needs the new asset).
+
+### P2.18 — Arabizi conformal coverage: borrowed Arabic-script quantile  (ML, 2026-11-01)
+- **What now exists:** optional `conformal.q_lang_alias` (`{arabizi: ar}` in `config/train.yaml`): a language with no calibration rows uses its donor's category quantile. On rc3, our_test Arabizi category coverage 0.516 -> 0.839 (Wilson [0.67, 0.93]), set size 1.0 -> 3.35, 81 % of Arabizi requests to human review; EN and AR unchanged. Frozen v1 not refrozen; the rc4 refreeze must run `train.py --retune` (docs/ml/models.md 28).
