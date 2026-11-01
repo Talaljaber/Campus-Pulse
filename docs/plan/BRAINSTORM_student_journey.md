@@ -81,3 +81,10 @@ Decisions:
 - Build it, but after P7.9, the refreeze and the blind test; the classifier is the scored part and must not be delayed.
 - First version: in-app reply box for the student, email only outbound; add inbound email later if time allows.
 - Check what already exists (staff console, notifications, Linear sink, Supabase) before estimating.
+
+## 11. LLM rules for urgency, and questions in the chat (idea added 2026-11-01)
+- Idea (user): give the LLM explicit rules to flag a **deadline within 24 hours** and a **block** (cannot do what is needed), and so on, since it understands context; in the new chat design the LLM can also **ask the student questions**.
+- Fit: the P7.9 work already returns structured cues (danger, account compromise, outage, deadline) from the same call and uses them as a raise-only priority floor. The prompt rules for deadline and block are the same mechanism, written as explicit definitions with examples.
+- Chat questions: when a cue is unclear ("my exam is soon"), the LLM asks one short question ("when is it?") and the answer is added to the text that goes to the model. This replaces the fixed clarifying-question bank in the chat, but the decision that a question is needed still comes from the model's uncertainty, not from the LLM's own feeling.
+- Guardrails: the LLM returns flags, never the priority itself; the floor stays raise-only and deterministic; flags are read from the student's original text, so injected text cannot set them; false-escalation on low and medium rows must be measured (target about 2 points or less) before adopting; offline mode keeps the lexicon rules only.
+- Still to measure: how many of the missed deadline rows the LLM flags, and how often it over-flags. P7.9 reports this.
