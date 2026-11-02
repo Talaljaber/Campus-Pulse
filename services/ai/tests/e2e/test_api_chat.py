@@ -46,6 +46,17 @@ def test_turn_proposes_and_confirm_opens_a_ticket_with_its_follow_up() -> None:
     assert t.h.mail.sent
 
 
+def test_confirming_the_same_token_twice_is_422_and_opens_one_ticket() -> None:
+    client, t = chat_api()
+    token = client.post("/v1/chat/preview", json={"text": TEXT}, headers=STUDENT).json()["token"]
+    first = client.post("/v1/chat/confirm", json={"proposal_token": token}, headers=STUDENT)
+    second = client.post("/v1/chat/confirm", json={"proposal_token": token}, headers=STUDENT)
+    assert first.status_code == 200, first.text
+    assert second.status_code == 422 and second.json()["error"]["code"] == "invalid_input", second.text
+    assert "already sent" in second.text
+    assert len(t.tickets()) == 1
+
+
 def test_a_yes_in_a_turn_confirms_and_schedules_on_created() -> None:
     agent = ScriptedAgent(
         replies=[says("x", "request"), says("Done.", "confirm")], phrase_text="Shall I? IT Support"

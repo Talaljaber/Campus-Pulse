@@ -24,13 +24,20 @@ distress message, which is triaged and persisted like any other distress).
 `confirm(cmd, caller, later)` runs `TriageUseCase.run(chat_confirmed=True)` on the token's text, applies the
 hint as a "past correction" re-route (`TicketLifecycleUseCase.apply_hint`) and hands the follow-up work to
 `later` (a list the route turns into background tasks: first the hint's delivery, then `on_created`).
-Errors: `InvalidInput` (422) for a bad, expired or foreign token or an invalid conversation.
+Errors: `InvalidInput` (422) for a bad, expired, foreign or already used token or an invalid conversation.
+
+A token is single-use: the first confirm claims its signature (the part after the ".") in an in-process,
+thread-safe record before triage runs, so a typed "yes" twice or a retried request cannot open two tickets;
+a failed triage releases the claim so the user can retry. The record is pruned on each call and bounded
+(`CONSUMED_MAX`). It relies on the single uvicorn worker (docs/ARCHITECTURE: one worker) and resets on a
+restart (the token's own 30-minute expiry still applies).
 """
 
 from __future__ import annotations
 
 import logging
 import re
+import threading
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -70,6 +77,8 @@ from campuspulse_ai.domain.values import (
 log = logging.getLogger(__name__)
 
 REQUEST_TEXT_MAX = 1000
+CONSUMED_MAX = 10_000
+ALREADY_SENT = "this proposal was already sent"
 ASKED_IN_CHAT = "chat"
 """Placeholder question id counted once the requester wrote more than one message (one-question budget)."""
 DISTRESS_QUESTION_ID = "distress"
@@ -162,6 +171,8 @@ class ChatUseCase:
         self._journey = journey
         self._announcements = announcements
         self._encoder = encoder
+        self._consumed: dict[str, int] = {}  # token signature -> expiry (epoch seconds)
+        self._consumed_lock = threading.Lock()
 
     @property
     def llm_enabled(self) -> bool:
@@ -190,11 +201,14 @@ class ChatUseCase:
         agent_reply = self._agent.reply(ctx, turns)
         if agent_reply is None:
             return self._fallback(lang)
-        return self._answer(agent_reply, messages, caller, lang, ctx, claims, token_bad, later)
+        return self._answer(
+            agent_reply, cmd.proposal_token or "", messages, caller, lang, ctx, claims, token_bad, later
+        )
 
     def _answer(
         self,
         reply: AgentReply,
+        cmd_token: str,
         messages: Sequence[dto.ChatMessage],
         caller: Actor,
         lang: ReplyLang,
@@ -209,7 +223,10 @@ class ChatUseCase:
         if reply.intent == "confirm":
             if claims is None:  # nothing to confirm: never let the model's words claim a recorded request
                 return self._plain(text["expired"] if token_bad else text["no_proposal"], clear=token_bad)
-            done = self._confirm_claims(claims, caller, later)
+            try:
+                done = self._confirm_claims(cmd_token, claims, caller, later)
+            except InvalidInput:  # the proposal was already sent
+                return self._plain(text["expired"], clear=True)
             return dto.ChatTurnResponse(
                 mode="agent",
                 reply=self._confirmed_reply(done, lang),
@@ -420,20 +437,39 @@ class ChatUseCase:
         self, cmd: dto.ChatConfirmRequest, caller: Actor, later: Later | None = None
     ) -> dto.ChatConfirmResponse:
         claims = verify(self._key, cmd.proposal_token, caller.alias or "", self._clock.now())
-        return self._confirm_claims(claims, caller, later)
+        return self._confirm_claims(cmd.proposal_token, claims, caller, later)
 
     def _confirm_claims(
-        self, claims: ProposalClaims, caller: Actor, later: Later | None
+        self, token: str, claims: ProposalClaims, caller: Actor, later: Later | None
     ) -> dto.ChatConfirmResponse:
-        triage = self._triage.run(
-            dto.TriageRequest(text=claims.text, student_alias=caller.alias or "", chat_confirmed=True)
-        )
+        """Claim the token first (`InvalidInput` if already used), then triage; release on failure."""
+        signature = token.partition(".")[2]
+        self._claim(signature, claims.exp)
+        try:
+            triage = self._triage.run(
+                dto.TriageRequest(text=claims.text, student_alias=caller.alias or "", chat_confirmed=True)
+            )
+        except BaseException:
+            with self._consumed_lock:
+                self._consumed.pop(signature, None)
+            raise
         action = triage.action
         ticket_id = action.ticket_id if action is not None else None
         applied = False
         if ticket_id and claims.hint_id and action is not None and action.type == ActionType.TICKET:
             applied = self._apply_hint(ticket_id, claims, later)
         return dto.ChatConfirmResponse(triage=triage, ticket_id=ticket_id, hint_applied=applied)
+
+    def _claim(self, signature: str, exp: int) -> None:
+        now = int(self._clock.now().timestamp())
+        with self._consumed_lock:
+            for sig in [s for s, e in self._consumed.items() if e <= now]:
+                del self._consumed[sig]
+            if signature in self._consumed:
+                raise InvalidInput(ALREADY_SENT)
+            while len(self._consumed) >= CONSUMED_MAX:  # bounded: drop the oldest claim
+                del self._consumed[next(iter(self._consumed))]
+            self._consumed[signature] = exp
 
     def _apply_hint(self, ticket_id: str, claims: ProposalClaims, later: Later | None) -> bool:
         lifecycle = self._lifecycle

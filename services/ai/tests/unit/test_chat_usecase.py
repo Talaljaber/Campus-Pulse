@@ -80,6 +80,51 @@ def test_confirm_with_the_token_opens_exactly_one_ticket() -> None:
     assert len(t.c.repo.tables["requests"]) == 1
 
 
+def test_a_second_confirm_of_the_same_token_is_refused_and_opens_no_second_ticket() -> None:
+    t = build_chat(agent=proposing())
+    token = propose(t).token
+    t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    with pytest.raises(InvalidInput, match="already sent"):
+        t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    assert len(t.tickets()) == 1
+
+
+def test_a_turn_re_confirm_answers_the_expired_template_and_opens_no_second_ticket() -> None:
+    agent = proposing()
+    t = build_chat(agent=agent)
+    token = propose(t).token
+    agent.replies.extend([says("Done.", "confirm"), says("Done.", "confirm")])
+    history = (user(TEXT), assistant("..", "proposal"), user("yes"))
+    first = t.uc.turn(turn_of(*history, token=token), Caller())
+    again = t.uc.turn(turn_of(*history, token=token), Caller())
+    assert first.ticket_id is not None
+    assert again.ticket_id is None and again.clear_proposal and again.triage is None
+    assert again.reply == t.uc._text("en")["expired"]
+    assert len(t.tickets()) == 1
+    with pytest.raises(InvalidInput, match="already sent"):  # the same token via the confirm route too
+        t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+
+
+def test_a_failed_triage_releases_the_token_so_the_user_can_retry(monkeypatch: pytest.MonkeyPatch) -> None:
+    t = build_chat(agent=proposing())
+    token = propose(t).token
+    real = t.c.triage.run
+    calls = {"n": 0}
+
+    def flaky(*args: Any, **kwargs: Any) -> Any:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("boom")
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(t.c.triage, "run", flaky)
+    with pytest.raises(RuntimeError):
+        t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    assert t.tickets() == []
+    t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    assert len(t.tickets()) == 1
+
+
 def test_confirm_reply_is_arabic_for_an_arabic_request() -> None:
     agent = ScriptedAgent(replies=[says("x", "request"), says("x", "confirm")])
     t = build_chat(agent=agent)
