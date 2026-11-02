@@ -242,8 +242,8 @@ def supabase_adapters(
     """The production adapters over one Supabase client (module docstring, steps 2-5)."""
     from campuspulse_ai.adapters.memory.cached import QueryCachingMemoryStore
     from campuspulse_ai.adapters.memory.pgvector_memory import PgVectorMemoryStore
-    from campuspulse_ai.adapters.store.journey_supabase import SupabaseJourneyStore
     from campuspulse_ai.adapters.store.announcements_supabase import SupabaseAnnouncementStore
+    from campuspulse_ai.adapters.store.journey_supabase import SupabaseJourneyStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
 
