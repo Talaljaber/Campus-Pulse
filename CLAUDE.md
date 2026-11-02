@@ -8,7 +8,7 @@ Track C entry for GJU AI Quest 2026: CampusPulse, a bilingual (EN + Jordanian Ar
 ## Non-negotiables
 - NEVER open, read, list or use `hidden_test.csv`, `hidden_test_labels.csv` or `JUDGE_GUIDE.md` if they appear anywhere. If one shows up in the repo, stop and tell the user.
 - NEVER edit official labels in `data/raw` or `data/clean`. Label adjustments only live in `data/clean/label_flags.csv` as soft targets.
-- NEVER send email, calendar invites or messages to real people or real GJU addresses. Send only to addresses in the `DEMO_EMAIL_ALLOWLIST` env var, enforced in code. Advisor names in seed data are fictional.
+- NEVER send email, calendar invites or messages to an address that has not consented. Send only to addresses in the `DEMO_EMAIL_ALLOWLIST` env var, or to a notification email its owner typed on their profile and **verified with a code sent to that address** (user decision 2026-11-02, so testers such as the course doctor can receive real emails), enforced in one place in code. Never to departments or staff addresses taken from anywhere else. Advisor names in seed data are fictional.
 - API keys (OpenRouter, Resend, Google, Supabase service role) live server-side in env vars only. Never in client code, never committed. Keep `.env.example` up to date.
 - `services/ai/predict.py` must run fully offline with no API key, on CPU, from a clean `pip install -r requirements.txt`. LLM tiers only run behind `--use-llm`.
 - Evaluate only with scenario-held-out CV (`cv_group` column) and our own test set. Never report random-split scores.

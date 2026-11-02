@@ -226,3 +226,23 @@ All eight defaults of the P9 architect are accepted, with one change:
 6. Past-correction hints (similarity at least 0.85): may change the suggested department and only raise priority; recorded as a re-route by past correction.
 7. Emails per side as proposed (requester: received, in progress, forwarded, staff reply, solved, closed, reopened; office inbox: new request, forwarded in, student reply, reopened, student closed or solved, reminder). A priority change alone sends no email. Language follows the request.
 8. Hosting: designed for a sleeping service anyway (in-process loop, sweep on every API hit, GitHub cron every 10 minutes) with the delay limit documented. The user expects to pay for the Render Starter plan (always on).
+
+## 22. Real test emails, grounded chat, clustering and issue announcements (user, 2026-11-02)
+
+### 22.1 Verified notification email (so the course doctor can receive real emails)
+- The allow-list alone cannot let a tester receive mail. New rule (CLAUDE.md updated): a recipient is allowed if it is in `DEMO_EMAIL_ALLOWLIST` **or** it is a notification email its owner typed on their Profile page and **verified with a code mailed to that address**. This is checked in one place in the mailer. Everything else stays blocked and logged.
+- Flow: a tester logs in with a demo account (student or any staff office), opens Profile, types their own email, gets a 6-digit code (valid 30 minutes, 5 attempts, a send rate limit per account and per address), enters it, and from then on that account's emails (requester emails for a student; office emails for a staff member of that office) go to the verified address. One verified email per account; the latest verified one wins (shared demo accounts).
+- A kill switch env var turns the opt-in off; the verified address can be removed from Profile. The README disclosure and the demo notice say so.
+- Alternative not chosen for now: self-signup with Supabase auth (more work, more abuse surface).
+
+### 22.2 Chat answers only from what we know
+- The chat agent states facts only from announcements, the FAQ/knowledge base and past hints. No invented advice or promises ("use the lab network", "our team is working on it") unless the source says so. When nothing matches it says it has no information and offers to record a request.
+- A single short retry before the plain-form fallback when the LLM answers 429 or times out.
+
+### 22.3 Clustering similar requests and announcing issues
+What exists today (SPEC section 5.1 step 13): incident detection per building in a 30-minute window by embedding similarity, 3 or more reports make one incident, member tickets are merged into one, reporters and building subscribers get one message. Gaps: it needs a building, the window is short, it has not been checked against the new P9 chat and ticket flow, and the broadcast goes to reporters only.
+Wanted:
+- Cluster similar **shared-issue** requests (electricity down, wifi down, bus late) even when worded differently and even without an announcement. **Personal requests are never clustered** (my account, my fee, my grade, my registration).
+- No duplicates: if a new request matches an open cluster or announcement, the chat says it is already known, adds the request as another report to it, and does not create a new ticket (the student can still choose to record a separate request).
+- With **more than three** similar requests, suggest the department (office) and propose a draft announcement for that office's staff to edit and publish in one click (staff stay in control; nothing is announced automatically).
+- When an issue is announced, **students and staff both receive an email** (to allowed or verified addresses only), with a throttle.
