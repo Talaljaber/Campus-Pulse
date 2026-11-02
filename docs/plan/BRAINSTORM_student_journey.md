@@ -145,3 +145,39 @@ Plain, humane, short, bilingual where the student's language is known. Every tem
 - Privacy and rules: no real student documents in the demo (use sample files; a notice on the upload box says so), files are deleted with their ticket, and the model never reads file contents (the classifier only sees the typed text). Optional later idea: the LLM describes an image for the staff, but that sends the file to a third party, so it is out unless we disclose it.
 - Schema and migrations: a `ticket_files` table (ticket id, comment id, uploader, path, type, size, created at) with row-level security matching the ticket rules, in a new migration with explicit grants (see the pending service_role grants item).
 - Open points: staff-only attachments (internal notes with files), a total storage budget on the free Supabase tier, and whether the chat agent itself accepts an attachment before the ticket exists (simplest: files are added after the ticket is created).
+
+## 17. Decisions on the open questions (user, 2026-11-02)
+
+1. **Email for requests and comments:** the request itself and every comment on a ticket are sent by email (section 15). Inbound email replies stay optional and are not required for the first version (the in-app reply box covers the student side).
+2. **Status list and transitions** (forwarding is an action, not a status; it changes the department and restarts the clock):
+   - `new` -> `in_progress` (a staff member picks it up or replies)
+   - `new` or `in_progress` -> `solved` (staff give a solution) or `closed` (no comment, or no longer needed)
+   - `new` or `in_progress` -> `new` in another department (forward; clock restarts, history keeps who forwarded to whom)
+   - `solved` or `closed` -> `in_progress` (the student replies or reopens)
+   - A student can never set a status except by replying (which reopens). Staff of the handling department and the admin can set statuses.
+3. **Corrections are stored for the knowledge base:** a new table (for example `ticket_hints`) with the request text, the model's first category and priority, the corrected department and priority, who corrected it and when. The chat agent's LLM can read the closest past hints, and when the same situation happened before the stored result is picked up and used as the suggestion. It is a retrieval aid in the chat and staff path only. The frozen offline model and `predict.py` do not read it.
+4. **Advisor booking is dropped.**
+5. **Internal staff-to-staff notes are accepted** (never emailed to the student).
+6. **Announcements:** staff post them from their console, stored in Supabase, and the chat agent answers from them instead of opening a ticket.
+7. **Chat fallback:** the LLM is the conversation; our model is called as a tool and also serves as the fallback when the LLM or its key is down (plain form).
+8. **Build order accepted:** accounts and welcome page, then tickets with thread and email, then the chat agent, then files.
+9. The demo script is dropped for now.
+
+## 18. Deadlines (SLA) per ticket, and reminder emails (user, 2026-11-02)
+
+| Priority | Time allowed | Reminder |
+|---|---|---|
+| high | **1 hour** to respond | If nothing happens in the hour, send a follow-up reminder email |
+| medium | solved **within 24 hours** (same day) | Reminder when the time is exceeded |
+| low | **48 hours** | Reminder when the time is exceeded |
+
+- When the time is exceeded and the ticket has no solution and no forward, send a reminder email.
+- **A forward restarts the clock** for the new department.
+- Staff interface: add columns for the **deadline, time left and an overdue marker**; high tickets are shown as urgent and sorted first.
+- Reminder emails use their own template (section 14.2 list gets a "reminder" template) and go only to allow-listed demo addresses.
+- Assumptions to confirm before building (the planner must list them and ask, not guess):
+  1. Who gets the reminder (the handling department's staff, the admin as well after a second miss).
+  2. Whether a repeat reminder is sent every interval or once per ticket and then escalates.
+  3. For high tickets, whether a first staff reply (or moving to in progress) stops the one-hour clock and starts the normal resolution timer, or only solved, closed or forwarded stops it. The user's wording: the clock ends only with a solution or a forward.
+  4. Whether the clock counts calendar hours or office hours (default: calendar hours).
+  5. What changes the priority of an open ticket (a staff correction restarts or keeps the clock).
