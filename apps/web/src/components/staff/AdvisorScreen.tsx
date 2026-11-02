@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useAdvisorReviews } from "@/hooks/useAdvisorReviews";
+import { useFlagEvents } from "@/hooks/useFlagEvents";
+import { useHints } from "@/hooks/useHints";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useT, type DictKey } from "@/i18n";
 import type { ReviewStatus } from "@/lib/ai/types";
@@ -15,7 +17,9 @@ import { Loadable } from "../ui/Loadable";
 import { TabPanel, Tabs } from "../ui/Tabs";
 import { useToast } from "../ui/Toast";
 import { AdvisorReviewDetail, AdvisorReviewList } from "./AdvisorReviews";
+import { FlagsPanel } from "./FlagsPanel";
 import { useOfficeLabel } from "./office";
+import { PastCorrections } from "./PastCorrections";
 
 /** Props for {@link AdvisorScreen}. */
 export interface AdvisorScreenProps {
@@ -41,6 +45,8 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<{ id: string; kind: StaffErrorKind } | null>(null);
   const q = useAdvisorReviews(status);
+  const flags = useFlagEvents();
+  const past = useHints();
 
   const onNotice = (n: NoticeData) => {
     if (n.type !== "review_assigned") return;
@@ -107,6 +113,18 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
           </Loadable>
         </TabPanel>
       ))}
+
+      <section aria-label={t("corrections.flagsSection")}>
+        <Loadable state={flags.load} onRetry={flags.reload}>
+          <FlagsPanel events={flags.events} audience={role} />
+        </Loadable>
+      </section>
+
+      <section aria-label={t("corrections.title")}>
+        <Loadable state={past.load} onRetry={past.reload}>
+          <PastCorrections hints={past.hints} />
+        </Loadable>
+      </section>
     </AppShell>
   );
 }

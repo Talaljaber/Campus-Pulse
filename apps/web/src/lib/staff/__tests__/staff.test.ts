@@ -12,7 +12,10 @@ import { staffErrorKind } from "../service";
 import {
   ACTIVE_STATUSES,
   SETTABLE_STATUSES,
+  applyCriteria,
   applyTicketOut,
+  DEFAULT_CRITERIA,
+  withoutOwn,
   durationParts,
   filterTickets,
   mergeLive,
@@ -112,6 +115,37 @@ describe("ticket ordering and filtering", () => {
     expect(input.map((t) => t.id)).toEqual(["d1", "a", "d2", "b"]);
   });
 
+  it("orders running tickets by priority, then deadline, with finished ones last", () => {
+    const soonLow = ticket({ id: "soonLow", priority: "low", sla_due_at: new Date(NOW.getTime() + 1 * H).toISOString() });
+    const lateHigh = ticket({ id: "lateHigh", priority: "high", sla_due_at: new Date(NOW.getTime() + 9 * H).toISOString() });
+    const earlyHigh = ticket({ id: "earlyHigh", priority: "high", sla_due_at: new Date(NOW.getTime() + 2 * H).toISOString() });
+    const mid = ticket({ id: "mid", priority: "medium", status: "in_progress" });
+    const done = ticket({ id: "done", priority: "high", status: "closed" });
+    expect(sortTickets([done, soonLow, lateHigh, mid, earlyHigh]).map((x) => x.id)).toEqual(["earlyHigh", "lateHigh", "mid", "soonLow", "done"]);
+  });
+
+  it("hides the viewer's own requests and keeps tickets without a known requester", () => {
+    const list = [ticket({ id: "a", requester_alias: "rim" }), ticket({ id: "b", requester_alias: "sam" }), ticket({ id: "c", requester_alias: null })];
+    expect(withoutOwn(list, "rim").map((x) => x.id)).toEqual(["b", "c"]);
+    expect(withoutOwn(list, null)).toHaveLength(3);
+  });
+
+  it("filters by status, priority, office and a search over title or ticket number", () => {
+    const num = (id: string) => `N-${id}`;
+    const list = [
+      ticket({ id: "a", title: "Wi-Fi down", priority: "high" }),
+      ticket({ id: "b", title: "Printer", priority: "low", office: "finance" }),
+      ticket({ id: "c", title: "Old wifi", status: "closed" }),
+    ];
+    const ids = (c: Partial<typeof DEFAULT_CRITERIA>) => applyCriteria(list, { ...DEFAULT_CRITERIA, ...c }, num).map((x) => x.id);
+    expect(ids({})).toEqual(["a", "b"]);
+    expect(ids({ status: "all" })).toEqual(["a", "b", "c"]);
+    expect(ids({ priority: "high" })).toEqual(["a"]);
+    expect(ids({ office: "finance" })).toEqual(["b"]);
+    expect(ids({ status: "all", search: " FI " })).toEqual(["a", "c"]);
+    expect(ids({ search: "n-b" })).toEqual(["b"]);
+  });
+
   it("uses the P9 status model: new and in_progress are active, merged is never settable", () => {
     expect([...ACTIVE_STATUSES]).toEqual(["new", "in_progress"]);
     expect([...SETTABLE_STATUSES]).toEqual(["new", "in_progress", "solved", "closed"]);
@@ -167,6 +201,7 @@ describe("links and live merges", () => {
     });
     expect(merged.office).toBe("registrar");
     expect(merged.status).toBe("solved");
+    expect(merged.awaiting_student).toBe(false);
     expect(merged.priority).toBe("high");
   });
 });

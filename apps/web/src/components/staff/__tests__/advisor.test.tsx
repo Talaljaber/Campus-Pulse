@@ -8,7 +8,7 @@ import type { TicketView } from "@/lib/staff/tickets";
 import { AdvisorReviewDetail, AdvisorReviewList } from "../AdvisorReviews";
 import { ForwardForm } from "../ForwardForm";
 import { officeOfCategory } from "../office";
-import { RequestDetail } from "../RequestDetail";
+import { TicketSidePanel } from "../TicketSidePanel";
 
 const ITEMS = reviewsFixture.response as ReviewItem[];
 const MINE = ITEMS.find((i) => i.assigned_to_me)!;
@@ -140,18 +140,23 @@ describe("ForwardForm", () => {
   });
 });
 
-describe("RequestDetail ticket forward", () => {
-  const base = { ticket, detail: null, load: "ready" as const, audience: "staff" as const, onClose: () => {} };
+describe("TicketSidePanel ticket forward", () => {
+  const base = {
+    ticket,
+    busy: false,
+    onStatus: vi.fn(() => Promise.resolve(true)),
+    onPriority: vi.fn(() => Promise.resolve(true)),
+  };
 
-  it("has no forward button unless the page wires it", () => {
-    render(<RequestDetail {...base} />);
+  it("has no forward button once the ticket is finished", () => {
+    render(<TicketSidePanel {...base} ticket={{ ...ticket, status: "solved" }} onForward={vi.fn()} />);
     expect(screen.queryByRole("button", { name: "Forward to another office" })).toBeNull();
   });
 
   it("forwards the ticket to another office, never to the one that holds it", async () => {
     const user = userEvent.setup();
-    const onForward = vi.fn();
-    render(<RequestDetail {...base} onForward={onForward} />);
+    const onForward = vi.fn(() => Promise.resolve(true));
+    render(<TicketSidePanel {...base} onForward={onForward} />);
     await user.click(screen.getByRole("button", { name: "Forward to another office" }));
     const office = screen.getByLabelText("Office") as HTMLSelectElement;
     expect(within(office).queryByRole("option", { name: "IT Support" })).toBeNull();

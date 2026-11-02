@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { TicketStatus } from "@/lib/ai/types";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { listTicketLinks, listTickets, subscribeTickets } from "@/lib/repos/tickets";
-import { forwardErrorKind, forwardTicket, setTicketStatus, staffErrorKind, type StaffErrorKind } from "@/lib/staff/service";
-import { applyForward, applyTicketOut, mergeLive, withLinks, type TicketView } from "@/lib/staff/tickets";
+import { mergeLive, withLinks, withoutOwn, type TicketView } from "@/lib/staff/tickets";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 export type LoadState = "loading" | "ready" | "error";
@@ -14,11 +12,11 @@ export type LoadState = "loading" | "ready" | "error";
  * It reads once, then follows Realtime inserts and updates. RLS is what limits staff to
  * their office; the `office` argument only narrows an admin's view. A ticket that arrives
  * live has no Linear link yet (the link is written a moment later), so its link is read once.
+ * Tickets the caller requested themselves (`myAlias`) are left out: staff never work their own.
  */
-export function useTicketQueue(office: string | null) {
-  const [tickets, setTickets] = useState<TicketView[]>([]);
+export function useTicketQueue(office: string | null, myAlias: string | null = null) {
+  const [all, setTickets] = useState<TicketView[]>([]);
   const [load, setLoad] = useState<LoadState>("loading");
-  const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
@@ -65,33 +63,7 @@ export function useTicketQueue(office: string | null) {
     setNonce((n) => n + 1);
   }, []);
 
-  /** Changes a ticket's status through the API. Resolves to an error kind, or `null` on success. */
-  const changeStatus = useCallback(async (id: string, status: TicketStatus): Promise<StaffErrorKind | null> => {
-    setPending((p) => new Set(p).add(id));
-    const res = await setTicketStatus(id, status);
-    setPending((p) => {
-      const next = new Set(p);
-      next.delete(id);
-      return next;
-    });
-    if (!res.ok) return staffErrorKind(res);
-    setTickets((cur) => cur.map((t) => (t.id === id ? applyTicketOut(t, res.data) : t)));
-    return null;
-  }, []);
+  const tickets = useMemo(() => withoutOwn(all, myAlias), [all, myAlias]);
 
-  /** Forwards a ticket to another office (UD-13). Resolves to an error kind, or `null` on success. */
-  const forward = useCallback(async (id: string, toOffice: string, note: string): Promise<StaffErrorKind | null> => {
-    setPending((p) => new Set(p).add(id));
-    const res = await forwardTicket(id, toOffice, note);
-    setPending((p) => {
-      const next = new Set(p);
-      next.delete(id);
-      return next;
-    });
-    if (!res.ok) return forwardErrorKind(res);
-    setTickets((cur) => cur.map((t) => (t.id === id ? applyForward(t, res.data, toOffice) : t)));
-    return null;
-  }, []);
-
-  return { tickets, load, pending, reload, changeStatus, forward };
+  return { tickets, load, reload };
 }
