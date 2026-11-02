@@ -56,6 +56,8 @@ REQUEST_MODELS: dict[str, type[BaseModel] | None] = {
     "ticket_comment": dto.CommentRequest,
     "ticket_priority": dto.PriorityRequest,
     "ticket_student_action": dto.StudentActionRequest,
+    "announcement_create": dto.AnnouncementIn,
+    "announcement_archive": None,
 }
 QUERY_MODELS: dict[str, type[BaseModel]] = {
     "triage": dto.TriageQuery,

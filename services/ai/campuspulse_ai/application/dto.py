@@ -917,3 +917,40 @@ class ReindexResponse(_Model):
     reindexed: int = Field(ge=0)
     dim: int = Field(ge=1)
     duration_ms: int = Field(ge=0)
+
+
+# --- announcements (P9.5) ---------------------------------------------------------------------------
+
+AnnouncementKindName = Literal["info", "outage", "maintenance"]
+"""Mirrors `domain.announcements.AnnouncementKind`."""
+
+
+class AnnouncementIn(_Model):
+    """Body of `POST /v1/announcements`.
+
+    Staff post for their own office (`office` omitted or equal to theirs; another office is 403);
+    admins pick any office, or leave it null for a campus-wide notice. `starts_at` defaults to now;
+    `ends_at` must be after `starts_at`.
+    """
+
+    title: str = Field(min_length=1, max_length=120)
+    body: str = Field(min_length=1, max_length=1000)
+    kind: AnnouncementKindName = "info"
+    office: str | None = Field(default=None, description="D-005 office code; null = campus-wide (admin).")
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+
+
+class AnnouncementOut(_Model):
+    """One announcement (a row of `announcements`)."""
+
+    id: str
+    office: str | None
+    kind: AnnouncementKindName
+    title: str
+    body: str
+    starts_at: datetime
+    ends_at: datetime | None
+    archived_at: datetime | None
+    created_by: str | None
+    created_at: datetime | None

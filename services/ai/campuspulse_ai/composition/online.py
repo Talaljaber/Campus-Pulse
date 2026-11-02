@@ -60,6 +60,8 @@ from campuspulse_ai.application.services.gaming import GamingDetector
 from campuspulse_ai.application.services.llm_merge import LLMMerger
 from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.application.use_cases.act import ActConfig, ActUseCase
+from campuspulse_ai.application.use_cases.announcement_ports import AnnouncementStore
+from campuspulse_ai.application.use_cases.announcements import AnnouncementsUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
@@ -150,6 +152,7 @@ class OnlineAdapters:
     reviews: ReviewReads | None = None
     directory: AdvisorDirectory | None = None
     journey: JourneyStore | None = None
+    announcements: AnnouncementStore | None = None  # P9.5; without it the routes answer 501
 
 
 @dataclass(frozen=True, slots=True)
@@ -240,6 +243,7 @@ def supabase_adapters(
     from campuspulse_ai.adapters.memory.cached import QueryCachingMemoryStore
     from campuspulse_ai.adapters.memory.pgvector_memory import PgVectorMemoryStore
     from campuspulse_ai.adapters.store.journey_supabase import SupabaseJourneyStore
+    from campuspulse_ai.adapters.store.announcements_supabase import SupabaseAnnouncementStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
 
@@ -262,6 +266,7 @@ def supabase_adapters(
         reviews=repo,
         directory=repo,
         journey=SupabaseJourneyStore(client, clock),
+        announcements=SupabaseAnnouncementStore(client),
     )
 
 
@@ -551,6 +556,11 @@ def wire_online(
         ),
         redteam=build_redteam(core, policy, repo, clock, settings, memory=True),
         identity=adapters.identity,
+        announcements=(
+            AnnouncementsUseCase(adapters.announcements, clock, offices.offices)
+            if adapters.announcements is not None
+            else None
+        ),
         health=HealthInfo(
             artifact=manifest.artifact_version,
             sha=manifest.sha,

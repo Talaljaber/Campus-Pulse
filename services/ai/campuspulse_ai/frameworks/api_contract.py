@@ -20,6 +20,7 @@ from fastapi.security import HTTPBearer
 
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
+    AnnouncementOut,
     CounterfactualResponse,
     ErrorCode,
     ErrorResponse,
@@ -547,6 +548,34 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             "after the response: updates the Linear issue; allow-listed email to the office "
             "(`solved`, `closed` or `reopened`)",
         ),
+        tag="staff",
+    ),
+    # --- P9.5 announcements (append new entries below this line) ---
+    EndpointDoc(
+        op_id="announcement_create",
+        method="POST",
+        path="/v1/announcements",
+        summary="Post an announcement",
+        purpose=(
+            "Staff post a notice for their own office, admins for any office or campus-wide "
+            "(`office` null). Students read live announcements on Home (Supabase read under RLS)."
+        ),
+        roles=("staff", "admin"),
+        response_model=AnnouncementOut,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.FORBIDDEN, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("inserts an `announcements` row (realtime to open Home pages)",),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="announcement_archive",
+        method="POST",
+        path="/v1/announcements/{announcement_id}/archive",
+        summary="Archive an announcement",
+        purpose="Staff of the announcement's office, or an admin, take it off Home (sets `archived_at`).",
+        roles=("staff", "admin"),
+        response_model=AnnouncementOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_FOUND, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("sets `announcements.archived_at`",),
         tag="staff",
     ),
 )

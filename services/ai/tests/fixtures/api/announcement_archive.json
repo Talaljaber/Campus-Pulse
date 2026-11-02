@@ -1,0 +1,29 @@
+{
+  "name": "announcement_archive",
+  "description": "Staff of the announcement's office archive it.",
+  "method": "POST",
+  "path": "/v1/announcements/{announcement_id}/archive",
+  "path_params": {
+    "announcement_id": "a1b2c3d4-0000-4a00-8000-000000000051"
+  },
+  "query": {},
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Alias": "staff-it",
+    "X-CP-Office": "it"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "id": "a1b2c3d4-0000-4a00-8000-000000000051",
+    "office": "it",
+    "kind": "maintenance",
+    "title": "Outlook unavailable for two hours",
+    "body": "Mail will be offline tonight for maintenance.",
+    "starts_at": "2026-11-05T09:05:00+03:00",
+    "ends_at": "2026-11-06T22:00:00+03:00",
+    "archived_at": "2026-11-05T10:00:00+03:00",
+    "created_by": "5f0d2f0e-0000-4a00-8000-0000000000a1",
+    "created_at": "2026-11-05T09:05:00+03:00"
+  }
+}

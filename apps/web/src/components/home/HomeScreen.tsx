@@ -1,25 +1,49 @@
 "use client";
 
+import { useLiveAnnouncements } from "@/hooks/useAnnouncements";
 import { useT } from "@/i18n";
+import { firstName } from "@/lib/announcements/view";
 import type { Role } from "@/lib/auth/routing";
-import { AppShell } from "../shell/AppShell";
+import { AnnouncementList } from "../announcements/AnnouncementList";
+import { AppShell, type TileSpec } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
-import { EmptyState } from "../ui/EmptyState";
+import { Loadable } from "../ui/Loadable";
 
 /** Props for {@link HomeScreen}. */
 export interface HomeScreenProps {
   role: Role;
-  /** Shown as the name until profiles carry a display name. */
+  /** The signed-in alias (the header name falls back to it). */
   alias: string | null;
+  /** The fictional display name; the greeting uses its first word. */
+  name?: string | null;
 }
 
-/** Home placeholder: the welcome heading and an empty announcements area (the announcements package fills it). */
-export function HomeScreen({ role, alias }: HomeScreenProps) {
+/**
+ * Home `/`: "Welcome, <first name>", the live announcements (kept current with Realtime) and, for a
+ * student, two tiles: ask a question and my requests. Staff and admins keep their own shortcut tiles.
+ */
+export function HomeScreen({ role, alias, name = null }: HomeScreenProps) {
   const t = useT();
+  const announcements = useLiveAnnouncements();
+  const shown = name ?? alias;
+  const tiles: TileSpec[] | undefined =
+    role === "student"
+      ? [
+          { id: "ask", icon: "chat", href: "/ask", label: t("home.tileAsk"), hint: t("home.tileAskHint") },
+          { id: "requests", icon: "ticket", href: "/requests", label: t("nav.requests"), hint: t("home.tileRequestsHint") },
+        ]
+      : undefined;
   return (
-    <AppShell role={role} current="home" alias={alias}>
-      <PageHeader title={t("home.welcome", { name: alias ?? "" }).trim()} />
-      <EmptyState title={t("home.announcementsEmpty")} />
+    <AppShell role={role} current="home" name={shown} alias={alias} tiles={tiles}>
+      <PageHeader title={t("home.welcome", { name: firstName(shown) }).trim()} />
+      <section aria-labelledby="home-announcements" className="flex flex-col gap-3">
+        <h2 id="home-announcements" className="text-xl font-bold text-accent">
+          {t("home.announcements")}
+        </h2>
+        <Loadable state={announcements.load} onRetry={announcements.reload} lines={3}>
+          <AnnouncementList rows={announcements.rows} />
+        </Loadable>
+      </section>
     </AppShell>
   );
 }

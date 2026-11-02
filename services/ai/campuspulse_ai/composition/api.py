@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from campuspulse_ai.application.use_cases.announcements import AnnouncementsUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
@@ -77,6 +78,7 @@ class ApiServices:
     metrics: MetricsUseCase | None = None
     redteam: RunRedTeamUseCase | None = None
     identity: IdentityVerifier | None = None
+    announcements: AnnouncementsUseCase | None = None
     health: HealthInfo = field(default_factory=HealthInfo)
     lifecycle: TicketLifecycleUseCase | None = None
 

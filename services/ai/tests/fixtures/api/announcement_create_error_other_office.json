@@ -1,0 +1,29 @@
+{
+  "name": "announcement_create_error_other_office",
+  "description": "Staff may only post for their own office: an explicit other office is forbidden.",
+  "method": "POST",
+  "path": "/v1/announcements",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Alias": "staff-it",
+    "X-CP-Office": "it"
+  },
+  "request": {
+    "title": "Fee deadline moved",
+    "body": "The deadline is now the 20th.",
+    "kind": "info",
+    "office": "finance",
+    "starts_at": null,
+    "ends_at": null
+  },
+  "status_code": 403,
+  "response": {
+    "error": {
+      "code": "forbidden",
+      "message": "staff may only post for their own office",
+      "details": null
+    }
+  }
+}

@@ -15,11 +15,13 @@ export interface FilterGroupProps {
   onSubmit: () => void;
   /** When set, a secondary "Reset" button is shown. */
   onReset?: () => void;
+  /** Text of the solid submit button. Default: the translated "Search". */
+  submitLabel?: string;
   className?: string;
 }
 
 /** Bordered "Filtering criteria" box: a fieldset with a bold blue legend, a 2-column grid and one solid Search button. */
-export function FilterGroup({ legend, children, onSubmit, onReset, className }: FilterGroupProps) {
+export function FilterGroup({ legend, children, onSubmit, onReset, submitLabel, className }: FilterGroupProps) {
   const t = useT();
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -31,7 +33,7 @@ export function FilterGroup({ legend, children, onSubmit, onReset, className }: 
         <legend className="px-2 text-base font-bold text-accent">{legend ?? t("filters.legend")}</legend>
         <div className="grid gap-x-6 gap-y-3 pt-2 sm:grid-cols-2">{children}</div>
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-          <Button type="submit">{t("filters.search")}</Button>
+          <Button type="submit">{submitLabel ?? t("filters.search")}</Button>
           {onReset && (
             <Button type="reset" variant="secondary">
               {t("filters.reset")}

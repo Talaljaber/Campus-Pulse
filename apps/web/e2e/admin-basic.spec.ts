@@ -123,7 +123,7 @@ test("the admin moves between queue, incidents, reports, accounts and the outbox
 
   await nav().getByRole("link", { name: "Accounts" }).click();
   await expect(page).toHaveURL(/\/admin\/accounts$/);
-  await expect(page.getByText("Coming in this build")).toBeVisible();
+  await expect(page.getByRole("table", { name: "Accounts" })).toBeVisible();
 
   await nav().getByRole("link", { name: "Reports" }).click();
   await expect(page).toHaveURL(/\/lab$/);

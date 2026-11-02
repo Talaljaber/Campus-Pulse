@@ -37,6 +37,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from campuspulse_ai import __version__
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
+    AnnouncementIn,
     ClarifyRequest,
     CommentRequest,
     CounterfactualQuery,
@@ -321,6 +322,22 @@ def build_router(store: FixtureStore) -> APIRouter:
     def ticket_student_action(ticket_id: str, body: StudentActionRequest, request: Request) -> Any:
         """Requester buttons (fixture-backed)."""
         return _respond(store.pick("ticket_student_action", request, body.model_dump(mode="json")))
+
+    # --- P9.5 announcements (append new routes below this line, in ENDPOINTS order) ---
+
+    @router.api_route(
+        **route_kwargs("announcement_create"), dependencies=[Depends(_guard("announcement_create"))]
+    )
+    def announcement_create(body: AnnouncementIn, request: Request) -> Any:
+        """Post an announcement (fixture-backed)."""
+        return _respond(store.pick("announcement_create", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("announcement_archive"), dependencies=[Depends(_guard("announcement_archive"))]
+    )
+    def announcement_archive(announcement_id: str, request: Request) -> Any:
+        """Archive an announcement (fixture-backed)."""
+        return _respond(store.pick("announcement_archive", request, None))
 
     return router
 
