@@ -9,4 +9,3 @@ export { DistressCard, type DistressCardProps } from "./DistressCard";
 export { FlagBadges, isFlagVisible, type Audience, type FlagBadgesProps } from "./FlagBadges";
 export { ResultCard, type ResultCardProps } from "./ResultCard";
 export { UnderstandingView, type UnderstandingViewProps } from "./UnderstandingView";
-// ChatScreen is not re-exported: it pulls the data hooks, and this barrel stays presentational.

@@ -49,6 +49,10 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   // P9.5 announcements (append new P9 rules below)
   rule("POST", "announcements"),
   rule("POST", "announcements/{id}/archive"),
+  // P9.9 chat agent
+  rule("POST", "chat/turn"),
+  rule("POST", "chat/preview"),
+  rule("POST", "chat/confirm"),
 ];
 
 /** A path that passed the allow-list. */
