@@ -120,7 +120,7 @@ class LifecycleHarness:
 
 
 def build_lifecycle(
-    c: BackendTestContainer, *, encoder: Any = None, mail: FakeNotifier | None = None
+    c: BackendTestContainer, *, encoder: Any = None, mail: FakeNotifier | None = None, files: Any = None
 ) -> LifecycleHarness:
     """The lifecycle over `c.repo` and `c.sink`; emails go to `mail` (a recording fake, never SMTP)."""
     actions = ActionsConfig.from_dict(load_yaml(CONFIG_DIR / "actions.yaml"))
@@ -145,6 +145,7 @@ def build_lifecycle(
         OfficeMap.from_actions(actions),
         c.messages,
         encoder,
+        files,
     )
     sla = SlaReminderUseCase(c.repo, journey, mailer, c.messages, actions.sla_hours)
     return LifecycleHarness(c, lifecycle, journey, mail, sla)

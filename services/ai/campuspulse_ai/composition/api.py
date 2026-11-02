@@ -26,6 +26,7 @@ from campuspulse_ai.application.use_cases.ports import FeedbackHandler, Identity
 from campuspulse_ai.application.use_cases.reviews import ReviewsUseCase
 from campuspulse_ai.application.use_cases.run_redteam import RunRedTeamUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
+from campuspulse_ai.application.use_cases.ticket_files import TicketFilesUseCase
 from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import TriageUseCase
 from campuspulse_ai.config.settings import Settings
@@ -82,6 +83,7 @@ class ApiServices:
     announcements: AnnouncementsUseCase | None = None
     health: HealthInfo = field(default_factory=HealthInfo)
     lifecycle: TicketLifecycleUseCase | None = None
+    files: TicketFilesUseCase | None = None  # P9.10; without it the file routes answer 501
 
 
 def build_identity(settings: Settings) -> IdentityVerifier | None:

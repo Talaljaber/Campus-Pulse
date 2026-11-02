@@ -26,6 +26,7 @@ from datetime import datetime, timedelta
 from functools import partial
 from typing import Any, Literal
 
+from campuspulse_ai.application.use_cases.file_ports import FileStore
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.mirror import RECORD_SINK, TicketMirror, relabelled
@@ -39,6 +40,7 @@ from campuspulse_ai.application.use_cases.ticket_emails import (
     EmailEvent,
     TicketMailer,
 )
+from campuspulse_ai.application.use_cases.ticket_files import validate_attachments
 from campuspulse_ai.domain.entities import Request, Ticket
 from campuspulse_ai.domain.errors import InvalidInput, NotFound, StoreError, Unauthorized
 from campuspulse_ai.domain.journey import (
@@ -108,6 +110,7 @@ class TicketLifecycleUseCase:
         offices: OfficeMap,
         messages: Messages,
         encoder: SentenceEncoder | None = None,
+        files: FileStore | None = None,
     ) -> None:
         self._repo = repo
         self._journey = journey
@@ -118,6 +121,7 @@ class TicketLifecycleUseCase:
         self._offices = offices
         self._messages = messages
         self._encoder = encoder
+        self._files = files
 
     # ------------------------------------------------------------------ actions
 
@@ -128,8 +132,30 @@ class TicketLifecycleUseCase:
         body: str,
         internal: bool = False,
         status: TicketStatus | None = None,
+        file_ids: Sequence[str] = (),
     ) -> LifecycleChange:
-        """Rows 2-4 and 11-12 (a staff comment with a status is a status change, rows 5-8)."""
+        """Rows 2-4 and 11-12 (a staff comment with a status is a status change, rows 5-8).
+
+        `file_ids` (P9.10): files the caller already uploaded to this ticket; they are checked first (422),
+        linked to the new thread row, and counted in the email's files line."""
+        attach: list[str] = []
+        if file_ids:
+            if self._files is None:
+                raise InvalidInput("files are not available in this deployment")
+            attach = validate_attachments(self._files, ticket_id, actor, file_ids, internal)
+        change = self._comment(ticket_id, actor, body, internal, status)
+        if attach and self._files is not None and change.activity is not None:
+            self._files.attach(attach, change.activity.id)
+            n = len(attach)
+            counted = tuple(
+                dataclasses.replace(e, ctx=dataclasses.replace(e.ctx, files=n)) for e in change.emails
+            )
+            change = dataclasses.replace(change, emails=counted)
+        return change
+
+    def _comment(
+        self, ticket_id: str, actor: Actor, body: str, internal: bool, status: TicketStatus | None
+    ) -> LifecycleChange:
         ticket, request = self._load(ticket_id)
         role = self._role(actor, ticket, request)
         text = self._text(body)

@@ -537,6 +537,11 @@ class CommentRequest(_Model):
     body: str = Field(min_length=1, max_length=4000)
     internal: bool = False
     status: Literal["in_progress", "solved", "closed"] | None = None
+    file_ids: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description="Files the caller already uploaded to this ticket (`ticket_file_upload`).",
+    )
 
 
 class PriorityRequest(_Model):
@@ -961,3 +966,22 @@ class SlaScanOut(_Model):
 
     ran_at: datetime
     reminded: list[str] = Field(description="Ids of the tickets reminded now (a claimed level 1 or 2).")
+
+
+class FileOut(_Model):
+    """One file on a ticket (a row of `ticket_files`, without its storage path or the original name)."""
+
+    id: str
+    ticket_id: str
+    mime: str
+    size_bytes: int
+    ext: str
+    visibility: Literal["public", "internal"]
+    created_at: datetime
+
+
+class FileLinkOut(_Model):
+    """A signed link to open one file: valid for `expires_in` seconds (60), then it stops working."""
+
+    url: str
+    expires_in: int

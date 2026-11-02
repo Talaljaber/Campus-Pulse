@@ -66,6 +66,7 @@ from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import SlaReminderUseCase
 from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
+from campuspulse_ai.application.use_cases.file_ports import BlobStore, FileStore
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.messages import Messages
@@ -81,6 +82,7 @@ from campuspulse_ai.application.use_cases.ports import (
 from campuspulse_ai.application.use_cases.reviews import ReviewAssigner, ReviewRouter, ReviewsUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.ticket_emails import InboxBook, TicketMailer
+from campuspulse_ai.application.use_cases.ticket_files import TicketFilesUseCase
 from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.composition.api import ApiServices, HealthInfo, build_identity
@@ -120,6 +122,8 @@ TEMPLATES_DIR = CONFIG_DIR / "templates"
 ORACLE_PROMPT = "oracle"
 UNDERSTAND_PROMPT = "understand"
 UNDERSTAND_PROMPT_VERSION = "v1"
+FILE_TIMEOUT_S = 30.0
+"""Seconds for one Supabase Storage call (a 5 MB upload)."""
 
 
 @dataclass(frozen=True)
@@ -153,6 +157,8 @@ class OnlineAdapters:
     directory: AdvisorDirectory | None = None
     journey: JourneyStore | None = None
     announcements: AnnouncementStore | None = None  # P9.5; without it the routes answer 501
+    files: FileStore | None = None  # P9.10: ticket file rows; with `blobs` it serves the file routes
+    blobs: BlobStore | None = None  # P9.10: the private `ticket-files` bucket
 
 
 @dataclass(frozen=True, slots=True)
@@ -243,6 +249,7 @@ def supabase_adapters(
     from campuspulse_ai.adapters.memory.cached import QueryCachingMemoryStore
     from campuspulse_ai.adapters.memory.pgvector_memory import PgVectorMemoryStore
     from campuspulse_ai.adapters.store.announcements_supabase import SupabaseAnnouncementStore
+    from campuspulse_ai.adapters.store.files_supabase import SupabaseFileStore
     from campuspulse_ai.adapters.store.journey_supabase import SupabaseJourneyStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
@@ -267,6 +274,22 @@ def supabase_adapters(
         directory=repo,
         journey=SupabaseJourneyStore(client, clock),
         announcements=SupabaseAnnouncementStore(client),
+        files=SupabaseFileStore(client),
+        blobs=_blob_store(settings),
+    )
+
+
+def _blob_store(settings: Settings) -> BlobStore | None:
+    """Supabase Storage over httpx with the service key (server side only), or None without both."""
+    key = settings.supabase_service_role_key
+    if not settings.supabase_url or key is None:
+        return None
+    import httpx
+
+    from campuspulse_ai.adapters.store.storage_supabase import SupabaseBlobStore
+
+    return SupabaseBlobStore(
+        settings.supabase_url, key.get_secret_value(), httpx.Client(timeout=FILE_TIMEOUT_S)
     )
 
 
@@ -525,8 +548,14 @@ def wire_online(
             messages,
             # the encoder the online core runs: hints and the chat preview live in the same space
             offline.encoder,
+            adapters.files,
         )
         if adapters.journey is not None
+        else None
+    )
+    ticket_files = (
+        TicketFilesUseCase(repo, adapters.files, adapters.blobs, adapters.journey, clock)
+        if adapters.journey is not None and adapters.files is not None and adapters.blobs is not None
         else None
     )
     sla = (
@@ -544,6 +573,7 @@ def wire_online(
         ),
         reviews=reviews,
         lifecycle=lifecycle,
+        files=ticket_files,
         sla=sla,
         clock=clock,
         incidents=IncidentsUseCase(

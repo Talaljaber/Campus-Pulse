@@ -25,6 +25,8 @@ from campuspulse_ai.application.dto import (
     ErrorCode,
     ErrorResponse,
     FeedbackResponse,
+    FileLinkOut,
+    FileOut,
     HealthResponse,
     IncidentOut,
     MetricsResponse,
@@ -598,6 +600,49 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             "`ticket_activity` row `reminder`, a `notifications` row for the office and an `events` row "
             "`sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)",
         ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="ticket_file_upload",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/files",
+        summary="Attach a file to a ticket",
+        purpose=(
+            "Multipart upload (`file`, `internal`, optional `activity_id`). The requester (public files "
+            "only), staff of the ticket's office and admins may upload. The type is decided by the file's "
+            "bytes (PNG, JPEG, WEBP, PDF, Word, Excel, PowerPoint, plain text); a name or type that "
+            "claims something else is refused. Caps: 5 MB per file, 5 files and 15 MB per ticket. The "
+            "original filename is not stored. Send the returned id in `file_ids` of a comment to attach "
+            "it to that message. No virus scan (demo; use sample files only)."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=FileOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "stores the bytes in the private `ticket-files` bucket under a generated path and inserts "
+            "a `ticket_files` row",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="file_link",
+        method="GET",
+        path="/v1/files/{file_id}/link",
+        summary="Get a signed link to a file",
+        purpose=(
+            "A link that opens the file for 60 seconds. Who may read the file row may get a link: the "
+            "requester (public files only), staff of the ticket's office, an admin. Images and PDFs open "
+            "in a tab; other types download."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=FileLinkOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_FOUND, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("none (the link is signed, nothing is written)",),
         tag="staff",
     ),
 )

@@ -59,6 +59,8 @@ REQUEST_MODELS: dict[str, type[BaseModel] | None] = {
     "ticket_student_action": dto.StudentActionRequest,
     "announcement_create": dto.AnnouncementIn,
     "announcement_archive": None,
+    "ticket_file_upload": None,  # multipart, checked separately
+    "file_link": None,
 }
 QUERY_MODELS: dict[str, type[BaseModel]] = {
     "triage": dto.TriageQuery,
@@ -174,9 +176,10 @@ def test_mock_app_serves_the_fixture(client: TestClient, fixture: dict[str, Any]
         headers["Authorization"] = "Bearer test-token"
     for path in (fixture["path"], *fixture.get("alias_paths", [])):
         kwargs: dict[str, Any] = {"headers": headers, "params": fixture["query"]}
-        if endpoint.op_id == "batch":
+        if isinstance(fixture["request"], dict) and "files" in fixture["request"]:  # multipart
             upload = fixture["request"]["files"]["file"]
-            kwargs["files"] = {"file": (upload["filename"], upload["content"].encode("utf-8"), "text/csv")}
+            kind = "text/csv" if endpoint.op_id == "batch" else "text/plain"
+            kwargs["files"] = {"file": (upload["filename"], upload["content"].encode("utf-8"), kind)}
             kwargs["data"] = fixture["request"]["form"]
         elif fixture["request"] is not None:
             kwargs["json"] = fixture["request"]

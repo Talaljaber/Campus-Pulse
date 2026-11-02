@@ -44,6 +44,8 @@ Every non-2xx response has this shape:
 - [`POST /v1/announcements`](#announcement_create) Post an announcement
 - [`POST /v1/announcements/{announcement_id}/archive`](#announcement_archive) Archive an announcement
 - [`POST /v1/cron/sla`](#cron_sla) Run the SLA reminder scan
+- [`POST /v1/tickets/{ticket_id}/files`](#ticket_file_upload) Attach a file to a ticket
+- [`GET /v1/files/{file_id}/link`](#file_link) Get a signed link to a file
 - [Schemas](#schemas)
 
 <a id="triage"></a>
@@ -2274,6 +2276,7 @@ Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
 | `body` | string | yes | min len 1 |
 | `internal` | boolean | no | default `false` |
 | `status` | `in_progress` \| `solved` \| `closed` \| null | no |  |
+| `file_ids` | array of string | no | Files the caller already uploaded to this ticket (`ticket_file_upload`) |
 
 **Response `200`:** `application/json` [TicketThreadOut](#schema-ticketthreadout)
 
@@ -2754,6 +2757,169 @@ Response `200`:
 
 - per reminded ticket: updates `reminder_count` and `reminder_sent_at`; inserts an internal `ticket_activity` row `reminder`, a `notifications` row for the office and an `events` row `sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)
 
+<a id="ticket_file_upload"></a>
+## `POST /v1/tickets/{ticket_id}/files`
+
+**Attach a file to a ticket.** Multipart upload (`file`, `internal`, optional `activity_id`). The requester (public files only), staff of the ticket's office and admins may upload. The type is decided by the file's bytes (PNG, JPEG, WEBP, PDF, Word, Excel, PowerPoint, plain text); a name or type that claims something else is refused. Caps: 5 MB per file, 5 files and 15 MB per ticket. The original filename is not stored. Send the returned id in `file_ids` of a comment to attach it to that message. No virus scan (demo; use sample files only).
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`multipart/form-data`: [Body_ticket_file_upload](#schema-body_ticket_file_upload)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `file` | string | yes | The file (5 MB at most) |
+| `internal` | boolean | no | default `false` |
+| `activity_id` | string \| null | no |  |
+
+**Response `200`:** `application/json` [FileOut](#schema-fileout)
+
+**Example** (fixture `ticket_file_upload`): The requester attaches a small text file to their own ticket (public).
+
+`sample-note.txt`:
+
+```csv
+Sample file for the demo. No real document.
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031/files" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -F "file=@sample-note.txt;type=text/csv" `
+  -F "internal=false"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "f7d2a1c9-3b64-4e85-9a10-5c2e8b7d0041",
+  "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+  "mime": "text/plain",
+  "size_bytes": 44,
+  "ext": "txt",
+  "visibility": "public",
+  "created_at": "2026-11-05T11:35:00+03:00"
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `ticket_file_upload_error_type` | 422 | A file whose bytes are not an allowed type (for example an executable renamed to .png) is refused. |
+
+Error example (`ticket_file_upload_error_type`, 422):
+
+```json
+{
+  "error": {
+    "code": "invalid_input",
+    "message": "the file does not match its name; it was refused",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- stores the bytes in the private `ticket-files` bucket under a generated path and inserts a `ticket_files` row
+
+<a id="file_link"></a>
+## `GET /v1/files/{file_id}/link`
+
+**Get a signed link to a file.** A link that opens the file for 60 seconds. Who may read the file row may get a link: the requester (public files only), staff of the ticket's office, an admin. Images and PDFs open in a tab; other types download.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `file_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [FileLinkOut](#schema-filelinkout)
+
+**Example** (fixture `file_link`): A signed link to one file; it works for 60 seconds (a fictional address).
+
+```powershell
+curl.exe -s -X GET "$env:AI_URL/v1/files/f7d2a1c9-3b64-4e85-9a10-5c2e8b7d0041/link" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "url": "https://storage.example.invalid/object/sign/ticket-files/tickets/c1a9e3b7/f7d2a1c9.txt?token=demo&download=f7d2a1c9.txt",
+  "expires_in": 60
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `file_link_error_internal` | 403 | The requester asks for a link to a staff-only file: refused. |
+
+Error example (`file_link_error_internal`, 403):
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "this file is for staff only",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- none (the link is signed, nothing is written)
+
 <a id="schemas"></a>
 ## Schemas
 
@@ -2882,6 +3048,15 @@ One benchmark cell (SPEC §6.2). Null metrics = `n/a` (no key) or `cut` (M3).
 | `file` | string | yes | CSV with columns request_id,text (UTF-8) |
 | `use_llm` | boolean | no | default `false` |
 
+<a id="schema-body_ticket_file_upload"></a>
+### Body_ticket_file_upload
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `file` | string | yes | The file (5 MB at most) |
+| `internal` | boolean | no | default `false` |
+| `activity_id` | string \| null | no |  |
+
 <a id="schema-bookingout"></a>
 ### BookingOut
 
@@ -2976,6 +3151,7 @@ Body of `POST /v1/tickets/{ticket_id}/comments`.  A requester sends a public com
 | `body` | string | yes | min len 1 |
 | `internal` | boolean | no | default `false` |
 | `status` | `in_progress` \| `solved` \| `closed` \| null | no |  |
+| `file_ids` | array of string | no | Files the caller already uploaded to this ticket (`ticket_file_upload`) |
 
 <a id="schema-confusionout"></a>
 ### ConfusionOut
@@ -3163,6 +3339,31 @@ Result of `POST /v1/feedback`.
 | `memory` | [MemoryWriteOut](#schema-memorywriteout) | yes |  |
 | `actions` | array of [ActionOut](#schema-actionout) | yes | Deferred actions that fired on confirmation |
 | `message` | string | yes |  |
+
+<a id="schema-filelinkout"></a>
+### FileLinkOut
+
+A signed link to open one file: valid for `expires_in` seconds (60), then it stops working.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `url` | string | yes |  |
+| `expires_in` | integer | yes |  |
+
+<a id="schema-fileout"></a>
+### FileOut
+
+One file on a ticket (a row of `ticket_files`, without its storage path or the original name).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `ticket_id` | string | yes |  |
+| `mime` | string | yes |  |
+| `size_bytes` | integer | yes |  |
+| `ext` | string | yes |  |
+| `visibility` | `public` \| `internal` | yes |  |
+| `created_at` | string (date-time) | yes |  |
 
 <a id="schema-forwardrequest"></a>
 ### ForwardRequest
