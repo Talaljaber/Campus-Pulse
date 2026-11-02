@@ -1,11 +1,11 @@
-import { ChatScreen } from "@/components/chat/ChatScreen";
+import { AgentScreen } from "@/components/chat/AgentScreen";
 import { requireProfile } from "@/lib/auth/guard";
 
 /**
- * `/ask`: the request chat, for every signed-in role. The proxy already sends signed-out visitors
- * to `/login`; the check here is the second lock, and it supplies the alias for live notifications.
+ * `/ask`: the request assistant, for every signed-in role. The proxy already sends signed-out visitors
+ * to `/login`; the check here is the second lock, and it supplies the alias for the shell.
  */
 export default async function AskPage() {
   const profile = await requireProfile();
-  return <ChatScreen alias={profile.alias} role={profile.role} />;
+  return <AgentScreen alias={profile.alias} role={profile.role} />;
 }
