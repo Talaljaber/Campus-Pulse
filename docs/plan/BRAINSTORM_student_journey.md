@@ -181,3 +181,15 @@ Plain, humane, short, bilingual where the student's language is known. Every tem
   3. For high tickets, whether a first staff reply (or moving to in progress) stops the one-hour clock and starts the normal resolution timer, or only solved, closed or forwarded stops it. The user's wording: the clock ends only with a solution or a forward.
   4. Whether the clock counts calendar hours or office hours (default: calendar hours).
   5. What changes the priority of an open ticket (a staff correction restarts or keeps the clock).
+
+## 19. Answers on the deadline assumptions (user, 2026-11-02)
+
+1. **Staff emails:** each staff account gets its own test email later; until then the code reads the staff inbox per office from configuration (allow-list rules unchanged).
+2. **What stops the clock:**
+   - A staff reply alone does not stop it.
+   - After a staff reply or a solved status, the student gets three buttons: **Solved**, **Close**, **Keep open**. Solved or Close stops the clock.
+   - If the student keeps it open, or opens the ticket again later, **the timer restarts** for the ticket's priority period (for a high ticket, another hour).
+   - A forward restarts the clock for the new department (section 18).
+3. **Hours are calendar hours:** no office hours. A day is 24 hours.
+4. **Staff can change a ticket's priority** (good point, accepted). The clock changes to the new priority's period: high 1 hour, medium 24 hours, low 48 hours.
+- Readings to confirm with the planner: (a) when staff change the priority, the new period counts from the moment of the change; (b) a staff "solved" status with no student answer yet keeps the ticket waiting for the student, and the reminder logic treats "waiting for student" as not overdue for staff but sends the student a gentle nudge after 48 hours, then the ticket closes itself after a further 48 hours (an auto-close rule that the user has not asked for, so it stays off unless confirmed).
