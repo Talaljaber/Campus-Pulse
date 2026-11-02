@@ -235,6 +235,10 @@ All eight defaults of the P9 architect are accepted, with one change:
 - A kill switch env var turns the opt-in off; the verified address can be removed from Profile. The README disclosure and the demo notice say so.
 - Alternative not chosen for now: self-signup with Supabase auth (more work, more abuse surface).
 
+### 22.1b Change (user, 2026-11-02): consent tickbox, no code
+- No verification code. The Profile page has a required consent checkbox ("this is my own email address and I agree to receive CampusPulse demo emails at it"). Ticking it and saving activates the address at once. Reason given: it is a demo app and the course doctor is the only tester.
+- Kept: one check in the mailer (allow-list OR a consented profile address), an abuse guard (at most 5 changes per profile per hour), a kill switch, Remove on Profile, and the README disclosure. Known trade-off: without a code, a mistyped or someone else's address would receive demo emails; acceptable for a single-tester demo, and the switch can be turned off.
+
 ### 22.2 Chat answers only from what we know
 - The chat agent states facts only from announcements, the FAQ/knowledge base and past hints. No invented advice or promises ("use the lab network", "our team is working on it") unless the source says so. When nothing matches it says it has no information and offers to record a request.
 - A single short retry before the plain-form fallback when the LLM answers 429 or times out.
