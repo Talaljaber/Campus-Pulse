@@ -215,7 +215,7 @@ export const en = {
       why: "Why this?",
       whyCategory: "Category: {label}, {pct}%. Other categories that fit: {set}",
       whyPriority: "Priority: {label}, {pct}%. Other priorities that fit: {set}",
-      whyHint: "A staff correction on a similar request points here: {text}",
+      whyHint: "Based on a past staff correction: {category}, {priority} ({pct}% similar)",
       recorded: "Request recorded",
       recordedNumber: "Request recorded #{number}",
       recordedDemo: "Demo only: no real department was contacted.",

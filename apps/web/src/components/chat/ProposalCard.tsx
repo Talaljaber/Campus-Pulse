@@ -56,7 +56,11 @@ function WhyDetails({ proposal }: { proposal: ProposalOut }) {
           set: why.priority.set.map(pri).join(", "),
         })}
       </p>
-      {hint && <p>{t("chat.agent.whyHint", { text: hint.text })}</p>}
+      {hint && (
+        <p>
+          {t("chat.agent.whyHint", { category: cat(hint.category), priority: pri(hint.priority), pct: Math.round(hint.sim * 100) })}
+        </p>
+      )}
       <h5 className="font-semibold text-fg-1">{t("explain.neighborsTitle")}</h5>
       {why.neighbors.length === 0 ? (
         <p>{t("explain.neighborsNone")}</p>
@@ -130,16 +134,18 @@ export function ProposalCard({ proposal, busy, onConfirm, onDecline, onAnswer }:
           </p>
           <ChipGroup
             label={t("chat.clarifyGroup")}
-            items={q.options.map((o) => ({ id: o.id, label: o.label, disabled: busy }))}
+            items={q.options.map((o) => ({ id: o.id, label: o.text, disabled: busy }))}
             value={null}
             onChange={onAnswer}
           />
         </div>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button variant={faq ? "secondary" : "primary"} loading={busy} onClick={onConfirm}>
-          {faq ? t("chat.agent.recordAnyway") : t("chat.agent.yes")}
-        </Button>
+        {!q && (
+          <Button variant={faq ? "secondary" : "primary"} loading={busy} onClick={onConfirm}>
+            {faq ? t("chat.agent.recordAnyway") : t("chat.agent.yes")}
+          </Button>
+        )}
         <Button variant="secondary" disabled={busy} onClick={onDecline}>
           {t("chat.agent.notNow")}
         </Button>

@@ -65,8 +65,8 @@ export function useAgent(texts: { recorded: string; declined: string }) {
     if (!cur.proposal || !question || cur.busy) return;
     dispatch({ type: "busy" });
     stateRef.current = { ...cur, busy: true };
-    const res = await preview(cur.proposal.text, [...cur.asked, question.id], optionId);
-    if (res.ok) dispatch({ type: "previewed", proposal: res.data, question: question.id });
+    const res = await preview(cur.proposal.text, [...cur.asked, question.question_id], optionId);
+    if (res.ok) dispatch({ type: "previewed", proposal: res.data, question: question.question_id });
     else dispatch({ type: "failed", error: agentErrorKind(res) });
   }, []);
 

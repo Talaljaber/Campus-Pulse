@@ -4,9 +4,9 @@ import { toWire } from "../agent";
 import { agentErrorKind, agentReducer, INITIAL_AGENT, type AgentState } from "../agentReducer";
 import type { ChatTurnResponse, ProposalOut } from "../agentTypes";
 
-const P = { token: "t", text: "x", office: "it" } as ProposalOut;
+const P = { token: "t", text: "x", office: "it", question: null } as ProposalOut;
 const turn = (o: Partial<ChatTurnResponse>): ChatTurnResponse => ({
-  mode: "llm",
+  mode: "agent",
   reply: "",
   proposal: null,
   ticket_id: null,
@@ -20,6 +20,13 @@ describe("agentReducer", () => {
   it("sent adds the message, locks and remembers the draft", () => {
     const s = sent(INITIAL_AGENT);
     expect(s).toMatchObject({ busy: true, draft: "hello", messages: [{ role: "user", content: "hello" }] });
+  });
+
+  it("a distress preview adds the supportive text as a distress message and no proposal", () => {
+    const distress = { ...P, token: "", question: { question_id: "distress", text: "Be kind to yourself.", options: [] } } as ProposalOut;
+    const s = agentReducer(sent(INITIAL_AGENT), { type: "previewed", proposal: distress });
+    expect(s.proposal).toBeNull();
+    expect(s.messages.at(-1)).toMatchObject({ role: "assistant", content: "Be kind to yourself.", distress: true });
   });
 
   it("a turn with a proposal keeps it pending and shows the reply", () => {
@@ -56,7 +63,7 @@ describe("agentReducer", () => {
 
   it("a failed turn without fallback keeps the mode and shows the error", () => {
     const s = agentReducer(sent(INITIAL_AGENT), { type: "turnFailed", error: "generic", fallback: false });
-    expect(s).toMatchObject({ mode: "llm", error: "generic" });
+    expect(s).toMatchObject({ mode: "agent", error: "generic" });
   });
 
   it("previewed stores the proposal and records the answered question once", () => {

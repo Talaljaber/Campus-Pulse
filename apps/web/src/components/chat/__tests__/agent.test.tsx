@@ -24,8 +24,8 @@ const PROPOSAL: ProposalOut = {
   hint: null,
   why: {
     category: { label: "IT Support", prob: 0.91, set: ["IT Support", "Facilities"] },
-    priority: { label: "high", prob: 0.7, set: ["high", "medium"] },
-    neighbors: [{ text: "wifi not working in the lab", sim: 0.88, source: "train" }],
+    priority: { label: "high", prob: 0.7, set: ["high", "medium"], evidence: [] },
+    neighbors: [{ text: "wifi not working in the lab", label: "IT Support", priority: "high", sim: 0.88, source: "train", created_at: null }],
   },
 };
 
@@ -36,7 +36,7 @@ const calls: Array<{ url: string; body: Record<string, unknown> | null }> = [];
 let respond: (url: string, body: Record<string, unknown> | null) => Response;
 
 const turn = (o: Partial<ChatTurnResponse>): ChatTurnResponse => ({
-  mode: "llm",
+  mode: "agent",
   reply: "",
   proposal: null,
   ticket_id: null,
@@ -96,7 +96,7 @@ describe("ProposalCard", () => {
 
   it("shows a FAQ answer with 'Record a request anyway'", async () => {
     const onConfirm = vi.fn();
-    const faq: ProposalOut = { ...PROPOSAL, action_kind: "faq_answer", faq: { question: "Bus times?", answer: "Every hour." } };
+    const faq: ProposalOut = { ...PROPOSAL, action_kind: "faq_answer", faq: { question: "Bus times?", answer: "Every hour.", source_url: "", is_demo: true, score: 0.9 } };
     render(<ProposalCard proposal={faq} busy={false} onConfirm={onConfirm} onDecline={vi.fn()} onAnswer={vi.fn()} />);
     expect(screen.getByText("Every hour.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Yes, send it" })).not.toBeInTheDocument();
@@ -108,11 +108,20 @@ describe("ProposalCard", () => {
     const onAnswer = vi.fn();
     const asking: ProposalOut = {
       ...PROPOSAL,
-      question: { id: "q1", text: "Which one?", options: [{ id: "a", label: "Wifi" }, { id: "b", label: "Printer" }] },
+      token: "",
+      question: { question_id: "q1", text: "Which one?", options: [{ id: "a", text: "Wifi" }, { id: "b", text: "Printer" }] },
     };
     render(<ProposalCard proposal={asking} busy={false} onConfirm={vi.fn()} onDecline={vi.fn()} onAnswer={onAnswer} />);
     await userEvent.click(screen.getByRole("radio", { name: "Printer" }));
     expect(onAnswer).toHaveBeenCalledWith("b");
+    expect(screen.queryByRole("button", { name: "Yes, send it" })).not.toBeInTheDocument();
+  });
+
+  it("'Why this?' names the past staff correction a hint is based on", async () => {
+    const hinted: ProposalOut = { ...PROPOSAL, hint: { hint_id: "h1", category: "IT Support", priority: "high", sim: 0.93 } };
+    render(<ProposalCard proposal={hinted} busy={false} onConfirm={vi.fn()} onDecline={vi.fn()} onAnswer={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Why this?" }));
+    expect(screen.getByText(/Based on a past staff correction: IT Support, High \(93% similar\)/)).toBeInTheDocument();
   });
 });
 
@@ -168,19 +177,41 @@ describe("AgentScreen", () => {
     expect(calls[1]?.body).toMatchObject({ proposal_token: "tok-1" });
   });
 
-  it("a question chip calls chat/preview with the answer and the asked ids", async () => {
+  it("a question chip calls chat/preview with the answer and the asked ids (plain form)", async () => {
     const asking: ProposalOut = {
       ...PROPOSAL,
-      question: { id: "q1", text: "Which one?", options: [{ id: "a", label: "Wifi" }, { id: "b", label: "Printer" }] },
+      token: "",
+      question: { question_id: "q1", text: "Which one?", options: [{ id: "a", text: "Wifi" }, { id: "b", text: "Printer" }] },
     };
-    respond = (url) => (url.endsWith("/chat/turn") ? json(turn({ reply: "One question.", proposal: asking })) : json(PROPOSAL));
+    respond = (url) => {
+      if (url.endsWith("/chat/turn")) return json(turn({ mode: "fallback" }));
+      const body = calls.at(-1)?.body;
+      return json(body?.answer ? PROPOSAL : asking);
+    };
     renderScreen();
     await userEvent.type(screen.getByLabelText("Your request"), "it is broken{Enter}");
+    await userEvent.click(await screen.findByRole("button", { name: "Check" }));
+    expect(screen.queryByRole("button", { name: "Yes, send it" })).not.toBeInTheDocument();
     await userEvent.click(await screen.findByRole("radio", { name: "Wifi" }));
-    await waitFor(() => expect(calls).toHaveLength(2));
-    expect(calls[1]?.url).toContain("/chat/preview");
-    expect(calls[1]?.body).toEqual({ text: PROPOSAL.text, asked: ["q1"], answer: "a" });
+    await waitFor(() => expect(calls).toHaveLength(3));
+    expect(calls[2]?.url).toContain("/chat/preview");
+    expect(calls[2]?.body).toEqual({ text: asking.text, asked: ["q1"], answer: "a" });
     expect(await screen.findByRole("button", { name: "Yes, send it" })).toBeInTheDocument();
+  });
+
+  it("a distress preview shows the distress card and no proposal", async () => {
+    const distress: ProposalOut = {
+      ...PROPOSAL,
+      token: "",
+      question: { question_id: "distress", text: "You are not alone. Please talk to someone.", options: [] },
+    };
+    respond = (url) => (url.endsWith("/chat/turn") ? json(turn({ mode: "fallback" })) : json(distress));
+    renderScreen();
+    await userEvent.type(screen.getByLabelText("Your request"), "I cannot cope{Enter}");
+    await userEvent.click(await screen.findByRole("button", { name: "Check" }));
+    expect(await screen.findByText("You are not alone. Please talk to someone.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Yes, send it" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Not now" })).not.toBeInTheDocument();
   });
 
   it("switches to the plain form when the turn says fallback, then Check -> card -> confirm", async () => {

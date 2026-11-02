@@ -7,16 +7,16 @@ export const MAX_TURN_MESSAGES = 20;
 export const MAX_MESSAGE_CHARS = 2000;
 
 /** Trims a conversation to what the service accepts: the latest 20 messages, each cut at 2000 characters. */
-export function toWire(messages: readonly WireMessage[]): WireMessage[] {
+export function toWire(messages: readonly (Omit<WireMessage, "kind"> & { kind?: WireMessage["kind"] })[]): WireMessage[] {
   return messages.slice(-MAX_TURN_MESSAGES).map(({ role, content, kind }) => ({
     role,
     content: content.slice(0, MAX_MESSAGE_CHARS),
-    ...(kind ? { kind } : {}),
+    kind: kind ?? "text",
   }));
 }
 
 /** `POST /v1/chat/turn`: one conversation turn. `token` is the pending proposal's token, if any. */
-export function sendTurn(messages: readonly WireMessage[], token: string | null): Promise<AiResult<ChatTurnResponse>> {
+export function sendTurn(messages: readonly (Omit<WireMessage, "kind"> & { kind?: WireMessage["kind"] })[], token: string | null): Promise<AiResult<ChatTurnResponse>> {
   return callAi<ChatTurnResponse>("chat/turn", {
     method: "POST",
     body: { messages: toWire(messages), proposal_token: token },

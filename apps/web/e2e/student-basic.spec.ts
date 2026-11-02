@@ -9,7 +9,7 @@ const TICKET_ID = "ab12cd34-0000-4000-8000-000000000001";
 const PROPOSAL = {
   token: "tok-e2e", text: SENTENCE, category: "Transportation", priority: "low", office: "transport", action_kind: "ticket",
   question: null, faq: null, hint: null,
-  why: { category: { label: "Transportation", prob: 0.93, set: ["Transportation"] }, priority: { label: "low", prob: 0.8, set: ["low"] }, neighbors: [] },
+  why: { category: { label: "Transportation", prob: 0.93, set: ["Transportation"] }, priority: { label: "low", prob: 0.8, set: ["low"], evidence: [] }, neighbors: [] },
 };
 const DEMO_LINE = "Demo: simulated portal, not the official university system. No real department is contacted.";
 
@@ -37,9 +37,9 @@ test("a student signs in, asks about the bus timetable and gets a Transportation
   await expect(page).toHaveURL(/\/ask$/);
   await expect(page.getByRole("heading", { level: 1, name: "Ask CampusPulse" })).toBeVisible();
 
-  // The mock AI app has no chat routes yet, so the browser stubs them (as the comments spec does).
+  // The chat routes are stubbed in the browser with the real response shapes (types.gen.ts), so the proposal token is fixed.
   await page.route("**/api/ai/chat/turn", (route) =>
-    route.fulfill({ json: { mode: "llm", reply: "I can send this to Transport.", proposal: PROPOSAL, ticket_id: null, triage: null, clear_proposal: false } }),
+    route.fulfill({ json: { mode: "agent", reply: "I can send this to Transport.", proposal: PROPOSAL, ticket_id: null, triage: null, clear_proposal: false } }),
   );
   let confirmed: unknown = null;
   await page.route("**/api/ai/chat/confirm", async (route) => {

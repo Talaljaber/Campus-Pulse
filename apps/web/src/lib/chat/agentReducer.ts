@@ -13,6 +13,8 @@ export interface AgentMessage {
   ticketId?: string | null;
   triage?: TriageResponse | null;
   proposal?: ProposalOut | null;
+  /** A supportive reply to a distress text: shown as the distress card, never as a proposal. */
+  distress?: boolean;
 }
 
 export interface AgentState {
@@ -27,7 +29,7 @@ export interface AgentState {
   draft: string;
 }
 
-export const INITIAL_AGENT: AgentState = { messages: [], proposal: null, mode: "llm", busy: false, error: null, asked: [], draft: "" };
+export const INITIAL_AGENT: AgentState = { messages: [], proposal: null, mode: "agent", busy: false, error: null, asked: [], draft: "" };
 
 export type AgentAction =
   | { type: "sent"; id: string; text: string }
@@ -94,7 +96,21 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
         error: action.fallback ? null : action.error,
         mode: action.fallback ? "fallback" : state.mode,
       };
-    case "previewed":
+    case "previewed": {
+      // the plain form answers distress with question_id "distress", no options and an empty token
+      if (action.proposal.question?.question_id === "distress") {
+        return {
+          ...state,
+          busy: false,
+          error: null,
+          proposal: null,
+          asked: [],
+          messages: [
+            ...state.messages,
+            { id: `d${state.messages.length}`, role: "assistant", kind: "text", content: action.proposal.question.text, distress: true },
+          ],
+        };
+      }
       return {
         ...state,
         busy: false,
@@ -102,6 +118,7 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
         proposal: action.proposal,
         asked: action.question && !state.asked.includes(action.question) ? [...state.asked, action.question] : state.asked,
       };
+    }
     case "confirmed":
       return {
         ...state,

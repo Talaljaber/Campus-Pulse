@@ -98,9 +98,9 @@ export function AgentScreen({ alias, role = "student" }: AgentScreenProps) {
         <ol aria-label={t("chat.thread")} className="flex flex-col gap-4 py-4">
           {agent.messages.length === 0 && !fallback && <li className="text-fg-2">{t("chat.agent.welcome")}</li>}
           {agent.messages.map((m) =>
-            m.triage?.status === "distress" ? (
+            m.distress || m.triage?.status === "distress" ? (
               <li key={m.id}>
-                <DistressCard message={m.triage.message ?? m.content} />
+                <DistressCard message={m.triage?.message ?? m.content} />
               </li>
             ) : m.kind === "ticket" ? (
               <li key={m.id}>

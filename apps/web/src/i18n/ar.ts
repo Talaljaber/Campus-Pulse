@@ -209,7 +209,7 @@ export const ar: Dict = {
       why: "ليش هيك؟",
       whyCategory: "الفئة: {label}، {pct}%. فئات ثانية ممكنة: {set}",
       whyPriority: "الأولوية: {label}، {pct}%. أولويات ثانية ممكنة: {set}",
-      whyHint: "تصحيح من الموظفين على طلب مشابه بشير لهون: {text}",
+      whyHint: "بناءً على تصحيح سابق من الموظفين: {category}، {priority} (تشابه {pct}%)",
       recorded: "تم تسجيل الطلب",
       recordedNumber: "تم تسجيل الطلب #{number}",
       recordedDemo: "تجريبي فقط: ما تم التواصل مع أي قسم حقيقي.",
