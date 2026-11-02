@@ -5,8 +5,9 @@ import { useAdvisorReviews } from "@/hooks/useAdvisorReviews";
 import { useFlagEvents } from "@/hooks/useFlagEvents";
 import { useHints } from "@/hooks/useHints";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useT, type DictKey } from "@/i18n";
-import type { ReviewStatus } from "@/lib/ai/types";
+import type { Category, Priority, ReviewStatus } from "@/lib/ai/types";
 import type { NoticeData } from "@/lib/chat/types";
 import type { StaffErrorKind } from "@/lib/staff/service";
 import { useNoticeText } from "../chat/ChatThread";
@@ -20,6 +21,7 @@ import { AdvisorReviewDetail, AdvisorReviewList } from "./AdvisorReviews";
 import { FlagsPanel } from "./FlagsPanel";
 import { useOfficeLabel } from "./office";
 import { PastCorrections } from "./PastCorrections";
+import { ReviewQueue } from "./ReviewQueue";
 
 /** Props for {@link AdvisorScreen}. */
 export interface AdvisorScreenProps {
@@ -47,11 +49,13 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
   const q = useAdvisorReviews(status);
   const flags = useFlagEvents();
   const past = useHints();
+  const waiting = useReviewQueue();
 
   const onNotice = (n: NoticeData) => {
     if (n.type !== "review_assigned") return;
     toast.show(noticeText(n), "info");
     q.reload();
+    waiting.reload();
   };
   useNotifications(alias, onNotice);
   useNotifications(office ? `office:${office}` : null, onNotice);
@@ -68,6 +72,12 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
     else setError({ id, kind: out.kind });
   };
 
+  const decide = async (run: () => ReturnType<typeof waiting.confirm>) => {
+    const out = await run();
+    if (out.ok) toast.show(t("staff.memoryToast"), "ok");
+    else toast.show(t(`staff.error.${out.kind}` as DictKey), "danger");
+  };
+
   return (
     <AppShell role={role} current="corrections" alias={alias}>
       <PageHeader
@@ -78,6 +88,26 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
           </Badge>
         }
       />
+      <section aria-label={t("corrections.waitingSection")} className="flex flex-col gap-2">
+        <h2 className="text-lg font-bold text-fg-1">{t("corrections.waitingSection")}</h2>
+        <Loadable state={waiting.load} onRetry={waiting.reload}>
+          <ReviewQueue
+            items={waiting.items}
+            pendingIds={waiting.pending}
+            onConfirm={(pid) => void decide(() => waiting.confirm(pid))}
+            onCorrect={(pid, category, priority, note) =>
+              void decide(() =>
+                waiting.correct(pid, {
+                  category: (category as Category | undefined) ?? null,
+                  priority: (priority as Priority | undefined) ?? null,
+                  note: note ?? "",
+                }),
+              )
+            }
+          />
+        </Loadable>
+      </section>
+
       <Tabs
         items={STATUSES.map((s) => ({ id: s, label: t(`advisor.tabs.${s}` as DictKey) }))}
         value={status}

@@ -31,6 +31,11 @@ export interface CommentRequest {
   status?: "in_progress" | "solved" | "closed" | null;
 }
 
+/** `POST tickets/{id}/student-action` body: the requester settles, closes or keeps their request open. */
+export interface StudentActionRequest {
+  action: "solved" | "close" | "keep_open";
+}
+
 /** `POST tickets/{id}/priority` body. */
 export interface PriorityRequest {
   priority: "low" | "medium" | "high";

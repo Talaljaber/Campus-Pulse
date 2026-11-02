@@ -1,8 +1,8 @@
-import { PlaceholderScreen } from "@/components/shell/PlaceholderScreen";
+import { MyRequestsScreen } from "@/components/requests/MyRequestsScreen";
 import { requireProfile } from "@/lib/auth/guard";
 
-/** `/requests`: My requests (placeholder until the tickets package lands), for every signed-in role. */
+/** `/requests`: My requests, for every signed-in role (the tickets this person opened). */
 export default async function RequestsPage() {
   const profile = await requireProfile();
-  return <PlaceholderScreen role={profile.role} alias={profile.alias} current="requests" />;
+  return <MyRequestsScreen role={profile.role} alias={profile.alias} />;
 }

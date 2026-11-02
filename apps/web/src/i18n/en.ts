@@ -341,6 +341,7 @@ export const en = {
   corrections: {
     title: "Past corrections",
     flagsSection: "Flagged requests",
+    waitingSection: "Waiting for review",
     hint: "What staff changed when they forwarded a ticket or changed its priority. The chat assistant learns from these.",
     empty: "No corrections yet.",
     col: {
@@ -353,6 +354,30 @@ export const en = {
       when: "When",
     },
     kind: { forward: "Forward", priority: "Priority change" },
+  },
+  myRequests: {
+    demo: "Demo: no real department is contacted.",
+    empty: "No requests here",
+    emptyHint: "Requests you send through Ask that become tickets appear here.",
+    col: { department: "Department", updated: "Last update", deadline: "We aim to reply by" },
+    deadline: "We aim to reply by {when}.",
+    notFound: "This request does not exist, or you cannot open it.",
+    yourRequest: "Your request",
+    reply: {
+      title: "Send a message about this request",
+      label: "Your message",
+      send: "Send message",
+      reopens: "Sending a message reopens your request.",
+    },
+    actions: {
+      title: "Your answer",
+      hintAwaiting: "The team is waiting for your answer.",
+      hintSolved: "The team marked this request as solved. Is it?",
+      solved: "Solved",
+      close: "Close",
+      keepOpen: "Keep open",
+    },
+    toast: { sent: "Message sent.", solved: "Marked as solved.", close: "Request closed.", keepOpen: "Your request stays open." },
   },
   advisor: {
     title: "Review queue",

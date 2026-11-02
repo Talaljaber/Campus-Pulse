@@ -32,6 +32,8 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   // P9.6: ticket thread and priority (staff workspace).
   rule("POST", "tickets/{id}/comments"),
   rule("POST", "tickets/{id}/priority"),
+  // P9.7: the requester's answer on their own ticket.
+  rule("POST", "tickets/{id}/student-action"),
   rule("GET", "reviews"),
   rule("POST", "reviews/{id}/forward"),
   rule("GET", "incidents"),
