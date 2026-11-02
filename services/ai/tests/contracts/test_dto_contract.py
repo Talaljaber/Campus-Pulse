@@ -53,6 +53,8 @@ REQUEST_MODELS: dict[str, type[BaseModel] | None] = {
     "health_root": None,
     "admin_simulate": dto.SimulateRequest,
     "admin_reindex": dto.ReindexRequest,
+    "announcement_create": dto.AnnouncementIn,
+    "announcement_archive": None,
 }
 QUERY_MODELS: dict[str, type[BaseModel]] = {
     "triage": dto.TriageQuery,

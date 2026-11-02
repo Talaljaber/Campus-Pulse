@@ -37,6 +37,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from campuspulse_ai import __version__
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
+    AnnouncementIn,
     ClarifyRequest,
     CounterfactualQuery,
     ErrorBody,
@@ -301,6 +302,22 @@ def build_router(store: FixtureStore) -> APIRouter:
     def admin_reindex(body: ReindexRequest, request: Request) -> Any:
         """Optional extra: re-embed a collection (fixture-backed)."""
         return _respond(store.pick("admin_reindex", request, body.model_dump(mode="json")))
+
+    # --- P9.5 announcements (append new routes below this line, in ENDPOINTS order) ---
+
+    @router.api_route(
+        **route_kwargs("announcement_create"), dependencies=[Depends(_guard("announcement_create"))]
+    )
+    def announcement_create(body: AnnouncementIn, request: Request) -> Any:
+        """Post an announcement (fixture-backed)."""
+        return _respond(store.pick("announcement_create", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("announcement_archive"), dependencies=[Depends(_guard("announcement_archive"))]
+    )
+    def announcement_archive(announcement_id: str, request: Request) -> Any:
+        """Archive an announcement (fixture-backed)."""
+        return _respond(store.pick("announcement_archive", request, None))
 
     return router
 

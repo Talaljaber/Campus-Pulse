@@ -3240,6 +3240,367 @@
         ],
         "x-optional": true
       }
+    },
+    "/v1/announcements": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Post an announcement",
+        "description": "Staff post a notice for their own office, admins for any office or campus-wide (`office` null). Students read live announcements on Home (Supabase read under RLS).",
+        "operationId": "announcement_create",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "inserts an `announcements` row (realtime to open Home pages)"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/announcements/{announcement_id}/archive": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Archive an announcement",
+        "description": "Staff of the announcement's office, or an admin, take it off Home (sets `archived_at`).",
+        "operationId": "announcement_archive",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Announcement Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "sets `announcements.archived_at`"
+        ],
+        "x-optional": false
+      }
     }
   },
   "components": {
@@ -3422,6 +3783,180 @@
           "incident_merge"
         ],
         "title": "ActionType"
+      },
+      "AnnouncementIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "info",
+              "outage",
+              "maintenance"
+            ],
+            "title": "Kind",
+            "default": "info"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office",
+            "description": "D-005 office code; null = campus-wide (admin)."
+          },
+          "starts_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "body"
+        ],
+        "title": "AnnouncementIn",
+        "description": "Body of `POST /v1/announcements`.\n\nStaff post for their own office (`office` omitted or equal to theirs; another office is 403);\nadmins pick any office, or leave it null for a campus-wide notice. `starts_at` defaults to now;\n`ends_at` must be after `starts_at`."
+      },
+      "AnnouncementOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "info",
+              "outage",
+              "maintenance"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At"
+          },
+          "ends_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ends At"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "office",
+          "kind",
+          "title",
+          "body",
+          "starts_at",
+          "ends_at",
+          "archived_at",
+          "created_by",
+          "created_at"
+        ],
+        "title": "AnnouncementOut",
+        "description": "One announcement (a row of `announcements`)."
       },
       "ArtifactOut": {
         "properties": {

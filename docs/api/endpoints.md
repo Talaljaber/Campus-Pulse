@@ -38,6 +38,8 @@ Every non-2xx response has this shape:
 - [`GET /health`](#health_root) Health (root alias)
 - [`POST /v1/admin/simulate`](#admin_simulate) Start simulated Pulse traffic (optional extra)
 - [`POST /v1/admin/reindex`](#admin_reindex) Re-embed a vector collection (optional extra)
+- [`POST /v1/announcements`](#announcement_create) Post an announcement
+- [`POST /v1/announcements/{announcement_id}/archive`](#announcement_archive) Archive an announcement
 - [Schemas](#schemas)
 
 <a id="triage"></a>
@@ -2243,6 +2245,165 @@ Error example (`admin_reindex_error_not_built`, 501):
 
 - rewrites every `faq.embedding`
 
+<a id="announcement_create"></a>
+## `POST /v1/announcements`
+
+**Post an announcement.** Staff post a notice for their own office, admins for any office or campus-wide (`office` null). Students read live announcements on Home (Supabase read under RLS).
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [AnnouncementIn](#schema-announcementin)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `title` | string | yes | min len 1 |
+| `body` | string | yes | min len 1 |
+| `kind` | `info` \| `outage` \| `maintenance` | no | default `"info"` |
+| `office` | string \| null | no | D-005 office code; null = campus-wide (admin) |
+| `starts_at` | string (date-time) \| null | no |  |
+| `ends_at` | string (date-time) \| null | no |  |
+
+**Response `200`:** `application/json` [AnnouncementOut](#schema-announcementout)
+
+**Example** (fixture `announcement_create`): IT staff post a maintenance notice for their own office (fictional text).
+
+`request.json`:
+
+```json
+{
+  "title": "Outlook unavailable for two hours",
+  "body": "Mail will be offline tonight for maintenance.",
+  "kind": "maintenance",
+  "office": null,
+  "starts_at": null,
+  "ends_at": "2026-11-06T22:00:00+03:00"
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/announcements" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "a1b2c3d4-0000-4a00-8000-000000000051",
+  "office": "it",
+  "kind": "maintenance",
+  "title": "Outlook unavailable for two hours",
+  "body": "Mail will be offline tonight for maintenance.",
+  "starts_at": "2026-11-05T09:05:00+03:00",
+  "ends_at": "2026-11-06T22:00:00+03:00",
+  "archived_at": null,
+  "created_by": "5f0d2f0e-0000-4a00-8000-0000000000a1",
+  "created_at": "2026-11-05T09:05:00+03:00"
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `announcement_create_error_other_office` | 403 | Staff may only post for their own office: an explicit other office is forbidden. |
+
+Error example (`announcement_create_error_other_office`, 403):
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "staff may only post for their own office",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- inserts an `announcements` row (realtime to open Home pages)
+
+<a id="announcement_archive"></a>
+## `POST /v1/announcements/{announcement_id}/archive`
+
+**Archive an announcement.** Staff of the announcement's office, or an admin, take it off Home (sets `archived_at`).
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `announcement_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [AnnouncementOut](#schema-announcementout)
+
+**Example** (fixture `announcement_archive`): Staff of the announcement's office archive it.
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/announcements/a1b2c3d4-0000-4a00-8000-000000000051/archive" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "a1b2c3d4-0000-4a00-8000-000000000051",
+  "office": "it",
+  "kind": "maintenance",
+  "title": "Outlook unavailable for two hours",
+  "body": "Mail will be offline tonight for maintenance.",
+  "starts_at": "2026-11-05T09:05:00+03:00",
+  "ends_at": "2026-11-06T22:00:00+03:00",
+  "archived_at": "2026-11-05T10:00:00+03:00",
+  "created_by": "5f0d2f0e-0000-4a00-8000-0000000000a1",
+  "created_at": "2026-11-05T09:05:00+03:00"
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- sets `announcements.archived_at`
+
 <a id="schemas"></a>
 ## Schemas
 
@@ -2281,6 +2442,38 @@ What happened next (SPEC §5.1 [11]).
 ### ActionType
 
 Values: `faq_answer`, `ticket`, `booking`, `safety_alert`, `incident_merge`
+
+<a id="schema-announcementin"></a>
+### AnnouncementIn
+
+Body of `POST /v1/announcements`.  Staff post for their own office (`office` omitted or equal to theirs; another office is 403); admins pick any office, or leave it null for a campus-wide notice. `starts_at` defaults to now; `ends_at` must be after `starts_at`.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `title` | string | yes | min len 1 |
+| `body` | string | yes | min len 1 |
+| `kind` | `info` \| `outage` \| `maintenance` | no | default `"info"` |
+| `office` | string \| null | no | D-005 office code; null = campus-wide (admin) |
+| `starts_at` | string (date-time) \| null | no |  |
+| `ends_at` | string (date-time) \| null | no |  |
+
+<a id="schema-announcementout"></a>
+### AnnouncementOut
+
+One announcement (a row of `announcements`).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `office` | string \| null | yes |  |
+| `kind` | `info` \| `outage` \| `maintenance` | yes |  |
+| `title` | string | yes |  |
+| `body` | string | yes |  |
+| `starts_at` | string (date-time) | yes |  |
+| `ends_at` | string (date-time) \| null | yes |  |
+| `archived_at` | string (date-time) \| null | yes |  |
+| `created_by` | string \| null | yes |  |
+| `created_at` | string (date-time) \| null | yes |  |
 
 <a id="schema-artifactout"></a>
 ### ArtifactOut
