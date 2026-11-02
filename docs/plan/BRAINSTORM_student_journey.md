@@ -214,3 +214,15 @@ How we apply it (inspired by it, not copied):
 - Staff queue as a dense table (sortable columns, filters in a bordered "Filtering criteria" group), not cards. Status and priority shown as small plain labels, no decorative badges.
 - Typography and spacing: one sans-serif family that supports Arabic, 14 to 15 px body, restrained headings, 8 px spacing grid, WCAG AA contrast, full keyboard access, visible focus rings.
 - Icons: one simple line-icon set, small, only for the tab tiles and utility links.
+
+## 21. Architect questions answered (user, 2026-11-02)
+
+All eight defaults of the P9 architect are accepted, with one change:
+1. **Reminders (changed, "go with your review"):** the first reminder goes to the handling department's inbox when the clock runs out. If the ticket is still overdue after one more clock period, a second reminder goes to the department inbox and the admin. Then it stops (at most two reminders per clock period). A forward, keep open, reopen or priority change restarts the clock and the reminder count.
+2. Priority change by staff: the new period counts from the moment of the change; the reminder marker resets.
+3. Staff "solved": the clock pauses, the ticket waits for the student's Solved, Close or Keep open; no student nudge and no auto-close.
+4. Status names in the database change: open to new, resolved to solved, escalated removed (old rows become in_progress), merged stays system-only. The scanner no longer raises priority or sets "escalated"; it only sends reminders. This replaces the earlier SPEC escalation behaviour (record as a decision).
+5. Low-priority requests with an FAQ answer: the chat shows the FAQ answer and offers "record a request anyway". Advisor booking becomes a plain ticket.
+6. Past-correction hints (similarity at least 0.85): may change the suggested department and only raise priority; recorded as a re-route by past correction.
+7. Emails per side as proposed (requester: received, in progress, forwarded, staff reply, solved, closed, reopened; office inbox: new request, forwarded in, student reply, reopened, student closed or solved, reminder). A priority change alone sends no email. Language follows the request.
+8. Hosting: designed for a sleeping service anyway (in-process loop, sweep on every API hit, GitHub cron every 10 minutes) with the delay limit documented. The user expects to pay for the Render Starter plan (always on).
