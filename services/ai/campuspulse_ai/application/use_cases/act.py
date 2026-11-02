@@ -214,7 +214,13 @@ class ActUseCase:
         return self._planner.plan(category, priority, frozenset(), False).office
 
     def run(
-        self, pred: Prediction, req: Request, provisional: bool, understanding: Understanding | None = None
+        self,
+        pred: Prediction,
+        req: Request,
+        provisional: bool,
+        understanding: Understanding | None = None,
+        *,
+        force_ticket: bool = False,
     ) -> dto.ActionOut:
         plan = self.plan_for(pred, provisional)
         normalized = req.normalized
@@ -231,7 +237,7 @@ class ActUseCase:
             or (understanding.entities.building if understanding else None),
         )
         if plan.kind == ActionType.FAQ_ANSWER:
-            return self._faq_answer(plan, ctx)
+            return self._ticket_only(plan, ctx) if force_ticket else self._faq_answer(plan, ctx)
         if plan.kind == ActionType.BOOKING:
             return self._booking(plan, ctx)
         if plan.kind == ActionType.SAFETY_ALERT:
@@ -339,8 +345,13 @@ class ActUseCase:
     # ------------------------------------------------------------------ building blocks
 
     def _best_faq(self, ctx: _Ctx) -> FAQHit | None:
+        return self.faq_hit(ctx.text, ctx.lang)
+
+    def faq_hit(self, text: str, lang: Lang) -> FAQHit | None:
+        """The best FAQ hit for `text` when its score reaches `tau_faq`, else None (also on a store error).
+        Read-only; the chat preview uses it to show the answer before anything is recorded."""
         try:
-            hits = self._faq.search(ctx.text, ctx.lang, self._config.faq_top_k)
+            hits = self._faq.search(text, lang, self._config.faq_top_k)
         except StoreError as exc:
             log.warning("FAQ search failed, opening a ticket instead: %s", exc)
             return None

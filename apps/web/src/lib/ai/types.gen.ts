@@ -504,6 +504,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/chat/turn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * One chat turn
+         * @description The chat agent's next message for a conversation (1..20 messages, the last from the user). The language model only talks: it never decides category, priority, office or flags (the classifier does, on the requester's own words). A request becomes a proposal with a server-signed token; a ticket is created only when the user confirms it with that token. Distress is handled first with no LLM call. `mode: fallback` = no language model (no key, disabled or failing): the client shows the plain form and uses preview and confirm.
+         */
+        post: operations["chat_turn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview a request (plain form)
+         * @description No language model: classifies the text with the offline model, applies the decision policy with a one-question budget, and returns what would be recorded (department, priority, FAQ answer, a past staff correction if one is similar) with a signed token to confirm. When `question` is set, answer it by calling again with `asked` and `answer`. Used by the plain-form fallback and the Why this? view.
+         */
+        post: operations["chat_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a proposal
+         * @description Records the request of a proposal the caller received: the token must be signed by the server, unexpired and bound to the caller's alias (else 422). Runs the triage with the clarification budget at 0 (a FAQ cell opens a ticket instead of answering) and applies a similar past staff correction as a recorded re-route.
+         */
+        post: operations["chat_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -805,6 +865,91 @@ export interface components {
              * @description Conformal prediction set (1-alpha = 0.90).
              */
             set: components["schemas"]["Category"][];
+        };
+        /**
+         * ChatConfirmRequest
+         * @description Body of `POST /v1/chat/confirm`.
+         */
+        ChatConfirmRequest: {
+            /** Proposal Token */
+            proposal_token: string;
+        };
+        /**
+         * ChatConfirmResponse
+         * @description The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it.
+         */
+        ChatConfirmResponse: {
+            triage: components["schemas"]["TriageResponse"];
+            /** Ticket Id */
+            ticket_id: string | null;
+            /** Hint Applied */
+            hint_applied: boolean;
+        };
+        /**
+         * ChatMessage
+         * @description One message of the conversation. The client tags the assistant messages it got from a proposal
+         *     (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts
+         *     after the last of them.
+         */
+        ChatMessage: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Content */
+            content: string;
+            /**
+             * Kind
+             * @default text
+             * @enum {string}
+             */
+            kind: "text" | "proposal" | "ticket";
+        };
+        /**
+         * ChatPreviewRequest
+         * @description Body of `POST /v1/chat/preview` (the plain form): the text, the question ids already asked and the
+         *     answer to the last question (appended to the text).
+         */
+        ChatPreviewRequest: {
+            /** Text */
+            text: string;
+            /** Asked */
+            asked?: string[];
+            /** Answer */
+            answer?: string | null;
+        };
+        /**
+         * ChatTurnRequest
+         * @description Body of `POST /v1/chat/turn`: 1..20 messages, the last one from the user, and the token of the
+         *     proposal the assistant made last (if any, so that a "yes" can confirm it).
+         */
+        ChatTurnRequest: {
+            /** Messages */
+            messages: components["schemas"]["ChatMessage"][];
+            /** Proposal Token */
+            proposal_token?: string | null;
+        };
+        /**
+         * ChatTurnResponse
+         * @description The assistant's next message. `mode: fallback` = no language model; the client shows the plain form.
+         *     `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or
+         *     a distress message was handled), `clear_proposal` when the client should drop its pending proposal.
+         */
+        ChatTurnResponse: {
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "agent" | "fallback";
+            /** Reply */
+            reply: string;
+            proposal: components["schemas"]["ProposalOut"] | null;
+            /** Ticket Id */
+            ticket_id: string | null;
+            triage: components["schemas"]["TriageResponse"] | null;
+            /** Clear Proposal */
+            clear_proposal: boolean;
         };
         /**
          * ClarificationOptionOut
@@ -1172,6 +1317,18 @@ export interface components {
             vector_store: string | null;
         };
         /**
+         * HintOut
+         * @description A past staff correction that changed the proposal (no text of the other request is shown).
+         */
+        HintOut: {
+            /** Hint Id */
+            hint_id: string;
+            category: components["schemas"]["Category"];
+            priority: components["schemas"]["Priority"];
+            /** Sim */
+            sim: number;
+        };
+        /**
          * IncidentOut
          * @description A Pulse incident: several reports of the same problem in one building.
          */
@@ -1381,6 +1538,44 @@ export interface components {
             representative_text: string;
             /** Sample Request Ids */
             sample_request_ids: string[];
+        };
+        /**
+         * ProposalOut
+         * @description What the assistant proposes to record. `token` is the server-signed proof the caller must send to
+         *     confirm (empty while `question` is set: answer it with another preview first).
+         */
+        ProposalOut: {
+            /** Token */
+            token: string;
+            /**
+             * Text
+             * @description The request text the proposal is about (the requester's own words).
+             */
+            text: string;
+            category: components["schemas"]["Category"];
+            priority: components["schemas"]["Priority"];
+            /**
+             * Office
+             * @description D-005 office code the request goes to.
+             */
+            office: string;
+            action_kind: components["schemas"]["ActionType"];
+            /** @description Set when one more answer is needed first (or a supportive message with no options). */
+            question: components["schemas"]["ClarificationOut"] | null;
+            /** @description Set for a `faq_answer` cell: the answer to show first. */
+            faq: components["schemas"]["FaqAnswerOut"] | null;
+            hint: components["schemas"]["HintOut"] | null;
+            why: components["schemas"]["ProposalWhyOut"];
+        };
+        /**
+         * ProposalWhyOut
+         * @description Behind the "Why this?" button: the model's category and priority and its three nearest examples.
+         */
+        ProposalWhyOut: {
+            category: components["schemas"]["CategoryOut"];
+            priority: components["schemas"]["PriorityOut"];
+            /** Neighbors */
+            neighbors: components["schemas"]["NeighborOut"][];
         };
         /**
          * RedTeamFailureOut
@@ -1799,6 +1994,12 @@ export interface components {
              * @default false
              */
             simulated: boolean;
+            /**
+             * Chat Confirmed
+             * @description Set only by `POST /v1/chat/confirm` (the route forces it to false here): the requester already confirmed a proposal, so no clarifying question is asked and a FAQ cell opens a ticket (P9.8).
+             * @default false
+             */
+            chat_confirmed: boolean;
         };
         /**
          * TriageResponse
@@ -3821,6 +4022,213 @@ export interface operations {
             };
             /** @description `not_implemented`: Optional extra that is not built in this deployment. */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    chat_turn: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatTurnRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTurnResponse"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    chat_preview: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    chat_confirm: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatConfirmResponse"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

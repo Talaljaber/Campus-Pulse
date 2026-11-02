@@ -44,6 +44,9 @@ Every non-2xx response has this shape:
 - [`POST /v1/announcements`](#announcement_create) Post an announcement
 - [`POST /v1/announcements/{announcement_id}/archive`](#announcement_archive) Archive an announcement
 - [`POST /v1/cron/sla`](#cron_sla) Run the SLA reminder scan
+- [`POST /v1/chat/turn`](#chat_turn) One chat turn
+- [`POST /v1/chat/preview`](#chat_preview) Preview a request (plain form)
+- [`POST /v1/chat/confirm`](#chat_confirm) Confirm a proposal
 - [Schemas](#schemas)
 
 <a id="triage"></a>
@@ -74,6 +77,7 @@ Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
 | `location` | [LocationIn](#schema-locationin) \| null | no |  |
 | `conversation_id` | string \| null | no |  |
 | `simulated` | boolean | no | True only for `scripts/simulate_pulse.py` traffic (P4.10); default `false` |
+| `chat_confirmed` | boolean | no | Set only by `POST /v1/chat/confirm` (the route forces it to false here): the requester already confirmed a proposal, so no clarifying question is asked and a FAQ cell opens a ticket (P9.8); default `false` |
 
 **Response `200`:** `application/json` [TriageResponse](#schema-triageresponse)
 
@@ -2754,6 +2758,480 @@ Response `200`:
 
 - per reminded ticket: updates `reminder_count` and `reminder_sent_at`; inserts an internal `ticket_activity` row `reminder`, a `notifications` row for the office and an `events` row `sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)
 
+<a id="chat_turn"></a>
+## `POST /v1/chat/turn`
+
+**One chat turn.** The chat agent's next message for a conversation (1..20 messages, the last from the user). The language model only talks: it never decides category, priority, office or flags (the classifier does, on the requester's own words). A request becomes a proposal with a server-signed token; a ticket is created only when the user confirms it with that token. Distress is handled first with no LLM call. `mode: fallback` = no language model (no key, disabled or failing): the client shows the plain form and uses preview and confirm.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ChatTurnRequest](#schema-chatturnrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `messages` | array of [ChatMessage](#schema-chatmessage) | yes |  |
+| `proposal_token` | string \| null | no |  |
+
+**Response `200`:** `application/json` [ChatTurnResponse](#schema-chatturnresponse)
+
+**Example** (fixture `chat_turn_proposal`): The assistant proposes a request and waits for a yes (the token is shown in the response).
+
+`request.json`:
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "The Moodle quiz page keeps freezing when I click submit",
+      "kind": "text"
+    }
+  ],
+  "proposal_token": null
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/chat/turn" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "mode": "agent",
+  "reply": "Sorry about the Moodle trouble, that is frustrating. I can send this to IT Support. Shall I record the request?",
+  "proposal": {
+    "token": "eyJhbGlhcyI6ImRlbW8tMTciLCJjYXRlZ29yeSI6IklUIFN1cHBvcnQifQ.5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e",
+    "text": "The Moodle quiz page keeps freezing when I click submit",
+    "category": "IT Support",
+    "priority": "medium",
+    "office": "it",
+    "action_kind": "ticket",
+    "question": null,
+    "faq": null,
+    "hint": null,
+    "why": {
+      "category": {
+        "label": "IT Support",
+        "prob": 0.78,
+        "set": [
+          "IT Support"
+        ]
+      },
+      "priority": {
+        "label": "medium",
+        "prob": 0.73,
+        "set": [
+          "medium"
+        ],
+        "evidence": [
+          {
+            "type": "transient_glitch",
+            "span": "keeps freezing"
+          }
+        ]
+      },
+      "neighbors": [
+        {
+          "text": "The e-learning quiz page hangs when I press submit",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.88,
+          "source": "memory",
+          "created_at": "2026-11-05T10:58:12+03:00"
+        },
+        {
+          "text": "المنصة بتعلق لما أسلم الواجب",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.79,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "I can't see my quiz grade on Moodle",
+          "label": "Academic Support",
+          "priority": "low",
+          "sim": 0.71,
+          "source": "train",
+          "created_at": null
+        }
+      ]
+    }
+  },
+  "ticket_id": null,
+  "triage": null,
+  "clear_proposal": false
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `chat_turn_fallback` | 200 | No language model (no key, disabled or failing): the client shows the plain form. |
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 503 | `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- calls the language model through OpenRouter (pinned model, temperature 0, cached) unless in fallback mode
+- a proposal writes nothing
+- a confirmed proposal inserts `requests`, `predictions` and `events` rows, opens a ticket (as `POST /v1/chat/confirm`), and after the response writes the thread's `created` row and sends the allow-listed `received` emails
+- distress: runs the full triage (`requests`, `predictions`, `review_queue` rows), no ticket, no LLM call
+
+<a id="chat_preview"></a>
+## `POST /v1/chat/preview`
+
+**Preview a request (plain form).** No language model: classifies the text with the offline model, applies the decision policy with a one-question budget, and returns what would be recorded (department, priority, FAQ answer, a past staff correction if one is similar) with a signed token to confirm. When `question` is set, answer it by calling again with `asked` and `answer`. Used by the plain-form fallback and the Why this? view.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ChatPreviewRequest](#schema-chatpreviewrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `text` | string | yes | min len 1 |
+| `asked` | array of string | no |  |
+| `answer` | string \| null | no |  |
+
+**Response `200`:** `application/json` [ProposalOut](#schema-proposalout)
+
+**Example** (fixture `chat_preview_ticket`): The plain form: what would be recorded, with a signed token to confirm.
+
+`request.json`:
+
+```json
+{
+  "text": "The Moodle quiz page keeps freezing when I click submit",
+  "asked": [],
+  "answer": null
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/chat/preview" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "token": "eyJhbGlhcyI6ImRlbW8tMTciLCJjYXRlZ29yeSI6IklUIFN1cHBvcnQifQ.5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e",
+  "text": "The Moodle quiz page keeps freezing when I click submit",
+  "category": "IT Support",
+  "priority": "medium",
+  "office": "it",
+  "action_kind": "ticket",
+  "question": null,
+  "faq": null,
+  "hint": null,
+  "why": {
+    "category": {
+      "label": "IT Support",
+      "prob": 0.78,
+      "set": [
+        "IT Support"
+      ]
+    },
+    "priority": {
+      "label": "medium",
+      "prob": 0.73,
+      "set": [
+        "medium"
+      ],
+      "evidence": [
+        {
+          "type": "transient_glitch",
+          "span": "keeps freezing"
+        }
+      ]
+    },
+    "neighbors": [
+      {
+        "text": "The e-learning quiz page hangs when I press submit",
+        "label": "IT Support",
+        "priority": "medium",
+        "sim": 0.88,
+        "source": "memory",
+        "created_at": "2026-11-05T10:58:12+03:00"
+      },
+      {
+        "text": "المنصة بتعلق لما أسلم الواجب",
+        "label": "IT Support",
+        "priority": "medium",
+        "sim": 0.79,
+        "source": "train",
+        "created_at": null
+      },
+      {
+        "text": "I can't see my quiz grade on Moodle",
+        "label": "Academic Support",
+        "priority": "low",
+        "sim": 0.71,
+        "source": "train",
+        "created_at": null
+      }
+    ]
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 503 | `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- writes nothing, except that a distress message is triaged and persisted (`requests`, `predictions`, `review_queue` rows) and answered through `question`
+
+<a id="chat_confirm"></a>
+## `POST /v1/chat/confirm`
+
+**Confirm a proposal.** Records the request of a proposal the caller received: the token must be signed by the server, unexpired and bound to the caller's alias (else 422). Runs the triage with the clarification budget at 0 (a FAQ cell opens a ticket instead of answering) and applies a similar past staff correction as a recorded re-route.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ChatConfirmRequest](#schema-chatconfirmrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `proposal_token` | string | yes | min len 1 |
+
+**Response `200`:** `application/json` [ChatConfirmResponse](#schema-chatconfirmresponse)
+
+**Example** (fixture `chat_confirm_ticket`): A confirmed proposal opens a ticket (the same triage response as POST /v1/triage).
+
+`request.json`:
+
+```json
+{
+  "proposal_token": "eyJhbGlhcyI6ImRlbW8tMTciLCJjYXRlZ29yeSI6IklUIFN1cHBvcnQifQ.5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e"
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/chat/confirm" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "triage": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0010",
+    "status": "decided",
+    "lang": "en",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "IT Support",
+      "prob": 0.78,
+      "set": [
+        "IT Support"
+      ]
+    },
+    "priority": {
+      "label": "medium",
+      "prob": 0.73,
+      "set": [
+        "medium"
+      ],
+      "evidence": [
+        {
+          "type": "transient_glitch",
+          "span": "keeps freezing"
+        }
+      ]
+    },
+    "tier": "tier1",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "freezing",
+          0.31
+        ],
+        [
+          "quiz",
+          0.2
+        ],
+        [
+          "submit",
+          0.16
+        ],
+        [
+          "Moodle",
+          0.14
+        ],
+        [
+          "page",
+          0.04
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "The e-learning quiz page hangs when I press submit",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.88,
+          "source": "memory",
+          "created_at": "2026-11-05T10:58:12+03:00"
+        },
+        {
+          "text": "المنصة بتعلق لما أسلم الواجب",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.79,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "I can't see my quiz grade on Moodle",
+          "label": "Academic Support",
+          "priority": "low",
+          "sim": 0.71,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": {
+        "drop": "freezing",
+        "category": "Academic Support",
+        "priority": "low"
+      },
+      "trace": {
+        "sets": {
+          "cat": 1,
+          "pri": 1
+        },
+        "models_agree": false,
+        "cost_usd": 0.00021,
+        "latency_ms": 980,
+        "policy_path": [
+          "e_escalate",
+          "c_accept"
+        ],
+        "clarified": false,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [],
+    "action": {
+      "type": "ticket",
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0010",
+      "external": [
+        {
+          "sink": "linear",
+          "external_id": "CP-47",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-47"
+        }
+      ],
+      "sla_due_at": "2026-11-08T11:00:00+03:00",
+      "message": "Helpdesk ticket opened. IT Support will get back to you within 72 hours.",
+      "provisional": false,
+      "tags": [],
+      "booking": null,
+      "faq": null,
+      "incident_id": null
+    },
+    "message": null,
+    "understanding": {
+      "summary_en": "The Moodle quiz page freezes whenever the student clicks submit.",
+      "summary_ar": "صفحة الكويز على مودل بتعلق كل ما الطالب يكبس تسليم.",
+      "entities": {
+        "building": null,
+        "room": null,
+        "course_code": null,
+        "deadline": null,
+        "system": "e-learning"
+      },
+      "student_reply": "Thanks, we've opened a helpdesk ticket. If the quiz has a deadline, take a screenshot of the error to share with your instructor.",
+      "ticket_title": "Moodle quiz page freezes on submit",
+      "ticket_body": "Reported by demo-17: the Moodle quiz page freezes when clicking submit.",
+      "source": "llm",
+      "prompt_version": "v1"
+    }
+  },
+  "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0010",
+  "hint_applied": false
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `chat_confirm_error_expired` | 422 | An expired, tampered or foreign token is refused. |
+
+Error example (`chat_confirm_error_expired`, 422):
+
+```json
+{
+  "error": {
+    "code": "invalid_input",
+    "message": "this proposal has expired",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 503 | `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- inserts `requests`, `predictions` and `events` rows; opens a ticket (Supabase + Linear issue), may create or attach to an incident
+- a hint re-route inserts a `ticket_activity` row `forward` (actor system, body `past correction`) and updates the Linear issue
+- after the response: the thread's `created` row and the allow-listed `received` emails
+
 <a id="schemas"></a>
 ## Schemas
 
@@ -2933,6 +3411,72 @@ Category decision: the label, its probability and the conformal set.
 | `label` | [Category](#schema-category) | yes |  |
 | `prob` | number | yes | >= 0.0, <= 1.0 |
 | `set` | array of [Category](#schema-category) | yes | Conformal prediction set (1-alpha = 0.90) |
+
+<a id="schema-chatconfirmrequest"></a>
+### ChatConfirmRequest
+
+Body of `POST /v1/chat/confirm`.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `proposal_token` | string | yes | min len 1 |
+
+<a id="schema-chatconfirmresponse"></a>
+### ChatConfirmResponse
+
+The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `triage` | [TriageResponse](#schema-triageresponse) | yes |  |
+| `ticket_id` | string \| null | yes |  |
+| `hint_applied` | boolean | yes |  |
+
+<a id="schema-chatmessage"></a>
+### ChatMessage
+
+One message of the conversation. The client tags the assistant messages it got from a proposal (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts after the last of them.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `role` | `user` \| `assistant` | yes |  |
+| `content` | string | yes | min len 1 |
+| `kind` | `text` \| `proposal` \| `ticket` | no | default `"text"` |
+
+<a id="schema-chatpreviewrequest"></a>
+### ChatPreviewRequest
+
+Body of `POST /v1/chat/preview` (the plain form): the text, the question ids already asked and the answer to the last question (appended to the text).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `text` | string | yes | min len 1 |
+| `asked` | array of string | no |  |
+| `answer` | string \| null | no |  |
+
+<a id="schema-chatturnrequest"></a>
+### ChatTurnRequest
+
+Body of `POST /v1/chat/turn`: 1..20 messages, the last one from the user, and the token of the proposal the assistant made last (if any, so that a "yes" can confirm it).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `messages` | array of [ChatMessage](#schema-chatmessage) | yes |  |
+| `proposal_token` | string \| null | no |  |
+
+<a id="schema-chatturnresponse"></a>
+### ChatTurnResponse
+
+The assistant's next message. `mode: fallback` = no language model; the client shows the plain form. `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or a distress message was handled), `clear_proposal` when the client should drop its pending proposal.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `mode` | `agent` \| `fallback` | yes |  |
+| `reply` | string | yes |  |
+| `proposal` | [ProposalOut](#schema-proposalout) \| null | yes |  |
+| `ticket_id` | string \| null | yes |  |
+| `triage` | [TriageResponse](#schema-triageresponse) \| null | yes |  |
+| `clear_proposal` | boolean | yes |  |
 
 <a id="schema-clarificationoptionout"></a>
 ### ClarificationOptionOut
@@ -3191,6 +3735,18 @@ Body of `POST /v1/tickets/{ticket_id}/forward` and `POST /v1/reviews/{review_id}
 | `llm_tiers` | array of [Tier](#schema-tier) | yes |  |
 | `vector_store` | string \| null | yes |  |
 
+<a id="schema-hintout"></a>
+### HintOut
+
+A past staff correction that changed the proposal (no text of the other request is shown).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `hint_id` | string | yes |  |
+| `category` | [Category](#schema-category) | yes |  |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `sim` | number | yes | >= 0.0, <= 1.0 |
+
 <a id="schema-incidentout"></a>
 ### IncidentOut
 
@@ -3330,6 +3886,35 @@ A recurring problem (UD-6): semantically similar requests in one category/buildi
 | `last_seen` | string (date-time) | yes |  |
 | `representative_text` | string | yes |  |
 | `sample_request_ids` | array of string | yes |  |
+
+<a id="schema-proposalout"></a>
+### ProposalOut
+
+What the assistant proposes to record. `token` is the server-signed proof the caller must send to confirm (empty while `question` is set: answer it with another preview first).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `token` | string | yes |  |
+| `text` | string | yes | The request text the proposal is about (the requester's own words) |
+| `category` | [Category](#schema-category) | yes |  |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `office` | string | yes | D-005 office code the request goes to |
+| `action_kind` | [ActionType](#schema-actiontype) | yes |  |
+| `question` | [ClarificationOut](#schema-clarificationout) \| null | yes | Set when one more answer is needed first (or a supportive message with no options) |
+| `faq` | [FaqAnswerOut](#schema-faqanswerout) \| null | yes | Set for a `faq_answer` cell: the answer to show first |
+| `hint` | [HintOut](#schema-hintout) \| null | yes |  |
+| `why` | [ProposalWhyOut](#schema-proposalwhyout) | yes |  |
+
+<a id="schema-proposalwhyout"></a>
+### ProposalWhyOut
+
+Behind the "Why this?" button: the model's category and priority and its three nearest examples.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `category` | [CategoryOut](#schema-categoryout) | yes |  |
+| `priority` | [PriorityOut](#schema-priorityout) | yes |  |
+| `neighbors` | array of [NeighborOut](#schema-neighborout) | yes |  |
 
 <a id="schema-redteamfailureout"></a>
 ### RedTeamFailureOut
@@ -3595,6 +4180,7 @@ Body of `POST /v1/triage` (SPEC §7).
 | `location` | [LocationIn](#schema-locationin) \| null | no |  |
 | `conversation_id` | string \| null | no |  |
 | `simulated` | boolean | no | True only for `scripts/simulate_pulse.py` traffic (P4.10); default `false` |
+| `chat_confirmed` | boolean | no | Set only by `POST /v1/chat/confirm` (the route forces it to false here): the requester already confirmed a proposal, so no clarifying question is asked and a FAQ cell opens a ticket (P9.8); default `false` |
 
 <a id="schema-triageresponse"></a>
 ### TriageResponse

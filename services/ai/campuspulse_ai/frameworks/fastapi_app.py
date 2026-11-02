@@ -38,6 +38,7 @@ from campuspulse_ai.frameworks.errors import install_error_handlers
 from campuspulse_ai.frameworks.heap import trim_heap
 from campuspulse_ai.frameworks.routes import (
     announcements,
+    chat,
     explain,
     feedback,
     health,
@@ -68,6 +69,7 @@ _ROUTERS = (
     pending.router,
     health.router,
     announcements.router,
+    chat.router,
 )
 _ORDER = {e.op_id: i for i, e in enumerate(ENDPOINTS)}
 

@@ -38,6 +38,9 @@ from campuspulse_ai import __version__
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
     AnnouncementIn,
+    ChatConfirmRequest,
+    ChatPreviewRequest,
+    ChatTurnRequest,
     ClarifyRequest,
     CommentRequest,
     CounterfactualQuery,
@@ -343,6 +346,23 @@ def build_router(store: FixtureStore) -> APIRouter:
     def cron_sla(request: Request) -> Any:
         """Run the SLA reminder scan (fixture-backed)."""
         return _respond(store.pick("cron_sla", request, None))
+
+    # --- P9.8 chat agent (append new routes below this line, in ENDPOINTS order) ---
+
+    @router.api_route(**route_kwargs("chat_turn"), dependencies=[Depends(_guard("chat_turn"))])
+    def chat_turn(body: ChatTurnRequest, request: Request) -> Any:
+        """One chat turn (fixture-backed)."""
+        return _respond(store.pick("chat_turn", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("chat_preview"), dependencies=[Depends(_guard("chat_preview"))])
+    def chat_preview(body: ChatPreviewRequest, request: Request) -> Any:
+        """Preview a request (fixture-backed)."""
+        return _respond(store.pick("chat_preview", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("chat_confirm"), dependencies=[Depends(_guard("chat_confirm"))])
+    def chat_confirm(body: ChatConfirmRequest, request: Request) -> Any:
+        """Confirm a proposal (fixture-backed)."""
+        return _respond(store.pick("chat_confirm", request, body.model_dump(mode="json")))
 
     return router
 

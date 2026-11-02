@@ -1,0 +1,23 @@
+{
+  "name": "chat_confirm_error_expired",
+  "description": "An expired, tampered or foreign token is refused.",
+  "method": "POST",
+  "path": "/v1/chat/confirm",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "proposal_token": "bad.token"
+  },
+  "status_code": 422,
+  "response": {
+    "error": {
+      "code": "invalid_input",
+      "message": "this proposal has expired",
+      "details": null
+    }
+  }
+}

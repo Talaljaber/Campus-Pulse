@@ -60,6 +60,8 @@ def triage(
     cmd = body if caller.alias is None else body.model_copy(update={"student_alias": caller.alias})
     if cmd.simulated and caller.role not in SIMULATION_ROLES:
         cmd = cmd.model_copy(update={"simulated": False})  # only scripts and admins mark traffic
+    if cmd.chat_confirmed:
+        cmd = cmd.model_copy(update={"chat_confirmed": False})  # only POST /v1/chat/confirm may set it
     response = services.triage.run(cmd, debug_members=debug)
     schedule_created(services, background, response)
     return triage_view(response, caller.role)

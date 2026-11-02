@@ -17,6 +17,8 @@ services:
         value: "false"
       - key: SLA_SWEEP_MIN_INTERVAL_S
         value: "60"
+      - key: CHAT_AGENT_ENABLED
+        value: "true"
       - key: AI_SERVICE_TOKEN
         sync: false
       - key: SUPABASE_URL

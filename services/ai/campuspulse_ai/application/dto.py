@@ -218,6 +218,13 @@ class TriageRequest(_Model):
     simulated: bool = Field(
         default=False, description="True only for `scripts/simulate_pulse.py` traffic (P4.10)."
     )
+    chat_confirmed: bool = Field(
+        default=False,
+        description=(
+            "Set only by `POST /v1/chat/confirm` (the route forces it to false here): the requester already "
+            "confirmed a proposal, so no clarifying question is asked and a FAQ cell opens a ticket (P9.8)."
+        ),
+    )
 
 
 class CategoryOut(_Model):
@@ -961,3 +968,99 @@ class SlaScanOut(_Model):
 
     ran_at: datetime
     reminded: list[str] = Field(description="Ids of the tickets reminded now (a claimed level 1 or 2).")
+
+
+# --- chat agent (P9.8) ------------------------------------------------------------------------------
+
+ChatRole = Literal["user", "assistant"]
+ChatMessageKind = Literal["text", "proposal", "ticket"]
+ChatMode = Literal["agent", "fallback"]
+
+
+class ChatMessage(_Model):
+    """One message of the conversation. The client tags the assistant messages it got from a proposal
+    (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts
+    after the last of them."""
+
+    role: ChatRole
+    content: str = Field(min_length=1, max_length=2000)
+    kind: ChatMessageKind = "text"
+
+
+class ChatTurnRequest(_Model):
+    """Body of `POST /v1/chat/turn`: 1..20 messages, the last one from the user, and the token of the
+    proposal the assistant made last (if any, so that a "yes" can confirm it)."""
+
+    messages: list[ChatMessage] = Field(min_length=1, max_length=20)
+    proposal_token: str | None = Field(default=None, max_length=4000)
+
+
+class HintOut(_Model):
+    """A past staff correction that changed the proposal (no text of the other request is shown)."""
+
+    hint_id: str
+    category: Category
+    priority: Priority
+    sim: Probability
+
+
+class ProposalWhyOut(_Model):
+    """Behind the "Why this?" button: the model's category and priority and its three nearest examples."""
+
+    category: CategoryOut
+    priority: PriorityOut
+    neighbors: list[NeighborOut]
+
+
+class ProposalOut(_Model):
+    """What the assistant proposes to record. `token` is the server-signed proof the caller must send to
+    confirm (empty while `question` is set: answer it with another preview first)."""
+
+    token: str
+    text: str = Field(description="The request text the proposal is about (the requester's own words).")
+    category: Category
+    priority: Priority
+    office: str = Field(description="D-005 office code the request goes to.")
+    action_kind: ActionType
+    question: ClarificationOut | None = Field(
+        description="Set when one more answer is needed first (or a supportive message with no options)."
+    )
+    faq: FaqAnswerOut | None = Field(description="Set for a `faq_answer` cell: the answer to show first.")
+    hint: HintOut | None
+    why: ProposalWhyOut
+
+
+class ChatTurnResponse(_Model):
+    """The assistant's next message. `mode: fallback` = no language model; the client shows the plain form.
+    `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or
+    a distress message was handled), `clear_proposal` when the client should drop its pending proposal."""
+
+    mode: ChatMode
+    reply: str
+    proposal: ProposalOut | None
+    ticket_id: str | None
+    triage: TriageResponse | None
+    clear_proposal: bool
+
+
+class ChatPreviewRequest(_Model):
+    """Body of `POST /v1/chat/preview` (the plain form): the text, the question ids already asked and the
+    answer to the last question (appended to the text)."""
+
+    text: str = Field(min_length=1, max_length=2000)
+    asked: list[str] = Field(default_factory=list, max_length=5)
+    answer: str | None = Field(default=None, max_length=500)
+
+
+class ChatConfirmRequest(_Model):
+    """Body of `POST /v1/chat/confirm`."""
+
+    proposal_token: str = Field(min_length=1, max_length=4000)
+
+
+class ChatConfirmResponse(_Model):
+    """The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it."""
+
+    triage: TriageResponse
+    ticket_id: str | None
+    hint_applied: bool

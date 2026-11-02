@@ -59,6 +59,9 @@ REQUEST_MODELS: dict[str, type[BaseModel] | None] = {
     "ticket_student_action": dto.StudentActionRequest,
     "announcement_create": dto.AnnouncementIn,
     "announcement_archive": None,
+    "chat_turn": dto.ChatTurnRequest,
+    "chat_preview": dto.ChatPreviewRequest,
+    "chat_confirm": dto.ChatConfirmRequest,
 }
 QUERY_MODELS: dict[str, type[BaseModel]] = {
     "triage": dto.TriageQuery,

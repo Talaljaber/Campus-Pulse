@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     llm_frontend_model: str | None = None  # overrides the pinned model of the yaml (measurements only)
     llm_frontend_cache_path: Path | None = None  # overrides the yaml cache (scratch caches)
 
+    # Chat agent (P9.8): the LLM part runs only with OPENROUTER_API_KEY and CHAT_AGENT_ENABLED != false;
+    # preview and confirm always work (the plain form). Model id and parameters are pinned in the yaml.
+    chat_agent_enabled: bool = True
+    chat_agent_config: Path = Path("config/chat_agent.yaml")
+
     # Supabase (service role is server-side only)
     supabase_url: str | None = None
     supabase_service_role_key: SecretStr | None = None

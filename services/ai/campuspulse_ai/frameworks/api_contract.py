@@ -21,6 +21,8 @@ from fastapi.security import HTTPBearer
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
     AnnouncementOut,
+    ChatConfirmResponse,
+    ChatTurnResponse,
     CounterfactualResponse,
     ErrorCode,
     ErrorResponse,
@@ -29,6 +31,7 @@ from campuspulse_ai.application.dto import (
     IncidentOut,
     MetricsResponse,
     ProblemClusterOut,
+    ProposalOut,
     ReindexResponse,
     ResolveIncidentResponse,
     ReviewItemOut,
@@ -599,6 +602,79 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             "`sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)",
         ),
         tag="staff",
+    ),
+    # --- P9.8 chat agent (append new entries below this line) ---
+    EndpointDoc(
+        op_id="chat_turn",
+        method="POST",
+        path="/v1/chat/turn",
+        summary="One chat turn",
+        purpose=(
+            "The chat agent's next message for a conversation (1..20 messages, the last from the user). The "
+            "language model only talks: it never decides category, priority, office or flags (the classifier "
+            "does, on the requester's own words). A request becomes a proposal with a server-signed token; a "
+            "ticket is created only when the user confirms it with that token. Distress is handled "
+            "first with no LLM call. `mode: fallback` = no language model (no key, disabled or failing): "
+            "the client shows the plain form and uses preview and confirm."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=ChatTurnResponse,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.ARTIFACT_UNAVAILABLE, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=(
+            "calls the language model through OpenRouter (pinned model, temperature 0, cached) unless in "
+            "fallback mode",
+            "a proposal writes nothing",
+            "a confirmed proposal inserts `requests`, `predictions` and `events` rows, opens a ticket (as "
+            "`POST /v1/chat/confirm`), and after the response writes the thread's `created` row and "
+            "sends the allow-listed `received` emails",
+            "distress: runs the full triage (`requests`, `predictions`, `review_queue` rows), no ticket, "
+            "no LLM call",
+        ),
+        tag="chat",
+    ),
+    EndpointDoc(
+        op_id="chat_preview",
+        method="POST",
+        path="/v1/chat/preview",
+        summary="Preview a request (plain form)",
+        purpose=(
+            "No language model: classifies the text with the offline model, applies the decision policy "
+            "with a one-question budget, and returns what would be recorded (department, priority, FAQ "
+            "answer, a past staff correction if one is similar) with a signed token to confirm. When "
+            "`question` is set, answer it by calling again with `asked` and `answer`. Used by the "
+            "plain-form fallback and the Why this? view."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=ProposalOut,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.ARTIFACT_UNAVAILABLE, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=(
+            "writes nothing, except that a distress message is triaged and persisted (`requests`, "
+            "`predictions`, `review_queue` rows) and answered through `question`",
+        ),
+        tag="chat",
+    ),
+    EndpointDoc(
+        op_id="chat_confirm",
+        method="POST",
+        path="/v1/chat/confirm",
+        summary="Confirm a proposal",
+        purpose=(
+            "Records the request of a proposal the caller received: the token must be signed by the server, "
+            "unexpired and bound to the caller's alias (else 422). Runs the triage with the clarification "
+            "budget at 0 (a FAQ cell opens a ticket instead of answering) and applies a similar past "
+            "staff correction as a recorded re-route."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=ChatConfirmResponse,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.ARTIFACT_UNAVAILABLE, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=(
+            "inserts `requests`, `predictions` and `events` rows; opens a ticket (Supabase + Linear "
+            "issue), may create or attach to an incident",
+            "a hint re-route inserts a `ticket_activity` row `forward` (actor system, body `past "
+            "correction`) and updates the Linear issue",
+            "after the response: the thread's `created` row and the allow-listed `received` emails",
+        ),
+        tag="chat",
     ),
 )
 
