@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 
 from campuspulse_ai.application.use_cases.announcements import AnnouncementsUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
+from campuspulse_ai.application.use_cases.chat import ChatUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.explain import CounterfactualUseCase
@@ -61,6 +62,8 @@ class ApiServices:
     - `reviews` serves `GET /v1/reviews` and `POST /v1/reviews/{id}/forward` (UD-13 advisor routing).
     - `batch`, `metrics` and `redteam` serve the model lab (`composition.redteam.build_redteam` builds
       `redteam` from the online core, its policy and the repository, with live memory on).
+    - `chat` serves `POST /v1/chat/turn`, `/preview` and `/confirm` (P9.8); its LLM part exists only
+      with a key and `CHAT_AGENT_ENABLED`, preview and confirm always work.
     - `identity` verifies user tokens in `AUTH_MODE=supabase_jwt`; without it a request carrying a
       user token gets `503 store_unavailable`.
     """
@@ -81,6 +84,7 @@ class ApiServices:
     announcements: AnnouncementsUseCase | None = None
     health: HealthInfo = field(default_factory=HealthInfo)
     lifecycle: TicketLifecycleUseCase | None = None
+    chat: ChatUseCase | None = None
 
 
 def build_identity(settings: Settings) -> IdentityVerifier | None:

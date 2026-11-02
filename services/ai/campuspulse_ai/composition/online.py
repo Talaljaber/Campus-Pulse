@@ -84,6 +84,7 @@ from campuspulse_ai.application.use_cases.ticket_emails import InboxBook, Ticket
 from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.composition.api import ApiServices, HealthInfo, build_identity
+from campuspulse_ai.composition.chat import build_chat
 from campuspulse_ai.composition.offline import OfflineContainer, build_offline
 from campuspulse_ai.composition.redteam import build_redteam, resolve
 from campuspulse_ai.config.paths import CONFIG_DIR
@@ -478,9 +479,10 @@ def wire_online(
         if adapters.reviews is not None and directory is not None
         else None
     )
+    flow_clarifier = InfoGainStrategy(QuestionBank.load(CONFIG_DIR / "clarify_questions.yaml"))
     flow = DecisionFlow(
         policy=policy,
-        clarifier=InfoGainStrategy(QuestionBank.load(CONFIG_DIR / "clarify_questions.yaml")),
+        clarifier=flow_clarifier,
         tiers=tiers,
         explainer=None,  # P3.4 (ML) is not built: the flow explains with the core's evidence and neighbours
         gaming=GamingDetector(
@@ -528,9 +530,24 @@ def wire_online(
         if adapters.journey is not None
         else None
     )
+    triage = TriageUseCase(core, flow, repo, clock, marks=adapters.marks)
+    chat = build_chat(
+        settings,
+        classifier=core,
+        policy=policy,
+        clarifier=flow_clarifier,
+        act=act,
+        triage=triage,
+        repo=repo,
+        clock=clock,
+        lifecycle=lifecycle,
+        journey=adapters.journey,
+        announcements=adapters.announcements,
+        encoder=offline.encoder,
+    )
     manifest = offline.manifest
     return ApiServices(
-        triage=TriageUseCase(core, flow, repo, clock, marks=adapters.marks),
+        triage=triage,
         clarify=ClarifyUseCase(core, flow, repo, clock),
         feedback=feedback,
         tickets=SyncTicketUseCase(
@@ -538,6 +555,7 @@ def wire_online(
         ),
         reviews=reviews,
         lifecycle=lifecycle,
+        chat=chat,
         sla=EscalateSlaUseCase(sinks, repo, messages),
         clock=clock,
         incidents=IncidentsUseCase(

@@ -1,0 +1,78 @@
+{
+  "name": "chat_preview_ticket",
+  "description": "The plain form: what would be recorded, with a signed token to confirm.",
+  "method": "POST",
+  "path": "/v1/chat/preview",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "text": "The Moodle quiz page keeps freezing when I click submit",
+    "asked": [],
+    "answer": null
+  },
+  "status_code": 200,
+  "response": {
+    "token": "eyJhbGlhcyI6ImRlbW8tMTciLCJjYXRlZ29yeSI6IklUIFN1cHBvcnQifQ.5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e",
+    "text": "The Moodle quiz page keeps freezing when I click submit",
+    "category": "IT Support",
+    "priority": "medium",
+    "office": "it",
+    "action_kind": "ticket",
+    "question": null,
+    "faq": null,
+    "hint": null,
+    "why": {
+      "category": {
+        "label": "IT Support",
+        "prob": 0.78,
+        "set": [
+          "IT Support"
+        ]
+      },
+      "priority": {
+        "label": "medium",
+        "prob": 0.73,
+        "set": [
+          "medium"
+        ],
+        "evidence": [
+          {
+            "type": "transient_glitch",
+            "span": "keeps freezing"
+          }
+        ]
+      },
+      "neighbors": [
+        {
+          "text": "The e-learning quiz page hangs when I press submit",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.88,
+          "source": "memory",
+          "created_at": "2026-11-05T10:58:12+03:00"
+        },
+        {
+          "text": "المنصة بتعلق لما أسلم الواجب",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.79,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "I can't see my quiz grade on Moodle",
+          "label": "Academic Support",
+          "priority": "low",
+          "sim": 0.71,
+          "source": "train",
+          "created_at": null
+        }
+      ]
+    }
+  },
+  "default": true
+}
