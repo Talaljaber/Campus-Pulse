@@ -84,6 +84,7 @@ def test_recipient_policy_allows_only_listed_and_rejects_all_when_empty() -> Non
 
 def test_ticket_status_rank_is_the_forward_lifecycle_order() -> None:
     # D-013 moved the order from the sync use case into the domain.
-    order = [TicketStatus.OPEN, TicketStatus.ESCALATED, TicketStatus.IN_PROGRESS, TicketStatus.RESOLVED]
+    order = [TicketStatus.NEW, TicketStatus.IN_PROGRESS, TicketStatus.SOLVED, TicketStatus.CLOSED]
     assert [s.rank for s in order] == [0, 1, 2, 3]
-    assert TicketStatus.CLOSED.rank == TicketStatus.MERGED.rank > TicketStatus.RESOLVED.rank
+    assert {s.value for s in TicketStatus} == {"new", "in_progress", "solved", "closed", "merged"}
+    assert TicketStatus.CLOSED.rank == TicketStatus.MERGED.rank > TicketStatus.SOLVED.rank

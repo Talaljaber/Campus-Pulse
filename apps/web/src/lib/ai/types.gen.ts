@@ -1398,18 +1398,38 @@ export interface components {
             title: string;
             /** Links */
             links: components["schemas"]["ExternalRefOut"][];
+            /**
+             * Clock Started At
+             * Format: date-time
+             * @description Start of the running SLA period (P9).
+             */
+            clock_started_at: string;
+            /**
+             * Reminder Sent At
+             * @description When the overdue reminder went out, if it did.
+             */
+            reminder_sent_at: string | null;
+            /**
+             * Awaiting Student
+             * @description Staff replied and wait for the requester.
+             */
+            awaiting_student: boolean;
         };
         /**
          * TicketStatus
          * @enum {string}
          */
-        TicketStatus: "open" | "in_progress" | "resolved" | "closed" | "escalated" | "merged";
+        TicketStatus: "new" | "in_progress" | "solved" | "closed" | "merged";
         /**
          * TicketStatusRequest
          * @description Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25).
          */
         TicketStatusRequest: {
-            status: components["schemas"]["TicketStatus"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "in_progress" | "solved" | "closed";
             /** Note */
             note?: string | null;
         };

@@ -31,10 +31,10 @@ def test_signed_webhook_resolves_and_needs_no_service_token() -> None:
     raw = webhook_body(c.clock, ticket.links[0].external_id)
     r = client.post(WEBHOOK, content=raw, headers={"Linear-Signature": signature(raw)})
     assert r.status_code == 200, r.text
-    assert r.json() == {"accepted": True, "ticket_id": ticket.id, "status": "resolved"}
-    assert c.repo.get_ticket(ticket.id).status == TicketStatus.RESOLVED
+    assert r.json() == {"accepted": True, "ticket_id": ticket.id, "status": "solved"}
+    assert c.repo.get_ticket(ticket.id).status == TicketStatus.SOLVED
     [note] = c.notifications()  # the background task ran after the response
-    assert note["alias"] == ALIAS and note["payload"]["status"] == "resolved"
+    assert note["alias"] == ALIAS and note["payload"]["status"] == "solved"
 
 
 def test_bad_or_missing_signature_is_401_and_writes_nothing() -> None:
@@ -46,7 +46,7 @@ def test_bad_or_missing_signature_is_401_and_writes_nothing() -> None:
         r = client.post(WEBHOOK, content=raw, headers=headers)
         assert r.status_code == 401 and r.json()["error"]["code"] == "unauthenticated"
     assert len(c.events()) == events and c.notifications() == []
-    assert c.repo.get_ticket(ticket.id).status == TicketStatus.OPEN
+    assert c.repo.get_ticket(ticket.id).status == TicketStatus.NEW
 
 
 def test_ignored_events_are_acknowledged() -> None:
@@ -88,10 +88,10 @@ def test_lifespan_runs_the_sla_scanner_at_startup() -> None:
     overdue = seed_ticket(c, sla_due_at=c.clock.at - timedelta(minutes=1))
     with TestClient(create_app(ApiServices(sla=c.sla, clock=c.clock), api_settings(sla_scan_minutes=5))):
         waited = 0.0
-        while c.repo.get_ticket(overdue.id).status != TicketStatus.ESCALATED and waited < WAIT_S:
+        while c.repo.get_ticket(overdue.id).escalated_at is None and waited < WAIT_S:
             threading.Event().wait(POLL_S)
             waited += POLL_S
-    assert c.repo.get_ticket(overdue.id).status == TicketStatus.ESCALATED
+    assert c.repo.get_ticket(overdue.id).escalated_at is not None
     assert len(c.events("sla.escalated")) == 1  # the loop sleeps 5 min between scans
 
 
@@ -100,4 +100,4 @@ def test_no_scanner_when_disabled() -> None:
     overdue = seed_ticket(c, sla_due_at=c.clock.at - timedelta(minutes=1))
     with TestClient(create_app(ApiServices(sla=c.sla, clock=c.clock), api_settings(sla_scan_minutes=0))):
         threading.Event().wait(0.2)
-    assert c.repo.get_ticket(overdue.id).status == TicketStatus.OPEN
+    assert c.repo.get_ticket(overdue.id).status == TicketStatus.NEW

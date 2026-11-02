@@ -36,6 +36,10 @@ const ticketRow = (o) => ({
   body: "",
   escalated_at: null,
   resolved_at: null,
+  clock_started_at: ago(5),
+  reminder_sent_at: null,
+  awaiting_student: false,
+  requester_alias: null,
   created_at: ago(5),
   ...o,
 });
@@ -48,9 +52,9 @@ const explanation = {
 const outboxRow = (o) => ({ channel: "email", alias: null, request_id: null, body: "", priority: null, flags: [], error: null, provider_id: null, ...o });
 const TABLES = {
   tickets: [
-    ticketRow({ id: "t-1", request_id: "r-1", office: "it", category: "IT Support", priority: "high", status: "open", title: "Wi-Fi is down in building M", sla_due_at: ago(3) }),
-    ticketRow({ id: "t-2", request_id: "r-3", office: "finance", category: "Finance", priority: "medium", status: "open", title: "Fee receipt missing", sla_due_at: ahead(40) }),
-    ticketRow({ id: "t-3", request_id: "r-4", office: "it", category: "IT Support", priority: "low", status: "resolved", title: "Reset my e-learning password", sla_due_at: ahead(100), resolved_at: ago(1) }),
+    ticketRow({ id: "t-1", request_id: "r-1", office: "it", category: "IT Support", priority: "high", status: "new", title: "Wi-Fi is down in building M", sla_due_at: ago(3) }),
+    ticketRow({ id: "t-2", request_id: "r-3", office: "finance", category: "Finance", priority: "medium", status: "new", title: "Fee receipt missing", sla_due_at: ahead(40) }),
+    ticketRow({ id: "t-3", request_id: "r-4", office: "it", category: "IT Support", priority: "low", status: "solved", title: "Reset my e-learning password", sla_due_at: ahead(100), resolved_at: ago(1) }),
   ],
   ticket_links: [{ ticket_id: "t-1", sink: "linear", external_id: "CP-47", external_url: "https://linear.app/campuspulse-demo/issue/CP-47", created_at: ago(5), last_error: null, last_synced_at: null }],
   requests: [

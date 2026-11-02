@@ -48,7 +48,7 @@ def seed_ticket(
     office: str = "registrar",
     category: Category = Category.REGISTRATION,
     priority: Priority = Priority.HIGH,
-    status: TicketStatus = TicketStatus.OPEN,
+    status: TicketStatus = TicketStatus.NEW,
     sla_due_at: datetime | None = None,
     issue_id: str | None = None,
 ) -> Ticket:

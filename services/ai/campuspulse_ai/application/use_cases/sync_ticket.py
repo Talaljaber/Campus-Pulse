@@ -34,9 +34,9 @@ from campuspulse_ai.domain.values import TicketStatus
 
 log = logging.getLogger(__name__)
 
-DONE_STATUSES = frozenset({TicketStatus.RESOLVED, TicketStatus.CLOSED})
+DONE_STATUSES = frozenset({TicketStatus.SOLVED, TicketStatus.CLOSED})
 """Statuses that set `resolved_at`; moving back to an open status clears it (a dashboard reopen)."""
-OPEN_STATUSES = frozenset({TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.ESCALATED})
+OPEN_STATUSES = frozenset({TicketStatus.NEW, TicketStatus.IN_PROGRESS})
 DASHBOARD = "dashboard"
 """`StatusChange.source` of a staff change made in the CampusPulse dashboard."""
 NOTIFICATION_KIND = "ticket_status"
@@ -172,7 +172,7 @@ class SyncTicketUseCase:
         try:
             self._mirror.push(ticket, skip={RECORD_SINK, change.source})
             self._notify_student(change)
-            if ticket.status == TicketStatus.RESOLVED:
+            if ticket.status == TicketStatus.SOLVED:
                 self._email_resolution(change)
         except Exception:  # background boundary: a failed side effect never surfaces to the caller
             log.exception("propagating ticket %s -> %s failed", ticket.id, ticket.status)

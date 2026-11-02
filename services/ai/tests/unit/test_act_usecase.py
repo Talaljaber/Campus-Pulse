@@ -18,6 +18,7 @@ from fixtures.containers import (
 )
 
 from campuspulse_ai.adapters.integrations.supabase_sink import SINK_NAME
+from campuspulse_ai.adapters.store import codec
 from campuspulse_ai.application.use_cases.act import RECORD_SINK, ActConfig
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.config.paths import CONFIG_DIR
@@ -120,9 +121,10 @@ def test_faq_store_error_degrades_to_a_ticket() -> None:
 def test_ticket_has_sla_office_links_and_a_student_message() -> None:
     c = build_test()
     req, out = act(c, Category.IT_SUPPORT, Priority.MEDIUM)
-    assert out.sla_due_at == c.clock.now() + timedelta(hours=72)  # type: ignore[attr-defined]
+    assert out.sla_due_at == c.clock.now() + timedelta(hours=24)  # type: ignore[attr-defined]
     [row] = tickets(c)
-    assert (row["office"], row["status"], row["provisional"]) == ("it", "open", False)
+    assert (row["office"], row["status"], row["provisional"]) == ("it", "new", False)
+    assert row["clock_started_at"] == codec.iso(c.clock.now())  # P9: the SLA clock starts at creation
     assert [(e.sink, e.external_id) for e in out.external] == [("linear", f"linear-{out.ticket_id}")]  # type: ignore[attr-defined]
     assert c.repo.ticket_by_link("linear", f"linear-{out.ticket_id}").id == out.ticket_id  # type: ignore[attr-defined]
     [note] = c.notifications()
@@ -153,7 +155,7 @@ def test_the_record_sink_is_not_a_link() -> None:
 
 
 def test_booking_claims_a_slot_saves_a_case_and_emails_both() -> None:
-    c = build_test()
+    c = build_test(booking_route=True)
     _, out = act(c, Category.ACADEMIC_SUPPORT, Priority.HIGH)
     assert out.type == "booking" and out.booking is not None and out.ticket_id  # type: ignore[attr-defined]
     assert out.booking.advisor_name == c.advisor.name  # type: ignore[attr-defined]
@@ -164,10 +166,18 @@ def test_booking_claims_a_slot_saves_a_case_and_emails_both() -> None:
     assert len(claimed) == 1 and claimed[0]["booked_by"] == STUDENT_INBOX
 
 
+def test_the_academic_high_cell_is_a_plain_ticket_with_a_one_hour_clock() -> None:
+    c = build_test()
+    _, out = act(c, Category.ACADEMIC_SUPPORT, Priority.HIGH)
+    assert out.type == "ticket" and out.booking is None  # type: ignore[attr-defined]
+    assert out.sla_due_at == c.clock.now() + timedelta(hours=1)  # type: ignore[attr-defined]
+    assert c.repo.get_ticket(out.ticket_id).clock_started_at == c.clock.now()  # type: ignore[attr-defined]
+
+
 def test_a_non_allowlisted_attendee_never_reaches_the_calendar() -> None:
     slot = Slot("s1", "adv", datetime(2026, 11, 5, 10, 0), datetime(2026, 11, 5, 10, 30))
     calendar = FakeCalendar(slot=slot)
-    c = build_test(calendar=calendar, advisor_email="real.person@gju.edu.jo")
+    c = build_test(calendar=calendar, advisor_email="real.person@gju.edu.jo", booking_route=True)
     calendar.slot = Slot(
         "s1", c.advisor.id, c.clock.now() + timedelta(hours=1), c.clock.now() + timedelta(hours=2)
     )
@@ -179,7 +189,7 @@ def test_a_non_allowlisted_attendee_never_reaches_the_calendar() -> None:
 
 def test_provisional_defers_the_booking_and_finalize_fires_it() -> None:
     calendar = FakeCalendar()
-    c = build_test(calendar=calendar)
+    c = build_test(calendar=calendar, booking_route=True)
     calendar.slot = Slot(
         "s1", c.advisor.id, c.clock.now() + timedelta(hours=1), c.clock.now() + timedelta(hours=2)
     )

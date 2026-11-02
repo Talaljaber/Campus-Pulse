@@ -12,10 +12,10 @@ export interface TicketView extends TicketRow {
 }
 
 /** Statuses staff may choose. `merged` is set by the system when a ticket joins an incident. */
-export const SETTABLE_STATUSES = ["open", "in_progress", "escalated", "resolved", "closed"] as const satisfies readonly TicketStatus[];
+export const SETTABLE_STATUSES = ["new", "in_progress", "solved", "closed"] as const satisfies readonly TicketStatus[];
 
 /** Statuses that still need work. The queue shows these by default. */
-export const ACTIVE_STATUSES: ReadonlySet<string> = new Set(["open", "in_progress", "escalated"]);
+export const ACTIVE_STATUSES: ReadonlySet<string> = new Set(["new", "in_progress"]);
 
 export const isActive = (t: Pick<TicketRow, "status">): boolean => ACTIVE_STATUSES.has(t.status);
 

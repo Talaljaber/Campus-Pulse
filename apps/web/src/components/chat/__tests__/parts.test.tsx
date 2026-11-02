@@ -120,7 +120,7 @@ describe("DistressCard and Disclaimer", () => {
 describe("ChatThread items", () => {
   const items: ChatItem[] = [
     { id: "s1", role: "student", text: "hello" },
-    { id: "n1", role: "notice", notice: { type: "ticket_status", title: "Wi-Fi in M", status: "resolved" } },
+    { id: "n1", role: "notice", notice: { type: "ticket_status", title: "Wi-Fi in M", status: "solved" } },
     { id: "n2", role: "notice", notice: { type: "ticket_status", title: "", status: "in_progress" } },
     { id: "n3", role: "notice", notice: { type: "generic" } },
     { id: "e1", role: "error", kind: "session" },
@@ -130,7 +130,7 @@ describe("ChatThread items", () => {
     render(<ChatThread items={items} />);
     expect(screen.getByRole("log", { name: "Conversation" })).toBeInTheDocument();
     expect(screen.getByText("hello")).toBeInTheDocument();
-    expect(screen.getByText('Your ticket "Wi-Fi in M" is now resolved.')).toBeInTheDocument();
+    expect(screen.getByText('Your ticket "Wi-Fi in M" is now solved.')).toBeInTheDocument();
     expect(screen.getByText("Your ticket is now in progress.")).toBeInTheDocument();
     expect(screen.getByText("You have a new update on your request.")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Your session ended");

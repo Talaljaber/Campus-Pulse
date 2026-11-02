@@ -50,7 +50,7 @@ def test_permanent_errors_are_not_retried() -> None:
 
 
 def test_inbound_is_passed_through_without_retries() -> None:
-    event = InboundEvent("fake", "ext-1", TicketStatus.RESOLVED, make_ticket("r").sla_due_at)
+    event = InboundEvent("fake", "ext-1", TicketStatus.SOLVED, make_ticket("r").sla_due_at)
     inner = FakeSink(inbound=event)
     sink, _ = wrap(inner)
     assert sink.handle_inbound(b"{}", "sig") is event and inner.calls == [("handle_inbound", "sig")]

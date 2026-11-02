@@ -150,7 +150,7 @@ def test_resolve_closes_members_and_notifies_each_reporter_once(c: BackendTestCo
     assert out.incident.status == "resolved" and out.notified_reporters == 4
     assert len(out.closed_ticket_ids) == 5  # four reports + the incident ticket
     statuses = {t["id"]: t["status"] for t in tickets(c)}
-    assert statuses[listed.ticket_id] == TicketStatus.RESOLVED
+    assert statuses[listed.ticket_id] == TicketStatus.SOLVED
     assert {statuses[t] for t in listed.member_ticket_ids} == {TicketStatus.CLOSED}
     assert c.sink.calls[-1] == ("update_status", listed.ticket_id)  # the Linear issue moves to Done
     assert len(c.notifications()) - before == 4

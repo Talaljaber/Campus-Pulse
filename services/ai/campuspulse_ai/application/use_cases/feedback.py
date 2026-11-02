@@ -217,6 +217,7 @@ class FeedbackUseCase:
         """A confirmed ticket for the final labels' office (the request had none, e.g. an FAQ
         answer that a reviewer forwarded to an office)."""
         plan = self._act.plan_for(final, provisional=False)
+        now = self._clock.now()
         ticket = Ticket(
             id=str(uuid.uuid4()),
             request_id=request.id,
@@ -224,9 +225,10 @@ class FeedbackUseCase:
             office=plan.office,
             category=final.category,
             priority=final.priority,
-            status=TicketStatus.OPEN,
+            status=TicketStatus.NEW,
             provisional=False,
-            sla_due_at=self._clock.now() + timedelta(hours=plan.sla_hours),
+            sla_due_at=now + timedelta(hours=plan.sla_hours),
+            clock_started_at=now,
             title="",
             body=request.raw_text,
             tags=plan.tags,

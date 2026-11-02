@@ -349,6 +349,7 @@ class ActUseCase:
 
     def _open_ticket(self, plan: ActionPlan, ctx: _Ctx) -> Ticket:
         u = ctx.understanding
+        now = self._clock.now()
         ticket = Ticket(
             id=str(uuid.uuid4()),
             request_id=ctx.request.id,
@@ -356,9 +357,10 @@ class ActUseCase:
             office=plan.office,
             category=ctx.category,
             priority=ctx.priority,
-            status=TicketStatus.OPEN,
+            status=TicketStatus.NEW,
             provisional=ctx.provisional,
-            sla_due_at=self._clock.now() + timedelta(hours=plan.sla_hours),
+            sla_due_at=now + timedelta(hours=plan.sla_hours),
+            clock_started_at=now,
             title=u.ticket_title if u else "",
             body=u.ticket_body if u else ctx.request.raw_text,
             tags=plan.tags,

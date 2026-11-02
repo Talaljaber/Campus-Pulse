@@ -476,6 +476,9 @@ class TicketOut(_Model):
     resolved_at: datetime | None
     title: str
     links: list[ExternalRefOut]
+    clock_started_at: datetime = Field(description="Start of the running SLA period (P9).")
+    reminder_sent_at: datetime | None = Field(description="When the overdue reminder went out, if it did.")
+    awaiting_student: bool = Field(description="Staff replied and wait for the requester.")
 
 
 class MemoryWriteOut(_Model):
@@ -503,7 +506,7 @@ class FeedbackResponse(_Model):
 class TicketStatusRequest(_Model):
     """Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25)."""
 
-    status: TicketStatus
+    status: Literal["new", "in_progress", "solved", "closed"]
     note: str | None = None
 
 

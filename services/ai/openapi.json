@@ -5748,6 +5748,30 @@
             },
             "type": "array",
             "title": "Links"
+          },
+          "clock_started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Clock Started At",
+            "description": "Start of the running SLA period (P9)."
+          },
+          "reminder_sent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Sent At",
+            "description": "When the overdue reminder went out, if it did."
+          },
+          "awaiting_student": {
+            "type": "boolean",
+            "title": "Awaiting Student",
+            "description": "Staff replied and wait for the requester."
           }
         },
         "additionalProperties": false,
@@ -5765,7 +5789,10 @@
           "escalated_at",
           "resolved_at",
           "title",
-          "links"
+          "links",
+          "clock_started_at",
+          "reminder_sent_at",
+          "awaiting_student"
         ],
         "title": "TicketOut",
         "description": "A CampusPulse ticket (system of record in Supabase)."
@@ -5773,11 +5800,10 @@
       "TicketStatus": {
         "type": "string",
         "enum": [
-          "open",
+          "new",
           "in_progress",
-          "resolved",
+          "solved",
           "closed",
-          "escalated",
           "merged"
         ],
         "title": "TicketStatus"
@@ -5785,7 +5811,14 @@
       "TicketStatusRequest": {
         "properties": {
           "status": {
-            "$ref": "#/components/schemas/TicketStatus"
+            "type": "string",
+            "enum": [
+              "new",
+              "in_progress",
+              "solved",
+              "closed"
+            ],
+            "title": "Status"
           },
           "note": {
             "anyOf": [

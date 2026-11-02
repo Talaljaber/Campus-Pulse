@@ -41,12 +41,12 @@ def test_signed_state_change_resolves_the_ticket_and_tells_the_student() -> None
     issue = ticket.links[0].external_id
     raw = webhook_body(c.clock, issue)
     saved = c.sync.run("linear", raw, signature(raw))
-    assert saved is not None and saved.status == TicketStatus.RESOLVED
+    assert saved is not None and saved.status == TicketStatus.SOLVED
     stored = c.repo.get_ticket(ticket.id)
-    assert stored.status == TicketStatus.RESOLVED and stored.resolved_at is not None
+    assert stored.status == TicketStatus.SOLVED and stored.resolved_at is not None
     [note] = c.notifications()
     assert (note["alias"], note["kind"]) == (ALIAS, "ticket_status")
-    assert note["payload"] == {"ticket_id": ticket.id, "status": "resolved", "title": ticket.title}
+    assert note["payload"] == {"ticket_id": ticket.id, "status": "solved", "title": ticket.title}
     [email] = c.email.sent
     assert email.to_address == STUDENT_INBOX and "Resolved" in email.subject
     assert c.events("ticket.status")[0]["payload"]["source"] == "linear"
@@ -61,7 +61,7 @@ def test_bad_signature_is_unauthorized_and_writes_nothing(bad: str) -> None:
     raw = webhook_body(c.clock, ticket.links[0].external_id)
     with pytest.raises(Unauthorized):
         c.sync.apply_inbound("linear", raw, bad)
-    assert counts(c) == before and c.repo.get_ticket(ticket.id).status == TicketStatus.OPEN
+    assert counts(c) == before and c.repo.get_ticket(ticket.id).status == TicketStatus.NEW
 
 
 def test_stale_webhook_and_non_json_body() -> None:
@@ -114,16 +114,16 @@ def test_dashboard_change_by_other_office_staff_or_a_student_is_forbidden() -> N
     ticket = seed_ticket(c)
     for caller in (Caller("staff", "it"), Caller("staff", None), Caller("student", alias=ALIAS)):
         with pytest.raises(Unauthorized):
-            c.sync.change_status(ticket.id, TicketStatus.RESOLVED, caller)
-    assert c.repo.get_ticket(ticket.id).status == TicketStatus.OPEN and c.sink.calls == []
-    admin = c.sync.change_status(ticket.id, TicketStatus.RESOLVED, Caller("admin"))
+            c.sync.change_status(ticket.id, TicketStatus.SOLVED, caller)
+    assert c.repo.get_ticket(ticket.id).status == TicketStatus.NEW and c.sink.calls == []
+    admin = c.sync.change_status(ticket.id, TicketStatus.SOLVED, Caller("admin"))
     assert admin.changed and admin.ticket.resolved_at == c.clock.at
 
 
 def test_dashboard_reopen_clears_resolved_at_and_same_status_is_a_no_op() -> None:
     c = build_test()
-    ticket = seed_ticket(c, status=TicketStatus.RESOLVED)
-    same = c.sync.change_status(ticket.id, TicketStatus.RESOLVED, REGISTRAR)
+    ticket = seed_ticket(c, status=TicketStatus.SOLVED)
+    same = c.sync.change_status(ticket.id, TicketStatus.SOLVED, REGISTRAR)
     assert not same.changed
     c.sync.propagate(same)
     assert c.notifications() == [] and c.sink.calls == []
@@ -137,8 +137,8 @@ def test_propagation_failures_never_escape() -> None:
     sink = FakeSink(name="linear", script=[SinkError("Linear down", retryable=True)])
     c = build_test(sinks=[sink])
     ticket = seed_ticket(c)
-    saved = c.sync.from_dashboard(ticket.id, TicketStatus.RESOLVED, REGISTRAR)
-    assert saved.status == TicketStatus.RESOLVED
+    saved = c.sync.from_dashboard(ticket.id, TicketStatus.SOLVED, REGISTRAR)
+    assert saved.status == TicketStatus.SOLVED
     [link] = c.repo.get_ticket(ticket.id).links
     assert link.error == "Linear down"
     assert c.notifications()  # the student is still told

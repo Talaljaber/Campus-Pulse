@@ -41,7 +41,7 @@ from campuspulse_ai.domain.values import (
     Tier,
 )
 
-OPEN_TICKET_STATUSES = ("open", "in_progress")
+OPEN_TICKET_STATUSES = ("new", "in_progress")
 REVIEW_OFFICE_BY_CATEGORY: Mapping[str, str] = {
     "Registration": "registrar",
     "IT Support": "it",
@@ -153,7 +153,15 @@ class InMemoryRepository:
         self._fk("requests", saved.request_id)
         if saved.incident_id:
             self._fk("incidents", saved.incident_id)
-        self._upsert("tickets", saved.id, codec.ticket_row(saved))
+        row = codec.ticket_row(saved)
+        # Like the DB: clock_started_at defaults to now, requester_alias is filled from the request
+        # by a trigger on insert (never overwritten afterwards).
+        existing = self.tables["tickets"].get(saved.id)
+        prior = existing or {}
+        row.setdefault("clock_started_at", prior.get("clock_started_at") or codec.iso(self._clock.now()))
+        request_alias = self.tables["requests"][saved.request_id].get("alias")
+        row["requester_alias"] = prior.get("requester_alias") or request_alias
+        self._upsert("tickets", saved.id, row)
         links = [dataclasses.replace(link, ticket_id=saved.id) for link in saved.links]
         for link in links:
             self.save_ticket_link(link)

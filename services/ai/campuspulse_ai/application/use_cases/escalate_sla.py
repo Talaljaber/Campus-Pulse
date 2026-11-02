@@ -17,7 +17,6 @@ from campuspulse_ai.application.use_cases.sync_ticket import NOTIFICATION_KIND, 
 from campuspulse_ai.domain.entities import Ticket
 from campuspulse_ai.domain.errors import StoreError
 from campuspulse_ai.domain.ports import Repository, TicketSink
-from campuspulse_ai.domain.values import TicketStatus
 
 log = logging.getLogger(__name__)
 
@@ -28,14 +27,15 @@ TIME_FORMAT = "%Y-%m-%d %H:%M"
 
 
 class EscalateSlaUseCase:
-    """`run(now) -> list[str]`: escalate every overdue open ticket once; returns the escalated ids.
+    """`run(now) -> list[str]`: flag every overdue open ticket once; returns the flagged ids.
 
-    For each ticket from `Repository.overdue_open_tickets(now)` (status `open`/`in_progress`, SLA due
-    before `now`) that was never escalated (`escalated_at` is None):
-    - `priority.bump()` (high stays high), status `escalated`, `escalated_at = now`, saved;
-    - mirrored to the external sinks (Linear gets the new priority; `escalated` changes no state);
+    TEMPORARY until P9.4 replaces this with the reminder scanner: priority and status are no longer
+    changed. For each ticket from `Repository.overdue_open_tickets(now)` (status `new`/`in_progress`,
+    SLA due before `now`) that was never flagged (`escalated_at` is None):
+    - `escalated_at = now`, saved (priority and status unchanged);
+    - mirrored to the external sinks;
     - an in-app note for the office's staff: a `notifications` row for `office:<office>`, kind
-      `ticket_status`, `{ticket_id, status: "escalated", title, message}`;
+      `ticket_status`, `{ticket_id, status, title, message}`;
     - an `events` row `sla.escalated`.
 
     Errors: none escape. A failed scan (`StoreError`) returns [] and the next scan retries; a ticket
@@ -57,12 +57,7 @@ class EscalateSlaUseCase:
         for ticket in overdue:
             if ticket.escalated_at is not None:
                 continue  # exactly once, even if staff moved it back to in_progress
-            updated = dataclasses.replace(
-                ticket,
-                priority=ticket.priority.bump(),
-                status=TicketStatus.ESCALATED,
-                escalated_at=now,
-            )
+            updated = dataclasses.replace(ticket, escalated_at=now)
             try:
                 self._repo.save_ticket(updated)
             except StoreError as exc:
