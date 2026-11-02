@@ -68,6 +68,8 @@ function FallbackForm({ initial, busy, onCheck }: { initial: string; busy: boole
 /** Props for {@link AgentScreen}. */
 export interface AgentScreenProps {
   alias: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
   /** The signed-in role. Staff and admins use the agent too; default student. */
   role?: Role;
 }
@@ -77,7 +79,7 @@ export interface AgentScreenProps {
  * proposal card) and the student confirms; nothing is created before that. When the assistant is not
  * available it shows a plain form that uses the same card.
  */
-export function AgentScreen({ alias, role = "student" }: AgentScreenProps) {
+export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const agent = useAgent({ recorded: t("chat.agent.recorded"), declined: t("chat.agent.declined") });
@@ -90,7 +92,7 @@ export function AgentScreen({ alias, role = "student" }: AgentScreenProps) {
   }, [count, agent.proposal]);
 
   return (
-    <AppShell role={role} current="ask" alias={alias} width="narrow">
+    <AppShell role={role} current="ask" name={name} alias={alias} width="narrow">
       <PageHeader title={t("chat.title")} subtitle={t("app.tagline")} />
       <p className="rounded-md bg-surface-2 px-3 py-2 text-sm text-fg-2">{t("chat.agent.demo")}</p>
 

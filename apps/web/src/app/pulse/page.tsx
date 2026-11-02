@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { PulseScreen } from "@/components/pulse/PulseScreen";
-import { fetchProfile } from "@/lib/auth/profile";
+import { fetchProfile, nameOf } from "@/lib/auth/profile";
 import { homeFor } from "@/lib/auth/routing";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -15,5 +15,5 @@ export default async function PulsePage() {
   const profile = await fetchProfile(sb, data.user.id);
   if (!profile) redirect("/login");
   if (profile.role === "student") redirect(homeFor(profile.role));
-  return <PulseScreen role={profile.role} alias={profile.alias} />;
+  return <PulseScreen role={profile.role} alias={profile.alias} name={nameOf(profile)} />;
 }

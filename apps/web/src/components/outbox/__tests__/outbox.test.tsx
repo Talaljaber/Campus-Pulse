@@ -108,6 +108,13 @@ describe("OutboxScreen", () => {
     expect(m.list).toHaveBeenCalledWith(expect.anything(), { limit: 200 });
   });
 
+  it("greets by display name in the header, not the alias", async () => {
+    render(<OutboxScreen role="staff" alias="staff-it-1" name="Omar Nasser" />);
+    await screen.findByRole("table");
+    expect(screen.getByText("Hello Omar Nasser")).toBeInTheDocument();
+    expect(screen.queryByText("Hello staff-it-1")).not.toBeInTheDocument();
+  });
+
   it("filters to one status and offers a way back when none match", async () => {
     render(<OutboxScreen role="admin" />);
     await screen.findByRole("table");

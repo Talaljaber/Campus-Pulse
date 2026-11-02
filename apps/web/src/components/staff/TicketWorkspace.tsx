@@ -30,6 +30,8 @@ export interface TicketWorkspaceProps {
   ticketId: string;
   role: "staff" | "admin";
   alias: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
 }
 
 /**
@@ -37,7 +39,7 @@ export interface TicketWorkspaceProps {
  * reply box, and a side panel to change status, forward and change priority. Reads go to Supabase under
  * row-level security; every write goes through the AI service, whose message is shown when it refuses.
  */
-export function TicketWorkspace({ ticketId, role, alias }: TicketWorkspaceProps) {
+export function TicketWorkspace({ ticketId, role, alias, name }: TicketWorkspaceProps) {
   const t = useT();
   const { lang } = useLang();
   const toast = useToast();
@@ -67,7 +69,7 @@ export function TicketWorkspace({ ticketId, role, alias }: TicketWorkspaceProps)
   ];
 
   return (
-    <AppShell role={role} current="queue" alias={alias} crumbs={crumbs}>
+    <AppShell role={role} current="queue" name={name} alias={alias} crumbs={crumbs}>
       <Loadable state={thread.load === "notfound" ? "ready" : thread.load} onRetry={thread.reload}>
         {thread.load === "notfound" || !ticket ? (
           <p role="alert" className="rounded-lg border border-dashed border-line-strong p-6 text-center text-fg-2">

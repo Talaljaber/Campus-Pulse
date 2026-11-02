@@ -25,6 +25,8 @@ export interface RequestScreenProps {
   ticketId: string;
   role: Role;
   alias: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
 }
 
 const ACTION_TOAST: Record<StudentAction, DictKey> = {
@@ -34,7 +36,7 @@ const ACTION_TOAST: Record<StudentAction, DictKey> = {
 };
 
 /** `/requests/[id]`: one of my own requests: the text, the department, the status, the thread, a message box and the answer buttons. */
-export function RequestScreen({ ticketId, role, alias }: RequestScreenProps) {
+export function RequestScreen({ ticketId, role, alias, name }: RequestScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const toast = useToast();
@@ -62,7 +64,7 @@ export function RequestScreen({ ticketId, role, alias }: RequestScreenProps) {
   ];
 
   return (
-    <AppShell role={role} current="requests" alias={alias} crumbs={crumbs}>
+    <AppShell role={role} current="requests" name={name} alias={alias} crumbs={crumbs}>
       <Loadable state={thread.load === "notfound" ? "ready" : thread.load} onRetry={thread.reload}>
         {thread.load === "notfound" || !ticket ? (
           <p role="alert" className="rounded-lg border border-dashed border-line-strong p-6 text-center text-fg-2">

@@ -27,6 +27,8 @@ import { ReviewQueue } from "./ReviewQueue";
 export interface AdvisorScreenProps {
   role: "staff" | "admin";
   alias?: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
   office: string | null;
 }
 
@@ -38,7 +40,7 @@ const ID_BASE = "advisor";
  * list and the detail panel come from `GET /v1/reviews`. A `review_assigned` notification shows a
  * toast and re-reads the list.
  */
-export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps) {
+export function AdvisorScreen({ role, alias = null, name = null, office }: AdvisorScreenProps) {
   const t = useT();
   const toast = useToast();
   const noticeText = useNoticeText();
@@ -79,7 +81,7 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
   };
 
   return (
-    <AppShell role={role} current="corrections" alias={alias}>
+    <AppShell role={role} current="corrections" name={name} alias={alias}>
       <PageHeader
         title={t("advisor.title")}
         badges={

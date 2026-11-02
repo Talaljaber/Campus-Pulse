@@ -21,10 +21,12 @@ import { Select } from "../ui/Select";
 export interface MyRequestsScreenProps {
   role: Role;
   alias: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
 }
 
 /** `/requests`: the tickets the signed-in person opened, for students and for staff. A row opens `/requests/[id]`. */
-export function MyRequestsScreen({ role, alias }: MyRequestsScreenProps) {
+export function MyRequestsScreen({ role, alias, name }: MyRequestsScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const router = useRouter();
@@ -67,7 +69,7 @@ export function MyRequestsScreen({ role, alias }: MyRequestsScreenProps) {
   ];
 
   return (
-    <AppShell role={role} current="requests" alias={alias}>
+    <AppShell role={role} current="requests" name={name} alias={alias}>
       <PageHeader title={t("nav.requests")} />
       <div>
         <Badge tone="info" icon="info">

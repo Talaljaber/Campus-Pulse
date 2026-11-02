@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { LabScreen } from "@/components/lab/LabScreen";
-import { fetchProfile } from "@/lib/auth/profile";
+import { fetchProfile, nameOf } from "@/lib/auth/profile";
 import { homeFor } from "@/lib/auth/routing";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -16,5 +16,5 @@ export default async function LabPage() {
   const profile = await fetchProfile(sb, data.user.id);
   if (!profile) redirect("/login");
   if (profile.role !== "admin") redirect(homeFor(profile.role));
-  return <LabScreen alias={profile.alias} />;
+  return <LabScreen alias={profile.alias} name={nameOf(profile)} />;
 }

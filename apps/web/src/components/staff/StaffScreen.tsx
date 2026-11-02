@@ -30,6 +30,8 @@ export interface StaffScreenProps {
   role: "staff" | "admin";
   /** The signed-in user's alias: the greeting, and the requests that are hidden from this queue. */
   alias?: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
   /** The staff member's office code (D-005). Null for an admin, who sees every office. */
   office: string | null;
 }
@@ -43,7 +45,7 @@ const NO_CLOCK = 8.64e15;
  * an admin). A row opens the ticket workspace. Which rows appear is decided by row-level security; the
  * only filter applied here is hiding the viewer's own requests.
  */
-export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
+export function StaffScreen({ role, alias = null, name = null, office }: StaffScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const router = useRouter();
@@ -107,7 +109,7 @@ export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
   ];
 
   return (
-    <AppShell role={role} current="queue" alias={alias}>
+    <AppShell role={role} current="queue" name={name} alias={alias}>
       <PageHeader
         title={t("staff.title")}
         badges={
