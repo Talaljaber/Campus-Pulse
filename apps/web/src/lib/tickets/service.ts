@@ -1,7 +1,7 @@
 import { callAi } from "@/lib/ai/browser";
 import type { AiFail, AiResult } from "@/lib/ai/result";
 import type { TicketOut } from "@/lib/ai/types";
-import type { CommentRequest, CommentResponse, PriorityRequest } from "./types";
+import type { CommentRequest, CommentResponse, PriorityRequest, StudentActionRequest } from "./types";
 
 const base = (id: string) => `tickets/${encodeURIComponent(id)}`;
 
@@ -24,6 +24,11 @@ export function postPriority(ticketId: string, req: PriorityRequest): Promise<Ai
     method: "POST",
     body: { priority: req.priority, note: req.note?.trim() || null },
   });
+}
+
+/** `POST /v1/tickets/{id}/student-action`: the requester answers "solved", "close" or "keep open". */
+export function postStudentAction(ticketId: string, req: StudentActionRequest): Promise<AiResult<TicketOut>> {
+  return callAi<TicketOut>(`${base(ticketId)}/student-action`, { method: "POST", body: { action: req.action } });
 }
 
 /**

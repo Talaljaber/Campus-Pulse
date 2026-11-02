@@ -28,6 +28,20 @@ async function listVisibleTickets(sb: Sb): Promise<TicketRow[]> {
   return unwrap(await sb.from("tickets").select("*").order("sla_due_at", { ascending: true, nullsFirst: false }));
 }
 
+/** The tickets a requester opened themselves, newest first (RLS decides what the caller may read; the filter picks "mine"). */
+export async function listMyTickets(sb: Sb, alias: string): Promise<TicketRow[]> {
+  return unwrap(await sb.from("tickets").select("*").eq("requester_alias", alias).order("created_at", { ascending: false }));
+}
+
+/** The time of the latest visible thread row per ticket (internal rows are hidden from a requester by RLS). */
+export async function listLastActivity(sb: Sb, ticketIds: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (ticketIds.length === 0) return out;
+  const rows = unwrap(await sb.from("ticket_activity").select("ticket_id, created_at").in("ticket_id", ticketIds).order("created_at", { ascending: false }));
+  for (const r of rows as { ticket_id: string; created_at: string }[]) if (!out.has(r.ticket_id)) out.set(r.ticket_id, r.created_at);
+  return out;
+}
+
 /** The tickets opened for one request (a student sees their own by RLS). */
 export async function listTicketsForRequest(sb: Sb, requestId: string): Promise<TicketRow[]> {
   return unwrap(await sb.from("tickets").select("*").eq("request_id", requestId).order("created_at", { ascending: true }));
