@@ -1,5 +1,6 @@
 "use client";
 
+import { useFileOpener } from "@/hooks/useFileOpener";
 import { useMyTicket } from "@/hooks/useMyTicket";
 import { useLang, useT, type DictKey } from "@/i18n";
 import type { AiFail } from "@/lib/ai/result";
@@ -39,6 +40,7 @@ export function RequestScreen({ ticketId, role, alias }: RequestScreenProps) {
   const toast = useToast();
   const officeLabel = useOfficeLabel();
   const thread = useMyTicket(ticketId, alias);
+  const openFile = useFileOpener();
   const ticket = thread.ticket;
   const number = ticketNumber(ticketId);
 
@@ -97,7 +99,7 @@ export function RequestScreen({ ticketId, role, alias }: RequestScreenProps) {
             </Card>
             <Card title={t("workspace.thread")}>
               <div className="flex flex-col gap-4">
-                <TicketThread activity={thread.activity} viewer="requester" />
+                <TicketThread activity={thread.activity} viewer="requester" files={thread.files} onOpenFile={openFile} />
                 <StudentActions
                   ticket={ticket}
                   busy={thread.busy}
@@ -107,7 +109,8 @@ export function RequestScreen({ ticketId, role, alias }: RequestScreenProps) {
                   <RequesterReply
                     busy={thread.busy}
                     reopens={messageReopens(ticket.status)}
-                    onSend={(body) => settle(thread.comment(body), t("myRequests.toast.sent"))}
+                    files={thread.files}
+                    onSend={(body, picked) => settle(picked ? thread.comment(body, picked) : thread.comment(body), t("myRequests.toast.sent"))}
                   />
                 )}
               </div>

@@ -27,6 +27,8 @@ describe("matchAllowed", () => {
     ["POST", ["admin", "reindex"]],
     ["POST", ["announcements"]],
     ["POST", ["announcements", ID, "archive"]],
+    ["POST", ["tickets", ID, "files"]],
+    ["GET", ["files", ID, "link"]],
   ])("allows %s %j", (method, segments) => {
     expect(matchAllowed(method, segments)).not.toBeNull();
   });
@@ -60,6 +62,11 @@ describe("matchAllowed", () => {
     ["GET", ["announcements", ID, "archive"]],
     ["POST", ["announcements", "..", "archive"]],
     ["POST", ["announcements", ID, "delete"]],
+    ["GET", ["tickets", ID, "files"]],
+    ["POST", ["files", ID, "link"]],
+    ["GET", ["files"]],
+    ["GET", ["files", "..", "link"]],
+    ["POST", ["tickets", ID, "files", "x"]],
   ])("rejects %s %j", (method, segments) => {
     expect(matchAllowed(method, segments)).toBeNull();
   });

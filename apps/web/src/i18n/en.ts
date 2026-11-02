@@ -1013,6 +1013,27 @@ export const en = {
     mapSelected: "Selected building: {code}",
     mapNone: "No building selected",
   },
+  files: {
+    notice: "Demo: use sample files only, no real documents.",
+    attach: "Attach files",
+    hint: "Images, PDF, Word, Excel, PowerPoint or plain text. Up to 5 MB each.",
+    picked: "Files to send",
+    remove: "Remove file {name}",
+    staffOnly: "Staff only",
+    staffOnlyHint: "Files sent with an internal note are only visible to staff.",
+    label: "Files",
+    loose: "Files not in a message",
+    open: "Open {kind} file, {size}",
+    error: {
+      type: "This file type is not allowed. Use an image, PDF, Word, Excel, PowerPoint or plain text file.",
+      size: "This file is larger than 5 MB.",
+      empty: "This file is empty.",
+      count: "A request can hold at most 5 files.",
+      total: "A request can hold at most 15 MB of files.",
+      upload: "The file could not be uploaded. Try again.",
+      open: "The file could not be opened. Try again.",
+    },
+  },
 };
 
 export type Dict = typeof en;
