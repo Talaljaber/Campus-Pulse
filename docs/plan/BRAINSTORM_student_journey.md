@@ -193,3 +193,24 @@ Plain, humane, short, bilingual where the student's language is known. Every tem
 3. **Hours are calendar hours:** no office hours. A day is 24 hours.
 4. **Staff can change a ticket's priority** (good point, accepted). The clock changes to the new priority's period: high 1 hour, medium 24 hours, low 48 hours.
 - Readings to confirm with the planner: (a) when staff change the priority, the new period counts from the moment of the change; (b) a staff "solved" status with no student answer yet keeps the ticket waiting for the student, and the reminder logic treats "waiting for student" as not overdue for staff but sends the student a gentle nudge after 48 hours, then the ticket closes itself after a further 48 hours (an auto-close rule that the user has not asked for, so it stays off unless confirmed).
+
+## 20. UI direction: a university-portal look (user, 2026-11-02)
+
+The user shared two screenshots of the real university student portal (login page and the Academic Affairs page) and asked for the UI to follow the university's theme: professional, nothing childish. The screenshots are not stored in the repo (the login one shows a real username).
+
+What the portal looks like (read off the screenshots, colours estimated by eye):
+- Light grey page background with one centred white container (about 1000 px wide) and a soft shadow; header band at the top, dark grey footer band at the bottom.
+- Palette: a mid blue (about #1F8AC9) for links, labels, active tab and buttons, an orange (about #F5A623) for accents and notices, greys for text and borders, white surfaces. Inputs have a pale blue tint; buttons are solid blue.
+- Login: one centred card with bold blue labels, username and password fields, and two buttons, "log in as student" and "log in as staff", plus an orange line asking for the university email.
+- After login: "Hello <name>" at the top left, small utility links at the top right (Help, Calendar, language switch, Logout); a row of top-level tabs (Profile, Academic Affairs, Financial Affairs, Registration, Clearance); under it a row of icon tiles for the sub-areas; a grey breadcrumb; then dense, form-like content in bordered groups with a single Search button.
+- Overall feel: plain, dense, functional, serious. No gradients except subtle button shading, no illustrations, no emoji, no rounded playful shapes.
+
+How we apply it (inspired by it, not copied):
+- **We do not use the university's logo, the portal's name, or its Arabic name as branding**, and the app must not look like it claims to be the official portal (project rule and the rule that the tool never claims to contact a real department). We use our own plain "CampusPulse" wordmark and a visible "Demo: simulated portal, not the official university system" line in the footer or header.
+- Re-skin through the existing `--cp-*` tokens (blue, orange accent, greys, white surface, grey page background, dark grey footer), not by rewriting components.
+- App shell shared by all pages: header band (wordmark, "Hello <name>", Help, language switch EN/AR with RTL, Logout), a top tab bar, an optional second row of icon tiles, a breadcrumb line, a content area in a bordered container, a dark grey footer with the demo line.
+- Student tabs: Home (welcome and announcements), Ask (the chat agent), My Requests, Profile. Staff tabs: Queue (deadline, time left, overdue columns in a real table), Announcements, Incidents (Pulse), Corrections. Admin adds Accounts and Reports.
+- Login page: one centred card, student and staff buttons, simulated university login note.
+- Staff queue as a dense table (sortable columns, filters in a bordered "Filtering criteria" group), not cards. Status and priority shown as small plain labels, no decorative badges.
+- Typography and spacing: one sans-serif family that supports Arabic, 14 to 15 px body, restrained headings, 8 px spacing grid, WCAG AA contrast, full keyboard access, visible focus rings.
+- Icons: one simple line-icon set, small, only for the tab tiles and utility links.
