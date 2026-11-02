@@ -3,6 +3,7 @@
 import type { AiFail } from "@/lib/ai/result";
 import { useT, type DictKey, labelOf, useLang } from "@/i18n";
 import { useTicketDetail } from "@/hooks/useTicketDetail";
+import { useFileOpener } from "@/hooks/useFileOpener";
 import { useTicketThread } from "@/hooks/useTicketThread";
 import { formatDateTime } from "@/lib/time";
 import { isRunning, timeLeft } from "@/lib/tickets/clock";
@@ -43,6 +44,7 @@ export function TicketWorkspace({ ticketId, role, alias }: TicketWorkspaceProps)
   const officeLabel = useOfficeLabel();
   const clock = useNow();
   const thread = useTicketThread(ticketId, alias);
+  const openFile = useFileOpener();
   const ticket = thread.ticket;
   const detail = useTicketDetail(ticket?.request_id ?? null);
   const number = ticketNumber(ticketId);
@@ -108,13 +110,14 @@ export function TicketWorkspace({ ticketId, role, alias }: TicketWorkspaceProps)
                 </Card>
                 <Card title={t("workspace.thread")}>
                   <div className="flex flex-col gap-4">
-                    <TicketThread activity={thread.activity} viewer="staff" />
+                    <TicketThread activity={thread.activity} viewer="staff" files={thread.files} onOpenFile={openFile} />
                     {ticket.status !== "merged" && (
                       <ReplyBox
                         busy={thread.busy}
                         statusOptions={staffStatusOptions(ticket.status)}
                         publicAllowed={isRunning(ticket.status)}
-                        onSend={(req) => settle(thread.comment(req), t(req.internal ? "reply.noteSaved" : "reply.sent"))}
+                        files={thread.files}
+                        onSend={(req, picked) => settle(picked ? thread.comment(req, picked) : thread.comment(req), t(req.internal ? "reply.noteSaved" : "reply.sent"))}
                       />
                     )}
                   </div>

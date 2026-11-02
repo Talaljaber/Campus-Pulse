@@ -7,6 +7,8 @@ from datetime import datetime
 from enum import StrEnum
 
 TICKET_NUMBER_LENGTH = 8
+MAX_FILE_BYTES = 5 * 1024 * 1024
+"""Largest ticket file (migration 0015 `size_bytes` check and bucket `file_size_limit`)."""
 
 
 def ticket_number(ticket_id: str) -> str:
@@ -71,6 +73,26 @@ class TicketActivity:
     to_office: str | None = None
     from_priority: str | None = None
     to_priority: str | None = None
+    id: str = ""
+
+
+@dataclass(frozen=True)
+class TicketFile:
+    """One file on a ticket (`ticket_files`, migration 0015). `id` is "" until the store saved it.
+
+    `storage_path` is generated (`tickets/<ticket_id>/<uuid4>.<ext>`); the original filename is never kept.
+    """
+
+    ticket_id: str
+    uploader_role: str  # student, staff or admin
+    visibility: Visibility
+    storage_path: str
+    mime: str
+    size_bytes: int
+    ext: str
+    created_at: datetime
+    uploader_alias: str | None = None
+    activity_id: str | None = None
     id: str = ""
 
 

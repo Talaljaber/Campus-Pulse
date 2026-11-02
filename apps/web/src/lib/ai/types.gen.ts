@@ -564,6 +564,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tickets/{ticket_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach a file to a ticket
+         * @description Multipart upload (`file`, `internal`, optional `activity_id`). The requester (public files only), staff of the ticket's office and admins may upload. The type is decided by the file's bytes (PNG, JPEG, WEBP, PDF, Word, Excel, PowerPoint, plain text); a name or type that claims something else is refused. Caps: 5 MB per file, 5 files and 15 MB per ticket. The original filename is not stored. Send the returned id in `file_ids` of a comment to attach it to that message. No virus scan (demo; use sample files only).
+         */
+        post: operations["ticket_file_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/files/{file_id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a signed link to a file
+         * @description A link that opens the file for 60 seconds. Who may read the file row may get a link: the requester (public files only), staff of the ticket's office, an admin. Images and PDFs open in a tab; other types download.
+         */
+        get: operations["file_link"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -796,6 +836,21 @@ export interface components {
              */
             use_llm: boolean;
         };
+        /** Body_ticket_file_upload */
+        Body_ticket_file_upload: {
+            /**
+             * File
+             * @description The file (5 MB at most).
+             */
+            file: string;
+            /**
+             * Internal
+             * @default false
+             */
+            internal: boolean;
+            /** Activity Id */
+            activity_id?: string | null;
+        };
         /**
          * BookingOut
          * @description An advisor slot booked for Academic Support x high (UD-1). Advisors are fictional.
@@ -1005,6 +1060,11 @@ export interface components {
             internal: boolean;
             /** Status */
             status?: ("in_progress" | "solved" | "closed") | null;
+            /**
+             * File Ids
+             * @description Files the caller already uploaded to this ticket (`ticket_file_upload`).
+             */
+            file_ids?: string[];
         };
         /**
          * ConfusionOut
@@ -1264,6 +1324,42 @@ export interface components {
             actions: components["schemas"]["ActionOut"][];
             /** Message */
             message: string;
+        };
+        /**
+         * FileLinkOut
+         * @description A signed link to open one file: valid for `expires_in` seconds (60), then it stops working.
+         */
+        FileLinkOut: {
+            /** Url */
+            url: string;
+            /** Expires In */
+            expires_in: number;
+        };
+        /**
+         * FileOut
+         * @description One file on a ticket (a row of `ticket_files`, without its storage path or the original name).
+         */
+        FileOut: {
+            /** Id */
+            id: string;
+            /** Ticket Id */
+            ticket_id: string;
+            /** Mime */
+            mime: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Ext */
+            ext: string;
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "public" | "internal";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * ForwardRequest
@@ -4228,6 +4324,180 @@ export interface operations {
                 };
             };
             /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ticket_file_upload: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_ticket_file_upload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    file_link: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileLinkOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
             503: {
                 headers: {
                     [name: string]: unknown;

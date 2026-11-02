@@ -41,6 +41,7 @@ from campuspulse_ai.frameworks.routes import (
     chat,
     explain,
     feedback,
+    files,
     health,
     incidents,
     integrations,
@@ -70,6 +71,7 @@ _ROUTERS = (
     health.router,
     announcements.router,
     chat.router,
+    files.router,
 )
 _ORDER = {e.op_id: i for i, e in enumerate(ENDPOINTS)}
 

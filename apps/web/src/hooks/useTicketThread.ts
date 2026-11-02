@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AiFail, AiResult } from "@/lib/ai/result";
 import type { TicketOut } from "@/lib/ai/types";
+import { uploadAll, type UploadedCache } from "@/lib/files/send";
+import type { FileRow } from "@/lib/files/types";
+import { listFilesSafe } from "@/lib/repos/files";
 import { getTicket, listActivity, subscribeActivity, subscribeTicket, type TicketRow } from "@/lib/repos/tickets";
 import { forwardTicket } from "@/lib/staff/service";
 import { applyForward, applyTicketOut } from "@/lib/staff/tickets";
@@ -26,6 +29,8 @@ export function mergeActivity(list: readonly ActivityRow[], row: ActivityRow): A
 export function useTicketThread(ticketId: string, myAlias: string | null) {
   const [ticket, setTicket] = useState<TicketRow | null>(null);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [files, setFiles] = useState<FileRow[]>([]);
+  const uploaded = useRef<UploadedCache>(new Map());
   const [load, setLoad] = useState<ThreadLoad>("loading");
   const [busy, setBusy] = useState(false);
   const [nonce, setNonce] = useState(0);
@@ -38,7 +43,7 @@ export function useTicketThread(ticketId: string, myAlias: string | null) {
       const sb = createBrowserSupabase();
       (async () => {
         try {
-          const [row, rows] = await Promise.all([getTicket(sb, ticketId), listActivity(sb, ticketId)]);
+          const [row, rows, fileRows] = await Promise.all([getTicket(sb, ticketId), listActivity(sb, ticketId), listFilesSafe(sb, ticketId)]);
           if (!live) return;
           if (!row || (myAlias && row.requester_alias === myAlias)) {
             setLoad("notfound");
@@ -46,6 +51,7 @@ export function useTicketThread(ticketId: string, myAlias: string | null) {
           }
           setTicket(row);
           setActivity(rows);
+          setFiles(fileRows);
           setLoad("ready");
         } catch {
           if (live) setLoad("error");
@@ -86,16 +92,45 @@ export function useTicketThread(ticketId: string, myAlias: string | null) {
     return { ok: true };
   }, []);
 
+  const refreshFiles = useCallback(async () => {
+    try {
+      setFiles(await listFilesSafe(createBrowserSupabase(), ticketId));
+    } catch {
+      // Files are an extra; the thread stays usable.
+    }
+  }, [ticketId]);
+
+  /**
+   * A reply or note, with optional picked files: they are uploaded first (visibility follows `req.internal`),
+   * then sent as `file_ids` of the comment. A failed upload is returned and no comment is sent.
+   */
   const comment = useCallback(
-    (req: CommentRequest) =>
-      run<CommentResponse>(
-        () => postComment(ticketId, req),
+    async (req: CommentRequest, picked: readonly File[] = []): Promise<{ ok: true } | AiFail> => {
+      let ids: string[] | undefined;
+      if (picked.length > 0) {
+        setBusy(true);
+        const up = await uploadAll(ticketId, picked, req.internal, uploaded.current);
+        setBusy(false);
+        if (!up.ok) {
+          void refreshFiles();
+          return up;
+        }
+        ids = up.rows.map((r) => r.id);
+      }
+      const res = await run<CommentResponse>(
+        () => postComment(ticketId, ids ? { ...req, file_ids: ids } : req),
         (data) => {
           setTicket((cur) => (cur ? applyTicketOut(cur, data.ticket) : cur));
           setActivity((cur) => mergeActivity(cur, data.activity));
         },
-      ),
-    [run, ticketId],
+      );
+      if (ids) {
+        if (res.ok) uploaded.current.clear();
+        void refreshFiles();
+      }
+      return res;
+    },
+    [run, ticketId, refreshFiles],
   );
 
   const changeStatus = useCallback(
@@ -134,5 +169,5 @@ export function useTicketThread(ticketId: string, myAlias: string | null) {
     [run, ticketId, refreshActivity],
   );
 
-  return { ticket, activity, load, busy, reload, comment, changeStatus, forward, changePriority };
+  return { ticket, activity, files, load, busy, reload, comment, changeStatus, forward, changePriority };
 }

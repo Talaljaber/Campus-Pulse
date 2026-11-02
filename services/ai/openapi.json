@@ -4862,6 +4862,388 @@
         ],
         "x-optional": false
       }
+    },
+    "/v1/tickets/{ticket_id}/files": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Attach a file to a ticket",
+        "description": "Multipart upload (`file`, `internal`, optional `activity_id`). The requester (public files only), staff of the ticket's office and admins may upload. The type is decided by the file's bytes (PNG, JPEG, WEBP, PDF, Word, Excel, PowerPoint, plain text); a name or type that claims something else is refused. Caps: 5 MB per file, 5 files and 15 MB per ticket. The original filename is not stored. Send the returned id in `file_ids` of a comment to attach it to that message. No virus scan (demo; use sample files only).",
+        "operationId": "ticket_file_upload",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ticket_file_upload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "student",
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "stores the bytes in the private `ticket-files` bucket under a generated path and inserts a `ticket_files` row"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/files/{file_id}/link": {
+      "get": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Get a signed link to a file",
+        "description": "A link that opens the file for 60 seconds. Who may read the file row may get a link: the requester (public files only), staff of the ticket's office, an admin. Images and PDFs open in a tab; other types download.",
+        "operationId": "file_link",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileLinkOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "student",
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (the link is signed, nothing is written)"
+        ],
+        "x-optional": false
+      }
     }
   },
   "components": {
@@ -5515,6 +5897,37 @@
         ],
         "title": "Body_batch"
       },
+      "Body_ticket_file_upload": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The file (5 MB at most)."
+          },
+          "internal": {
+            "type": "boolean",
+            "title": "Internal",
+            "default": false
+          },
+          "activity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_ticket_file_upload"
+      },
       "BookingOut": {
         "properties": {
           "advisor_name": {
@@ -6004,6 +6417,15 @@
               }
             ],
             "title": "Status"
+          },
+          "file_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "File Ids",
+            "description": "Files the caller already uploaded to this ticket (`ticket_file_upload`)."
           }
         },
         "additionalProperties": false,
@@ -6702,6 +7124,76 @@
         ],
         "title": "FeedbackResponse",
         "description": "Result of `POST /v1/feedback`."
+      },
+      "FileLinkOut": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "url",
+          "expires_in"
+        ],
+        "title": "FileLinkOut",
+        "description": "A signed link to open one file: valid for `expires_in` seconds (60), then it stops working."
+      },
+      "FileOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "ticket_id": {
+            "type": "string",
+            "title": "Ticket Id"
+          },
+          "mime": {
+            "type": "string",
+            "title": "Mime"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "ext": {
+            "type": "string",
+            "title": "Ext"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal"
+            ],
+            "title": "Visibility"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "ticket_id",
+          "mime",
+          "size_bytes",
+          "ext",
+          "visibility",
+          "created_at"
+        ],
+        "title": "FileOut",
+        "description": "One file on a ticket (a row of `ticket_files`, without its storage path or the original name)."
       },
       "ForwardRequest": {
         "properties": {

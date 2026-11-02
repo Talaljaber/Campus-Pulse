@@ -3,17 +3,23 @@
 import type { ReactNode } from "react";
 import { labelOf, useLang, useT, type DictKey } from "@/i18n";
 import { formatDateTime } from "@/lib/time";
+import type { FileRow } from "@/lib/files/types";
 import type { ActivityRow } from "@/lib/tickets/types";
 import { textDir } from "../explain/text";
 import { useOfficeLabel } from "../staff/office";
 import { Badge } from "../ui/Badge";
 import { cn } from "../ui/cn";
+import { FileChips } from "./FileChips";
 
 /** Props for {@link TicketThread}. */
 export interface TicketThreadProps {
   activity: readonly ActivityRow[];
   /** Who is looking. A requester never sees internal rows, even if one reaches the client. */
   viewer: "staff" | "requester";
+  /** The ticket's files (P9.10); each shows as a chip under its message. */
+  files?: readonly FileRow[];
+  /** Opens one file through a signed link (chips are inert without it). */
+  onOpenFile?: (fileId: string) => Promise<void> | void;
 }
 
 const isInternal = (r: ActivityRow) => r.visibility === "internal" || r.kind === "note" || r.kind === "reminder";
@@ -23,20 +29,32 @@ const isInternal = (r: ActivityRow) => r.visibility === "internal" || r.kind ===
  * changes, requester actions and reminders. Shared by the staff workspace and the requester's page
  * (viewer `requester` filters internal rows out defensively; the database already hides them).
  */
-export function TicketThread({ activity, viewer }: TicketThreadProps) {
+export function TicketThread({ activity, viewer, files = [], onOpenFile }: TicketThreadProps) {
   const t = useT();
   const rows = viewer === "requester" ? activity.filter((r) => !isInternal(r)) : activity;
+  // A requester never sees a staff-only file, even if one reached the client (RLS already hides it).
+  const visible = viewer === "requester" ? files.filter((f) => f.visibility === "public") : files;
+  const ids = new Set(rows.map((r) => r.id));
+  const loose = visible.filter((f) => !f.activity_id || !ids.has(f.activity_id));
   if (rows.length === 0) return <p className="text-sm text-fg-2">{t("ticketThread.empty")}</p>;
   return (
-    <ol aria-label={t("ticketThread.label")} className="flex flex-col gap-3">
-      {rows.map((r) => (
-        <ThreadItem key={r.id} row={r} />
-      ))}
-    </ol>
+    <>
+      <ol aria-label={t("ticketThread.label")} className="flex flex-col gap-3">
+        {rows.map((r) => (
+          <ThreadItem key={r.id} row={r} files={visible.filter((f) => f.activity_id === r.id)} onOpenFile={onOpenFile} />
+        ))}
+      </ol>
+      {loose.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <p className="text-sm font-bold text-fg-2">{t("files.loose")}</p>
+          <FileChips files={loose} onOpen={onOpenFile} />
+        </div>
+      )}
+    </>
   );
 }
 
-function ThreadItem({ row }: { row: ActivityRow }) {
+function ThreadItem({ row, files, onOpenFile }: { row: ActivityRow; files: readonly FileRow[]; onOpenFile?: (fileId: string) => Promise<void> | void }) {
   const t = useT();
   const { lang } = useLang();
   const officeLabel = useOfficeLabel();
@@ -106,6 +124,7 @@ function ThreadItem({ row }: { row: ActivityRow }) {
           {row.body}
         </p>
       )}
+      <FileChips files={files} onOpen={onOpenFile} />
     </li>
   );
 }

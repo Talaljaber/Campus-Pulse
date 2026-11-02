@@ -364,6 +364,26 @@ def build_router(store: FixtureStore) -> APIRouter:
         """Confirm a proposal (fixture-backed)."""
         return _respond(store.pick("chat_confirm", request, body.model_dump(mode="json")))
 
+    # --- P9.10 ticket files (append new routes below this line, in ENDPOINTS order) ---
+
+    @router.api_route(
+        **route_kwargs("ticket_file_upload"), dependencies=[Depends(_guard("ticket_file_upload"))]
+    )
+    def ticket_file_upload(
+        ticket_id: str,
+        file: Annotated[UploadFile, File(description="The file (5 MB at most).")],
+        request: Request,
+        internal: Annotated[bool, Form()] = False,
+        activity_id: Annotated[str | None, Form()] = None,
+    ) -> Any:
+        """Attach a file to a ticket (fixture-backed)."""
+        return _respond(store.pick("ticket_file_upload", request, None))
+
+    @router.api_route(**route_kwargs("file_link"), dependencies=[Depends(_guard("file_link"))])
+    def file_link(file_id: str, request: Request) -> Any:
+        """Signed link to a file (fixture-backed)."""
+        return _respond(store.pick("file_link", request, None))
+
     return router
 
 

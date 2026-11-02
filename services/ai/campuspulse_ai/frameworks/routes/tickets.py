@@ -121,7 +121,7 @@ def ticket_comment(
     if services.lifecycle is None:
         raise not_wired("ticket comments")
     status = TicketStatus(body.status) if body.status else None
-    change = services.lifecycle.comment(ticket_id, caller, body.body, body.internal, status)
+    change = services.lifecycle.comment(ticket_id, caller, body.body, body.internal, status, body.file_ids)
     background.add_task(services.lifecycle.deliver, change)
     assert change.activity is not None  # a comment always writes a thread row
     return TicketThreadOut(ticket=ticket_out(change.ticket), activity=activity_out(change.activity))

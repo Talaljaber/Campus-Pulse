@@ -3,8 +3,10 @@
 import { useState, type FormEvent } from "react";
 import { useT, type DictKey } from "@/i18n";
 import type { StaffStatus } from "@/lib/tickets/transitions";
+import type { FileRow } from "@/lib/files/types";
 import type { CommentRequest } from "@/lib/tickets/types";
 import { Button } from "../ui/Button";
+import { FilePicker } from "./FilePicker";
 import { Select } from "../ui/Select";
 import { TextArea } from "../ui/TextField";
 
@@ -12,8 +14,10 @@ import { TextArea } from "../ui/TextField";
 export interface ReplyBoxProps {
   /** Statuses the reply may set (from `staffStatusOptions`). Without any, the picker is hidden. */
   statusOptions: readonly StaffStatus[];
-  /** Sends the comment; resolves true on success so the box can clear itself. */
-  onSend: (req: CommentRequest) => Promise<boolean> | boolean | void;
+  /** Sends the comment (and the picked files, when there are any); resolves true on success so the box can clear itself. */
+  onSend: (req: CommentRequest, files?: File[]) => Promise<boolean> | boolean | void;
+  /** The ticket's current files. When given, the box offers an upload control; files follow the reply mode (internal note = staff only). */
+  files?: readonly FileRow[];
   busy?: boolean;
   /** False when a public reply is not possible (a finished ticket: reopen it first). Only an internal note remains. */
   publicAllowed?: boolean;
@@ -25,11 +29,12 @@ type Mode = "public" | "internal";
  * Staff reply: a text area, a switch between a public reply (the requester sees it and is emailed)
  * and an internal note (staff only), and an optional status to set with a public reply.
  */
-export function ReplyBox({ statusOptions, onSend, busy = false, publicAllowed = true }: ReplyBoxProps) {
+export function ReplyBox({ statusOptions, onSend, files, busy = false, publicAllowed = true }: ReplyBoxProps) {
   const t = useT();
   const [body, setBody] = useState("");
   const [mode, setMode] = useState<Mode>("public");
   const [status, setStatus] = useState("");
+  const [chosen, setChosen] = useState<File[]>([]);
 
   const internal = mode === "internal" || !publicAllowed;
   const options = statusOptions.filter((s): s is Exclude<StaffStatus, "new"> => s !== "new");
@@ -39,10 +44,12 @@ export function ReplyBox({ statusOptions, onSend, busy = false, publicAllowed = 
     e.preventDefault();
     if (!canSend) return;
     const picked = !internal && status !== "" ? (status as Exclude<StaffStatus, "new">) : null;
-    const ok = await onSend({ body: body.trim(), internal, status: picked });
+    const req = { body: body.trim(), internal, status: picked };
+    const ok = await (files && chosen.length > 0 ? onSend(req, chosen) : onSend(req));
     if (ok !== false) {
       setBody("");
       setStatus("");
+      setChosen([]);
     }
   };
 
@@ -75,6 +82,7 @@ export function ReplyBox({ statusOptions, onSend, busy = false, publicAllowed = 
         disabled={busy}
         onChange={(e) => setBody(e.target.value)}
       />
+      {files && <FilePicker picked={chosen} onChange={setChosen} existing={files} internal={internal} disabled={busy} />}
       {options.length > 0 && (
         <Select
           label={t("reply.status")}

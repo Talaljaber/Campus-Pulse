@@ -1,0 +1,20 @@
+{
+  "name": "file_link",
+  "description": "A signed link to one file; it works for 60 seconds (a fictional address).",
+  "method": "GET",
+  "path": "/v1/files/{file_id}/link",
+  "path_params": {
+    "file_id": "f7d2a1c9-3b64-4e85-9a10-5c2e8b7d0041"
+  },
+  "query": {},
+  "headers": {
+    "X-CP-Role": "staff",
+    "X-CP-Office": "it"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "url": "https://storage.example.invalid/object/sign/ticket-files/tickets/c1a9e3b7/f7d2a1c9.txt?token=demo&download=f7d2a1c9.txt",
+    "expires_in": 60
+  }
+}

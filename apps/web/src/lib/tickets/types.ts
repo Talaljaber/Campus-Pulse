@@ -29,6 +29,8 @@ export interface CommentRequest {
   body: string;
   internal: boolean;
   status?: "in_progress" | "solved" | "closed" | null;
+  /** Ids of files already uploaded to this ticket by the caller (`POST tickets/{id}/files`); they join this message. */
+  file_ids?: string[];
 }
 
 /** `POST tickets/{id}/student-action` body: the requester settles, closes or keeps their request open. */

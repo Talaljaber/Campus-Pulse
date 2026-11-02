@@ -27,6 +27,9 @@ function notConfigured(): AiFail {
   };
 }
 
+/** FormData from any realm (the route handler's request parser and the global one can be different classes). */
+const isFormData = (v: unknown): v is FormData => v instanceof FormData || Object.prototype.toString.call(v) === '[object FormData]';
+
 /**
  * Calls the FastAPI service. This module is the only place that reads `AI_SERVICE_URL`
  * and `AI_SERVICE_TOKEN` (LD-25); `server-only` makes a client import a build error.
@@ -44,7 +47,7 @@ export async function aiFetch<T>(path: AiPath, init: AiFetchInit): Promise<AiRes
   if (init.userJwt) headers["X-CP-User-JWT"] = init.userJwt;
 
   let body: BodyInit | undefined;
-  if (init.body instanceof FormData) {
+  if (isFormData(init.body)) {
     body = init.body; // fetch sets the multipart boundary itself
   } else if (init.body !== undefined) {
     headers["Content-Type"] = "application/json";
