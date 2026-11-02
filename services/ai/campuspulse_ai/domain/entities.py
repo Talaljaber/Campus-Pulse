@@ -125,6 +125,13 @@ class Ticket:
     resolved_at: datetime | None = None
     links: list[TicketLink] = field(default_factory=list)
     tags: tuple[str, ...] = ()
+    clock_started_at: datetime | None = None
+    reminder_sent_at: datetime | None = None
+    awaiting_student: bool = False
+    reminder_count: int = 0
+    """SLA reminders sent in the current clock period (0 to 2); a restart resets it (P9.2)."""
+    requester_alias: str | None = None
+    """Read-only copy of the request's alias (filled by a DB trigger); the codec never writes it."""
 
 
 @dataclass
@@ -204,6 +211,8 @@ class OutboxMessage:
     priority: Priority | None = None
     flags: frozenset[str] = frozenset()
     error: str | None = None
+    html: str | None = None
+    """Optional HTML alternative for email (P9.2). Sent by the notifier, never stored in the outbox."""
 
 
 @dataclass

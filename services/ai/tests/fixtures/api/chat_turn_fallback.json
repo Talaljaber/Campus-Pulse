@@ -1,0 +1,31 @@
+{
+  "name": "chat_turn_fallback",
+  "description": "No language model (no key, disabled or failing): the client shows the plain form.",
+  "method": "POST",
+  "path": "/v1/chat/turn",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "hello",
+        "kind": "text"
+      }
+    ],
+    "proposal_token": null
+  },
+  "status_code": 200,
+  "response": {
+    "mode": "fallback",
+    "reply": "The assistant is not available right now. Please describe your request in the form and I will route it.",
+    "proposal": null,
+    "ticket_id": null,
+    "triage": null,
+    "clear_proposal": false
+  }
+}

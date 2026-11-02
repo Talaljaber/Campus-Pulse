@@ -33,6 +33,8 @@ const ID_BASE = "lab";
 export interface LabScreenProps {
   /** The signed-in admin's alias, for the header greeting. */
   alias?: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
 }
 
 /**
@@ -41,7 +43,7 @@ export interface LabScreenProps {
  * `POST /v1/redteam/run` to presentational sections. Without an evaluation report the offline tabs
  * say so plainly and the live system and the red team keep working.
  */
-export function LabScreen({ alias = null }: LabScreenProps) {
+export function LabScreen({ alias = null, name = null }: LabScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const toast = useToast();
@@ -67,7 +69,7 @@ export function LabScreen({ alias = null }: LabScreenProps) {
   const empty = <EmptyState title={t("lab.empty.title")} hint={t("lab.empty.hint")} />;
 
   return (
-    <AppShell role="admin" current="lab" alias={alias}>
+    <AppShell role="admin" current="reports" name={name} alias={alias}>
       <PageHeader title={t("lab.title")} subtitle={t("lab.subtitle")} />
 
       <div className="flex flex-wrap items-center gap-2">

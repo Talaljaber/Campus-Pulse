@@ -95,7 +95,7 @@ export interface paths {
         put?: never;
         /**
          * Change a ticket's status from the dashboard
-         * @description Dashboard status change (LD-25); same path as the inbound Linear sync.
+         * @description Status change by staff of the ticket's office or an admin (never on their own request). Only the transitions of the lifecycle table are allowed (`transition <from> -> <to> not allowed`, 422): new -> in_progress, new/in_progress -> solved, new/in_progress/solved -> closed, solved/closed -> in_progress (reopen, the clock restarts). The optional note becomes a public comment inside the status email. Same status = no-op.
          */
         post: operations["ticket_status"];
         delete?: never;
@@ -115,7 +115,7 @@ export interface paths {
         put?: never;
         /**
          * Forward a ticket to another office
-         * @description Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, keeps its status, priority and SLA, and the Linear issue is updated.
+         * @description Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, goes back to `new`, keeps its priority, its SLA clock restarts, and the Linear issue is updated. Only `new` and `in_progress` tickets can be forwarded.
          */
         post: operations["ticket_forward"];
         delete?: never;
@@ -384,6 +384,226 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tickets/{ticket_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Comment on a ticket
+         * @description The requester adds a public comment (a comment on a solved or closed ticket reopens it). Staff of the ticket's office or an admin reply publicly (the ticket moves to in_progress and waits for the requester), add an `internal` note the requester never sees, or send a reply that also sets `status` (one status email carries the comment). A caller who owns the request is always treated as the requester.
+         */
+        post: operations["ticket_comment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tickets/{ticket_id}/priority": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change a ticket's priority
+         * @description Staff of the ticket's office or an admin (never on their own request) change the priority of a `new` or `in_progress` ticket. The SLA clock restarts with the new priority's period. Same priority = no-op. No email.
+         */
+        post: operations["ticket_priority"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tickets/{ticket_id}/student-action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Requester buttons: solved, close, keep open
+         * @description The requester confirms the fix (`solved`), closes the ticket (`close`) or asks to keep it open (`keep_open`: back to in_progress, the clock restarts). Only the owner of the request may call it.
+         */
+        post: operations["ticket_student_action"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post an announcement
+         * @description Staff post a notice for their own office, admins for any office or campus-wide (`office` null). Students read live announcements on Home (Supabase read under RLS).
+         */
+        post: operations["announcement_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/announcements/{announcement_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive an announcement
+         * @description Staff of the announcement's office, or an admin, take it off Home (sets `archived_at`).
+         */
+        post: operations["announcement_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/cron/sla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run the SLA reminder scan
+         * @description Scans the overdue `new` and `in_progress` tickets and sends at most two reminders per clock period (level 1 when overdue, level 2 one SLA period later, also to the admin inbox). Called every 10 minutes by `.github/workflows/sla-ping.yml`; the request also wakes a sleeping service. Safe to repeat: a reminder level is claimed once.
+         */
+        post: operations["cron_sla"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/turn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * One chat turn
+         * @description The chat agent's next message for a conversation (1..20 messages, the last from the user). The language model only talks: it never decides category, priority, office or flags (the classifier does, on the requester's own words). A request becomes a proposal with a server-signed token; a ticket is created only when the user confirms it with that token. Distress is handled first with no LLM call. `mode: fallback` = no language model (no key, disabled or failing): the client shows the plain form and uses preview and confirm.
+         */
+        post: operations["chat_turn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview a request (plain form)
+         * @description No language model: classifies the text with the offline model, applies the decision policy with a one-question budget, and returns what would be recorded (department, priority, FAQ answer, a past staff correction if one is similar) with a signed token to confirm. When `question` is set, answer it by calling again with `asked` and `answer`. Used by the plain-form fallback and the Why this? view.
+         */
+        post: operations["chat_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a proposal
+         * @description Records the request of a proposal the caller received: the token must be signed by the server, unexpired and bound to the caller's alias (else 422). Runs the triage with the clarification budget at 0 (a FAQ cell opens a ticket instead of answering) and applies a similar past staff correction as a recorded re-route.
+         */
+        post: operations["chat_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/tickets/{ticket_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach a file to a ticket
+         * @description Multipart upload (`file`, `internal`, optional `activity_id`). The requester (public files only), staff of the ticket's office and admins may upload. The type is decided by the file's bytes (PNG, JPEG, WEBP, PDF, Word, Excel, PowerPoint, plain text); a name or type that claims something else is refused. Caps: 5 MB per file, 5 files and 15 MB per ticket. The original filename is not stored. Send the returned id in `file_ids` of a comment to attach it to that message. No virus scan (demo; use sample files only).
+         */
+        post: operations["ticket_file_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/files/{file_id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a signed link to a file
+         * @description A link that opens the file for 60 seconds. Who may read the file row may get a link: the requester (public files only), staff of the ticket's office, an admin. Images and PDFs open in a tab; other types download.
+         */
+        get: operations["file_link"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -454,6 +674,115 @@ export interface components {
          */
         ActionType: "faq_answer" | "ticket" | "booking" | "safety_alert" | "incident_merge";
         /**
+         * ActivityOut
+         * @description One row of a ticket's thread (mirrors a `ticket_activity` row).
+         */
+        ActivityOut: {
+            /** Id */
+            id: string;
+            /** Ticket Id */
+            ticket_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "created" | "comment" | "note" | "status" | "forward" | "priority" | "student_action" | "reminder";
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "public" | "internal";
+            /**
+             * Actor Role
+             * @enum {string}
+             */
+            actor_role: "student" | "staff" | "admin" | "system";
+            /** Actor Alias */
+            actor_alias: string | null;
+            /** Actor Office */
+            actor_office: string | null;
+            /** Body */
+            body: string;
+            /** From Status */
+            from_status: string | null;
+            /** To Status */
+            to_status: string | null;
+            /** From Office */
+            from_office: string | null;
+            /** To Office */
+            to_office: string | null;
+            /** From Priority */
+            from_priority: string | null;
+            /** To Priority */
+            to_priority: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * AnnouncementIn
+         * @description Body of `POST /v1/announcements`.
+         *
+         *     Staff post for their own office (`office` omitted or equal to theirs; another office is 403);
+         *     admins pick any office, or leave it null for a campus-wide notice. `starts_at` defaults to now;
+         *     `ends_at` must be after `starts_at`.
+         */
+        AnnouncementIn: {
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /**
+             * Kind
+             * @default info
+             * @enum {string}
+             */
+            kind: "info" | "outage" | "maintenance";
+            /**
+             * Office
+             * @description D-005 office code; null = campus-wide (admin).
+             */
+            office?: string | null;
+            /** Starts At */
+            starts_at?: string | null;
+            /** Ends At */
+            ends_at?: string | null;
+        };
+        /**
+         * AnnouncementOut
+         * @description One announcement (a row of `announcements`).
+         */
+        AnnouncementOut: {
+            /** Id */
+            id: string;
+            /** Office */
+            office: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "info" | "outage" | "maintenance";
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Ends At */
+            ends_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
+            /** Created By */
+            created_by: string | null;
+            /** Created At */
+            created_at: string | null;
+        };
+        /**
          * ArtifactOut
          * @description The frozen model artifact in use.
          */
@@ -506,6 +835,21 @@ export interface components {
              * @default false
              */
             use_llm: boolean;
+        };
+        /** Body_ticket_file_upload */
+        Body_ticket_file_upload: {
+            /**
+             * File
+             * @description The file (5 MB at most).
+             */
+            file: string;
+            /**
+             * Internal
+             * @default false
+             */
+            internal: boolean;
+            /** Activity Id */
+            activity_id?: string | null;
         };
         /**
          * BookingOut
@@ -578,6 +922,91 @@ export interface components {
             set: components["schemas"]["Category"][];
         };
         /**
+         * ChatConfirmRequest
+         * @description Body of `POST /v1/chat/confirm`.
+         */
+        ChatConfirmRequest: {
+            /** Proposal Token */
+            proposal_token: string;
+        };
+        /**
+         * ChatConfirmResponse
+         * @description The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it.
+         */
+        ChatConfirmResponse: {
+            triage: components["schemas"]["TriageResponse"];
+            /** Ticket Id */
+            ticket_id: string | null;
+            /** Hint Applied */
+            hint_applied: boolean;
+        };
+        /**
+         * ChatMessage
+         * @description One message of the conversation. The client tags the assistant messages it got from a proposal
+         *     (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts
+         *     after the last of them.
+         */
+        ChatMessage: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Content */
+            content: string;
+            /**
+             * Kind
+             * @default text
+             * @enum {string}
+             */
+            kind: "text" | "proposal" | "ticket";
+        };
+        /**
+         * ChatPreviewRequest
+         * @description Body of `POST /v1/chat/preview` (the plain form): the text, the question ids already asked and the
+         *     answer to the last question (appended to the text).
+         */
+        ChatPreviewRequest: {
+            /** Text */
+            text: string;
+            /** Asked */
+            asked?: string[];
+            /** Answer */
+            answer?: string | null;
+        };
+        /**
+         * ChatTurnRequest
+         * @description Body of `POST /v1/chat/turn`: 1..20 messages, the last one from the user, and the token of the
+         *     proposal the assistant made last (if any, so that a "yes" can confirm it).
+         */
+        ChatTurnRequest: {
+            /** Messages */
+            messages: components["schemas"]["ChatMessage"][];
+            /** Proposal Token */
+            proposal_token?: string | null;
+        };
+        /**
+         * ChatTurnResponse
+         * @description The assistant's next message. `mode: fallback` = no language model; the client shows the plain form.
+         *     `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or
+         *     a distress message was handled), `clear_proposal` when the client should drop its pending proposal.
+         */
+        ChatTurnResponse: {
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "agent" | "fallback";
+            /** Reply */
+            reply: string;
+            proposal: components["schemas"]["ProposalOut"] | null;
+            /** Ticket Id */
+            ticket_id: string | null;
+            triage: components["schemas"]["TriageResponse"] | null;
+            /** Clear Proposal */
+            clear_proposal: boolean;
+        };
+        /**
          * ClarificationOptionOut
          * @description One answer chip.
          */
@@ -613,6 +1042,29 @@ export interface components {
             option_id?: string | null;
             /** Free Text */
             free_text?: string | null;
+        };
+        /**
+         * CommentRequest
+         * @description Body of `POST /v1/tickets/{ticket_id}/comments`.
+         *
+         *     A requester sends a public comment. Staff send a public reply, an `internal` note (never shown to the
+         *     requester) or a reply that also sets `status` (then one status email carries the comment).
+         */
+        CommentRequest: {
+            /** Body */
+            body: string;
+            /**
+             * Internal
+             * @default false
+             */
+            internal: boolean;
+            /** Status */
+            status?: ("in_progress" | "solved" | "closed") | null;
+            /**
+             * File Ids
+             * @description Files the caller already uploaded to this ticket (`ticket_file_upload`).
+             */
+            file_ids?: string[];
         };
         /**
          * ConfusionOut
@@ -874,6 +1326,42 @@ export interface components {
             message: string;
         };
         /**
+         * FileLinkOut
+         * @description A signed link to open one file: valid for `expires_in` seconds (60), then it stops working.
+         */
+        FileLinkOut: {
+            /** Url */
+            url: string;
+            /** Expires In */
+            expires_in: number;
+        };
+        /**
+         * FileOut
+         * @description One file on a ticket (a row of `ticket_files`, without its storage path or the original name).
+         */
+        FileOut: {
+            /** Id */
+            id: string;
+            /** Ticket Id */
+            ticket_id: string;
+            /** Mime */
+            mime: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Ext */
+            ext: string;
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "public" | "internal";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
          * ForwardRequest
          * @description Body of `POST /v1/tickets/{ticket_id}/forward` and `POST /v1/reviews/{review_id}/forward` (UD-13).
          *
@@ -923,6 +1411,18 @@ export interface components {
             llm_tiers: components["schemas"]["Tier"][];
             /** Vector Store */
             vector_store: string | null;
+        };
+        /**
+         * HintOut
+         * @description A past staff correction that changed the proposal (no text of the other request is shown).
+         */
+        HintOut: {
+            /** Hint Id */
+            hint_id: string;
+            category: components["schemas"]["Category"];
+            priority: components["schemas"]["Priority"];
+            /** Sim */
+            sim: number;
         };
         /**
          * IncidentOut
@@ -1100,6 +1600,15 @@ export interface components {
             evidence: components["schemas"]["EvidenceOut"][];
         };
         /**
+         * PriorityRequest
+         * @description Body of `POST /v1/tickets/{ticket_id}/priority`: the clock restarts with the new priority's period.
+         */
+        PriorityRequest: {
+            priority: components["schemas"]["Priority"];
+            /** Note */
+            note?: string | null;
+        };
+        /**
          * ProblemClusterOut
          * @description A recurring problem (UD-6): semantically similar requests in one category/building.
          */
@@ -1125,6 +1634,44 @@ export interface components {
             representative_text: string;
             /** Sample Request Ids */
             sample_request_ids: string[];
+        };
+        /**
+         * ProposalOut
+         * @description What the assistant proposes to record. `token` is the server-signed proof the caller must send to
+         *     confirm (empty while `question` is set: answer it with another preview first).
+         */
+        ProposalOut: {
+            /** Token */
+            token: string;
+            /**
+             * Text
+             * @description The request text the proposal is about (the requester's own words).
+             */
+            text: string;
+            category: components["schemas"]["Category"];
+            priority: components["schemas"]["Priority"];
+            /**
+             * Office
+             * @description D-005 office code the request goes to.
+             */
+            office: string;
+            action_kind: components["schemas"]["ActionType"];
+            /** @description Set when one more answer is needed first (or a supportive message with no options). */
+            question: components["schemas"]["ClarificationOut"] | null;
+            /** @description Set for a `faq_answer` cell: the answer to show first. */
+            faq: components["schemas"]["FaqAnswerOut"] | null;
+            hint: components["schemas"]["HintOut"] | null;
+            why: components["schemas"]["ProposalWhyOut"];
+        };
+        /**
+         * ProposalWhyOut
+         * @description Behind the "Why this?" button: the model's category and priority and its three nearest examples.
+         */
+        ProposalWhyOut: {
+            category: components["schemas"]["CategoryOut"];
+            priority: components["schemas"]["PriorityOut"];
+            /** Neighbors */
+            neighbors: components["schemas"]["NeighborOut"][];
         };
         /**
          * RedTeamFailureOut
@@ -1368,6 +1915,33 @@ export interface components {
             label: "SIMULATED TRAFFIC";
         };
         /**
+         * SlaScanOut
+         * @description Result of `POST /v1/cron/sla`: the tickets that got a reminder in this scan.
+         */
+        SlaScanOut: {
+            /**
+             * Ran At
+             * Format: date-time
+             */
+            ran_at: string;
+            /**
+             * Reminded
+             * @description Ids of the tickets reminded now (a claimed level 1 or 2).
+             */
+            reminded: string[];
+        };
+        /**
+         * StudentActionRequest
+         * @description Body of `POST /v1/tickets/{ticket_id}/student-action`: the requester's three buttons.
+         */
+        StudentActionRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "solved" | "close" | "keep_open";
+        };
+        /**
          * TicketOut
          * @description A CampusPulse ticket (system of record in Supabase).
          */
@@ -1398,20 +1972,53 @@ export interface components {
             title: string;
             /** Links */
             links: components["schemas"]["ExternalRefOut"][];
+            /**
+             * Clock Started At
+             * Format: date-time
+             * @description Start of the running SLA period (P9).
+             */
+            clock_started_at: string;
+            /**
+             * Reminder Sent At
+             * @description When the overdue reminder went out, if it did.
+             */
+            reminder_sent_at: string | null;
+            /**
+             * Awaiting Student
+             * @description Staff replied and wait for the requester.
+             */
+            awaiting_student: boolean;
+            /**
+             * Reminder Count
+             * @description SLA reminders sent in the current period (0 to 2).
+             */
+            reminder_count: number;
         };
         /**
          * TicketStatus
          * @enum {string}
          */
-        TicketStatus: "open" | "in_progress" | "resolved" | "closed" | "escalated" | "merged";
+        TicketStatus: "new" | "in_progress" | "solved" | "closed" | "merged";
         /**
          * TicketStatusRequest
          * @description Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25).
          */
         TicketStatusRequest: {
-            status: components["schemas"]["TicketStatus"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "in_progress" | "solved" | "closed";
             /** Note */
             note?: string | null;
+        };
+        /**
+         * TicketThreadOut
+         * @description Answer of `POST /v1/tickets/{ticket_id}/comments`: the ticket after the comment and the new row.
+         */
+        TicketThreadOut: {
+            ticket: components["schemas"]["TicketOut"];
+            activity: components["schemas"]["ActivityOut"];
         };
         /**
          * Tier
@@ -1483,6 +2090,12 @@ export interface components {
              * @default false
              */
             simulated: boolean;
+            /**
+             * Chat Confirmed
+             * @description Set only by `POST /v1/chat/confirm` (the route forces it to false here): the requester already confirmed a proposal, so no clarifying question is asked and a FAQ cell opens a ticket (P9.8).
+             * @default false
+             */
+            chat_confirmed: boolean;
         };
         /**
          * TriageResponse
@@ -2992,6 +3605,891 @@ export interface operations {
             };
             /** @description `not_implemented`: Optional extra that is not built in this deployment. */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ticket_comment: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketThreadOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ticket_priority: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriorityRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ticket_student_action: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    announcement_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    announcement_archive: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cron_sla: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlaScanOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_implemented`: Optional extra that is not built in this deployment. */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    chat_turn: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatTurnRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTurnResponse"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    chat_preview: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    chat_confirm: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatConfirmResponse"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ticket_file_upload: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                ticket_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_ticket_file_upload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    file_link: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileLinkOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

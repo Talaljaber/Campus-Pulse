@@ -1,5 +1,5 @@
 /**
- * Geometry of the fictional campus map. Nothing here is a real GJU layout.
+ * Geometry of the fictional campus map. Nothing here is a real campus layout.
  *
  * Convention (same as the DB seed, docs/db/schema.md `buildings.map_x/map_y`):
  * - one coordinate space of 1000 x 600 user units, origin at the top-left, x grows

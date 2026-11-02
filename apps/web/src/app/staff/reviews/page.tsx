@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdvisorScreen } from "@/components/staff/AdvisorScreen";
-import { fetchProfile } from "@/lib/auth/profile";
+import { fetchProfile, nameOf } from "@/lib/auth/profile";
 import { homeFor } from "@/lib/auth/routing";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -16,5 +16,5 @@ export default async function AdvisorReviewsPage() {
   const profile = await fetchProfile(sb, data.user.id);
   if (!profile) redirect("/login");
   if (profile.role === "student") redirect(homeFor(profile.role));
-  return <AdvisorScreen role={profile.role} alias={profile.alias} office={profile.role === "staff" ? profile.office : null} />;
+  return <AdvisorScreen role={profile.role} alias={profile.alias} name={nameOf(profile)} office={profile.role === "staff" ? profile.office : null} />;
 }

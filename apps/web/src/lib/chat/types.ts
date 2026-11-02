@@ -1,4 +1,4 @@
-import type { Clarification, CounterfactualView, TriageResponse } from "@/lib/ai/types";
+import type { Clarification, TriageResponse } from "@/lib/ai/types";
 
 /** Why a call failed, as the UI needs to say it (the dictionary key is `chat.error<Kind>`). */
 export type ChatErrorKind = "generic" | "waking" | "session" | "nothingToAnswer";
@@ -22,13 +22,3 @@ export type ChatItem =
   | { id: string; role: "clarify"; requestId: string; q: Clarification; answered?: string }
   | { id: string; role: "notice"; notice: NoticeData }
   | { id: string; role: "error"; kind: ChatErrorKind };
-
-/** Everything the page keeps: the thread, the live counterfactual answers, and the busy flag. */
-export interface ChatState {
-  items: ChatItem[];
-  /** Latest counterfactual answer per `request_id`. */
-  counterfactuals: Record<string, CounterfactualView>;
-  busy: boolean;
-}
-
-export const INITIAL_CHAT: ChatState = { items: [], counterfactuals: {}, busy: false };

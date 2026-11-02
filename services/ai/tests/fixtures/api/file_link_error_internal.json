@@ -1,0 +1,23 @@
+{
+  "name": "file_link_error_internal",
+  "description": "The requester asks for a link to a staff-only file: refused.",
+  "method": "GET",
+  "path": "/v1/files/{file_id}/link",
+  "path_params": {
+    "file_id": "f7d2a1c9-3b64-4e85-9a10-5c2e8b7d0042"
+  },
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": null,
+  "status_code": 403,
+  "response": {
+    "error": {
+      "code": "forbidden",
+      "message": "this file is for staff only",
+      "details": null
+    }
+  }
+}

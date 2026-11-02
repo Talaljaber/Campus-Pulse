@@ -11,6 +11,9 @@ describe("matchAllowed", () => {
     ["POST", ["feedback"]],
     ["POST", ["tickets", ID, "status"]],
     ["POST", ["tickets", ID, "forward"]],
+    ["POST", ["tickets", ID, "comments"]],
+    ["POST", ["tickets", ID, "priority"]],
+    ["POST", ["tickets", ID, "student-action"]],
     ["GET", ["reviews"]],
     ["POST", ["reviews", ID, "forward"]],
     ["GET", ["incidents"]],
@@ -22,6 +25,13 @@ describe("matchAllowed", () => {
     ["GET", ["health"]],
     ["POST", ["admin", "simulate"]],
     ["POST", ["admin", "reindex"]],
+    ["POST", ["announcements"]],
+    ["POST", ["announcements", ID, "archive"]],
+    ["POST", ["chat", "turn"]],
+    ["POST", ["chat", "preview"]],
+    ["POST", ["chat", "confirm"]],
+    ["POST", ["tickets", ID, "files"]],
+    ["GET", ["files", ID, "link"]],
   ])("allows %s %j", (method, segments) => {
     expect(matchAllowed(method, segments)).not.toBeNull();
   });
@@ -33,6 +43,9 @@ describe("matchAllowed", () => {
 
   it.each([
     ["GET", ["triage"]],
+    ["GET", ["tickets", ID, "comments"]],
+    ["POST", ["tickets", ID, "priority", "x"]],
+    ["GET", ["tickets", ID, "student-action"]],
     ["POST", ["health"]],
     ["GET", ["admin", "simulate"]],
     ["POST", ["admin", "users"]],
@@ -47,6 +60,19 @@ describe("matchAllowed", () => {
     ["POST", ["triage", "a/b", "clarify"]],
     ["DELETE", ["triage"]],
     ["GET", []],
+    ["GET", ["announcements"]],
+    ["POST", ["announcements", ID]],
+    ["GET", ["announcements", ID, "archive"]],
+    ["POST", ["announcements", "..", "archive"]],
+    ["POST", ["announcements", ID, "delete"]],
+    ["GET", ["chat", "turn"]],
+    ["POST", ["chat", "other"]],
+    ["POST", ["chat"]],
+    ["GET", ["tickets", ID, "files"]],
+    ["POST", ["files", ID, "link"]],
+    ["GET", ["files"]],
+    ["GET", ["files", "..", "link"]],
+    ["POST", ["tickets", ID, "files", "x"]],
   ])("rejects %s %j", (method, segments) => {
     expect(matchAllowed(method, segments)).toBeNull();
   });

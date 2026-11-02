@@ -35,7 +35,7 @@ const ICON_TONE = {
 
 /**
  * Portal tile: a white card with a thin grey border, an illustrative icon at the start and a
- * blue label beside it (the MyGJU icon row). A link, a button or a static card depending on the
+ * blue label beside it (the portal icon row). A link, a button or a static card depending on the
  * props, so a row of tiles can be navigation, actions or an overview. Keyboard and focus work
  * as for the native element underneath.
  */

@@ -1,0 +1,237 @@
+# Ticket emails, English (P9.2). Parsed by application/use_cases/ticket_emails.py (TicketEmailTemplates).
+# Same keys as ticket_emails.ar.yaml (a test enforces it). Placeholders use str.format. No university name.
+version: 1
+demo_line: "Demo only: CampusPulse is a student project. No real university department was contacted."
+labels:
+  comment: "Message"
+  note: "Note"
+  files: "{n} file(s) attached; open them in the app."
+  open: "Open the request"
+  there: "there"
+offices:
+  registrar: "Registration"
+  it: "IT Support"
+  finance: "Finance"
+  transport: "Transportation"
+  facilities: "Facilities"
+  academic: "Academic Support"
+statuses:
+  new: "New"
+  in_progress: "In progress"
+  solved: "Solved"
+  closed: "Closed"
+  merged: "Merged"
+priorities:
+  low: "Low"
+  medium: "Medium"
+  high: "High"
+events:
+  received:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] Request recorded: {title}"
+      body: |
+        Hello {recipient_name},
+
+        Your request was recorded and sent to {department} (demo). Ticket #{ticket_number}.
+
+        Your request: "{request_text}"
+
+        Next step: {department} will reply in the app; you will also get an email for each reply.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] New request: {title}"
+      body: |
+        A new request arrived for {department}. Ticket #{ticket_number}, priority {priority}, due {due_at}.
+
+        Request: "{request_text}"
+
+        {files_line}
+
+        Next step: open the request, reply to the requester or set its status before the deadline.
+
+        {link}
+  in_progress:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] Your request is in progress"
+      body: |
+        Hello {recipient_name},
+
+        {department} started working on your request. Ticket #{ticket_number}.
+
+        Your request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+        Next step: {department} will update you here; you will get an email for each reply.
+
+        {link}
+  forwarded:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] Your request moved to {to_department}"
+      body: |
+        Hello {recipient_name},
+
+        Your request was passed from {from_department} to {department}, which is the better place for it. Ticket #{ticket_number}.
+
+        Your request: "{request_text}"
+
+        {note_block}
+        Next step: {department} will reply in the app; you will also get an email for each reply.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] Forwarded to {department}: {title}"
+      body: |
+        A request was forwarded from {from_department} to {department}. Ticket #{ticket_number}, priority {priority}, due {due_at}.
+
+        Request: "{request_text}"
+
+        {note_block}
+        {files_line}
+
+        Next step: open the request and reply to the requester or set its status before the deadline.
+
+        {link}
+  staff_reply:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] {department} replied to your request"
+      body: |
+        Hello {recipient_name},
+
+        {department} replied to your request. Ticket #{ticket_number}.
+
+        Your request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+        Next step: read the reply in the app and answer if {department} asked you something; mark the request as solved if it helped.
+
+        {link}
+  solved:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] Your request was marked solved"
+      body: |
+        Hello {recipient_name},
+
+        {department} marked your request as solved. Ticket #{ticket_number}.
+
+        Your request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+        Next step: if this solved it, close the request; if not, tell us in the app and it will be reopened.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] Marked solved: {title}"
+      body: |
+        The request below was marked solved for {department}. Ticket #{ticket_number}.
+
+        Request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+        Next step: no action needed unless the requester reopens it.
+
+        {link}
+  closed:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] Your request was closed"
+      body: |
+        Hello {recipient_name},
+
+        Your request to {department} was closed. Ticket #{ticket_number}.
+
+        Your request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+        Next step: nothing more is needed. If the problem comes back, reply in the app and the request will reopen.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] Closed: {title}"
+      body: |
+        The request below was closed for {department}. Ticket #{ticket_number}.
+
+        Request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+        Next step: no action needed unless the requester reopens it.
+
+        {link}
+  reopened:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] Your request was reopened"
+      body: |
+        Hello {recipient_name},
+
+        Your request was reopened and is back with {department}. Ticket #{ticket_number}.
+
+        Your request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+        Next step: {department} will reply in the app; you will also get an email for each reply.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] Reopened: {title}"
+      body: |
+        A request was reopened for {department}. Ticket #{ticket_number}, priority {priority}, due {due_at}.
+
+        Request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+        Next step: open the request and reply to the requester before the new deadline.
+
+        {link}
+  reminder:
+    office:
+      subject: "[CampusPulse #{ticket_number}] Reminder: deadline passed for {title}"
+      body: |
+        This request for {department} passed its deadline ({due_at}) and is still {status}. Ticket #{ticket_number}, priority {priority}.
+
+        Request: "{request_text}"
+
+        Next step: reply to the requester or set the status now. If nothing changes, one last reminder follows, copied to the admin.
+
+        {link}
+  reminder_2:
+    office:
+      subject: "[CampusPulse #{ticket_number}] Second reminder: still open, {title}"
+      body: |
+        Second reminder: this request for {department} is still open one more period after its deadline ({due_at}). The admin has been informed. Ticket #{ticket_number}, priority {priority}.
+
+        Request: "{request_text}"
+
+        Next step: reply to the requester or set the status now. This is the last reminder for this period.
+
+        {link}
+    admin:
+      subject: "[CampusPulse #{ticket_number}] Admin copy, second reminder: {title}"
+      body: |
+        Second and last reminder: this request for {department} is still open one more period after its deadline ({due_at}). You are receiving this because the admin is informed at this point. Ticket #{ticket_number}, priority {priority}, status {status}.
+
+        Request: "{request_text}"
+
+        Next step: check with {department} or forward the request to another office.
+
+        {link}
+  requester_reply:
+    office:
+      subject: "[CampusPulse #{ticket_number}] The requester replied: {title}"
+      body: |
+        The requester replied on a request for {department}. Ticket #{ticket_number}, priority {priority}, due {due_at}.
+
+        Request: "{request_text}"
+
+        {comment_block}
+        {files_line}
+
+        Next step: read the reply and answer in the app before the deadline.
+
+        {link}

@@ -8,6 +8,13 @@ export interface Profile {
   office: string | null;
   /** The pseudonymous alias the AI service and Realtime filters use. */
   alias: string | null;
+  /** The fictional full name shown in the header and on Profile; null when the row has none. */
+  displayName: string | null;
+}
+
+/** The name the header and Home greet: the display name, else the alias. */
+export function nameOf(profile: Pick<Profile, "displayName" | "alias">): string | null {
+  return profile.displayName?.trim() || profile.alias;
 }
 
 /**
@@ -15,7 +22,7 @@ export interface Profile {
  * row is missing or carries an unknown role, so callers treat the user as not set up.
  */
 export async function fetchProfile(sb: Sb, userId: string): Promise<Profile | null> {
-  const { data, error } = await sb.from("profiles").select("id, role, office, alias").eq("id", userId).maybeSingle();
+  const { data, error } = await sb.from("profiles").select("id, role, office, alias, display_name").eq("id", userId).maybeSingle();
   if (error || !data || !isRole(data.role)) return null;
-  return { id: data.id, role: data.role, office: data.office, alias: data.alias };
+  return { id: data.id, role: data.role, office: data.office, alias: data.alias, displayName: data.display_name };
 }

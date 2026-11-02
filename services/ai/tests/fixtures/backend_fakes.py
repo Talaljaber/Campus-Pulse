@@ -299,7 +299,7 @@ def make_ticket(
     office: str = "registrar",
     category: Category = Category.REGISTRATION,
     priority: Priority = Priority.HIGH,
-    status: TicketStatus = TicketStatus.OPEN,
+    status: TicketStatus = TicketStatus.NEW,
     provisional: bool = False,
     sla_due_at: datetime | None = None,
     title: str = "Registration portal error on the last add/drop day",

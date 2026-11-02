@@ -20,20 +20,28 @@ from fastapi.security import HTTPBearer
 
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
+    AnnouncementOut,
+    ChatConfirmResponse,
+    ChatTurnResponse,
     CounterfactualResponse,
     ErrorCode,
     ErrorResponse,
     FeedbackResponse,
+    FileLinkOut,
+    FileOut,
     HealthResponse,
     IncidentOut,
     MetricsResponse,
     ProblemClusterOut,
+    ProposalOut,
     ReindexResponse,
     ResolveIncidentResponse,
     ReviewItemOut,
     ScorecardOut,
     SimulateResponse,
+    SlaScanOut,
     TicketOut,
+    TicketThreadOut,
     TriageResponse,
     WebhookAck,
 )
@@ -187,7 +195,13 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         method="POST",
         path="/v1/tickets/{ticket_id}/status",
         summary="Change a ticket's status from the dashboard",
-        purpose="Dashboard status change (LD-25); same path as the inbound Linear sync.",
+        purpose=(
+            "Status change by staff of the ticket's office or an admin (never on their own request). "
+            "Only the transitions of the lifecycle table are allowed (`transition <from> -> <to> not "
+            "allowed`, 422): new -> in_progress, new/in_progress -> solved, new/in_progress/solved -> "
+            "closed, solved/closed -> in_progress (reopen, the clock restarts). The optional note becomes "
+            "a public comment inside the status email. Same status = no-op."
+        ),
         roles=("staff", "admin"),
         response_model=TicketOut,
         errors=(
@@ -197,8 +211,10 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             ErrorCode.STORE_UNAVAILABLE,
         ),
         side_effects=(
-            "updates the `tickets` row; updates the Linear issue",
-            "in-app notification to the student; email on `resolved` if allow-listed",
+            "updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a "
+            "`ticket_activity` row `status`; appends an `events` row `ticket.status`",
+            "after the response: updates the Linear issue; in-app notification to the requester; one "
+            "allow-listed email to the requester (`in_progress`, `solved`, `closed` or `reopened`)",
         ),
         tag="staff",
     ),
@@ -209,7 +225,8 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         summary="Forward a ticket to another office",
         purpose=(
             "Staff hand a ticket to another office (UD-13): the ticket takes that office and its "
-            "category, keeps its status, priority and SLA, and the Linear issue is updated."
+            "category, goes back to `new`, keeps its priority, its SLA clock restarts, and the Linear "
+            "issue is updated. Only `new` and `in_progress` tickets can be forwarded."
         ),
         roles=("staff", "admin"),
         response_model=TicketOut,
@@ -220,10 +237,12 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             ErrorCode.STORE_UNAVAILABLE,
         ),
         side_effects=(
-            "updates the `tickets` row (office, category, tag `forwarded`); appends an `events` row "
+            "updates the `tickets` row (office, category, status `new`, tag `forwarded`, clock); inserts a "
+            "`ticket_activity` row `forward` and a `ticket_hints` row; appends an `events` row "
             "`ticket.forwarded`",
             "after the response: updates the Linear issue (label, title, description); one in-app "
-            "`ticket_forwarded` notification for `office:<new office>`",
+            "`ticket_forwarded` notification for `office:<new office>`; allow-listed emails to the "
+            "requester and the new office (`forwarded`)",
             "no prediction change and no live-memory write",
         ),
         tag="staff",
@@ -456,6 +475,251 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         side_effects=("rewrites every `faq.embedding`",),
         optional=True,
         tag="admin",
+    ),
+    EndpointDoc(
+        op_id="ticket_comment",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/comments",
+        summary="Comment on a ticket",
+        purpose=(
+            "The requester adds a public comment (a comment on a solved or closed ticket reopens it). "
+            "Staff of the ticket's office or an admin reply publicly (the ticket moves to in_progress and "
+            "waits for the requester), add an `internal` note the requester never sees, or send a reply "
+            "that also sets `status` (one status email carries the comment). A caller who owns the "
+            "request is always treated as the requester."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=TicketThreadOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a "
+            "`ticket_activity` row (`comment`, `note` or `status`); appends an `events` row",
+            "after the response: allow-listed email (`staff_reply` to the requester, `requester_reply` "
+            "to the office and, on a forwarded ticket, the admin inbox, or the status/`reopened` email); "
+            "in-app notification to the requester on a staff reply; none for an internal note",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="ticket_priority",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/priority",
+        summary="Change a ticket's priority",
+        purpose=(
+            "Staff of the ticket's office or an admin (never on their own request) change the priority of "
+            "a `new` or `in_progress` ticket. The SLA clock restarts with the new priority's period. Same "
+            "priority = no-op. No email."
+        ),
+        roles=("staff", "admin"),
+        response_model=TicketOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "updates the `tickets` row (priority, clock); inserts a `ticket_activity` row `priority` and a "
+            "`ticket_hints` row; appends an `events` row `ticket.priority`",
+            "after the response: updates the Linear issue",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="ticket_student_action",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/student-action",
+        summary="Requester buttons: solved, close, keep open",
+        purpose=(
+            "The requester confirms the fix (`solved`), closes the ticket (`close`) or asks to keep it "
+            "open (`keep_open`: back to in_progress, the clock restarts). Only the owner of the request "
+            "may call it."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=TicketOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "updates the `tickets` row (status, `awaiting_student`, clock on keep open); inserts a "
+            "`ticket_activity` row `student_action`; appends an `events` row `ticket.student_action`",
+            "after the response: updates the Linear issue; allow-listed email to the office "
+            "(`solved`, `closed` or `reopened`)",
+        ),
+        tag="staff",
+    ),
+    # --- P9.5 announcements (append new entries below this line) ---
+    EndpointDoc(
+        op_id="announcement_create",
+        method="POST",
+        path="/v1/announcements",
+        summary="Post an announcement",
+        purpose=(
+            "Staff post a notice for their own office, admins for any office or campus-wide "
+            "(`office` null). Students read live announcements on Home (Supabase read under RLS)."
+        ),
+        roles=("staff", "admin"),
+        response_model=AnnouncementOut,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.FORBIDDEN, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("inserts an `announcements` row (realtime to open Home pages)",),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="announcement_archive",
+        method="POST",
+        path="/v1/announcements/{announcement_id}/archive",
+        summary="Archive an announcement",
+        purpose="Staff of the announcement's office, or an admin, take it off Home (sets `archived_at`).",
+        roles=("staff", "admin"),
+        response_model=AnnouncementOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_FOUND, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("sets `announcements.archived_at`",),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="cron_sla",
+        method="POST",
+        path="/v1/cron/sla",
+        summary="Run the SLA reminder scan",
+        purpose=(
+            "Scans the overdue `new` and `in_progress` tickets and sends at most two reminders per clock "
+            "period (level 1 when overdue, level 2 one SLA period later, also to the admin inbox). Called "
+            "every 10 minutes by `.github/workflows/sla-ping.yml`; the request also wakes a sleeping "
+            "service. Safe to repeat: a reminder level is claimed once."
+        ),
+        roles=("service",),
+        response_model=SlaScanOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_IMPLEMENTED),
+        side_effects=(
+            "per reminded ticket: updates `reminder_count` and `reminder_sent_at`; inserts an internal "
+            "`ticket_activity` row `reminder`, a `notifications` row for the office and an `events` row "
+            "`sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)",
+        ),
+        tag="staff",
+    ),
+    # --- P9.8 chat agent (append new entries below this line) ---
+    EndpointDoc(
+        op_id="chat_turn",
+        method="POST",
+        path="/v1/chat/turn",
+        summary="One chat turn",
+        purpose=(
+            "The chat agent's next message for a conversation (1..20 messages, the last from the user). The "
+            "language model only talks: it never decides category, priority, office or flags (the classifier "
+            "does, on the requester's own words). A request becomes a proposal with a server-signed token; a "
+            "ticket is created only when the user confirms it with that token. Distress is handled "
+            "first with no LLM call. `mode: fallback` = no language model (no key, disabled or failing): "
+            "the client shows the plain form and uses preview and confirm."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=ChatTurnResponse,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.ARTIFACT_UNAVAILABLE, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=(
+            "calls the language model through OpenRouter (pinned model, temperature 0, cached) unless in "
+            "fallback mode",
+            "a proposal writes nothing",
+            "a confirmed proposal inserts `requests`, `predictions` and `events` rows, opens a ticket (as "
+            "`POST /v1/chat/confirm`), and after the response writes the thread's `created` row and "
+            "sends the allow-listed `received` emails",
+            "distress: runs the full triage (`requests`, `predictions`, `review_queue` rows), no ticket, "
+            "no LLM call",
+        ),
+        tag="chat",
+    ),
+    EndpointDoc(
+        op_id="chat_preview",
+        method="POST",
+        path="/v1/chat/preview",
+        summary="Preview a request (plain form)",
+        purpose=(
+            "No language model: classifies the text with the offline model, applies the decision policy "
+            "with a one-question budget, and returns what would be recorded (department, priority, FAQ "
+            "answer, a past staff correction if one is similar) with a signed token to confirm. When "
+            "`question` is set, answer it by calling again with `asked` and `answer`. Used by the "
+            "plain-form fallback and the Why this? view."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=ProposalOut,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.ARTIFACT_UNAVAILABLE, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=(
+            "writes nothing, except that a distress message is triaged and persisted (`requests`, "
+            "`predictions`, `review_queue` rows) and answered through `question`",
+        ),
+        tag="chat",
+    ),
+    EndpointDoc(
+        op_id="chat_confirm",
+        method="POST",
+        path="/v1/chat/confirm",
+        summary="Confirm a proposal",
+        purpose=(
+            "Records the request of a proposal the caller received: the token must be signed by the server, "
+            "unexpired and bound to the caller's alias (else 422). Runs the triage with the clarification "
+            "budget at 0 (a FAQ cell opens a ticket instead of answering) and applies a similar past "
+            "staff correction as a recorded re-route."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=ChatConfirmResponse,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.ARTIFACT_UNAVAILABLE, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=(
+            "inserts `requests`, `predictions` and `events` rows; opens a ticket (Supabase + Linear "
+            "issue), may create or attach to an incident",
+            "a hint re-route inserts a `ticket_activity` row `forward` (actor system, body `past "
+            "correction`) and updates the Linear issue",
+            "after the response: the thread's `created` row and the allow-listed `received` emails",
+        ),
+        tag="chat",
+    ),
+    EndpointDoc(
+        op_id="ticket_file_upload",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/files",
+        summary="Attach a file to a ticket",
+        purpose=(
+            "Multipart upload (`file`, `internal`, optional `activity_id`). The requester (public files "
+            "only), staff of the ticket's office and admins may upload. The type is decided by the file's "
+            "bytes (PNG, JPEG, WEBP, PDF, Word, Excel, PowerPoint, plain text); a name or type that "
+            "claims something else is refused. Caps: 5 MB per file, 5 files and 15 MB per ticket. The "
+            "original filename is not stored. Send the returned id in `file_ids` of a comment to attach "
+            "it to that message. No virus scan (demo; use sample files only)."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=FileOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "stores the bytes in the private `ticket-files` bucket under a generated path and inserts "
+            "a `ticket_files` row",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="file_link",
+        method="GET",
+        path="/v1/files/{file_id}/link",
+        summary="Get a signed link to a file",
+        purpose=(
+            "A link that opens the file for 60 seconds. Who may read the file row may get a link: the "
+            "requester (public files only), staff of the ticket's office, an admin. Images and PDFs open "
+            "in a tab; other types download."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=FileLinkOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_FOUND, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("none (the link is signed, nothing is written)",),
+        tag="staff",
     ),
 )
 

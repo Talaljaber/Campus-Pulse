@@ -29,6 +29,11 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   rule("POST", "feedback"),
   rule("POST", "tickets/{id}/status"),
   rule("POST", "tickets/{id}/forward"),
+  // P9.6: ticket thread and priority (staff workspace).
+  rule("POST", "tickets/{id}/comments"),
+  rule("POST", "tickets/{id}/priority"),
+  // P9.7: the requester's answer on their own ticket.
+  rule("POST", "tickets/{id}/student-action"),
   rule("GET", "reviews"),
   rule("POST", "reviews/{id}/forward"),
   rule("GET", "incidents"),
@@ -41,6 +46,16 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   // Optional extras (B-list); a deployment without them answers 501 not_implemented.
   rule("POST", "admin/simulate"),
   rule("POST", "admin/reindex"),
+  // P9.5 announcements (append new P9 rules below)
+  rule("POST", "announcements"),
+  rule("POST", "announcements/{id}/archive"),
+  // P9.9 chat agent
+  rule("POST", "chat/turn"),
+  rule("POST", "chat/preview"),
+  rule("POST", "chat/confirm"),
+  // P9.10 ticket files: a multipart upload (forwarded as is by the proxy) and the 60-second signed link.
+  rule("POST", "tickets/{id}/files"),
+  rule("GET", "files/{id}/link"),
 ];
 
 /** A path that passed the allow-list. */

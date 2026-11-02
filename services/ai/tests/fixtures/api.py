@@ -30,6 +30,7 @@ def api_settings(**overrides: Any) -> Settings:
         "ai_service_token": SecretStr(SERVICE_TOKEN),
         "auth_mode": "trusted_headers",
         "sla_scan_minutes": 0,
+        "sla_sweep_min_interval_s": 0,
         **overrides,
     }
     return Settings(_env_file=None, **values)  # type: ignore[call-arg]

@@ -13,6 +13,7 @@ from campuspulse_ai.domain.entities import OutboxMessage
 from campuspulse_ai.domain.values import TicketLink
 
 AT = datetime(2026, 11, 5, 6, 0, tzinfo=UTC)
+CLOCK_KEYS = {"clock_started_at", "reminder_sent_at", "awaiting_student"}
 Status = Literal["queued", "sent", "failed", "rejected", "deferred"]
 
 
@@ -35,6 +36,25 @@ def test_rows_carry_tags_last_error_and_outbox_error() -> None:
     assert codec.link_row(link)["last_error"] == "Linear timed out"
     assert codec.to_link(codec.link_row(link)) == link
     assert codec.outbox_row(_outbox("failed", "smtp down"))["error"] == "smtp down"
+
+
+def test_ticket_clock_columns_round_trip_and_requester_is_read_only() -> None:
+    ticket = make_ticket("r1", id="t1")
+    row = codec.ticket_row(ticket)
+    # No clock start on the entity: the column (not null, default now()) is left to the database.
+    assert "clock_started_at" not in row and "requester_alias" not in row
+    assert row["reminder_sent_at"] is None and row["awaiting_student"] is False
+    ticket.clock_started_at, ticket.reminder_sent_at, ticket.awaiting_student = AT, AT, True
+    ticket.requester_alias = "demo-17"
+    row = codec.ticket_row(ticket)
+    assert row["clock_started_at"] == codec.iso(AT) and row["reminder_sent_at"] == codec.iso(AT)
+    assert "requester_alias" not in row  # written by the DB trigger only
+    back = codec.to_ticket({**row, "requester_alias": "demo-17"}, [])
+    assert (back.clock_started_at, back.reminder_sent_at, back.awaiting_student) == (AT, AT, True)
+    assert back.requester_alias == "demo-17"
+    old = codec.to_ticket({k: v for k, v in row.items() if k not in CLOCK_KEYS}, [])
+    assert (old.clock_started_at, old.reminder_sent_at, old.awaiting_student, old.requester_alias) == (
+        None, None, False, None)  # fmt: skip
 
 
 def test_rows_without_the_new_columns_read_as_defaults() -> None:

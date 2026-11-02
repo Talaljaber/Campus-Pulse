@@ -15,7 +15,6 @@ const JWT_SECRET = "fake-supabase-e2e-secret-not-used-anywhere-else";
 const USERS = {
   "talal@demo.local": { id: "00000000-0000-4000-8000-000000000001", role: "student", office: null, alias: "talal" },
   "it@demo.local": { id: "00000000-0000-4000-8000-000000000002", role: "staff", office: "it", alias: "staff-it" },
-  "advisor@demo.local": { id: "00000000-0000-4000-8000-000000000004", role: "staff", office: "academic", alias: "advisor" },
   "admin@demo.local": { id: "00000000-0000-4000-8000-000000000003", role: "admin", office: null, alias: "admin" },
 };
 const byId = (id) => Object.entries(USERS).find(([, u]) => u.id === id);
@@ -36,6 +35,10 @@ const ticketRow = (o) => ({
   body: "",
   escalated_at: null,
   resolved_at: null,
+  clock_started_at: ago(5),
+  reminder_sent_at: null,
+  awaiting_student: false,
+  requester_alias: null,
   created_at: ago(5),
   ...o,
 });
@@ -48,9 +51,18 @@ const explanation = {
 const outboxRow = (o) => ({ channel: "email", alias: null, request_id: null, body: "", priority: null, flags: [], error: null, provider_id: null, ...o });
 const TABLES = {
   tickets: [
-    ticketRow({ id: "t-1", request_id: "r-1", office: "it", category: "IT Support", priority: "high", status: "open", title: "Wi-Fi is down in building M", sla_due_at: ago(3) }),
-    ticketRow({ id: "t-2", request_id: "r-3", office: "finance", category: "Finance", priority: "medium", status: "open", title: "Fee receipt missing", sla_due_at: ahead(40) }),
-    ticketRow({ id: "t-3", request_id: "r-4", office: "it", category: "IT Support", priority: "low", status: "resolved", title: "Reset my e-learning password", sla_due_at: ahead(100), resolved_at: ago(1) }),
+    ticketRow({ id: "t-1", request_id: "r-1", office: "it", category: "IT Support", priority: "high", status: "new", title: "Wi-Fi is down in building M", sla_due_at: ago(3) }),
+    ticketRow({ id: "t-2", request_id: "r-3", office: "finance", category: "Finance", priority: "medium", status: "new", title: "Fee receipt missing", sla_due_at: ahead(40) }),
+    ticketRow({ id: "t-3", request_id: "r-4", office: "it", category: "IT Support", priority: "low", status: "solved", title: "Reset my e-learning password", sla_due_at: ahead(100), resolved_at: ago(1) }),
+    // The staff member's own request: the queue and the workspace must hide it.
+    ticketRow({ id: "t-4", request_id: "r-6", office: "it", category: "IT Support", priority: "medium", status: "new", title: "My own laptop request", sla_due_at: ahead(10), requester_alias: "staff-it" }),
+  ],
+  ticket_activity: [
+    { id: "ac-1", ticket_id: "t-1", kind: "created", visibility: "public", actor_role: "system", actor_alias: null, actor_office: null, body: "", from_status: null, to_status: "new", from_office: null, to_office: null, from_priority: null, to_priority: null, created_at: ago(5) },
+    { id: "ac-2", ticket_id: "t-1", kind: "note", visibility: "internal", actor_role: "staff", actor_alias: "staff-it", actor_office: "it", body: "Checked the switch in M, looks fine", from_status: null, to_status: null, from_office: null, to_office: null, from_priority: null, to_priority: null, created_at: ago(4) },
+  ],
+  ticket_hints: [
+    { id: "h-1", ticket_id: "t-2", kind: "forward", request_text: "my fee receipt is missing", lang: "en", model_category: "Registration", model_priority: "medium", corrected_category: "Finance", corrected_priority: "medium", note: null, author_alias: "staff-it", author_role: "staff", created_at: ago(2) },
   ],
   ticket_links: [{ ticket_id: "t-1", sink: "linear", external_id: "CP-47", external_url: "https://linear.app/campuspulse-demo/issue/CP-47", created_at: ago(5), last_error: null, last_synced_at: null }],
   requests: [
@@ -166,8 +178,19 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === "/rest/v1/profiles") {
     const id = (url.searchParams.get("id") ?? "").replace(/^eq\./, "");
+    const shape = (u) => ({
+      id: u.id,
+      role: u.role,
+      office: u.office,
+      alias: u.alias,
+      display_name: null,
+      student_number: null,
+      faculty: null,
+      university_email: null,
+    });
+    // With an id filter: that user's row. Without one (the admin Accounts list): every user.
     const hit = byId(id);
-    const rows = hit ? [{ id: hit[1].id, role: hit[1].role, office: hit[1].office, alias: hit[1].alias }] : [];
+    const rows = id ? (hit ? [shape(hit[1])] : []) : Object.values(USERS).map(shape);
     const single = (req.headers.accept ?? "").includes("vnd.pgrst.object");
     if (single) return send(res, rows.length ? 200 : 406, rows[0] ?? { code: "PGRST116", message: "no rows" });
     return send(res, 200, rows);

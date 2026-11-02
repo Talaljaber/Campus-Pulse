@@ -18,6 +18,8 @@ export interface OutboxScreenProps {
   role: "staff" | "admin";
   /** The signed-in user's alias, for the header greeting. */
   alias?: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
 }
 
 const KNOWN = ["sent", "simulated", "deferred", "rejected", "failed", "queued"];
@@ -28,7 +30,7 @@ const KNOWN = ["sent", "simulated", "deferred", "rejected", "failed", "queued"];
  * the list with counts, and a rejected message shows the reason it was blocked. It only wires
  * `useOutbox` to the table; which rows appear is decided by row-level security.
  */
-export function OutboxScreen({ role, alias = null }: OutboxScreenProps) {
+export function OutboxScreen({ role, alias = null, name = null }: OutboxScreenProps) {
   const t = useT();
   const outbox = useOutbox();
   const [status, setStatus] = useState("all");
@@ -42,7 +44,7 @@ export function OutboxScreen({ role, alias = null }: OutboxScreenProps) {
   ];
 
   return (
-    <AppShell role={role} current="outbox" alias={alias}>
+    <AppShell role={role} current="outbox" name={name} alias={alias}>
       <PageHeader title={t("outbox.title")} subtitle={t("outbox.subtitle")} badges={<Badge tone="ok">{t("pulse.live")}</Badge>} />
 
       <aside

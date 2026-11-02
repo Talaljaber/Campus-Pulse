@@ -424,7 +424,7 @@ def to_review_item(row: Mapping[str, Any]) -> ReviewItem:
 
 
 def ticket_row(t: Ticket) -> Row:
-    return {
+    row: Row = {
         "id": t.id,
         "request_id": t.request_id,
         "incident_id": t.incident_id,
@@ -439,7 +439,13 @@ def ticket_row(t: Ticket) -> Row:
         "escalated_at": iso(t.escalated_at),
         "resolved_at": iso(t.resolved_at),
         "tags": list(t.tags),
+        "reminder_sent_at": iso(t.reminder_sent_at),
+        "awaiting_student": t.awaiting_student,
+        "reminder_count": t.reminder_count,
     }
+    if t.clock_started_at is not None:  # NOT NULL column with a DB default: never write null
+        row["clock_started_at"] = iso(t.clock_started_at)
+    return row  # requester_alias is read-only (DB trigger)
 
 
 def link_row(link: TicketLink) -> Row:
@@ -479,6 +485,11 @@ def to_ticket(row: Mapping[str, Any], links: list[TicketLink]) -> Ticket:
         resolved_at=parse_dt(row.get("resolved_at")),
         links=links,
         tags=tuple(row.get("tags") or ()),
+        clock_started_at=parse_dt(row.get("clock_started_at")),
+        reminder_sent_at=parse_dt(row.get("reminder_sent_at")),
+        awaiting_student=bool(row.get("awaiting_student") or False),
+        reminder_count=int(row.get("reminder_count") or 0),
+        requester_alias=row.get("requester_alias") or None,
     )
 
 

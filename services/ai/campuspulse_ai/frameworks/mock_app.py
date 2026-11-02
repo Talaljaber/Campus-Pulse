@@ -37,7 +37,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from campuspulse_ai import __version__
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
+    AnnouncementIn,
+    ChatConfirmRequest,
+    ChatPreviewRequest,
+    ChatTurnRequest,
     ClarifyRequest,
+    CommentRequest,
     CounterfactualQuery,
     ErrorBody,
     ErrorCode,
@@ -46,12 +51,14 @@ from campuspulse_ai.application.dto import (
     ForwardRequest,
     IncidentListQuery,
     PrincipalHeaders,
+    PriorityRequest,
     RecurringQuery,
     RedTeamRunRequest,
     ReindexRequest,
     ResolveIncidentRequest,
     ReviewListQuery,
     SimulateRequest,
+    StudentActionRequest,
     TicketStatusRequest,
     TriageQuery,
     TriageRequest,
@@ -301,6 +308,81 @@ def build_router(store: FixtureStore) -> APIRouter:
     def admin_reindex(body: ReindexRequest, request: Request) -> Any:
         """Optional extra: re-embed a collection (fixture-backed)."""
         return _respond(store.pick("admin_reindex", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("ticket_comment"), dependencies=[Depends(_guard("ticket_comment"))])
+    def ticket_comment(ticket_id: str, body: CommentRequest, request: Request) -> Any:
+        """Comment on a ticket (fixture-backed)."""
+        return _respond(store.pick("ticket_comment", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("ticket_priority"), dependencies=[Depends(_guard("ticket_priority"))])
+    def ticket_priority(ticket_id: str, body: PriorityRequest, request: Request) -> Any:
+        """Change a ticket's priority (fixture-backed)."""
+        return _respond(store.pick("ticket_priority", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("ticket_student_action"), dependencies=[Depends(_guard("ticket_student_action"))]
+    )
+    def ticket_student_action(ticket_id: str, body: StudentActionRequest, request: Request) -> Any:
+        """Requester buttons (fixture-backed)."""
+        return _respond(store.pick("ticket_student_action", request, body.model_dump(mode="json")))
+
+    # --- P9.5 announcements (append new routes below this line, in ENDPOINTS order) ---
+
+    @router.api_route(
+        **route_kwargs("announcement_create"), dependencies=[Depends(_guard("announcement_create"))]
+    )
+    def announcement_create(body: AnnouncementIn, request: Request) -> Any:
+        """Post an announcement (fixture-backed)."""
+        return _respond(store.pick("announcement_create", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("announcement_archive"), dependencies=[Depends(_guard("announcement_archive"))]
+    )
+    def announcement_archive(announcement_id: str, request: Request) -> Any:
+        """Archive an announcement (fixture-backed)."""
+        return _respond(store.pick("announcement_archive", request, None))
+
+    @router.api_route(**route_kwargs("cron_sla"), dependencies=[Depends(_guard("cron_sla"))])
+    def cron_sla(request: Request) -> Any:
+        """Run the SLA reminder scan (fixture-backed)."""
+        return _respond(store.pick("cron_sla", request, None))
+
+    # --- P9.8 chat agent (append new routes below this line, in ENDPOINTS order) ---
+
+    @router.api_route(**route_kwargs("chat_turn"), dependencies=[Depends(_guard("chat_turn"))])
+    def chat_turn(body: ChatTurnRequest, request: Request) -> Any:
+        """One chat turn (fixture-backed)."""
+        return _respond(store.pick("chat_turn", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("chat_preview"), dependencies=[Depends(_guard("chat_preview"))])
+    def chat_preview(body: ChatPreviewRequest, request: Request) -> Any:
+        """Preview a request (fixture-backed)."""
+        return _respond(store.pick("chat_preview", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("chat_confirm"), dependencies=[Depends(_guard("chat_confirm"))])
+    def chat_confirm(body: ChatConfirmRequest, request: Request) -> Any:
+        """Confirm a proposal (fixture-backed)."""
+        return _respond(store.pick("chat_confirm", request, body.model_dump(mode="json")))
+
+    # --- P9.10 ticket files (append new routes below this line, in ENDPOINTS order) ---
+
+    @router.api_route(
+        **route_kwargs("ticket_file_upload"), dependencies=[Depends(_guard("ticket_file_upload"))]
+    )
+    def ticket_file_upload(
+        ticket_id: str,
+        file: Annotated[UploadFile, File(description="The file (5 MB at most).")],
+        request: Request,
+        internal: Annotated[bool, Form()] = False,
+        activity_id: Annotated[str | None, Form()] = None,
+    ) -> Any:
+        """Attach a file to a ticket (fixture-backed)."""
+        return _respond(store.pick("ticket_file_upload", request, None))
+
+    @router.api_route(**route_kwargs("file_link"), dependencies=[Depends(_guard("file_link"))])
+    def file_link(file_id: str, request: Request) -> Any:
+        """Signed link to a file (fixture-backed)."""
+        return _respond(store.pick("file_link", request, None))
 
     return router
 

@@ -24,7 +24,9 @@ from campuspulse_ai.adapters.integrations.retrying import RetryingSink
 from campuspulse_ai.adapters.integrations.supabase_sink import SupabaseSink
 from campuspulse_ai.adapters.memory.inmemory import InMemoryMemoryStore
 from campuspulse_ai.adapters.notify.inapp import InAppNotifier
+from campuspulse_ai.adapters.store.announcements_inmemory import InMemoryAnnouncementStore
 from campuspulse_ai.adapters.store.inmemory import InMemoryRepository
+from campuspulse_ai.adapters.store.journey_inmemory import InMemoryJourneyStore
 from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
 from campuspulse_ai.composition import online
 from campuspulse_ai.composition.api import ApiServices
@@ -69,6 +71,8 @@ def wire(offline: OfflineContainer, **settings: Any) -> Wired:
         channels={"in_app": InAppNotifier(repo), "email": email},
         calendars=(SlotsTableCalendar(repo, clock, RecipientPolicy(cfg.demo_email_allowlist)),),
         vector_store="local",
+        announcements=InMemoryAnnouncementStore(),
+        journey=InMemoryJourneyStore(repo),
     )
     services = online.wire_online(cfg, offline, adapters, clock)
     return Wired(services, repo, vectors, memory, linear, email, api_client(services=services, settings=cfg))
@@ -78,7 +82,7 @@ def test_every_route_use_case_is_wired_and_health_is_ok(offline: OfflineContaine
     w = wire(offline)
     s = w.services
     wired = (s.triage, s.clarify, s.feedback, s.tickets, s.incidents, s.sla, s.clock)
-    assert None not in (s.batch, s.metrics, s.redteam)
+    assert None not in (s.batch, s.metrics, s.redteam, s.announcements)
     assert None not in wired
     body = w.client.get("/health").json()
     assert body["status"] == "ok" and body["artifact"] == offline.manifest.artifact_version

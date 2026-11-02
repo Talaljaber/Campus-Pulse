@@ -1,4 +1,4 @@
-"""Run the RLS proof (supabase/tests/rls.sql) and print "RLS: n/13 checks passed".
+"""Run the RLS proof (supabase/tests/rls.sql) and print "RLS: n/19 checks passed".
 
 Default: `supabase db reset` on the local CLI stack (Docker Desktop), then run rls.sql with
 psql, falling back to `docker exec ... psql` inside the local db container when psql is not

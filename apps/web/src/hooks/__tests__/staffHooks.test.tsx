@@ -42,7 +42,7 @@ const row = (o: Record<string, unknown> = {}) => ({
   office: "it",
   category: "IT Support",
   priority: "medium",
-  status: "open",
+  status: "new",
   provisional: false,
   tags: [],
   title: "Wi-Fi",
@@ -84,8 +84,8 @@ describe("useTicketQueue", () => {
     const push = tickets.subscribe.mock.calls[0]![2] as (r: unknown) => void;
     act(() => push(row({ id: "t2", title: "New" })));
     await waitFor(() => expect(result.current.tickets.find((t) => t.id === "t2")?.link?.id).toBe("CP-2"));
-    act(() => push(row({ id: "t1", status: "resolved" })));
-    expect(result.current.tickets.find((t) => t.id === "t1")?.status).toBe("resolved");
+    act(() => push(row({ id: "t1", status: "solved" })));
+    expect(result.current.tickets.find((t) => t.id === "t1")?.status).toBe("solved");
   });
 
   it("goes to the error state on a failed read and recovers on reload", async () => {
@@ -96,29 +96,11 @@ describe("useTicketQueue", () => {
     await waitFor(() => expect(result.current.load).toBe("ready"));
   });
 
-  it("changes a status through the API and keeps the office code", async () => {
-    svc.setStatus.mockResolvedValue({ ok: true, data: { status: "in_progress", resolved_at: null, escalated_at: null, provisional: false, priority: "medium", sla_due_at: "2026-11-08T12:00:00Z", office: "Maintenance" } });
-    const { result } = renderHook(() => useTicketQueue("it"));
+  it("hides the tickets the caller requested themselves", async () => {
+    tickets.list.mockResolvedValue([row({ id: "own", requester_alias: "rim" }), row({ id: "other", requester_alias: "sam" }), row({ id: "none" })]);
+    const { result } = renderHook(() => useTicketQueue("it", "rim"));
     await waitFor(() => expect(result.current.load).toBe("ready"));
-    let kind: unknown;
-    await act(async () => {
-      kind = await result.current.changeStatus("t1", "in_progress");
-    });
-    expect(kind).toBeNull();
-    expect(result.current.tickets[0]).toMatchObject({ status: "in_progress", office: "it" });
-    expect(result.current.pending.size).toBe(0);
-  });
-
-  it("returns the error kind and leaves the ticket alone on a failed change", async () => {
-    svc.setStatus.mockResolvedValue(fail(403, "forbidden"));
-    const { result } = renderHook(() => useTicketQueue("it"));
-    await waitFor(() => expect(result.current.load).toBe("ready"));
-    let kind: unknown;
-    await act(async () => {
-      kind = await result.current.changeStatus("t1", "closed");
-    });
-    expect(kind).toBe("forbidden");
-    expect(result.current.tickets[0]!.status).toBe("open");
+    expect(result.current.tickets.map((t) => t.id)).toEqual(["other", "none"]);
   });
 });
 

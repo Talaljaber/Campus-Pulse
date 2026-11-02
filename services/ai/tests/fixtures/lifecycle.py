@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import uuid
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -17,12 +18,19 @@ import httpx
 from pydantic import SecretStr
 
 from campuspulse_ai.adapters.integrations.linear import LinearMapping, LinearSink, sign
+from campuspulse_ai.adapters.notify.email_templates import load_ticket_email_templates
+from campuspulse_ai.adapters.store.journey_inmemory import InMemoryJourneyStore
+from campuspulse_ai.application.use_cases.escalate_sla import SlaReminderUseCase
+from campuspulse_ai.application.use_cases.offices import OfficeMap
+from campuspulse_ai.application.use_cases.ticket_emails import InboxBook, TicketMailer
+from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.config.paths import CONFIG_DIR
 from campuspulse_ai.domain.entities import Request, Ticket
 from campuspulse_ai.domain.labels import Category, Priority
+from campuspulse_ai.domain.routing import ActionsConfig
 from campuspulse_ai.domain.values import RequestStatus, TicketLink, TicketStatus
-from fixtures.backend_fakes import FrozenClock, make_request, make_ticket
-from fixtures.containers import BackendTestContainer
+from fixtures.backend_fakes import FakeNotifier, FrozenClock, make_request, make_ticket
+from fixtures.containers import BackendTestContainer, load_yaml
 
 ALIAS = "demo-17"
 SECRET = SecretStr("whsec-test-secret")
@@ -48,7 +56,7 @@ def seed_ticket(
     office: str = "registrar",
     category: Category = Category.REGISTRATION,
     priority: Priority = Priority.HIGH,
-    status: TicketStatus = TicketStatus.OPEN,
+    status: TicketStatus = TicketStatus.NEW,
     sla_due_at: datetime | None = None,
     issue_id: str | None = None,
 ) -> Ticket:
@@ -92,3 +100,52 @@ def webhook_body(clock: FrozenClock, issue_id: str, state_type: str = "completed
 
 def signature(raw: bytes) -> str:
     return sign(SECRET, raw)
+
+
+REQUESTER_INBOX = "requester@campuspulse.invalid"
+OFFICE_INBOX = "office@campuspulse.invalid"
+IT_INBOX = "it-desk@campuspulse.invalid"
+ADMIN_INBOX = "admin@campuspulse.invalid"
+
+
+@dataclass
+class LifecycleHarness:
+    """A `TicketLifecycleUseCase` over a container's repository, a journey store and a FAKE notifier."""
+
+    c: BackendTestContainer
+    lifecycle: TicketLifecycleUseCase
+    journey: InMemoryJourneyStore
+    mail: FakeNotifier
+    sla: SlaReminderUseCase
+
+
+def build_lifecycle(
+    c: BackendTestContainer, *, encoder: Any = None, mail: FakeNotifier | None = None, files: Any = None
+) -> LifecycleHarness:
+    """The lifecycle over `c.repo` and `c.sink`; emails go to `mail` (a recording fake, never SMTP)."""
+    actions = ActionsConfig.from_dict(load_yaml(CONFIG_DIR / "actions.yaml"))
+    mail = mail or FakeNotifier()
+    journey = InMemoryJourneyStore(c.repo)
+    inboxes = InboxBook(
+        student_inbox=REQUESTER_INBOX,
+        office_inboxes={"it": IT_INBOX},
+        default_office_inbox=OFFICE_INBOX,
+        admin_inbox=ADMIN_INBOX,
+    )
+    mailer = TicketMailer(
+        load_ticket_email_templates(CONFIG_DIR / "templates" / "email"), mail, c.clock, inboxes, None
+    )
+    lifecycle = TicketLifecycleUseCase(
+        c.repo,
+        journey,
+        mailer,
+        (c.sink,),
+        c.clock,
+        actions.sla_hours,
+        OfficeMap.from_actions(actions),
+        c.messages,
+        encoder,
+        files,
+    )
+    sla = SlaReminderUseCase(c.repo, journey, mailer, c.messages, actions.sla_hours)
+    return LifecycleHarness(c, lifecycle, journey, mail, sla)

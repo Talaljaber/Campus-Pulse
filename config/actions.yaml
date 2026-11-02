@@ -13,11 +13,11 @@ version: 1
 # D-005: exactly these codes (tickets.office, profiles.office, advisors.department).
 offices: [registrar, it, finance, transport, facilities, academic]
 
-# Hours from creation to sla_due_at. low = 14 days.
+# Hours from the clock start (creation, forward, priority change, reopen) to sla_due_at (P9).
 sla_hours:
-  high: 24
-  medium: 72
-  low: 336
+  high: 1
+  medium: 24
+  low: 48
 
 # Flag `safety` (physical danger) overrides any cell, for any category, even when provisional.
 safety:
@@ -35,8 +35,8 @@ routes:
     office: academic
     low: {kind: faq_answer}
     medium: {kind: ticket, tags: [office-hours-queue]}
-    # UD-1: the only booking cell. Earliest fictional advisor slot within the SLA (24 h) + email + case.
-    high: {kind: booking, also_ticket: true}
+    # booking dropped (P9, brainstorm 17.4): the booking code stays but is no longer routed.
+    high: {kind: ticket}
 
   Registration:
     office: registrar

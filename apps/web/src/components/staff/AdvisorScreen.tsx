@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { useAdvisorReviews } from "@/hooks/useAdvisorReviews";
+import { useFlagEvents } from "@/hooks/useFlagEvents";
+import { useHints } from "@/hooks/useHints";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useT, type DictKey } from "@/i18n";
-import type { ReviewStatus } from "@/lib/ai/types";
+import type { Category, Priority, ReviewStatus } from "@/lib/ai/types";
 import type { NoticeData } from "@/lib/chat/types";
 import type { StaffErrorKind } from "@/lib/staff/service";
 import { useNoticeText } from "../chat/ChatThread";
@@ -15,12 +18,17 @@ import { Loadable } from "../ui/Loadable";
 import { TabPanel, Tabs } from "../ui/Tabs";
 import { useToast } from "../ui/Toast";
 import { AdvisorReviewDetail, AdvisorReviewList } from "./AdvisorReviews";
+import { FlagsPanel } from "./FlagsPanel";
 import { useOfficeLabel } from "./office";
+import { PastCorrections } from "./PastCorrections";
+import { ReviewQueue } from "./ReviewQueue";
 
 /** Props for {@link AdvisorScreen}. */
 export interface AdvisorScreenProps {
   role: "staff" | "admin";
   alias?: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
   office: string | null;
 }
 
@@ -32,7 +40,7 @@ const ID_BASE = "advisor";
  * list and the detail panel come from `GET /v1/reviews`. A `review_assigned` notification shows a
  * toast and re-reads the list.
  */
-export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps) {
+export function AdvisorScreen({ role, alias = null, name = null, office }: AdvisorScreenProps) {
   const t = useT();
   const toast = useToast();
   const noticeText = useNoticeText();
@@ -41,11 +49,15 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<{ id: string; kind: StaffErrorKind } | null>(null);
   const q = useAdvisorReviews(status);
+  const flags = useFlagEvents();
+  const past = useHints();
+  const waiting = useReviewQueue();
 
   const onNotice = (n: NoticeData) => {
     if (n.type !== "review_assigned") return;
     toast.show(noticeText(n), "info");
     q.reload();
+    waiting.reload();
   };
   useNotifications(alias, onNotice);
   useNotifications(office ? `office:${office}` : null, onNotice);
@@ -62,8 +74,14 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
     else setError({ id, kind: out.kind });
   };
 
+  const decide = async (run: () => ReturnType<typeof waiting.confirm>) => {
+    const out = await run();
+    if (out.ok) toast.show(t("staff.memoryToast"), "ok");
+    else toast.show(t(`staff.error.${out.kind}` as DictKey), "danger");
+  };
+
   return (
-    <AppShell role={role} current="reviews" alias={alias}>
+    <AppShell role={role} current="corrections" name={name} alias={alias}>
       <PageHeader
         title={t("advisor.title")}
         badges={
@@ -72,6 +90,26 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
           </Badge>
         }
       />
+      <section aria-label={t("corrections.waitingSection")} className="flex flex-col gap-2">
+        <h2 className="text-lg font-bold text-fg-1">{t("corrections.waitingSection")}</h2>
+        <Loadable state={waiting.load} onRetry={waiting.reload}>
+          <ReviewQueue
+            items={waiting.items}
+            pendingIds={waiting.pending}
+            onConfirm={(pid) => void decide(() => waiting.confirm(pid))}
+            onCorrect={(pid, category, priority, note) =>
+              void decide(() =>
+                waiting.correct(pid, {
+                  category: (category as Category | undefined) ?? null,
+                  priority: (priority as Priority | undefined) ?? null,
+                  note: note ?? "",
+                }),
+              )
+            }
+          />
+        </Loadable>
+      </section>
+
       <Tabs
         items={STATUSES.map((s) => ({ id: s, label: t(`advisor.tabs.${s}` as DictKey) }))}
         value={status}
@@ -107,6 +145,18 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
           </Loadable>
         </TabPanel>
       ))}
+
+      <section aria-label={t("corrections.flagsSection")}>
+        <Loadable state={flags.load} onRetry={flags.reload}>
+          <FlagsPanel events={flags.events} audience={role} />
+        </Loadable>
+      </section>
+
+      <section aria-label={t("corrections.title")}>
+        <Loadable state={past.load} onRetry={past.reload}>
+          <PastCorrections hints={past.hints} />
+        </Loadable>
+      </section>
     </AppShell>
   );
 }

@@ -8,10 +8,7 @@ describe("homeFor", () => {
   it("maps each role to its landing page", () => {
     expect(homeFor("student")).toBe("/");
     expect(homeFor("staff")).toBe("/staff");
-    expect(homeFor("admin")).toBe("/lab");
-    expect(homeFor("staff", "it")).toBe("/staff");
-    expect(homeFor("staff", "academic")).toBe("/staff/reviews");
-    expect(homeFor("student", "academic")).toBe("/");
+    expect(homeFor("admin")).toBe("/staff");
   });
 });
 
@@ -22,6 +19,10 @@ describe("decideRoute matrix", () => {
     ["/staff", null, to("/login?next=%2Fstaff")],
     ["/pulse", null, to("/login?next=%2Fpulse")],
     ["/lab", null, to("/login?next=%2Flab")],
+    ["/ask", null, to("/login?next=%2Fask")],
+    ["/requests", null, to("/login?next=%2Frequests")],
+    ["/profile", null, to("/login?next=%2Fprofile")],
+    ["/admin/accounts", null, to("/login?next=%2Fadmin%2Faccounts")],
     ["/login", null, NEXT],
     ["/dev/ui", null, NEXT],
     // student
@@ -31,6 +32,11 @@ describe("decideRoute matrix", () => {
     ["/pulse", "student", to("/")],
     ["/outbox", "student", to("/")],
     ["/lab", "student", to("/")],
+    ["/ask", "student", NEXT],
+    ["/requests", "student", NEXT],
+    ["/profile", "student", NEXT],
+    ["/staff/announcements", "student", to("/")],
+    ["/admin/accounts", "student", to("/")],
     // staff
     ["/", "staff", NEXT],
     ["/login", "staff", to("/staff")],
@@ -41,9 +47,20 @@ describe("decideRoute matrix", () => {
     ["/pulse", "staff", NEXT],
     ["/outbox", "staff", NEXT],
     ["/lab", "staff", to("/staff")],
+    ["/ask", "staff", NEXT],
+    ["/requests", "staff", NEXT],
+    ["/profile", "staff", NEXT],
+    ["/staff/announcements", "staff", NEXT],
+    ["/admin/accounts", "staff", to("/staff")],
+    ["/admin", "staff", to("/staff")],
     // admin
     ["/", "admin", NEXT],
-    ["/login", "admin", to("/lab")],
+    ["/login", "admin", to("/staff")],
+    ["/ask", "admin", NEXT],
+    ["/requests", "admin", NEXT],
+    ["/profile", "admin", NEXT],
+    ["/staff/announcements", "admin", NEXT],
+    ["/admin/accounts", "admin", NEXT],
     ["/staff", "admin", NEXT],
     ["/pulse", "admin", NEXT],
     ["/outbox", "admin", NEXT],

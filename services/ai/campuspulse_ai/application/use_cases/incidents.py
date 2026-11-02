@@ -105,6 +105,7 @@ class IncidentActions:
         if incident is None or decision.kind == "none":
             raise ValueError("merge needs an incident decision of kind new or attach")
         incident_ticket = self._incident_ticket(decision, incident, request, plan)
+        now = self._clock.now()
         own = Ticket(
             id=str(uuid.uuid4()),
             request_id=request.id,
@@ -114,7 +115,8 @@ class IncidentActions:
             priority=pred.priority,
             status=TicketStatus.MERGED,
             provisional=provisional,
-            sla_due_at=self._clock.now() + timedelta(hours=plan.sla_hours),
+            sla_due_at=now + timedelta(hours=plan.sla_hours),
+            clock_started_at=now,
             title=understanding.ticket_title if understanding else "",
             body=understanding.ticket_body if understanding else request.raw_text,
             tags=plan.tags,
@@ -167,6 +169,7 @@ class IncidentActions:
                 self._repo.save_ticket(current)
                 self._mirror.push(current, skip=(RECORD_SINK,))
             return current
+        now = self._clock.now()
         ticket = Ticket(
             id=str(uuid.uuid4()),
             request_id=request.id,
@@ -174,9 +177,10 @@ class IncidentActions:
             office=self._act.office_for(incident.category, incident.priority),
             category=incident.category,
             priority=incident.priority,
-            status=TicketStatus.OPEN,
+            status=TicketStatus.NEW,
             provisional=False,
-            sla_due_at=self._clock.now() + timedelta(hours=plan.sla_hours),
+            sla_due_at=now + timedelta(hours=plan.sla_hours),
+            clock_started_at=now,
             title=f"{incident.title} ({incident.report_count} reports)",
             body=f"Pulse incident {incident.id}: {incident.report_count} similar reports in building "
             f"{incident.building}. First report: {request.raw_text}",
@@ -299,10 +303,10 @@ class IncidentsUseCase:
         closed: list[str] = []
         for member, _ in members:
             if INCIDENT_TAG in member.tags:
-                done = dataclasses.replace(member, status=TicketStatus.RESOLVED, resolved_at=now)
+                done = dataclasses.replace(member, status=TicketStatus.SOLVED, resolved_at=now)
                 self._repo.save_ticket(done)
                 self._mirror.push(done, skip=(RECORD_SINK,))
-            elif member.status not in (TicketStatus.CLOSED, TicketStatus.RESOLVED):
+            elif member.status not in (TicketStatus.CLOSED, TicketStatus.SOLVED):
                 self._repo.save_ticket(
                     dataclasses.replace(member, status=TicketStatus.CLOSED, resolved_at=now)
                 )

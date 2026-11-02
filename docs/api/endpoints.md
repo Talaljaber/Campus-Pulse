@@ -38,6 +38,17 @@ Every non-2xx response has this shape:
 - [`GET /health`](#health_root) Health (root alias)
 - [`POST /v1/admin/simulate`](#admin_simulate) Start simulated Pulse traffic (optional extra)
 - [`POST /v1/admin/reindex`](#admin_reindex) Re-embed a vector collection (optional extra)
+- [`POST /v1/tickets/{ticket_id}/comments`](#ticket_comment) Comment on a ticket
+- [`POST /v1/tickets/{ticket_id}/priority`](#ticket_priority) Change a ticket's priority
+- [`POST /v1/tickets/{ticket_id}/student-action`](#ticket_student_action) Requester buttons: solved, close, keep open
+- [`POST /v1/announcements`](#announcement_create) Post an announcement
+- [`POST /v1/announcements/{announcement_id}/archive`](#announcement_archive) Archive an announcement
+- [`POST /v1/cron/sla`](#cron_sla) Run the SLA reminder scan
+- [`POST /v1/chat/turn`](#chat_turn) One chat turn
+- [`POST /v1/chat/preview`](#chat_preview) Preview a request (plain form)
+- [`POST /v1/chat/confirm`](#chat_confirm) Confirm a proposal
+- [`POST /v1/tickets/{ticket_id}/files`](#ticket_file_upload) Attach a file to a ticket
+- [`GET /v1/files/{file_id}/link`](#file_link) Get a signed link to a file
 - [Schemas](#schemas)
 
 <a id="triage"></a>
@@ -68,6 +79,7 @@ Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
 | `location` | [LocationIn](#schema-locationin) \| null | no |  |
 | `conversation_id` | string \| null | no |  |
 | `simulated` | boolean | no | True only for `scripts/simulate_pulse.py` traffic (P4.10); default `false` |
+| `chat_confirmed` | boolean | no | Set only by `POST /v1/chat/confirm` (the route forces it to false here): the requester already confirmed a proposal, so no clarifying question is asked and a FAQ cell opens a ticket (P9.8); default `false` |
 
 **Response `200`:** `application/json` [TriageResponse](#schema-triageresponse)
 
@@ -638,9 +650,13 @@ Response `200`:
     "office": "Registrar",
     "category": "Registration",
     "priority": "medium",
-    "status": "open",
+    "status": "new",
     "provisional": false,
     "sla_due_at": "2026-11-08T10:02:00+03:00",
+    "clock_started_at": "2026-11-07T10:02:00+03:00",
+    "reminder_sent_at": null,
+    "awaiting_student": false,
+    "reminder_count": 0,
     "escalated_at": null,
     "resolved_at": null,
     "title": "Account still on hold after fee payment; grades not visible",
@@ -702,7 +718,7 @@ Error example (`feedback_error_student_forbidden`, 403):
 <a id="ticket_status"></a>
 ## `POST /v1/tickets/{ticket_id}/status`
 
-**Change a ticket's status from the dashboard.** Dashboard status change (LD-25); same path as the inbound Linear sync.
+**Change a ticket's status from the dashboard.** Status change by staff of the ticket's office or an admin (never on their own request). Only the transitions of the lifecycle table are allowed (`transition <from> -> <to> not allowed`, 422): new -> in_progress, new/in_progress -> solved, new/in_progress/solved -> closed, solved/closed -> in_progress (reopen, the clock restarts). The optional note becomes a public comment inside the status email. Same status = no-op.
 
 - **Roles:** `staff`, `admin`
 - **Auth:** service token
@@ -721,7 +737,7 @@ Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `status` | [TicketStatus](#schema-ticketstatus) | yes |  |
+| `status` | `new` \| `in_progress` \| `solved` \| `closed` | yes |  |
 | `note` | string \| null | no |  |
 
 **Response `200`:** `application/json` [TicketOut](#schema-ticketout)
@@ -758,6 +774,10 @@ Response `200`:
   "status": "in_progress",
   "provisional": false,
   "sla_due_at": "2026-11-06T09:14:00+03:00",
+  "clock_started_at": "2026-11-05T09:14:00+03:00",
+  "reminder_sent_at": null,
+  "awaiting_student": false,
+  "reminder_count": 0,
   "escalated_at": null,
   "resolved_at": null,
   "title": "Water leak next to power sockets in M 214",
@@ -784,13 +804,13 @@ Response `200`:
 
 **Side effects**
 
-- updates the `tickets` row; updates the Linear issue
-- in-app notification to the student; email on `resolved` if allow-listed
+- updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a `ticket_activity` row `status`; appends an `events` row `ticket.status`
+- after the response: updates the Linear issue; in-app notification to the requester; one allow-listed email to the requester (`in_progress`, `solved`, `closed` or `reopened`)
 
 <a id="ticket_forward"></a>
 ## `POST /v1/tickets/{ticket_id}/forward`
 
-**Forward a ticket to another office.** Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, keeps its status, priority and SLA, and the Linear issue is updated.
+**Forward a ticket to another office.** Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, goes back to `new`, keeps its priority, its SLA clock restarts, and the Linear issue is updated. Only `new` and `in_progress` tickets can be forwarded.
 
 - **Roles:** `staff`, `admin`
 - **Auth:** service token
@@ -846,6 +866,10 @@ Response `200`:
   "status": "in_progress",
   "provisional": false,
   "sla_due_at": "2026-11-06T11:30:00+03:00",
+  "clock_started_at": "2026-11-05T11:30:00+03:00",
+  "reminder_sent_at": null,
+  "awaiting_student": false,
+  "reminder_count": 0,
   "escalated_at": null,
   "resolved_at": null,
   "title": "Projector in C 105 has no power during the lecture",
@@ -872,8 +896,8 @@ Response `200`:
 
 **Side effects**
 
-- updates the `tickets` row (office, category, tag `forwarded`); appends an `events` row `ticket.forwarded`
-- after the response: updates the Linear issue (label, title, description); one in-app `ticket_forwarded` notification for `office:<new office>`
+- updates the `tickets` row (office, category, status `new`, tag `forwarded`, clock); inserts a `ticket_activity` row `forward` and a `ticket_hints` row; appends an `events` row `ticket.forwarded`
+- after the response: updates the Linear issue (label, title, description); one in-app `ticket_forwarded` notification for `office:<new office>`; allow-listed emails to the requester and the new office (`forwarded`)
 - no prediction change and no live-memory write
 
 <a id="list_reviews"></a>
@@ -1053,9 +1077,13 @@ Response `200`:
     "office": "it",
     "category": "IT Support",
     "priority": "medium",
-    "status": "open",
+    "status": "new",
     "provisional": false,
     "sla_due_at": "2026-11-08T10:15:00+03:00",
+    "clock_started_at": "2026-11-07T10:15:00+03:00",
+    "reminder_sent_at": null,
+    "awaiting_student": false,
+    "reminder_count": 0,
     "escalated_at": null,
     "resolved_at": null,
     "title": "Cannot reach the e-learning page to submit the assignment",
@@ -1412,7 +1440,7 @@ Response `200`:
 
 **Response `200`:** `application/json` [WebhookAck](#schema-webhookack)
 
-**Example** (fixture `linear_webhook_status_sync`): Linear moved CDP-43 to Done (`updatedFrom.stateId` marks a state change): the linked ticket becomes resolved.
+**Example** (fixture `linear_webhook_status_sync`): Linear moved CDP-43 to Done (`updatedFrom.stateId` marks a state change): the linked ticket becomes solved.
 
 `request.json`:
 
@@ -1448,7 +1476,7 @@ Response `200`:
 {
   "accepted": true,
   "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003",
-  "status": "resolved"
+  "status": "solved"
 }
 ```
 
@@ -2227,6 +2255,1149 @@ Error example (`admin_reindex_error_not_built`, 501):
 
 - rewrites every `faq.embedding`
 
+<a id="ticket_comment"></a>
+## `POST /v1/tickets/{ticket_id}/comments`
+
+**Comment on a ticket.** The requester adds a public comment (a comment on a solved or closed ticket reopens it). Staff of the ticket's office or an admin reply publicly (the ticket moves to in_progress and waits for the requester), add an `internal` note the requester never sees, or send a reply that also sets `status` (one status email carries the comment). A caller who owns the request is always treated as the requester.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [CommentRequest](#schema-commentrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `body` | string | yes | min len 1 |
+| `internal` | boolean | no | default `false` |
+| `status` | `in_progress` \| `solved` \| `closed` \| null | no |  |
+| `file_ids` | array of string | no | Files the caller already uploaded to this ticket (`ticket_file_upload`) |
+
+**Response `200`:** `application/json` [TicketThreadOut](#schema-ticketthreadout)
+
+**Example** (fixture `ticket_comment_requester_reply`): The requester answers; the office is emailed (and the admin inbox when the ticket was forwarded).
+
+`request.json`:
+
+```json
+{
+  "body": "Room 2, the CampusNet network.",
+  "internal": false,
+  "status": null
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031/comments" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "ticket": {
+    "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0031",
+    "incident_id": null,
+    "office": "it",
+    "category": "IT Support",
+    "priority": "medium",
+    "status": "in_progress",
+    "provisional": false,
+    "sla_due_at": "2026-11-06T11:30:00+03:00",
+    "clock_started_at": "2026-11-05T11:30:00+03:00",
+    "reminder_sent_at": null,
+    "awaiting_student": false,
+    "reminder_count": 0,
+    "escalated_at": null,
+    "resolved_at": null,
+    "title": "Wi-Fi drops in the library",
+    "links": []
+  },
+  "activity": {
+    "id": "a3f1c2d4-0b5e-4c7a-8d19-2e3f4a5b6c02",
+    "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+    "kind": "comment",
+    "visibility": "public",
+    "actor_role": "student",
+    "actor_alias": "demo-17",
+    "actor_office": null,
+    "body": "Room 2, the CampusNet network.",
+    "from_status": null,
+    "to_status": null,
+    "from_office": null,
+    "to_office": null,
+    "from_priority": null,
+    "to_priority": null,
+    "created_at": "2026-11-05T12:05:00+03:00"
+  }
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `ticket_comment_error_student_internal` | 403 | A requester may not add an internal note: 403 forbidden. |
+| `ticket_comment_staff_reply` | 200 | IT staff reply publicly: the ticket moves to in_progress and waits for the requester; the requester gets one email. |
+
+Error example (`ticket_comment_error_student_internal`, 403):
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "a requester can only add a public comment",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a `ticket_activity` row (`comment`, `note` or `status`); appends an `events` row
+- after the response: allow-listed email (`staff_reply` to the requester, `requester_reply` to the office and, on a forwarded ticket, the admin inbox, or the status/`reopened` email); in-app notification to the requester on a staff reply; none for an internal note
+
+<a id="ticket_priority"></a>
+## `POST /v1/tickets/{ticket_id}/priority`
+
+**Change a ticket's priority.** Staff of the ticket's office or an admin (never on their own request) change the priority of a `new` or `in_progress` ticket. The SLA clock restarts with the new priority's period. Same priority = no-op. No email.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [PriorityRequest](#schema-priorityrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `note` | string \| null | no |  |
+
+**Response `200`:** `application/json` [TicketOut](#schema-ticketout)
+
+**Example** (fixture `ticket_priority_high`): IT staff raise the priority to high: the clock restarts with the one-hour period; no email.
+
+`request.json`:
+
+```json
+{
+  "priority": "high",
+  "note": "The whole library floor is offline."
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031/priority" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+  "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0031",
+  "incident_id": null,
+  "office": "it",
+  "category": "IT Support",
+  "priority": "high",
+  "status": "in_progress",
+  "provisional": false,
+  "sla_due_at": "2026-11-05T13:10:00+03:00",
+  "clock_started_at": "2026-11-05T12:10:00+03:00",
+  "reminder_sent_at": null,
+  "awaiting_student": true,
+  "reminder_count": 0,
+  "escalated_at": null,
+  "resolved_at": null,
+  "title": "Wi-Fi drops in the library",
+  "links": []
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- updates the `tickets` row (priority, clock); inserts a `ticket_activity` row `priority` and a `ticket_hints` row; appends an `events` row `ticket.priority`
+- after the response: updates the Linear issue
+
+<a id="ticket_student_action"></a>
+## `POST /v1/tickets/{ticket_id}/student-action`
+
+**Requester buttons: solved, close, keep open.** The requester confirms the fix (`solved`), closes the ticket (`close`) or asks to keep it open (`keep_open`: back to in_progress, the clock restarts). Only the owner of the request may call it.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [StudentActionRequest](#schema-studentactionrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `action` | `solved` \| `close` \| `keep_open` | yes |  |
+
+**Response `200`:** `application/json` [TicketOut](#schema-ticketout)
+
+**Example** (fixture `ticket_student_action_solved`): The requester confirms the fix: the ticket becomes solved and the office is emailed.
+
+`request.json`:
+
+```json
+{
+  "action": "solved"
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031/student-action" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+  "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0031",
+  "incident_id": null,
+  "office": "it",
+  "category": "IT Support",
+  "priority": "medium",
+  "status": "solved",
+  "provisional": false,
+  "sla_due_at": "2026-11-06T11:30:00+03:00",
+  "clock_started_at": "2026-11-05T11:30:00+03:00",
+  "reminder_sent_at": null,
+  "awaiting_student": false,
+  "reminder_count": 0,
+  "escalated_at": null,
+  "resolved_at": "2026-11-05T12:30:00+03:00",
+  "title": "Wi-Fi drops in the library",
+  "links": []
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- updates the `tickets` row (status, `awaiting_student`, clock on keep open); inserts a `ticket_activity` row `student_action`; appends an `events` row `ticket.student_action`
+- after the response: updates the Linear issue; allow-listed email to the office (`solved`, `closed` or `reopened`)
+
+<a id="announcement_create"></a>
+## `POST /v1/announcements`
+
+**Post an announcement.** Staff post a notice for their own office, admins for any office or campus-wide (`office` null). Students read live announcements on Home (Supabase read under RLS).
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [AnnouncementIn](#schema-announcementin)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `title` | string | yes | min len 1 |
+| `body` | string | yes | min len 1 |
+| `kind` | `info` \| `outage` \| `maintenance` | no | default `"info"` |
+| `office` | string \| null | no | D-005 office code; null = campus-wide (admin) |
+| `starts_at` | string (date-time) \| null | no |  |
+| `ends_at` | string (date-time) \| null | no |  |
+
+**Response `200`:** `application/json` [AnnouncementOut](#schema-announcementout)
+
+**Example** (fixture `announcement_create`): IT staff post a maintenance notice for their own office (fictional text).
+
+`request.json`:
+
+```json
+{
+  "title": "Outlook unavailable for two hours",
+  "body": "Mail will be offline tonight for maintenance.",
+  "kind": "maintenance",
+  "office": null,
+  "starts_at": null,
+  "ends_at": "2026-11-06T22:00:00+03:00"
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/announcements" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "a1b2c3d4-0000-4a00-8000-000000000051",
+  "office": "it",
+  "kind": "maintenance",
+  "title": "Outlook unavailable for two hours",
+  "body": "Mail will be offline tonight for maintenance.",
+  "starts_at": "2026-11-05T09:05:00+03:00",
+  "ends_at": "2026-11-06T22:00:00+03:00",
+  "archived_at": null,
+  "created_by": "5f0d2f0e-0000-4a00-8000-0000000000a1",
+  "created_at": "2026-11-05T09:05:00+03:00"
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `announcement_create_error_other_office` | 403 | Staff may only post for their own office: an explicit other office is forbidden. |
+
+Error example (`announcement_create_error_other_office`, 403):
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "staff may only post for their own office",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- inserts an `announcements` row (realtime to open Home pages)
+
+<a id="announcement_archive"></a>
+## `POST /v1/announcements/{announcement_id}/archive`
+
+**Archive an announcement.** Staff of the announcement's office, or an admin, take it off Home (sets `archived_at`).
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `announcement_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [AnnouncementOut](#schema-announcementout)
+
+**Example** (fixture `announcement_archive`): Staff of the announcement's office archive it.
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/announcements/a1b2c3d4-0000-4a00-8000-000000000051/archive" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "a1b2c3d4-0000-4a00-8000-000000000051",
+  "office": "it",
+  "kind": "maintenance",
+  "title": "Outlook unavailable for two hours",
+  "body": "Mail will be offline tonight for maintenance.",
+  "starts_at": "2026-11-05T09:05:00+03:00",
+  "ends_at": "2026-11-06T22:00:00+03:00",
+  "archived_at": "2026-11-05T10:00:00+03:00",
+  "created_by": "5f0d2f0e-0000-4a00-8000-0000000000a1",
+  "created_at": "2026-11-05T09:05:00+03:00"
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- sets `announcements.archived_at`
+
+<a id="cron_sla"></a>
+## `POST /v1/cron/sla`
+
+**Run the SLA reminder scan.** Scans the overdue `new` and `in_progress` tickets and sends at most two reminders per clock period (level 1 when overdue, level 2 one SLA period later, also to the admin inbox). Called every 10 minutes by `.github/workflows/sla-ping.yml`; the request also wakes a sleeping service. Safe to repeat: a reminder level is claimed once.
+
+- **Roles:** `service`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [SlaScanOut](#schema-slascanout)
+
+**Example** (fixture `cron_sla`): The scheduled SLA scan (service token): two tickets got a reminder.
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/cron/sla" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "ran_at": "2026-11-02T09:10:00+03:00",
+  "reminded": [
+    "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+    "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0032"
+  ]
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 501 | `not_implemented`: Optional extra that is not built in this deployment. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- per reminded ticket: updates `reminder_count` and `reminder_sent_at`; inserts an internal `ticket_activity` row `reminder`, a `notifications` row for the office and an `events` row `sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)
+
+<a id="chat_turn"></a>
+## `POST /v1/chat/turn`
+
+**One chat turn.** The chat agent's next message for a conversation (1..20 messages, the last from the user). The language model only talks: it never decides category, priority, office or flags (the classifier does, on the requester's own words). A request becomes a proposal with a server-signed token; a ticket is created only when the user confirms it with that token. Distress is handled first with no LLM call. `mode: fallback` = no language model (no key, disabled or failing): the client shows the plain form and uses preview and confirm.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ChatTurnRequest](#schema-chatturnrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `messages` | array of [ChatMessage](#schema-chatmessage) | yes |  |
+| `proposal_token` | string \| null | no |  |
+
+**Response `200`:** `application/json` [ChatTurnResponse](#schema-chatturnresponse)
+
+**Example** (fixture `chat_turn_proposal`): The assistant proposes a request and waits for a yes (the token is shown in the response).
+
+`request.json`:
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "The Moodle quiz page keeps freezing when I click submit",
+      "kind": "text"
+    }
+  ],
+  "proposal_token": null
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/chat/turn" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "mode": "agent",
+  "reply": "Sorry about the Moodle trouble, that is frustrating. I can send this to IT Support. Shall I record the request?",
+  "proposal": {
+    "token": "eyJhbGlhcyI6ImRlbW8tMTciLCJjYXRlZ29yeSI6IklUIFN1cHBvcnQifQ.5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e",
+    "text": "The Moodle quiz page keeps freezing when I click submit",
+    "category": "IT Support",
+    "priority": "medium",
+    "office": "it",
+    "action_kind": "ticket",
+    "question": null,
+    "faq": null,
+    "hint": null,
+    "why": {
+      "category": {
+        "label": "IT Support",
+        "prob": 0.78,
+        "set": [
+          "IT Support"
+        ]
+      },
+      "priority": {
+        "label": "medium",
+        "prob": 0.73,
+        "set": [
+          "medium"
+        ],
+        "evidence": [
+          {
+            "type": "transient_glitch",
+            "span": "keeps freezing"
+          }
+        ]
+      },
+      "neighbors": [
+        {
+          "text": "The e-learning quiz page hangs when I press submit",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.88,
+          "source": "memory",
+          "created_at": "2026-11-05T10:58:12+03:00"
+        },
+        {
+          "text": "المنصة بتعلق لما أسلم الواجب",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.79,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "I can't see my quiz grade on Moodle",
+          "label": "Academic Support",
+          "priority": "low",
+          "sim": 0.71,
+          "source": "train",
+          "created_at": null
+        }
+      ]
+    }
+  },
+  "ticket_id": null,
+  "triage": null,
+  "clear_proposal": false
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `chat_turn_fallback` | 200 | No language model (no key, disabled or failing): the client shows the plain form. |
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 503 | `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- calls the language model through OpenRouter (pinned model, temperature 0, cached) unless in fallback mode
+- a proposal writes nothing
+- a confirmed proposal inserts `requests`, `predictions` and `events` rows, opens a ticket (as `POST /v1/chat/confirm`), and after the response writes the thread's `created` row and sends the allow-listed `received` emails
+- distress: runs the full triage (`requests`, `predictions`, `review_queue` rows), no ticket, no LLM call
+
+<a id="chat_preview"></a>
+## `POST /v1/chat/preview`
+
+**Preview a request (plain form).** No language model: classifies the text with the offline model, applies the decision policy with a one-question budget, and returns what would be recorded (department, priority, FAQ answer, a past staff correction if one is similar) with a signed token to confirm. When `question` is set, answer it by calling again with `asked` and `answer`. Used by the plain-form fallback and the Why this? view.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ChatPreviewRequest](#schema-chatpreviewrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `text` | string | yes | min len 1 |
+| `asked` | array of string | no |  |
+| `answer` | string \| null | no |  |
+
+**Response `200`:** `application/json` [ProposalOut](#schema-proposalout)
+
+**Example** (fixture `chat_preview_ticket`): The plain form: what would be recorded, with a signed token to confirm.
+
+`request.json`:
+
+```json
+{
+  "text": "The Moodle quiz page keeps freezing when I click submit",
+  "asked": [],
+  "answer": null
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/chat/preview" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "token": "eyJhbGlhcyI6ImRlbW8tMTciLCJjYXRlZ29yeSI6IklUIFN1cHBvcnQifQ.5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e",
+  "text": "The Moodle quiz page keeps freezing when I click submit",
+  "category": "IT Support",
+  "priority": "medium",
+  "office": "it",
+  "action_kind": "ticket",
+  "question": null,
+  "faq": null,
+  "hint": null,
+  "why": {
+    "category": {
+      "label": "IT Support",
+      "prob": 0.78,
+      "set": [
+        "IT Support"
+      ]
+    },
+    "priority": {
+      "label": "medium",
+      "prob": 0.73,
+      "set": [
+        "medium"
+      ],
+      "evidence": [
+        {
+          "type": "transient_glitch",
+          "span": "keeps freezing"
+        }
+      ]
+    },
+    "neighbors": [
+      {
+        "text": "The e-learning quiz page hangs when I press submit",
+        "label": "IT Support",
+        "priority": "medium",
+        "sim": 0.88,
+        "source": "memory",
+        "created_at": "2026-11-05T10:58:12+03:00"
+      },
+      {
+        "text": "المنصة بتعلق لما أسلم الواجب",
+        "label": "IT Support",
+        "priority": "medium",
+        "sim": 0.79,
+        "source": "train",
+        "created_at": null
+      },
+      {
+        "text": "I can't see my quiz grade on Moodle",
+        "label": "Academic Support",
+        "priority": "low",
+        "sim": 0.71,
+        "source": "train",
+        "created_at": null
+      }
+    ]
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 503 | `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- writes nothing, except that a distress message is triaged and persisted (`requests`, `predictions`, `review_queue` rows) and answered through `question`
+
+<a id="chat_confirm"></a>
+## `POST /v1/chat/confirm`
+
+**Confirm a proposal.** Records the request of a proposal the caller received: the token must be signed by the server, unexpired and bound to the caller's alias (else 422). Runs the triage with the clarification budget at 0 (a FAQ cell opens a ticket instead of answering) and applies a similar past staff correction as a recorded re-route.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ChatConfirmRequest](#schema-chatconfirmrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `proposal_token` | string | yes | min len 1 |
+
+**Response `200`:** `application/json` [ChatConfirmResponse](#schema-chatconfirmresponse)
+
+**Example** (fixture `chat_confirm_ticket`): A confirmed proposal opens a ticket (the same triage response as POST /v1/triage).
+
+`request.json`:
+
+```json
+{
+  "proposal_token": "eyJhbGlhcyI6ImRlbW8tMTciLCJjYXRlZ29yeSI6IklUIFN1cHBvcnQifQ.5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e5f0d2f0e"
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/chat/confirm" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "triage": {
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0010",
+    "status": "decided",
+    "lang": "en",
+    "is_arabizi": false,
+    "understood_as": null,
+    "category": {
+      "label": "IT Support",
+      "prob": 0.78,
+      "set": [
+        "IT Support"
+      ]
+    },
+    "priority": {
+      "label": "medium",
+      "prob": 0.73,
+      "set": [
+        "medium"
+      ],
+      "evidence": [
+        {
+          "type": "transient_glitch",
+          "span": "keeps freezing"
+        }
+      ]
+    },
+    "tier": "tier1",
+    "clarification": null,
+    "explanation": {
+      "top_tokens": [
+        [
+          "freezing",
+          0.31
+        ],
+        [
+          "quiz",
+          0.2
+        ],
+        [
+          "submit",
+          0.16
+        ],
+        [
+          "Moodle",
+          0.14
+        ],
+        [
+          "page",
+          0.04
+        ]
+      ],
+      "neighbors": [
+        {
+          "text": "The e-learning quiz page hangs when I press submit",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.88,
+          "source": "memory",
+          "created_at": "2026-11-05T10:58:12+03:00"
+        },
+        {
+          "text": "المنصة بتعلق لما أسلم الواجب",
+          "label": "IT Support",
+          "priority": "medium",
+          "sim": 0.79,
+          "source": "train",
+          "created_at": null
+        },
+        {
+          "text": "I can't see my quiz grade on Moodle",
+          "label": "Academic Support",
+          "priority": "low",
+          "sim": 0.71,
+          "source": "train",
+          "created_at": null
+        }
+      ],
+      "counterfactual": {
+        "drop": "freezing",
+        "category": "Academic Support",
+        "priority": "low"
+      },
+      "trace": {
+        "sets": {
+          "cat": 1,
+          "pri": 1
+        },
+        "models_agree": false,
+        "cost_usd": 0.00021,
+        "latency_ms": 980,
+        "policy_path": [
+          "e_escalate",
+          "c_accept"
+        ],
+        "clarified": false,
+        "artifact_version": "v1",
+        "per_model": null
+      }
+    },
+    "flags": [],
+    "action": {
+      "type": "ticket",
+      "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0010",
+      "external": [
+        {
+          "sink": "linear",
+          "external_id": "CP-47",
+          "url": "https://linear.app/campuspulse-demo/issue/CP-47"
+        }
+      ],
+      "sla_due_at": "2026-11-08T11:00:00+03:00",
+      "message": "Helpdesk ticket opened. IT Support will get back to you within 72 hours.",
+      "provisional": false,
+      "tags": [],
+      "booking": null,
+      "faq": null,
+      "incident_id": null
+    },
+    "message": null,
+    "understanding": {
+      "summary_en": "The Moodle quiz page freezes whenever the student clicks submit.",
+      "summary_ar": "صفحة الكويز على مودل بتعلق كل ما الطالب يكبس تسليم.",
+      "entities": {
+        "building": null,
+        "room": null,
+        "course_code": null,
+        "deadline": null,
+        "system": "e-learning"
+      },
+      "student_reply": "Thanks, we've opened a helpdesk ticket. If the quiz has a deadline, take a screenshot of the error to share with your instructor.",
+      "ticket_title": "Moodle quiz page freezes on submit",
+      "ticket_body": "Reported by demo-17: the Moodle quiz page freezes when clicking submit.",
+      "source": "llm",
+      "prompt_version": "v1"
+    }
+  },
+  "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0010",
+  "hint_applied": false
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `chat_confirm_error_expired` | 422 | An expired, tampered or foreign token is refused. |
+
+Error example (`chat_confirm_error_expired`, 422):
+
+```json
+{
+  "error": {
+    "code": "invalid_input",
+    "message": "this proposal has expired",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 503 | `artifact_unavailable`: The frozen model artifact is missing or failed its checksum. `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- inserts `requests`, `predictions` and `events` rows; opens a ticket (Supabase + Linear issue), may create or attach to an incident
+- a hint re-route inserts a `ticket_activity` row `forward` (actor system, body `past correction`) and updates the Linear issue
+- after the response: the thread's `created` row and the allow-listed `received` emails
+
+<a id="ticket_file_upload"></a>
+## `POST /v1/tickets/{ticket_id}/files`
+
+**Attach a file to a ticket.** Multipart upload (`file`, `internal`, optional `activity_id`). The requester (public files only), staff of the ticket's office and admins may upload. The type is decided by the file's bytes (PNG, JPEG, WEBP, PDF, Word, Excel, PowerPoint, plain text); a name or type that claims something else is refused. Caps: 5 MB per file, 5 files and 15 MB per ticket. The original filename is not stored. Send the returned id in `file_ids` of a comment to attach it to that message. No virus scan (demo; use sample files only).
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`multipart/form-data`: [Body_ticket_file_upload](#schema-body_ticket_file_upload)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `file` | string | yes | The file (5 MB at most) |
+| `internal` | boolean | no | default `false` |
+| `activity_id` | string \| null | no |  |
+
+**Response `200`:** `application/json` [FileOut](#schema-fileout)
+
+**Example** (fixture `ticket_file_upload`): The requester attaches a small text file to their own ticket (public).
+
+`sample-note.txt`:
+
+```csv
+Sample file for the demo. No real document.
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031/files" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -F "file=@sample-note.txt;type=text/csv" `
+  -F "internal=false"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "f7d2a1c9-3b64-4e85-9a10-5c2e8b7d0041",
+  "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+  "mime": "text/plain",
+  "size_bytes": 44,
+  "ext": "txt",
+  "visibility": "public",
+  "created_at": "2026-11-05T11:35:00+03:00"
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `ticket_file_upload_error_type` | 422 | A file whose bytes are not an allowed type (for example an executable renamed to .png) is refused. |
+
+Error example (`ticket_file_upload_error_type`, 422):
+
+```json
+{
+  "error": {
+    "code": "invalid_input",
+    "message": "the file does not match its name; it was refused",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- stores the bytes in the private `ticket-files` bucket under a generated path and inserts a `ticket_files` row
+
+<a id="file_link"></a>
+## `GET /v1/files/{file_id}/link`
+
+**Get a signed link to a file.** A link that opens the file for 60 seconds. Who may read the file row may get a link: the requester (public files only), staff of the ticket's office, an admin. Images and PDFs open in a tab; other types download.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `file_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [FileLinkOut](#schema-filelinkout)
+
+**Example** (fixture `file_link`): A signed link to one file; it works for 60 seconds (a fictional address).
+
+```powershell
+curl.exe -s -X GET "$env:AI_URL/v1/files/f7d2a1c9-3b64-4e85-9a10-5c2e8b7d0041/link" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "url": "https://storage.example.invalid/object/sign/ticket-files/tickets/c1a9e3b7/f7d2a1c9.txt?token=demo&download=f7d2a1c9.txt",
+  "expires_in": 60
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `file_link_error_internal` | 403 | The requester asks for a link to a staff-only file: refused. |
+
+Error example (`file_link_error_internal`, 403):
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "this file is for staff only",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- none (the link is signed, nothing is written)
+
 <a id="schemas"></a>
 ## Schemas
 
@@ -2266,6 +3437,61 @@ What happened next (SPEC §5.1 [11]).
 
 Values: `faq_answer`, `ticket`, `booking`, `safety_alert`, `incident_merge`
 
+<a id="schema-activityout"></a>
+### ActivityOut
+
+One row of a ticket's thread (mirrors a `ticket_activity` row).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `ticket_id` | string | yes |  |
+| `kind` | `created` \| `comment` \| `note` \| `status` \| `forward` \| `priority` \| `student_action` \| `reminder` | yes |  |
+| `visibility` | `public` \| `internal` | yes |  |
+| `actor_role` | `student` \| `staff` \| `admin` \| `system` | yes |  |
+| `actor_alias` | string \| null | yes |  |
+| `actor_office` | string \| null | yes |  |
+| `body` | string | yes |  |
+| `from_status` | string \| null | yes |  |
+| `to_status` | string \| null | yes |  |
+| `from_office` | string \| null | yes |  |
+| `to_office` | string \| null | yes |  |
+| `from_priority` | string \| null | yes |  |
+| `to_priority` | string \| null | yes |  |
+| `created_at` | string (date-time) | yes |  |
+
+<a id="schema-announcementin"></a>
+### AnnouncementIn
+
+Body of `POST /v1/announcements`.  Staff post for their own office (`office` omitted or equal to theirs; another office is 403); admins pick any office, or leave it null for a campus-wide notice. `starts_at` defaults to now; `ends_at` must be after `starts_at`.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `title` | string | yes | min len 1 |
+| `body` | string | yes | min len 1 |
+| `kind` | `info` \| `outage` \| `maintenance` | no | default `"info"` |
+| `office` | string \| null | no | D-005 office code; null = campus-wide (admin) |
+| `starts_at` | string (date-time) \| null | no |  |
+| `ends_at` | string (date-time) \| null | no |  |
+
+<a id="schema-announcementout"></a>
+### AnnouncementOut
+
+One announcement (a row of `announcements`).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `office` | string \| null | yes |  |
+| `kind` | `info` \| `outage` \| `maintenance` | yes |  |
+| `title` | string | yes |  |
+| `body` | string | yes |  |
+| `starts_at` | string (date-time) | yes |  |
+| `ends_at` | string (date-time) \| null | yes |  |
+| `archived_at` | string (date-time) \| null | yes |  |
+| `created_by` | string \| null | yes |  |
+| `created_at` | string (date-time) \| null | yes |  |
+
 <a id="schema-artifactout"></a>
 ### ArtifactOut
 
@@ -2299,6 +3525,15 @@ One benchmark cell (SPEC §6.2). Null metrics = `n/a` (no key) or `cut` (M3).
 | --- | --- | --- | --- |
 | `file` | string | yes | CSV with columns request_id,text (UTF-8) |
 | `use_llm` | boolean | no | default `false` |
+
+<a id="schema-body_ticket_file_upload"></a>
+### Body_ticket_file_upload
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `file` | string | yes | The file (5 MB at most) |
+| `internal` | boolean | no | default `false` |
+| `activity_id` | string \| null | no |  |
 
 <a id="schema-bookingout"></a>
 ### BookingOut
@@ -2352,6 +3587,72 @@ Category decision: the label, its probability and the conformal set.
 | `prob` | number | yes | >= 0.0, <= 1.0 |
 | `set` | array of [Category](#schema-category) | yes | Conformal prediction set (1-alpha = 0.90) |
 
+<a id="schema-chatconfirmrequest"></a>
+### ChatConfirmRequest
+
+Body of `POST /v1/chat/confirm`.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `proposal_token` | string | yes | min len 1 |
+
+<a id="schema-chatconfirmresponse"></a>
+### ChatConfirmResponse
+
+The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `triage` | [TriageResponse](#schema-triageresponse) | yes |  |
+| `ticket_id` | string \| null | yes |  |
+| `hint_applied` | boolean | yes |  |
+
+<a id="schema-chatmessage"></a>
+### ChatMessage
+
+One message of the conversation. The client tags the assistant messages it got from a proposal (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts after the last of them.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `role` | `user` \| `assistant` | yes |  |
+| `content` | string | yes | min len 1 |
+| `kind` | `text` \| `proposal` \| `ticket` | no | default `"text"` |
+
+<a id="schema-chatpreviewrequest"></a>
+### ChatPreviewRequest
+
+Body of `POST /v1/chat/preview` (the plain form): the text, the question ids already asked and the answer to the last question (appended to the text).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `text` | string | yes | min len 1 |
+| `asked` | array of string | no |  |
+| `answer` | string \| null | no |  |
+
+<a id="schema-chatturnrequest"></a>
+### ChatTurnRequest
+
+Body of `POST /v1/chat/turn`: 1..20 messages, the last one from the user, and the token of the proposal the assistant made last (if any, so that a "yes" can confirm it).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `messages` | array of [ChatMessage](#schema-chatmessage) | yes |  |
+| `proposal_token` | string \| null | no |  |
+
+<a id="schema-chatturnresponse"></a>
+### ChatTurnResponse
+
+The assistant's next message. `mode: fallback` = no language model; the client shows the plain form. `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or a distress message was handled), `clear_proposal` when the client should drop its pending proposal.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `mode` | `agent` \| `fallback` | yes |  |
+| `reply` | string | yes |  |
+| `proposal` | [ProposalOut](#schema-proposalout) \| null | yes |  |
+| `ticket_id` | string \| null | yes |  |
+| `triage` | [TriageResponse](#schema-triageresponse) \| null | yes |  |
+| `clear_proposal` | boolean | yes |  |
+
 <a id="schema-clarificationoptionout"></a>
 ### ClarificationOptionOut
 
@@ -2383,6 +3684,18 @@ Body of `POST /v1/triage/{request_id}/clarify`: exactly one of `option_id` or `f
 | `question_id` | string | yes | min len 1 |
 | `option_id` | string \| null | no |  |
 | `free_text` | string \| null | no |  |
+
+<a id="schema-commentrequest"></a>
+### CommentRequest
+
+Body of `POST /v1/tickets/{ticket_id}/comments`.  A requester sends a public comment. Staff send a public reply, an `internal` note (never shown to the requester) or a reply that also sets `status` (then one status email carries the comment).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `body` | string | yes | min len 1 |
+| `internal` | boolean | no | default `false` |
+| `status` | `in_progress` \| `solved` \| `closed` \| null | no |  |
+| `file_ids` | array of string | no | Files the caller already uploaded to this ticket (`ticket_file_upload`) |
 
 <a id="schema-confusionout"></a>
 ### ConfusionOut
@@ -2571,6 +3884,31 @@ Result of `POST /v1/feedback`.
 | `actions` | array of [ActionOut](#schema-actionout) | yes | Deferred actions that fired on confirmation |
 | `message` | string | yes |  |
 
+<a id="schema-filelinkout"></a>
+### FileLinkOut
+
+A signed link to open one file: valid for `expires_in` seconds (60), then it stops working.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `url` | string | yes |  |
+| `expires_in` | integer | yes |  |
+
+<a id="schema-fileout"></a>
+### FileOut
+
+One file on a ticket (a row of `ticket_files`, without its storage path or the original name).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `ticket_id` | string | yes |  |
+| `mime` | string | yes |  |
+| `size_bytes` | integer | yes |  |
+| `ext` | string | yes |  |
+| `visibility` | `public` \| `internal` | yes |  |
+| `created_at` | string (date-time) | yes |  |
+
 <a id="schema-forwardrequest"></a>
 ### ForwardRequest
 
@@ -2597,6 +3935,18 @@ Body of `POST /v1/tickets/{ticket_id}/forward` and `POST /v1/reviews/{review_id}
 | `sinks` | array of string | yes |  |
 | `llm_tiers` | array of [Tier](#schema-tier) | yes |  |
 | `vector_store` | string \| null | yes |  |
+
+<a id="schema-hintout"></a>
+### HintOut
+
+A past staff correction that changed the proposal (no text of the other request is shown).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `hint_id` | string | yes |  |
+| `category` | [Category](#schema-category) | yes |  |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `sim` | number | yes | >= 0.0, <= 1.0 |
 
 <a id="schema-incidentout"></a>
 ### IncidentOut
@@ -2712,6 +4062,16 @@ Priority decision: label, probability, conformal set and the evidence that drove
 | `set` | array of [Priority](#schema-priority) | yes |  |
 | `evidence` | array of [EvidenceOut](#schema-evidenceout) | yes |  |
 
+<a id="schema-priorityrequest"></a>
+### PriorityRequest
+
+Body of `POST /v1/tickets/{ticket_id}/priority`: the clock restarts with the new priority's period.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `note` | string \| null | no |  |
+
 <a id="schema-problemclusterout"></a>
 ### ProblemClusterOut
 
@@ -2727,6 +4087,35 @@ A recurring problem (UD-6): semantically similar requests in one category/buildi
 | `last_seen` | string (date-time) | yes |  |
 | `representative_text` | string | yes |  |
 | `sample_request_ids` | array of string | yes |  |
+
+<a id="schema-proposalout"></a>
+### ProposalOut
+
+What the assistant proposes to record. `token` is the server-signed proof the caller must send to confirm (empty while `question` is set: answer it with another preview first).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `token` | string | yes |  |
+| `text` | string | yes | The request text the proposal is about (the requester's own words) |
+| `category` | [Category](#schema-category) | yes |  |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `office` | string | yes | D-005 office code the request goes to |
+| `action_kind` | [ActionType](#schema-actiontype) | yes |  |
+| `question` | [ClarificationOut](#schema-clarificationout) \| null | yes | Set when one more answer is needed first (or a supportive message with no options) |
+| `faq` | [FaqAnswerOut](#schema-faqanswerout) \| null | yes | Set for a `faq_answer` cell: the answer to show first |
+| `hint` | [HintOut](#schema-hintout) \| null | yes |  |
+| `why` | [ProposalWhyOut](#schema-proposalwhyout) | yes |  |
+
+<a id="schema-proposalwhyout"></a>
+### ProposalWhyOut
+
+Behind the "Why this?" button: the model's category and priority and its three nearest examples.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `category` | [CategoryOut](#schema-categoryout) | yes |  |
+| `priority` | [PriorityOut](#schema-priorityout) | yes |  |
+| `neighbors` | array of [NeighborOut](#schema-neighborout) | yes |  |
 
 <a id="schema-redteamfailureout"></a>
 ### RedTeamFailureOut
@@ -2889,6 +4278,25 @@ A started simulated burst. All its requests carry `simulated=true`.
 | `interval_s` | number | yes |  |
 | `label` | `"SIMULATED TRAFFIC"` | yes |  |
 
+<a id="schema-slascanout"></a>
+### SlaScanOut
+
+Result of `POST /v1/cron/sla`: the tickets that got a reminder in this scan.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `ran_at` | string (date-time) | yes |  |
+| `reminded` | array of string | yes | Ids of the tickets reminded now (a claimed level 1 or 2) |
+
+<a id="schema-studentactionrequest"></a>
+### StudentActionRequest
+
+Body of `POST /v1/tickets/{ticket_id}/student-action`: the requester's three buttons.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `action` | `solved` \| `close` \| `keep_open` | yes |  |
+
 <a id="schema-ticketout"></a>
 ### TicketOut
 
@@ -2909,11 +4317,15 @@ A CampusPulse ticket (system of record in Supabase).
 | `resolved_at` | string (date-time) \| null | yes |  |
 | `title` | string | yes |  |
 | `links` | array of [ExternalRefOut](#schema-externalrefout) | yes |  |
+| `clock_started_at` | string (date-time) | yes | Start of the running SLA period (P9) |
+| `reminder_sent_at` | string (date-time) \| null | yes | When the overdue reminder went out, if it did |
+| `awaiting_student` | boolean | yes | Staff replied and wait for the requester |
+| `reminder_count` | integer | yes | SLA reminders sent in the current period (0 to 2); >= 0.0, <= 2.0 |
 
 <a id="schema-ticketstatus"></a>
 ### TicketStatus
 
-Values: `open`, `in_progress`, `resolved`, `closed`, `escalated`, `merged`
+Values: `new`, `in_progress`, `solved`, `closed`, `merged`
 
 <a id="schema-ticketstatusrequest"></a>
 ### TicketStatusRequest
@@ -2922,8 +4334,18 @@ Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25).
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `status` | [TicketStatus](#schema-ticketstatus) | yes |  |
+| `status` | `new` \| `in_progress` \| `solved` \| `closed` | yes |  |
 | `note` | string \| null | no |  |
+
+<a id="schema-ticketthreadout"></a>
+### TicketThreadOut
+
+Answer of `POST /v1/tickets/{ticket_id}/comments`: the ticket after the comment and the new row.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `ticket` | [TicketOut](#schema-ticketout) | yes |  |
+| `activity` | [ActivityOut](#schema-activityout) | yes |  |
 
 <a id="schema-tier"></a>
 ### Tier
@@ -2959,6 +4381,7 @@ Body of `POST /v1/triage` (SPEC §7).
 | `location` | [LocationIn](#schema-locationin) \| null | no |  |
 | `conversation_id` | string \| null | no |  |
 | `simulated` | boolean | no | True only for `scripts/simulate_pulse.py` traffic (P4.10); default `false` |
+| `chat_confirmed` | boolean | no | Set only by `POST /v1/chat/confirm` (the route forces it to false here): the requester already confirmed a proposal, so no clarifying question is asked and a FAQ cell opens a ticket (P9.8); default `false` |
 
 <a id="schema-triageresponse"></a>
 ### TriageResponse

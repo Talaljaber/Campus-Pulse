@@ -1,6 +1,6 @@
 {
   "name": "linear_webhook_status_sync",
-  "description": "Linear moved CDP-43 to Done (`updatedFrom.stateId` marks a state change): the linked ticket becomes resolved.",
+  "description": "Linear moved CDP-43 to Done (`updatedFrom.stateId` marks a state change): the linked ticket becomes solved.",
   "method": "POST",
   "path": "/v1/integrations/linear/webhook",
   "path_params": {},
@@ -28,7 +28,7 @@
   "response": {
     "accepted": true,
     "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003",
-    "status": "resolved"
+    "status": "solved"
   },
   "omit_auth": true
 }

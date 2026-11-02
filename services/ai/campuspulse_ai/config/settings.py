@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     llm_frontend_model: str | None = None  # overrides the pinned model of the yaml (measurements only)
     llm_frontend_cache_path: Path | None = None  # overrides the yaml cache (scratch caches)
 
+    # Chat agent (P9.8): the LLM part runs only with OPENROUTER_API_KEY and CHAT_AGENT_ENABLED != false;
+    # preview and confirm always work (the plain form). Model id and parameters are pinned in the yaml.
+    chat_agent_enabled: bool = True
+    chat_agent_config: Path = Path("config/chat_agent.yaml")
+
     # Supabase (service role is server-side only)
     supabase_url: str | None = None
     supabase_service_role_key: SecretStr | None = None
@@ -94,6 +99,11 @@ class Settings(BaseSettings):
     # Allow-listed demo inboxes the action engine emails (P4.8). Unset = that email is skipped.
     demo_student_inbox: str | None = None  # stands in for every student's email (booking confirmations)
     demo_office_inbox: str | None = None  # safety and transport alerts
+    # Per-office inboxes for ticket emails (P9.2): `it=a@x.com,finance=b@x.com`; unset offices fall
+    # back to demo_office_inbox.
+    demo_office_inboxes: Annotated[dict[str, str], NoDecode] = {}
+    demo_admin_inbox: str | None = None  # second SLA reminder and forwarded-ticket replies
+    public_web_url: str | None = None  # base of the links in emails; unset = no link
 
     # Linear and outbound sinks
     linear_api_key: SecretStr | None = None
@@ -116,6 +126,7 @@ class Settings(BaseSettings):
 
     # Background loops
     sla_scan_minutes: int = 5
+    sla_sweep_min_interval_s: int = 60  # SLA sweep after API responses, at most this often; 0 disables
     incident_window_min: int = 30
 
     # Artifacts and runtime
@@ -146,6 +157,27 @@ class Settings(BaseSettings):
         if self.llm_provider_order:
             prefs["order"] = list(self.llm_provider_order)
         return prefs
+
+    @field_validator("demo_office_inboxes", mode="before")
+    @classmethod
+    def _parse_office_inboxes(cls, value: object) -> object:
+        """Accept ``it=a@x.com, finance=b@x.com``; any pair without a name and an address is an error."""
+        if not isinstance(value, str):
+            return value
+        out: dict[str, str] = {}
+        for pair in (p.strip() for p in value.split(",")):
+            if not pair:
+                continue
+            name, sep, address = (part.strip() for part in pair.partition("="))
+            if not sep or not name or "@" not in address:
+                raise ValueError(f"invalid DEMO_OFFICE_INBOXES pair {pair!r}; expected office=address")
+            out[name.lower()] = address
+        return out
+
+    @field_validator("public_web_url", mode="after")
+    @classmethod
+    def _trim_web_url(cls, value: str | None) -> str | None:
+        return (value.strip().rstrip("/") or None) if value else None
 
     @field_validator("demo_email_allowlist", mode="before")
     @classmethod

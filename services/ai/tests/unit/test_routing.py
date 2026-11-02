@@ -34,7 +34,7 @@ FAQ, TICKET, BOOKING, ALERT = (
 
 # SPEC §5.1 [11] with UD-1: (kind, also_ticket) per cell.
 EXPECTED: dict[tuple[Category, Priority], tuple[ActionType, bool]] = {
-    (A, LOW): (FAQ, False), (A, MED): (TICKET, False), (A, HIGH): (BOOKING, True),
+    (A, LOW): (FAQ, False), (A, MED): (TICKET, False), (A, HIGH): (TICKET, False),
     (R, LOW): (FAQ, False), (R, MED): (TICKET, False), (R, HIGH): (TICKET, False),
     (IT, LOW): (FAQ, False), (IT, MED): (TICKET, False), (IT, HIGH): (TICKET, False),
     (F, LOW): (FAQ, False), (F, MED): (TICKET, False), (F, HIGH): (TICKET, False),
@@ -79,14 +79,14 @@ def test_offices_are_exactly_the_d005_codes(planner: TableActionPlanner) -> None
 
 
 def test_sla_hours(planner: TableActionPlanner) -> None:
-    assert dict(planner.config.sla_hours) == {HIGH: 24, MED: 72, LOW: 336}
-    for priority, hours in ((HIGH, 24), (MED, 72), (LOW, 336)):
+    assert dict(planner.config.sla_hours) == {HIGH: 1, MED: 24, LOW: 48}
+    for priority, hours in ((HIGH, 1), (MED, 24), (LOW, 48)):
         assert planner.plan(R, priority, NO_FLAGS, provisional=False).sla_hours == hours
 
 
-def test_ud1_only_academic_support_high_books(planner: TableActionPlanner) -> None:
+def test_no_cell_books_any_more_p9(planner: TableActionPlanner) -> None:
     bookings = [cell for cell in EXPECTED if planner.plan(*cell, NO_FLAGS, provisional=False).kind == BOOKING]
-    assert bookings == [(A, HIGH)]
+    assert bookings == []  # booking dropped (P9, brainstorm 17.4)
     registration_high = planner.plan(R, HIGH, NO_FLAGS, provisional=False)
     assert registration_high.kind == TICKET and "same-day-escalation" in registration_high.tags
 
@@ -95,14 +95,14 @@ def test_safety_flag_overrides_any_category(planner: TableActionPlanner) -> None
     for category in CATEGORY_ORDER:
         plan = planner.plan(category, HIGH, frozenset({"safety"}), provisional=False)
         assert (plan.kind, plan.also_ticket, plan.office) == (ALERT, True, OFFICE[category])
-        assert plan.sla_hours == 24 and plan.tags[0] == "safety"
+        assert plan.sla_hours == 1 and plan.tags[0] == "safety"
 
 
-def test_provisional_defers_booking_into_a_ticket(planner: TableActionPlanner) -> None:
-    plan = planner.plan(A, HIGH, NO_FLAGS, provisional=True)
+def test_provisional_defers_a_faq_cell_into_a_ticket(planner: TableActionPlanner) -> None:
+    plan = planner.plan(A, LOW, NO_FLAGS, provisional=True)
     assert (plan.kind, plan.also_ticket, plan.office) == (TICKET, False, "academic")
-    assert plan.tags[:2] == ("unconfirmed", "deferred:booking")
-    assert deferred_kind(plan) == BOOKING
+    assert plan.tags[:2] == ("unconfirmed", "deferred:faq_answer")
+    assert deferred_kind(plan) == FAQ
 
 
 def test_provisional_ticket_has_nothing_deferred(planner: TableActionPlanner) -> None:

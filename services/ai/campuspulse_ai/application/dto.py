@@ -218,6 +218,13 @@ class TriageRequest(_Model):
     simulated: bool = Field(
         default=False, description="True only for `scripts/simulate_pulse.py` traffic (P4.10)."
     )
+    chat_confirmed: bool = Field(
+        default=False,
+        description=(
+            "Set only by `POST /v1/chat/confirm` (the route forces it to false here): the requester already "
+            "confirmed a proposal, so no clarifying question is asked and a FAQ cell opens a ticket (P9.8)."
+        ),
+    )
 
 
 class CategoryOut(_Model):
@@ -476,6 +483,10 @@ class TicketOut(_Model):
     resolved_at: datetime | None
     title: str
     links: list[ExternalRefOut]
+    clock_started_at: datetime = Field(description="Start of the running SLA period (P9).")
+    reminder_sent_at: datetime | None = Field(description="When the overdue reminder went out, if it did.")
+    awaiting_student: bool = Field(description="Staff replied and wait for the requester.")
+    reminder_count: int = Field(ge=0, le=2, description="SLA reminders sent in the current period (0 to 2).")
 
 
 class MemoryWriteOut(_Model):
@@ -503,7 +514,7 @@ class FeedbackResponse(_Model):
 class TicketStatusRequest(_Model):
     """Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25)."""
 
-    status: TicketStatus
+    status: Literal["new", "in_progress", "solved", "closed"]
     note: str | None = None
 
 
@@ -518,6 +529,66 @@ class ForwardRequest(_Model):
         description="D-005 office code: registrar, it, finance, transport, facilities or academic.",
     )
     note: str | None = None
+
+
+# --- ticket thread (P9.3) ---------------------------------------------------------------------------
+
+
+class CommentRequest(_Model):
+    """Body of `POST /v1/tickets/{ticket_id}/comments`.
+
+    A requester sends a public comment. Staff send a public reply, an `internal` note (never shown to the
+    requester) or a reply that also sets `status` (then one status email carries the comment).
+    """
+
+    body: str = Field(min_length=1, max_length=4000)
+    internal: bool = False
+    status: Literal["in_progress", "solved", "closed"] | None = None
+    file_ids: list[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description="Files the caller already uploaded to this ticket (`ticket_file_upload`).",
+    )
+
+
+class PriorityRequest(_Model):
+    """Body of `POST /v1/tickets/{ticket_id}/priority`: the clock restarts with the new priority's period."""
+
+    priority: Priority
+    note: str | None = None
+
+
+class StudentActionRequest(_Model):
+    """Body of `POST /v1/tickets/{ticket_id}/student-action`: the requester's three buttons."""
+
+    action: Literal["solved", "close", "keep_open"]
+
+
+class ActivityOut(_Model):
+    """One row of a ticket's thread (mirrors a `ticket_activity` row)."""
+
+    id: str
+    ticket_id: str
+    kind: Literal["created", "comment", "note", "status", "forward", "priority", "student_action", "reminder"]
+    visibility: Literal["public", "internal"]
+    actor_role: Literal["student", "staff", "admin", "system"]
+    actor_alias: str | None
+    actor_office: str | None
+    body: str
+    from_status: str | None
+    to_status: str | None
+    from_office: str | None
+    to_office: str | None
+    from_priority: str | None
+    to_priority: str | None
+    created_at: datetime
+
+
+class TicketThreadOut(_Model):
+    """Answer of `POST /v1/tickets/{ticket_id}/comments`: the ticket after the comment and the new row."""
+
+    ticket: TicketOut
+    activity: ActivityOut
 
 
 # --- advisor review (UD-13) -------------------------------------------------------------------------
@@ -858,3 +929,162 @@ class ReindexResponse(_Model):
     reindexed: int = Field(ge=0)
     dim: int = Field(ge=1)
     duration_ms: int = Field(ge=0)
+
+
+# --- announcements (P9.5) ---------------------------------------------------------------------------
+
+AnnouncementKindName = Literal["info", "outage", "maintenance"]
+"""Mirrors `domain.announcements.AnnouncementKind`."""
+
+
+class AnnouncementIn(_Model):
+    """Body of `POST /v1/announcements`.
+
+    Staff post for their own office (`office` omitted or equal to theirs; another office is 403);
+    admins pick any office, or leave it null for a campus-wide notice. `starts_at` defaults to now;
+    `ends_at` must be after `starts_at`.
+    """
+
+    title: str = Field(min_length=1, max_length=120)
+    body: str = Field(min_length=1, max_length=1000)
+    kind: AnnouncementKindName = "info"
+    office: str | None = Field(default=None, description="D-005 office code; null = campus-wide (admin).")
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+
+
+class AnnouncementOut(_Model):
+    """One announcement (a row of `announcements`)."""
+
+    id: str
+    office: str | None
+    kind: AnnouncementKindName
+    title: str
+    body: str
+    starts_at: datetime
+    ends_at: datetime | None
+    archived_at: datetime | None
+    created_by: str | None
+    created_at: datetime | None
+
+
+class SlaScanOut(_Model):
+    """Result of `POST /v1/cron/sla`: the tickets that got a reminder in this scan."""
+
+    ran_at: datetime
+    reminded: list[str] = Field(description="Ids of the tickets reminded now (a claimed level 1 or 2).")
+
+
+# --- chat agent (P9.8) ------------------------------------------------------------------------------
+
+ChatRole = Literal["user", "assistant"]
+ChatMessageKind = Literal["text", "proposal", "ticket"]
+ChatMode = Literal["agent", "fallback"]
+
+
+class ChatMessage(_Model):
+    """One message of the conversation. The client tags the assistant messages it got from a proposal
+    (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts
+    after the last of them."""
+
+    role: ChatRole
+    content: str = Field(min_length=1, max_length=2000)
+    kind: ChatMessageKind = "text"
+
+
+class ChatTurnRequest(_Model):
+    """Body of `POST /v1/chat/turn`: 1..20 messages, the last one from the user, and the token of the
+    proposal the assistant made last (if any, so that a "yes" can confirm it)."""
+
+    messages: list[ChatMessage] = Field(min_length=1, max_length=20)
+    proposal_token: str | None = Field(default=None, max_length=4000)
+
+
+class HintOut(_Model):
+    """A past staff correction that changed the proposal (no text of the other request is shown)."""
+
+    hint_id: str
+    category: Category
+    priority: Priority
+    sim: Probability
+
+
+class ProposalWhyOut(_Model):
+    """Behind the "Why this?" button: the model's category and priority and its three nearest examples."""
+
+    category: CategoryOut
+    priority: PriorityOut
+    neighbors: list[NeighborOut]
+
+
+class ProposalOut(_Model):
+    """What the assistant proposes to record. `token` is the server-signed proof the caller must send to
+    confirm (empty while `question` is set: answer it with another preview first)."""
+
+    token: str
+    text: str = Field(description="The request text the proposal is about (the requester's own words).")
+    category: Category
+    priority: Priority
+    office: str = Field(description="D-005 office code the request goes to.")
+    action_kind: ActionType
+    question: ClarificationOut | None = Field(
+        description="Set when one more answer is needed first (or a supportive message with no options)."
+    )
+    faq: FaqAnswerOut | None = Field(description="Set for a `faq_answer` cell: the answer to show first.")
+    hint: HintOut | None
+    why: ProposalWhyOut
+
+
+class ChatTurnResponse(_Model):
+    """The assistant's next message. `mode: fallback` = no language model; the client shows the plain form.
+    `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or
+    a distress message was handled), `clear_proposal` when the client should drop its pending proposal."""
+
+    mode: ChatMode
+    reply: str
+    proposal: ProposalOut | None
+    ticket_id: str | None
+    triage: TriageResponse | None
+    clear_proposal: bool
+
+
+class ChatPreviewRequest(_Model):
+    """Body of `POST /v1/chat/preview` (the plain form): the text, the question ids already asked and the
+    answer to the last question (appended to the text)."""
+
+    text: str = Field(min_length=1, max_length=2000)
+    asked: list[str] = Field(default_factory=list, max_length=5)
+    answer: str | None = Field(default=None, max_length=500)
+
+
+class ChatConfirmRequest(_Model):
+    """Body of `POST /v1/chat/confirm`."""
+
+    proposal_token: str = Field(min_length=1, max_length=4000)
+
+
+class ChatConfirmResponse(_Model):
+    """The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it."""
+
+    triage: TriageResponse
+    ticket_id: str | None
+    hint_applied: bool
+
+
+class FileOut(_Model):
+    """One file on a ticket (a row of `ticket_files`, without its storage path or the original name)."""
+
+    id: str
+    ticket_id: str
+    mime: str
+    size_bytes: int
+    ext: str
+    visibility: Literal["public", "internal"]
+    created_at: datetime
+
+
+class FileLinkOut(_Model):
+    """A signed link to open one file: valid for `expires_in` seconds (60), then it stops working."""
+
+    url: str
+    expires_in: int

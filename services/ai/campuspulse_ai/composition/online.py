@@ -19,7 +19,7 @@ artifacts and every online adapter:
 7. The use cases: triage, clarify, feedback (live learning), the ticket lifecycle and SLA scanner,
    Pulse (embedding upsert and incident detection), batch, metrics, the red team (live memory on),
    the identity verifier, and UD-13 advisor routing (review assignment, `GET /v1/reviews`, review
-   and ticket forwards).
+   and the P9.3 ticket lifecycle).
 
 `wire_online(settings, offline, adapters, clock)` does steps 6-7 over any adapters, so tests run the
 same wiring over `InMemoryRepository`, `LocalNumpyVectorStore` and fakes (`tests/unit/test_online.py`).
@@ -50,6 +50,7 @@ from campuspulse_ai.adapters.llm.cost import InMemoryCostLogger
 from campuspulse_ai.adapters.llm.prompt import load_prompt
 from campuspulse_ai.adapters.notify.allowlist import AllowlistedNotifier
 from campuspulse_ai.adapters.notify.channels import ChannelNotifier
+from campuspulse_ai.adapters.notify.email_templates import load_ticket_email_templates
 from campuspulse_ai.adapters.notify.inapp import InAppNotifier
 from campuspulse_ai.adapters.pulse.incident_detector import WindowedCentroidDetector
 from campuspulse_ai.adapters.reports.json_reports import JsonReportsSource
@@ -59,12 +60,15 @@ from campuspulse_ai.application.services.gaming import GamingDetector
 from campuspulse_ai.application.services.llm_merge import LLMMerger
 from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.application.use_cases.act import ActConfig, ActUseCase
+from campuspulse_ai.application.use_cases.announcement_ports import AnnouncementStore
+from campuspulse_ai.application.use_cases.announcements import AnnouncementsUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
-from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
+from campuspulse_ai.application.use_cases.escalate_sla import SlaReminderUseCase
 from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
-from campuspulse_ai.application.use_cases.forward import TicketForwardUseCase
+from campuspulse_ai.application.use_cases.file_ports import BlobStore, FileStore
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
+from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
 from campuspulse_ai.application.use_cases.offices import OfficeMap
@@ -77,8 +81,12 @@ from campuspulse_ai.application.use_cases.ports import (
 )
 from campuspulse_ai.application.use_cases.reviews import ReviewAssigner, ReviewRouter, ReviewsUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
+from campuspulse_ai.application.use_cases.ticket_emails import InboxBook, TicketMailer
+from campuspulse_ai.application.use_cases.ticket_files import TicketFilesUseCase
+from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.composition.api import ApiServices, HealthInfo, build_identity
+from campuspulse_ai.composition.chat import build_chat
 from campuspulse_ai.composition.offline import OfflineContainer, build_offline
 from campuspulse_ai.composition.redteam import build_redteam, resolve
 from campuspulse_ai.config.paths import CONFIG_DIR
@@ -115,6 +123,8 @@ TEMPLATES_DIR = CONFIG_DIR / "templates"
 ORACLE_PROMPT = "oracle"
 UNDERSTAND_PROMPT = "understand"
 UNDERSTAND_PROMPT_VERSION = "v1"
+FILE_TIMEOUT_S = 30.0
+"""Seconds for one Supabase Storage call (a 5 MB upload)."""
 
 
 @dataclass(frozen=True)
@@ -130,6 +140,8 @@ class OnlineAdapters:
     - `channels`: notifier per outbox kind (`in_app` always; `email` only when SMTP is configured).
     - `calendars`: providers for `FallbackCalendar`, in order.
     - `vector_store`: what `/health` reports (`pgvector` or `local`).
+    - `journey`: the thread, hints and contacts of the ticket lifecycle (P9.3); without it the ticket
+      routes answer 501.
     """
 
     repo: Repository
@@ -144,6 +156,10 @@ class OnlineAdapters:
     vector_store: str = VECTOR_STORE_PGVECTOR
     reviews: ReviewReads | None = None
     directory: AdvisorDirectory | None = None
+    journey: JourneyStore | None = None
+    announcements: AnnouncementStore | None = None  # P9.5; without it the routes answer 501
+    files: FileStore | None = None  # P9.10: ticket file rows; with `blobs` it serves the file routes
+    blobs: BlobStore | None = None  # P9.10: the private `ticket-files` bucket
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,9 +177,7 @@ class HandTuned:
         """The file's values; a missing file or key keeps `fallback` (the frozen config's values).
         Raises `ValueError` for a value outside (0, 1]."""
         data = _yaml(path) if path.is_file() else {}
-        values = {
-            key: float(data.get(key, getattr(fallback, key))) for key in ("tau_faq", "tau_inc")
-        }
+        values = {key: float(data.get(key, getattr(fallback, key))) for key in ("tau_faq", "tau_inc")}
         for key, value in values.items():
             if not 0.0 < value <= 1.0:
                 raise ValueError(f"{path}: {key} must be in (0, 1], got {value}")
@@ -235,6 +249,9 @@ def supabase_adapters(
     """The production adapters over one Supabase client (module docstring, steps 2-5)."""
     from campuspulse_ai.adapters.memory.cached import QueryCachingMemoryStore
     from campuspulse_ai.adapters.memory.pgvector_memory import PgVectorMemoryStore
+    from campuspulse_ai.adapters.store.announcements_supabase import SupabaseAnnouncementStore
+    from campuspulse_ai.adapters.store.files_supabase import SupabaseFileStore
+    from campuspulse_ai.adapters.store.journey_supabase import SupabaseJourneyStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
 
@@ -256,6 +273,24 @@ def supabase_adapters(
         vector_store=VECTOR_STORE_PGVECTOR,
         reviews=repo,
         directory=repo,
+        journey=SupabaseJourneyStore(client, clock),
+        announcements=SupabaseAnnouncementStore(client),
+        files=SupabaseFileStore(client),
+        blobs=_blob_store(settings),
+    )
+
+
+def _blob_store(settings: Settings) -> BlobStore | None:
+    """Supabase Storage over httpx with the service key (server side only), or None without both."""
+    key = settings.supabase_service_role_key
+    if not settings.supabase_url or key is None:
+        return None
+    import httpx
+
+    from campuspulse_ai.adapters.store.storage_supabase import SupabaseBlobStore
+
+    return SupabaseBlobStore(
+        settings.supabase_url, key.get_secret_value(), httpx.Client(timeout=FILE_TIMEOUT_S)
     )
 
 
@@ -467,9 +502,10 @@ def wire_online(
         if adapters.reviews is not None and directory is not None
         else None
     )
+    flow_clarifier = InfoGainStrategy(QuestionBank.load(CONFIG_DIR / "clarify_questions.yaml"))
     flow = DecisionFlow(
         policy=policy,
-        clarifier=InfoGainStrategy(QuestionBank.load(CONFIG_DIR / "clarify_questions.yaml")),
+        clarifier=flow_clarifier,
         tiers=tiers,
         explainer=None,  # P3.4 (ML) is not built: the flow explains with the core's evidence and neighbours
         gaming=GamingDetector(
@@ -490,17 +526,73 @@ def wire_online(
         ),
         reviews=assigner,
     )
+    mailer = TicketMailer(
+        load_ticket_email_templates(TEMPLATES_DIR / "email"),
+        notifier,
+        clock,
+        InboxBook(
+            student_inbox=settings.demo_student_inbox,
+            office_inboxes=settings.demo_office_inboxes,
+            default_office_inbox=settings.demo_office_inbox,
+            admin_inbox=settings.demo_admin_inbox,
+        ),
+        settings.public_web_url,
+    )
+    lifecycle = (
+        TicketLifecycleUseCase(
+            repo,
+            adapters.journey,
+            mailer,
+            sinks,
+            clock,
+            actions_config.sla_hours,
+            offices,
+            messages,
+            # the encoder the online core runs: hints and the chat preview live in the same space
+            offline.encoder,
+            adapters.files,
+        )
+        if adapters.journey is not None
+        else None
+    )
+    ticket_files = (
+        TicketFilesUseCase(repo, adapters.files, adapters.blobs, adapters.journey, clock)
+        if adapters.journey is not None and adapters.files is not None and adapters.blobs is not None
+        else None
+    )
+    sla = (
+        SlaReminderUseCase(repo, adapters.journey, mailer, messages, actions_config.sla_hours)
+        if adapters.journey is not None
+        else None
+    )
+    triage = TriageUseCase(core, flow, repo, clock, marks=adapters.marks)
+    chat = build_chat(
+        settings,
+        classifier=core,
+        policy=policy,
+        clarifier=flow_clarifier,
+        act=act,
+        triage=triage,
+        repo=repo,
+        clock=clock,
+        lifecycle=lifecycle,
+        journey=adapters.journey,
+        announcements=adapters.announcements,
+        encoder=offline.encoder,
+    )
     manifest = offline.manifest
     return ApiServices(
-        triage=TriageUseCase(core, flow, repo, clock, marks=adapters.marks),
+        triage=triage,
         clarify=ClarifyUseCase(core, flow, repo, clock),
         feedback=feedback,
         tickets=SyncTicketUseCase(
             sinks, repo, notifier, clock, messages, student_inbox=act_config.student_inbox
         ),
-        forward=TicketForwardUseCase(sinks, repo, offices, messages),
         reviews=reviews,
-        sla=EscalateSlaUseCase(sinks, repo, messages),
+        lifecycle=lifecycle,
+        chat=chat,
+        files=ticket_files,
+        sla=sla,
         clock=clock,
         incidents=IncidentsUseCase(
             adapters.reads,
@@ -518,6 +610,11 @@ def wire_online(
         ),
         redteam=build_redteam(core, policy, repo, clock, settings, memory=True),
         identity=adapters.identity,
+        announcements=(
+            AnnouncementsUseCase(adapters.announcements, clock, offices.offices)
+            if adapters.announcements is not None
+            else None
+        ),
         health=HealthInfo(
             artifact=manifest.artifact_version,
             sha=manifest.sha,
@@ -534,4 +631,3 @@ def _yaml(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError(f"{path}: expected a mapping")
     return data
-

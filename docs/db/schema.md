@@ -20,6 +20,7 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 | 0010 | `0010_office_notifications.sql` | `notifications_read` altered: staff also read alias `office:<their office>`; `review_queue` and `ticket_links` added to Realtime |
 | 0011 | `0011_distress_reviews_admin_only.sql` | `review_queue_read` altered: staff no longer read `distress` items; admin only |
 | 0012 | `0012_advisor_routing.sql` | UD-13: `profiles.advisor_id`, `advisors.profile_id`, `review_queue.assignee` + `office` (trigger-filled); `review_queue_read` narrowed to own office, unassigned or own items |
+| 0013 | `0013_student_journey.sql` | P9: `profiles` directory columns (`display_name`, `student_number`, `faculty`, `university_email`, `demo_inbox`); `tickets.status` renamed (`open`→`new`, `resolved`→`solved`, `escalated`→`in_progress`) with new columns `clock_started_at`, `reminder_sent_at`, `awaiting_student`, `requester_alias` (trigger-filled); new tables `ticket_activity` (thread), `announcements`, `ticket_hints` (+ `match_ticket_hints`); helpers `private.cp_owns_ticket`, `private.cp_ticket_office_staff`. Not yet applied to the remote project (the lead applies it). |
 
 **Applying a migration.** Commit the file first. Then apply the same SQL with the Supabase MCP `apply_migration`, or with `supabase db push` on a linked CLI.
 - **MCP version repair.** MCP records a timestamp version. Afterwards, set the row in `supabase_migrations.schema_migrations` to the file's version and name (`0001`/`init`, …). This is what `supabase migration repair` does. It keeps the remote history identical to the file names, so a later `db push` does not re-apply anything.
@@ -45,7 +46,7 @@ Supabase project `efsanbaklpiakhsndhph` (Postgres 17.11, pgvector 0.8.2). Every 
 - **lang:** `en`, `ar`, `arabizi` (`faq.lang` is `en`/`ar` only)
 - **tier:** `tier0`, `tier1`, `tier2`, `human`
 - **requests.status:** `received`, `needs_clarification`, `clarified`, `decided`, `human_review`, `out_of_scope`, `distress`, `actioned`, `resolved`, `merged`
-- **tickets.status:** `open`, `in_progress`, `resolved`, `closed`, `escalated`, `merged`
+- **tickets.status:** `new`, `in_progress`, `solved`, `closed`, `merged` (0013; `merged` is system-only, set for incident duplicates). Incident status (`open`/`resolved`) is a different enum.
 - **outbox.status:** `queued`, `sent`, `failed`, `rejected`, `simulated`, `deferred` (D-011: held back by the action engine, reason in `error`)
 - **tickets.tags** are free text, not checked. In use (D-011): `safety`, `transport-alert`, `exam-in-progress`, `unconfirmed`, `deferred:<kind>`.
 
@@ -63,7 +64,10 @@ All ids are `uuid default gen_random_uuid()` unless stated. Every table has `cre
 | `predictions` | `request_id`, `category`, `priority`, `p_cat jsonb`, `p_pri jsonb`, `set_cat text[]`, `set_pri text[]`, `per_model jsonb`, `tier`, `models_used text[]`, `cost_usd numeric(10,6)`, `latency_ms`, `flags text[] default '{}'`, `explanation jsonb`, `artifact_version`, `core jsonb` (full CoreResult, 0007) | fk `request_id` (cascade); idx `(request_id, created_at desc)` |
 | `clarifications` | `request_id`, `question_id`, `options jsonb`, `answer`, `asked_at`, `answered_at` | fk request (cascade); idx `(request_id, asked_at)` |
 | `incidents` | `building_id`, `category`, `office` (filled from its first ticket by trigger `tickets_fill_incident_office`), `title`, `priority`, `report_count`, `status` (`open`/`resolved`), `opened_at`, `resolved_at` | fk building; idx `(building_id, status)` |
-| `tickets` | `request_id`, `incident_id`, `office`, `category`, `priority`, `status`, `provisional`, `title`, `body`, `sla_due_at`, `escalated_at`, `resolved_at`, `tags text[] not null default '{}'` (D-011) | fk request (cascade), incident (set null); idx `(office, status, sla_due_at)`, `(request_id)`, `(incident_id)` partial |
+| `tickets` | `request_id`, `incident_id`, `office`, `category`, `priority`, `status`, `provisional`, `title`, `body`, `sla_due_at`, `escalated_at`, `resolved_at`, `tags text[] not null default '{}'` (D-011), `clock_started_at` (not null, default now), `reminder_sent_at`, `awaiting_student bool`, `requester_alias` (read-only copy of `requests.alias`, trigger `tickets_fill_requester`) (0013) | fk request (cascade), incident (set null); idx `(office, status, sla_due_at)`, `(request_id)`, `(incident_id)` partial, `(requester_alias)`, `(sla_due_at)` partial on running statuses |
+| `ticket_activity` | `ticket_id`, `kind` (`created`/`comment`/`note`/`status`/`forward`/`priority`/`student_action`/`reminder`), `visibility` (`public`/`internal`; notes and reminders are internal), `actor_role`, `actor_alias`, `actor_office`, `body`, from/to status, office, priority | RLS: admin; office staff (not the requester); the requester sees public rows only. Service-role writes. In Realtime. (0013) |
+| `announcements` | `office` (null = campus-wide), `kind`, `title`, `body`, `starts_at`, `ends_at`, `archived_at`, `created_by` | authenticated read live rows, staff read archived too; service-role writes. In Realtime. (0013) |
+| `ticket_hints` | `ticket_id`, `kind` (`forward`/`priority`), `request_text`, `embedding vector(384)`, model and corrected category/priority, `note`, author | staff read all columns except `embedding` (column grant); retrieval via service-role RPC `match_ticket_hints`. Read only by the chat agent. (0013) |
 | `ticket_links` | `ticket_id`, `sink`, `external_id`, `external_url`, `last_synced_at`, `last_error` | pk `(ticket_id, sink)`; unique `(sink, external_id)` (for `ticket_by_link`) |
 | `advisors` | `fictional_name`, `department`, `room`, `calendar_id`, `demo_email`, `office_hours jsonb`, `profile_id` → profiles (the advisor's staff login, UD-13) | `profile_id` unique (set null on delete) |
 | `advisor_slots` | `advisor_id`, `starts_at`, `ends_at`, `booked_by` (alias), `booked_at` | unique `(advisor_id, starts_at)`; check `ends_at > starts_at`; partial idx on free slots |
@@ -316,14 +320,17 @@ The seed files are `supabase/seed/*.sql`, loaded by `supabase db reset` (`config
 
 **Scripts:**
 - `python scripts/check_seed_contacts.py` fails unless every email in the seeds passes `RecipientPolicy(DEMO_EMAIL_ALLOWLIST)`. The allow-list must contain the 6 advisor plus-addresses.
-- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles`. All four share `DEMO_USER_PASSWORD`. It also links `advisor@demo.local` to the fictional advisor `a0000000-…-0001` (Dr. Rana Haddad (fictional), `academic`, allow-listed `demo_email`) and makes that advisor `talal@demo.local`'s advisor (UD-13).
+- `python scripts/seed_demo_users.py` (needs `DEMO_USER_PASSWORD`) creates or refreshes these demo logins and upserts their `profiles` (including the 0013 directory columns). All share `DEMO_USER_PASSWORD`. Since P9.1 it no longer manages `advisor@demo.local`: an existing account is left untouched and a note is printed.
 
-  | Login | Role | Office | Alias |
-  | --- | --- | --- | --- |
-  | `talal@demo.local` | student | — | `talal` |
-  | `it@demo.local` | staff | `it` | `staff-it` |
-  | `admin@demo.local` | admin | — | `admin` |
-  | `advisor@demo.local` | staff | `academic` | `advisor` |
+  | Login | Role | Office | Alias | Display name |
+  | --- | --- | --- | --- | --- |
+  | `talal@demo.local` | student | — | `talal` | Talal Demo (no. 20230017) |
+  | `lina@demo.local` | student | — | `lina` | Lina Haddad (20230042) |
+  | `omar@demo.local` | student | — | `omar` | Omar Saleh (20220311) |
+  | `registrar`, `it`, `finance`, `transport`, `facilities`, `academic` `@demo.local` | staff | the office | `staff-<office>` | `<Office> Desk (demo)` |
+  | `admin@demo.local` | admin | — | `admin` | Admin (demo) |
+
+  Students also get a fictional faculty and a university email `<username>@student.demo.local` (shown on Profile, never mailed).
 
   - **Login names:** chosen by the user on 2026-10-31. They replace `student-demo-17@demo.local` and `staff-it@demo.local`; the script renames users still on those names in place, keeping their ids.
   - **No mail:** nothing is sent to these addresses. The users are created already confirmed.

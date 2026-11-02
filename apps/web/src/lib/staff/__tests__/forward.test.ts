@@ -50,13 +50,13 @@ describe("forwardErrorKind", () => {
 
 describe("applyForward", () => {
   it("moves the row to the picked office code and the category that follows it, keeping status and SLA", () => {
-    const row = { id: "t", office: "it", category: "IT Support", status: "open", priority: "high" } as unknown as TicketView;
-    const out = { status: "open", resolved_at: null, escalated_at: null, provisional: false, priority: "high", sla_due_at: "2026-11-09T10:00:00Z" };
+    const row = { id: "t", office: "it", category: "IT Support", status: "new", priority: "high" } as unknown as TicketView;
+    const out = { status: "new", resolved_at: null, escalated_at: null, provisional: false, priority: "high", sla_due_at: "2026-11-09T10:00:00Z" };
     // The API may word the office ("Maintenance"); the row keeps the code the staff member picked.
     expect(applyForward(row, { ...out, category: "Facilities" }, "facilities")).toMatchObject({
       office: "facilities",
       category: "Facilities",
-      status: "open",
+      status: "new",
       sla_due_at: "2026-11-09T10:00:00Z",
     });
   });

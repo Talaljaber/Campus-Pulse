@@ -2,6 +2,7 @@ import { failFromNetwork, failFromResponse, type AiResult } from "./result";
 
 export interface CallAiInit {
   method?: "GET" | "POST";
+  /** JSON-serialisable body, or `FormData` (the browser then sets the multipart boundary itself). */
   body?: unknown;
   /** Abort after this many milliseconds. Default: none (the server proxy already times out at 20 s). */
   timeoutMs?: number;
@@ -23,8 +24,8 @@ export async function callAi<T>(path: string, init: CallAiInit = {}): Promise<Ai
   try {
     res = await fetch(`/api/ai/${path}`, {
       method: init.method ?? "GET",
-      headers: init.body === undefined ? undefined : { "Content-Type": "application/json" },
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      headers: init.body === undefined || init.body instanceof FormData ? undefined : { "Content-Type": "application/json" },
+      body: init.body === undefined ? undefined : init.body instanceof FormData ? init.body : JSON.stringify(init.body),
       cache: "no-store",
       signal,
     });

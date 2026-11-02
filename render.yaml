@@ -15,6 +15,10 @@ services:
         value: "1"
       - key: ENABLE_LLM
         value: "false"
+      - key: SLA_SWEEP_MIN_INTERVAL_S
+        value: "60"
+      - key: CHAT_AGENT_ENABLED
+        value: "true"
       - key: AI_SERVICE_TOKEN
         sync: false
       - key: SUPABASE_URL
@@ -36,6 +40,12 @@ services:
       - key: SMTP_PORT
         value: "587"
       - key: DEMO_EMAIL_ALLOWLIST
+        sync: false
+      - key: DEMO_OFFICE_INBOXES
+        sync: false
+      - key: DEMO_ADMIN_INBOX
+        sync: false
+      - key: PUBLIC_WEB_URL
         sync: false
       - key: LINEAR_API_KEY
         sync: false

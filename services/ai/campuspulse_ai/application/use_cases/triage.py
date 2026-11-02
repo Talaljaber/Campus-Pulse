@@ -200,6 +200,7 @@ class DecisionFlow:
         path: Sequence[str] = (),
         clarified: bool = False,
         debug_members: bool = False,
+        force_ticket: bool = False,
     ) -> dto.TriageResponse:
         if DISTRESS in core.flags:
             return self._distress(request, req, core)
@@ -232,6 +233,7 @@ class DecisionFlow:
             policy_path=policy_path,
             clarified=clarified,
             debug_members=debug_members,
+            force_ticket=force_ticket,
         )
 
     # ------------------------------------------------------------------ outcomes
@@ -354,6 +356,7 @@ class DecisionFlow:
         policy_path: list[str],
         clarified: bool,
         debug_members: bool,
+        force_ticket: bool = False,
     ) -> dto.TriageResponse:
         category, priority = out.decided_labels(core)
         flags = set(core.flags) | extra_flags
@@ -394,7 +397,7 @@ class DecisionFlow:
         decision = self._pulse_step(request, req, pred, plan.kind)
         action = self._merge(decision, request, pred, plan, understanding, provisional)
         if action is None:
-            action = self._act.run(pred, request, provisional, understanding)
+            action = self._act.run(pred, request, provisional, understanding, force_ticket=force_ticket)
             if decision is not None and decision.incident is not None:
                 action = action.model_copy(update={"incident_id": decision.incident.id})
 
@@ -546,7 +549,10 @@ class TriageUseCase:
        anything is written, so invalid input leaves no row);
     2. `Repository.save_request` (status `received`, the normalized request, alias, input mode,
        conversation id);
-    3. `DecisionFlow.run` with a fresh one-question budget.
+    3. `DecisionFlow.run` with a fresh one-question budget. `cmd.chat_confirmed` (P9.8; only the chat
+       route sets it) means the requester already confirmed a proposal: the budget is 0 (an ambiguous
+       request is never asked about again: the policy goes on to ESCALATE when the LLM tiers are usable,
+       else to a provisional HUMAN_REVIEW ticket) and a `faq_answer` cell opens a ticket (`force_ticket`).
     `debug_members` fills `explanation.trace.per_model` (admin `?debug=members`; the route checks the
     role). `cmd.simulated` (simulator traffic; the route honours it for the service token and admins
     only) sets `requests.simulated` through `marks`. Errors: `InvalidInput` (422), `StoreError` (503),
@@ -594,8 +600,9 @@ class TriageUseCase:
             request,
             req,
             core,
-            budget=ClarificationBudget(max_questions=self._max_questions),
+            budget=ClarificationBudget(max_questions=0 if cmd.chat_confirmed else self._max_questions),
             debug_members=debug_members,
+            force_ticket=cmd.chat_confirmed,
         )
 
 

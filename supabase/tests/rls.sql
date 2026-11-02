@@ -1,7 +1,7 @@
 -- RLS proof (ARCHITECTURE §3.14, P4.1). Plain SQL, no pgTAP. Runs as postgres inside one
 -- transaction that is rolled back, so fixtures never persist. Each check impersonates a
 -- client by setting request.jwt.claims and `set local role`, exactly as PostgREST does.
--- Output: one row per check, then a summary row "RLS: n/13 checks passed".
+-- Output: one row per check, then a summary row "RLS: n/19 checks passed".
 -- Run: scripts/test_rls.py (local stack via psql), or paste into the SQL editor / MCP.
 -- Fixture identities are fictional aliases; emails use the reserved example.invalid domain.
 
@@ -201,6 +201,99 @@ begin
   select count(*) into n from public.review_queue where reason = 'rls advisor';
   reset role;
   insert into _rls values (13, 'IT staff read no academic review items', n = 0, format('rows=%s', n));
+
+  -- ---------------------------------------------------------------- 0013 (P9): thread, announcements, hints
+  -- fixtures (as postgres, after the checks above so their counts are unaffected): the IT staff member
+  -- also filed a request of their own (alias rls-staff-it), which gets an IT ticket.
+  insert into public.requests (id, alias, raw_text, lang, status) values
+    ('00000000-0000-4000-8000-0000000b0003', 'rls-staff-it', 'my laptop is broken', 'en', 'decided');
+  insert into public.tickets (id, request_id, office, category, priority, sla_due_at) values
+    ('00000000-0000-4000-8000-0000000d0003', '00000000-0000-4000-8000-0000000b0003', 'it', 'IT Support', 'medium',
+     now() + interval '1 day');
+  insert into public.ticket_activity (id, ticket_id, kind, visibility, actor_role, body) values
+    ('00000000-0000-4000-8000-0000000e0001', '00000000-0000-4000-8000-0000000d0001', 'comment', 'public',   'student', 'rls public a'),
+    ('00000000-0000-4000-8000-0000000e0002', '00000000-0000-4000-8000-0000000d0001', 'note',    'internal', 'staff',   'rls internal a'),
+    ('00000000-0000-4000-8000-0000000e0003', '00000000-0000-4000-8000-0000000d0002', 'comment', 'public',   'student', 'rls public b'),
+    ('00000000-0000-4000-8000-0000000e0004', '00000000-0000-4000-8000-0000000d0003', 'comment', 'public',   'staff',   'rls own request');
+  insert into public.announcements (id, title, body, archived_at) values
+    ('00000000-0000-4000-8000-0000000f0001', 'rls live',     'rls fixture', null),
+    ('00000000-0000-4000-8000-0000000f0002', 'rls archived', 'rls fixture', now());
+  insert into public.ticket_hints (kind, request_text, embedding, corrected_category, corrected_priority) values
+    ('forward', 'rls hint', array_fill(0.1::real, array[384])::extensions.vector, 'IT Support', 'high');
+
+  -- 14. a student reads only the public activity of their own ticket
+  perform set_config('request.jwt.claims', json_build_object('sub', v_a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.ticket_activity where body like 'rls %';
+  select count(*) into m from public.ticket_activity where body = 'rls public a';
+  reset role;
+  insert into _rls values (14, 'student reads only public activity of own tickets', n = 1 and m = 1,
+                           format('visible=%s own_public=%s', n, m));
+
+  -- 15. office staff read all activity of their office's tickets, not of tickets they requested themselves
+  perform set_config('request.jwt.claims', json_build_object('sub', v_it, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n_own from public.ticket_activity
+    where ticket_id = '00000000-0000-4000-8000-0000000d0001';
+  select count(*) into n_other from public.ticket_activity
+    where ticket_id in ('00000000-0000-4000-8000-0000000d0002', '00000000-0000-4000-8000-0000000d0003');
+  reset role;
+  insert into _rls values (15, 'office staff read office activity but not of their own request',
+                           n_own = 2 and n_other = 0, format('office=%s other_or_own=%s', n_own, n_other));
+
+  -- 16. staff read hints but not the embedding column
+  v_err := null; n := null;
+  perform set_config('request.jwt.claims', json_build_object('sub', v_it, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into m from public.ticket_hints where request_text = 'rls hint';
+  begin
+    select count(embedding) into n from public.ticket_hints;
+  exception when others then
+    v_err := sqlstate || ' ' || sqlerrm;
+  end;
+  reset role;
+  insert into _rls values (16, 'staff read ticket_hints but not embedding', m = 1 and v_err like '42501%',
+                           format('rows=%s embedding=%s', m, coalesce(v_err, 'readable')));
+
+  -- 17. anon reads none of the new tables
+  perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
+  v_err := null;
+  begin
+    set local role anon;
+    perform 1 from public.ticket_activity;
+    perform 1 from public.announcements;
+    perform 1 from public.ticket_hints;
+  exception when others then
+    v_err := sqlstate || ' ' || sqlerrm;
+  end;
+  reset role;
+  insert into _rls values (17, 'anon reads no P9 table', v_err like '42501%', coalesce(v_err, 'readable'));
+
+  -- 18. a student reads live announcements only and no hints; staff also see archived ones
+  perform set_config('request.jwt.claims', json_build_object('sub', v_a, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.announcements where body = 'rls fixture';
+  select count(*) into m from public.ticket_hints;
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', v_it, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n_own from public.announcements where body = 'rls fixture';
+  reset role;
+  insert into _rls values (18, 'student sees live announcements and no hints; staff see archived too',
+                           n = 1 and m = 0 and n_own = 2, format('student=%s hints=%s staff=%s', n, m, n_own));
+
+  -- 19. a client cannot write the new tables
+  perform set_config('request.jwt.claims', json_build_object('sub', v_it, 'role', 'authenticated')::text, true);
+  v_err := null;
+  begin
+    set local role authenticated;
+    insert into public.ticket_activity (ticket_id, kind, actor_role, body)
+      values ('00000000-0000-4000-8000-0000000d0001', 'comment', 'staff', 'forged');
+  exception when others then
+    v_err := sqlstate || ' ' || sqlerrm;
+  end;
+  reset role;
+  insert into _rls values (19, 'authenticated cannot write ticket_activity', v_err like '42501%', coalesce(v_err, 'insert succeeded'));
 end $$;
 
 select n, name, ok, detail from _rls

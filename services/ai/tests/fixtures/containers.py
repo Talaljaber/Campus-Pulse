@@ -10,7 +10,7 @@ Real classes: `InMemoryRepository`, `DefaultDecisionPolicy` (tau_ood from a vali
 `RuleBasedUnderstander`, `TableActionPlanner` over `config/actions.yaml`, the allow-listed notifier
 chain (`AllowlistedNotifier` -> `ChannelNotifier` -> `FakeNotifier` for email + `InAppNotifier`), and
 `FallbackCalendar([SlotsTableCalendar])` over one seeded fictional advisor with free slots, and the
-ticket lifecycle (`SyncTicketUseCase`, `EscalateSlaUseCase`, P4.9) over the same sinks and notifier.
+ticket lifecycle (`SyncTicketUseCase`, P4.9) over the same sinks and notifier.
 Fakes: `FakeCore`, `ScriptedOracle` (empty script = LLM off), `FakeSink`, `FakeFAQ`, `FakeLAC`,
 `FrozenClock`. Every email address is a `*.invalid` demo address on the test allow-list.
 """
@@ -42,7 +42,6 @@ from campuspulse_ai.application.services.gaming import GamingDetector
 from campuspulse_ai.application.services.llm_merge import LLMMerger
 from campuspulse_ai.application.use_cases.act import ActConfig, ActUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
-from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.reviews import ReviewAssigner, ReviewRouter
@@ -131,7 +130,6 @@ class BackendTestContainer:
     triage: TriageUseCase
     clarify: ClarifyUseCase
     sync: SyncTicketUseCase
-    sla: EscalateSlaUseCase
     extras: dict[str, Any] = field(default_factory=dict)
 
     def outbox(self, status: str | None = None) -> list[dict[str, Any]]:
@@ -165,6 +163,7 @@ def build_test(
     pulse: Pulse | None = None,
     pulse_encoder: SentenceEncoder | None = None,
     advisor_routing: bool = True,
+    booking_route: bool = False,
     tau_inc: float = 0.92,
     q_category: float = 0.5,
     q_priority: float = 0.5,
@@ -175,7 +174,9 @@ def build_test(
     script (or `llm_enabled=True`). `record_sink=True` puts `SupabaseSink(repo)` first, as production
     does (it writes to this container's repository). `q_*` are the FakeLAC quantiles used when an LLM
     answer is merged. `advisor_routing` wires the UD-13 `ReviewAssigner` over the repository (no
-    student is linked to an advisor until a test calls `link_student_advisor`).
+    student is linked to an advisor until a test calls `link_student_advisor`). `booking_route=True`
+    restores the pre-P9 booking cell (Academic Support/high) to exercise the booking code, which stays
+    in the codebase but is no longer routed by `config/actions.yaml`.
     """
     clock = FrozenClock()
     repo = InMemoryRepository(clock)
@@ -193,7 +194,10 @@ def build_test(
     notifier = AllowlistedNotifier(
         ChannelNotifier({"email": email, "in_app": InAppNotifier(repo)}), policy, repo
     )
-    planner = TableActionPlanner(ActionsConfig.from_dict(load_yaml(CONFIG_DIR / "actions.yaml")))
+    actions = load_yaml(CONFIG_DIR / "actions.yaml")
+    if booking_route:
+        actions["routes"]["Academic Support"]["high"] = {"kind": "booking", "also_ticket": True}
+    planner = TableActionPlanner(ActionsConfig.from_dict(actions))
     chosen: list[TicketSink] = sinks if sinks is not None else [sink]
     if record_sink:
         chosen = [SupabaseSink(repo), *chosen]
@@ -264,7 +268,6 @@ def build_test(
         triage=TriageUseCase(core, flow, repo, clock, marks=repo),
         clarify=ClarifyUseCase(core, flow, repo, clock),
         sync=SyncTicketUseCase(chosen, repo, notifier, clock, msgs, student_inbox=acfg.student_inbox),
-        sla=EscalateSlaUseCase(chosen, repo, msgs),
         extras={"incidents": incidents} if incidents else {},
     )
 

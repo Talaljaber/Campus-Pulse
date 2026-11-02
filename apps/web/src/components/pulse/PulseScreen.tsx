@@ -22,6 +22,8 @@ export interface PulseScreenProps {
   role: "staff" | "admin";
   /** The signed-in user's alias, for the header greeting. */
   alias?: string | null;
+  /** The name for the header greeting: the display name, else the alias. */
+  name?: string | null;
 }
 
 /**
@@ -30,7 +32,7 @@ export interface PulseScreenProps {
  * incident list to it. It only wires `usePulse` to presentational components; staff see the
  * rows of their office and an admin sees all, by row-level security.
  */
-export function PulseScreen({ role, alias = null }: PulseScreenProps) {
+export function PulseScreen({ role, alias = null, name = null }: PulseScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const toast = useToast();
@@ -50,7 +52,7 @@ export function PulseScreen({ role, alias = null }: PulseScreenProps) {
   };
 
   return (
-    <AppShell role={role} current="pulse" alias={alias} width="wide">
+    <AppShell role={role} current="incidents" name={name} alias={alias} width="wide">
       <PageHeader title={t("pulse.title")} subtitle={t("pulse.subtitle")} badges={<Badge tone="ok">{t("pulse.live")}</Badge>} />
 
       <Loadable state={pulse.load} onRetry={pulse.reload} lines={6}>
