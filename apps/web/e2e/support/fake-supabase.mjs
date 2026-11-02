@@ -169,8 +169,19 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === "/rest/v1/profiles") {
     const id = (url.searchParams.get("id") ?? "").replace(/^eq\./, "");
+    const shape = (u) => ({
+      id: u.id,
+      role: u.role,
+      office: u.office,
+      alias: u.alias,
+      display_name: null,
+      student_number: null,
+      faculty: null,
+      university_email: null,
+    });
+    // With an id filter: that user's row. Without one (the admin Accounts list): every user.
     const hit = byId(id);
-    const rows = hit ? [{ id: hit[1].id, role: hit[1].role, office: hit[1].office, alias: hit[1].alias }] : [];
+    const rows = id ? (hit ? [shape(hit[1])] : []) : Object.values(USERS).map(shape);
     const single = (req.headers.accept ?? "").includes("vnd.pgrst.object");
     if (single) return send(res, rows.length ? 200 : 406, rows[0] ?? { code: "PGRST116", message: "no rows" });
     return send(res, 200, rows);

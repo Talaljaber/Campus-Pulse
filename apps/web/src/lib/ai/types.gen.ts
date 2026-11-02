@@ -384,6 +384,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post an announcement
+         * @description Staff post a notice for their own office, admins for any office or campus-wide (`office` null). Students read live announcements on Home (Supabase read under RLS).
+         */
+        post: operations["announcement_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/announcements/{announcement_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive an announcement
+         * @description Staff of the announcement's office, or an admin, take it off Home (sets `archived_at`).
+         */
+        post: operations["announcement_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -453,6 +493,67 @@ export interface components {
          * @enum {string}
          */
         ActionType: "faq_answer" | "ticket" | "booking" | "safety_alert" | "incident_merge";
+        /**
+         * AnnouncementIn
+         * @description Body of `POST /v1/announcements`.
+         *
+         *     Staff post for their own office (`office` omitted or equal to theirs; another office is 403);
+         *     admins pick any office, or leave it null for a campus-wide notice. `starts_at` defaults to now;
+         *     `ends_at` must be after `starts_at`.
+         */
+        AnnouncementIn: {
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /**
+             * Kind
+             * @default info
+             * @enum {string}
+             */
+            kind: "info" | "outage" | "maintenance";
+            /**
+             * Office
+             * @description D-005 office code; null = campus-wide (admin).
+             */
+            office?: string | null;
+            /** Starts At */
+            starts_at?: string | null;
+            /** Ends At */
+            ends_at?: string | null;
+        };
+        /**
+         * AnnouncementOut
+         * @description One announcement (a row of `announcements`).
+         */
+        AnnouncementOut: {
+            /** Id */
+            id: string;
+            /** Office */
+            office: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "info" | "outage" | "maintenance";
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Ends At */
+            ends_at: string | null;
+            /** Archived At */
+            archived_at: string | null;
+            /** Created By */
+            created_by: string | null;
+            /** Created At */
+            created_at: string | null;
+        };
         /**
          * ArtifactOut
          * @description The frozen model artifact in use.
@@ -3017,6 +3118,169 @@ export interface operations {
             };
             /** @description `not_implemented`: Optional extra that is not built in this deployment. */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    announcement_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    announcement_archive: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_found`: The referenced request, prediction, ticket or incident does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

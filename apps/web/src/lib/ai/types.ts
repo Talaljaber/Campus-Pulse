@@ -67,3 +67,8 @@ export type MemoryStats = S["MemoryStatsOut"];
 export type Scorecard = S["ScorecardOut"];
 export type RedTeamFailure = S["RedTeamFailureOut"];
 export type RedTeamRunRequest = S["RedTeamRunRequest"];
+
+// P9.5 announcements
+export type AnnouncementIn = S["AnnouncementIn"];
+export type AnnouncementOut = S["AnnouncementOut"];
+export type AnnouncementKind = AnnouncementOut["kind"];

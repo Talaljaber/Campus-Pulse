@@ -41,6 +41,9 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   // Optional extras (B-list); a deployment without them answers 501 not_implemented.
   rule("POST", "admin/simulate"),
   rule("POST", "admin/reindex"),
+  // P9.5 announcements (append new P9 rules below)
+  rule("POST", "announcements"),
+  rule("POST", "announcements/{id}/archive"),
 ];
 
 /** A path that passed the allow-list. */
