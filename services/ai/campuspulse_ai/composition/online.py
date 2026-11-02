@@ -19,7 +19,7 @@ artifacts and every online adapter:
 7. The use cases: triage, clarify, feedback (live learning), the ticket lifecycle and SLA scanner,
    Pulse (embedding upsert and incident detection), batch, metrics, the red team (live memory on),
    the identity verifier, and UD-13 advisor routing (review assignment, `GET /v1/reviews`, review
-   and ticket forwards).
+   and the P9.3 ticket lifecycle).
 
 `wire_online(settings, offline, adapters, clock)` does steps 6-7 over any adapters, so tests run the
 same wiring over `InMemoryRepository`, `LocalNumpyVectorStore` and fakes (`tests/unit/test_online.py`).
@@ -50,6 +50,7 @@ from campuspulse_ai.adapters.llm.cost import InMemoryCostLogger
 from campuspulse_ai.adapters.llm.prompt import load_prompt
 from campuspulse_ai.adapters.notify.allowlist import AllowlistedNotifier
 from campuspulse_ai.adapters.notify.channels import ChannelNotifier
+from campuspulse_ai.adapters.notify.email_templates import load_ticket_email_templates
 from campuspulse_ai.adapters.notify.inapp import InAppNotifier
 from campuspulse_ai.adapters.pulse.incident_detector import WindowedCentroidDetector
 from campuspulse_ai.adapters.reports.json_reports import JsonReportsSource
@@ -63,8 +64,8 @@ from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
-from campuspulse_ai.application.use_cases.forward import TicketForwardUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
+from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
 from campuspulse_ai.application.use_cases.offices import OfficeMap
@@ -77,6 +78,8 @@ from campuspulse_ai.application.use_cases.ports import (
 )
 from campuspulse_ai.application.use_cases.reviews import ReviewAssigner, ReviewRouter, ReviewsUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
+from campuspulse_ai.application.use_cases.ticket_emails import InboxBook, TicketMailer
+from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import DecisionFlow, LLMTiers, Pulse, TriageUseCase
 from campuspulse_ai.composition.api import ApiServices, HealthInfo, build_identity
 from campuspulse_ai.composition.offline import OfflineContainer, build_offline
@@ -130,6 +133,8 @@ class OnlineAdapters:
     - `channels`: notifier per outbox kind (`in_app` always; `email` only when SMTP is configured).
     - `calendars`: providers for `FallbackCalendar`, in order.
     - `vector_store`: what `/health` reports (`pgvector` or `local`).
+    - `journey`: the thread, hints and contacts of the ticket lifecycle (P9.3); without it the ticket
+      routes answer 501.
     """
 
     repo: Repository
@@ -144,6 +149,7 @@ class OnlineAdapters:
     vector_store: str = VECTOR_STORE_PGVECTOR
     reviews: ReviewReads | None = None
     directory: AdvisorDirectory | None = None
+    journey: JourneyStore | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,9 +167,7 @@ class HandTuned:
         """The file's values; a missing file or key keeps `fallback` (the frozen config's values).
         Raises `ValueError` for a value outside (0, 1]."""
         data = _yaml(path) if path.is_file() else {}
-        values = {
-            key: float(data.get(key, getattr(fallback, key))) for key in ("tau_faq", "tau_inc")
-        }
+        values = {key: float(data.get(key, getattr(fallback, key))) for key in ("tau_faq", "tau_inc")}
         for key, value in values.items():
             if not 0.0 < value <= 1.0:
                 raise ValueError(f"{path}: {key} must be in (0, 1], got {value}")
@@ -235,6 +239,7 @@ def supabase_adapters(
     """The production adapters over one Supabase client (module docstring, steps 2-5)."""
     from campuspulse_ai.adapters.memory.cached import QueryCachingMemoryStore
     from campuspulse_ai.adapters.memory.pgvector_memory import PgVectorMemoryStore
+    from campuspulse_ai.adapters.store.journey_supabase import SupabaseJourneyStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
 
@@ -256,6 +261,7 @@ def supabase_adapters(
         vector_store=VECTOR_STORE_PGVECTOR,
         reviews=repo,
         directory=repo,
+        journey=SupabaseJourneyStore(client, clock),
     )
 
 
@@ -490,6 +496,33 @@ def wire_online(
         ),
         reviews=assigner,
     )
+    lifecycle = (
+        TicketLifecycleUseCase(
+            repo,
+            adapters.journey,
+            TicketMailer(
+                load_ticket_email_templates(TEMPLATES_DIR / "email"),
+                notifier,
+                clock,
+                InboxBook(
+                    student_inbox=settings.demo_student_inbox,
+                    office_inboxes=settings.demo_office_inboxes,
+                    default_office_inbox=settings.demo_office_inbox,
+                    admin_inbox=settings.demo_admin_inbox,
+                ),
+                settings.public_web_url,
+            ),
+            sinks,
+            clock,
+            actions_config.sla_hours,
+            offices,
+            messages,
+            # the encoder the online core runs: hints and the chat preview live in the same space
+            offline.encoder,
+        )
+        if adapters.journey is not None
+        else None
+    )
     manifest = offline.manifest
     return ApiServices(
         triage=TriageUseCase(core, flow, repo, clock, marks=adapters.marks),
@@ -498,8 +531,8 @@ def wire_online(
         tickets=SyncTicketUseCase(
             sinks, repo, notifier, clock, messages, student_inbox=act_config.student_inbox
         ),
-        forward=TicketForwardUseCase(sinks, repo, offices, messages),
         reviews=reviews,
+        lifecycle=lifecycle,
         sla=EscalateSlaUseCase(sinks, repo, messages),
         clock=clock,
         incidents=IncidentsUseCase(
@@ -534,4 +567,3 @@ def _yaml(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError(f"{path}: expected a mapping")
     return data
-

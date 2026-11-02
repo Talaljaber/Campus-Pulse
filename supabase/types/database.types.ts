@@ -1098,6 +1098,7 @@ export type Database = {
           office: string
           priority: string
           provisional: boolean
+          reminder_count: number
           reminder_sent_at: string | null
           request_id: string
           requester_alias: string | null
@@ -1119,6 +1120,7 @@ export type Database = {
           office: string
           priority: string
           provisional?: boolean
+          reminder_count?: number
           reminder_sent_at?: string | null
           request_id: string
           requester_alias?: string | null
@@ -1140,6 +1142,7 @@ export type Database = {
           office?: string
           priority?: string
           provisional?: boolean
+          reminder_count?: number
           reminder_sent_at?: string | null
           request_id?: string
           requester_alias?: string | null

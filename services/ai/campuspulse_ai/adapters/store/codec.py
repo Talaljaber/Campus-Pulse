@@ -441,6 +441,7 @@ def ticket_row(t: Ticket) -> Row:
         "tags": list(t.tags),
         "reminder_sent_at": iso(t.reminder_sent_at),
         "awaiting_student": t.awaiting_student,
+        "reminder_count": t.reminder_count,
     }
     if t.clock_started_at is not None:  # NOT NULL column with a DB default: never write null
         row["clock_started_at"] = iso(t.clock_started_at)
@@ -487,6 +488,7 @@ def to_ticket(row: Mapping[str, Any], links: list[TicketLink]) -> Ticket:
         clock_started_at=parse_dt(row.get("clock_started_at")),
         reminder_sent_at=parse_dt(row.get("reminder_sent_at")),
         awaiting_student=bool(row.get("awaiting_student") or False),
+        reminder_count=int(row.get("reminder_count") or 0),
         requester_alias=row.get("requester_alias") or None,
     )
 

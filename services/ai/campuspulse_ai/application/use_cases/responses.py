@@ -180,6 +180,7 @@ def ticket_out(ticket: Ticket) -> dto.TicketOut:
         clock_started_at=ticket.clock_started_at or ticket.sla_due_at,
         reminder_sent_at=ticket.reminder_sent_at,
         awaiting_student=ticket.awaiting_student,
+        reminder_count=ticket.reminder_count,
         links=external_refs(ticket),
     )
 

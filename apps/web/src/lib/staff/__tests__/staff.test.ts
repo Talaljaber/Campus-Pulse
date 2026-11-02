@@ -42,6 +42,7 @@ const ticket = (o: Partial<TicketRow> = {}): TicketRow => ({
   clock_started_at: "2026-11-08T08:00:00Z",
   reminder_sent_at: null,
   awaiting_student: false,
+  reminder_count: 0,
   requester_alias: null,
   created_at: "2026-11-08T08:00:00Z",
   tags: [],

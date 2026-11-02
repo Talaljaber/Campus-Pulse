@@ -42,6 +42,7 @@ def ticket_out(ticket: Ticket) -> TicketOut:
         clock_started_at=ticket.clock_started_at or ticket.sla_due_at,
         reminder_sent_at=ticket.reminder_sent_at,
         awaiting_student=ticket.awaiting_student,
+        reminder_count=ticket.reminder_count,
         links=[
             ExternalRefOut(sink=link.sink, external_id=link.external_id, url=link.url)
             for link in ticket.links

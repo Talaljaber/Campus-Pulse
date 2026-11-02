@@ -424,11 +424,21 @@ class InMemoryRepository:
         *,
         advisor_id: str | None = None,
         id: str = "",
+        display_name: str | None = None,
+        demo_inbox: str | None = None,
     ) -> str:
         """Insert a `profiles` row (a demo login; `seed_demo_users.py` online) and return its id.
         `advisor_id` makes an existing advisor this student's advisor (UD-13)."""
         self._fk("advisors", advisor_id)
-        row = {"id": new_id(id), "alias": alias, "role": role, "office": office, "advisor_id": advisor_id}
+        row = {
+            "id": new_id(id),
+            "alias": alias,
+            "role": role,
+            "office": office,
+            "advisor_id": advisor_id,
+            "display_name": display_name,
+            "demo_inbox": demo_inbox,
+        }
         self._upsert("profiles", row["id"], row)
         return str(row["id"])
 

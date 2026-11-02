@@ -37,6 +37,12 @@ services:
         value: "587"
       - key: DEMO_EMAIL_ALLOWLIST
         sync: false
+      - key: DEMO_OFFICE_INBOXES
+        sync: false
+      - key: DEMO_ADMIN_INBOX
+        sync: false
+      - key: PUBLIC_WEB_URL
+        sync: false
       - key: LINEAR_API_KEY
         sync: false
       - key: LINEAR_WEBHOOK_SECRET

@@ -34,6 +34,7 @@ from campuspulse_ai.application.dto import (
     ScorecardOut,
     SimulateResponse,
     TicketOut,
+    TicketThreadOut,
     TriageResponse,
     WebhookAck,
 )
@@ -187,7 +188,13 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         method="POST",
         path="/v1/tickets/{ticket_id}/status",
         summary="Change a ticket's status from the dashboard",
-        purpose="Dashboard status change (LD-25); same path as the inbound Linear sync.",
+        purpose=(
+            "Status change by staff of the ticket's office or an admin (never on their own request). "
+            "Only the transitions of the lifecycle table are allowed (`transition <from> -> <to> not "
+            "allowed`, 422): new -> in_progress, new/in_progress -> solved, new/in_progress/solved -> "
+            "closed, solved/closed -> in_progress (reopen, the clock restarts). The optional note becomes "
+            "a public comment inside the status email. Same status = no-op."
+        ),
         roles=("staff", "admin"),
         response_model=TicketOut,
         errors=(
@@ -197,8 +204,10 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             ErrorCode.STORE_UNAVAILABLE,
         ),
         side_effects=(
-            "updates the `tickets` row; updates the Linear issue",
-            "in-app notification to the student; email on `resolved` if allow-listed",
+            "updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a "
+            "`ticket_activity` row `status`; appends an `events` row `ticket.status`",
+            "after the response: updates the Linear issue; in-app notification to the requester; one "
+            "allow-listed email to the requester (`in_progress`, `solved`, `closed` or `reopened`)",
         ),
         tag="staff",
     ),
@@ -209,7 +218,8 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         summary="Forward a ticket to another office",
         purpose=(
             "Staff hand a ticket to another office (UD-13): the ticket takes that office and its "
-            "category, keeps its status, priority and SLA, and the Linear issue is updated."
+            "category, goes back to `new`, keeps its priority, its SLA clock restarts, and the Linear "
+            "issue is updated. Only `new` and `in_progress` tickets can be forwarded."
         ),
         roles=("staff", "admin"),
         response_model=TicketOut,
@@ -220,10 +230,12 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             ErrorCode.STORE_UNAVAILABLE,
         ),
         side_effects=(
-            "updates the `tickets` row (office, category, tag `forwarded`); appends an `events` row "
+            "updates the `tickets` row (office, category, status `new`, tag `forwarded`, clock); inserts a "
+            "`ticket_activity` row `forward` and a `ticket_hints` row; appends an `events` row "
             "`ticket.forwarded`",
             "after the response: updates the Linear issue (label, title, description); one in-app "
-            "`ticket_forwarded` notification for `office:<new office>`",
+            "`ticket_forwarded` notification for `office:<new office>`; allow-listed emails to the "
+            "requester and the new office (`forwarded`)",
             "no prediction change and no live-memory write",
         ),
         tag="staff",
@@ -456,6 +468,86 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         side_effects=("rewrites every `faq.embedding`",),
         optional=True,
         tag="admin",
+    ),
+    EndpointDoc(
+        op_id="ticket_comment",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/comments",
+        summary="Comment on a ticket",
+        purpose=(
+            "The requester adds a public comment (a comment on a solved or closed ticket reopens it). "
+            "Staff of the ticket's office or an admin reply publicly (the ticket moves to in_progress and "
+            "waits for the requester), add an `internal` note the requester never sees, or send a reply "
+            "that also sets `status` (one status email carries the comment). A caller who owns the "
+            "request is always treated as the requester."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=TicketThreadOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a "
+            "`ticket_activity` row (`comment`, `note` or `status`); appends an `events` row",
+            "after the response: allow-listed email (`staff_reply` to the requester, `requester_reply` "
+            "to the office and, on a forwarded ticket, the admin inbox, or the status/`reopened` email); "
+            "in-app notification to the requester on a staff reply; none for an internal note",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="ticket_priority",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/priority",
+        summary="Change a ticket's priority",
+        purpose=(
+            "Staff of the ticket's office or an admin (never on their own request) change the priority of "
+            "a `new` or `in_progress` ticket. The SLA clock restarts with the new priority's period. Same "
+            "priority = no-op. No email."
+        ),
+        roles=("staff", "admin"),
+        response_model=TicketOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "updates the `tickets` row (priority, clock); inserts a `ticket_activity` row `priority` and a "
+            "`ticket_hints` row; appends an `events` row `ticket.priority`",
+            "after the response: updates the Linear issue",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="ticket_student_action",
+        method="POST",
+        path="/v1/tickets/{ticket_id}/student-action",
+        summary="Requester buttons: solved, close, keep open",
+        purpose=(
+            "The requester confirms the fix (`solved`), closes the ticket (`close`) or asks to keep it "
+            "open (`keep_open`: back to in_progress, the clock restarts). Only the owner of the request "
+            "may call it."
+        ),
+        roles=("student", "staff", "admin"),
+        response_model=TicketOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=(
+            "updates the `tickets` row (status, `awaiting_student`, clock on keep open); inserts a "
+            "`ticket_activity` row `student_action`; appends an `events` row `ticket.student_action`",
+            "after the response: updates the Linear issue; allow-listed email to the office "
+            "(`solved`, `closed` or `reopened`)",
+        ),
+        tag="staff",
     ),
 )
 

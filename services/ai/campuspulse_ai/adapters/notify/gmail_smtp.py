@@ -184,11 +184,17 @@ class GmailSmtpNotifier:
         email["Subject"] = msg.subject
         email["Message-ID"] = message_id
         email.set_content(f"{msg.body}\n\n-- \n{FOOTER}\n")
-        body_html = html.escape(msg.body).replace("\n", "<br>\n")
-        email.add_alternative(
-            f"<html><body><p>{body_html}</p><hr><p><small>{html.escape(FOOTER)}</small></p></body></html>",
-            subtype="html",
-        )
+        footer_html = f"<hr><p><small>{html.escape(FOOTER)}</small></p>"
+        if msg.html:
+            page = (
+                msg.html.replace("</body>", footer_html + "</body>", 1)
+                if "</body>" in msg.html
+                else msg.html + footer_html
+            )
+        else:
+            body_html = html.escape(msg.body).replace("\n", "<br>\n")
+            page = f"<html><body><p>{body_html}</p>{footer_html}</body></html>"
+        email.add_alternative(page, subtype="html")
         return email, message_id
 
 

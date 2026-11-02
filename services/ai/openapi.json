@@ -787,7 +787,7 @@
           "staff"
         ],
         "summary": "Change a ticket's status from the dashboard",
-        "description": "Dashboard status change (LD-25); same path as the inbound Linear sync.",
+        "description": "Status change by staff of the ticket's office or an admin (never on their own request). Only the transitions of the lifecycle table are allowed (`transition <from> -> <to> not allowed`, 422): new -> in_progress, new/in_progress -> solved, new/in_progress/solved -> closed, solved/closed -> in_progress (reopen, the clock restarts). The optional note becomes a public comment inside the status email. Same status = no-op.",
         "operationId": "ticket_status",
         "security": [
           {
@@ -971,8 +971,8 @@
         ],
         "x-auth": "service_token",
         "x-side-effects": [
-          "updates the `tickets` row; updates the Linear issue",
-          "in-app notification to the student; email on `resolved` if allow-listed"
+          "updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a `ticket_activity` row `status`; appends an `events` row `ticket.status`",
+          "after the response: updates the Linear issue; in-app notification to the requester; one allow-listed email to the requester (`in_progress`, `solved`, `closed` or `reopened`)"
         ],
         "x-optional": false
       }
@@ -983,7 +983,7 @@
           "staff"
         ],
         "summary": "Forward a ticket to another office",
-        "description": "Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, keeps its status, priority and SLA, and the Linear issue is updated.",
+        "description": "Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, goes back to `new`, keeps its priority, its SLA clock restarts, and the Linear issue is updated. Only `new` and `in_progress` tickets can be forwarded.",
         "operationId": "ticket_forward",
         "security": [
           {
@@ -1167,8 +1167,8 @@
         ],
         "x-auth": "service_token",
         "x-side-effects": [
-          "updates the `tickets` row (office, category, tag `forwarded`); appends an `events` row `ticket.forwarded`",
-          "after the response: updates the Linear issue (label, title, description); one in-app `ticket_forwarded` notification for `office:<new office>`",
+          "updates the `tickets` row (office, category, status `new`, tag `forwarded`, clock); inserts a `ticket_activity` row `forward` and a `ticket_hints` row; appends an `events` row `ticket.forwarded`",
+          "after the response: updates the Linear issue (label, title, description); one in-app `ticket_forwarded` notification for `office:<new office>`; allow-listed emails to the requester and the new office (`forwarded`)",
           "no prediction change and no live-memory write"
         ],
         "x-optional": false
@@ -3240,6 +3240,596 @@
         ],
         "x-optional": true
       }
+    },
+    "/v1/tickets/{ticket_id}/comments": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Comment on a ticket",
+        "description": "The requester adds a public comment (a comment on a solved or closed ticket reopens it). Staff of the ticket's office or an admin reply publicly (the ticket moves to in_progress and waits for the requester), add an `internal` note the requester never sees, or send a reply that also sets `status` (one status email carries the comment). A caller who owns the request is always treated as the requester.",
+        "operationId": "ticket_comment",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketThreadOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "student",
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a `ticket_activity` row (`comment`, `note` or `status`); appends an `events` row",
+          "after the response: allow-listed email (`staff_reply` to the requester, `requester_reply` to the office and, on a forwarded ticket, the admin inbox, or the status/`reopened` email); in-app notification to the requester on a staff reply; none for an internal note"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/tickets/{ticket_id}/priority": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Change a ticket's priority",
+        "description": "Staff of the ticket's office or an admin (never on their own request) change the priority of a `new` or `in_progress` ticket. The SLA clock restarts with the new priority's period. Same priority = no-op. No email.",
+        "operationId": "ticket_priority",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriorityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "updates the `tickets` row (priority, clock); inserts a `ticket_activity` row `priority` and a `ticket_hints` row; appends an `events` row `ticket.priority`",
+          "after the response: updates the Linear issue"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/tickets/{ticket_id}/student-action": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Requester buttons: solved, close, keep open",
+        "description": "The requester confirms the fix (`solved`), closes the ticket (`close`) or asks to keep it open (`keep_open`: back to in_progress, the clock restarts). Only the owner of the request may call it.",
+        "operationId": "ticket_student_action",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Ticket Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "student",
+          "staff",
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "updates the `tickets` row (status, `awaiting_student`, clock on keep open); inserts a `ticket_activity` row `student_action`; appends an `events` row `ticket.student_action`",
+          "after the response: updates the Linear issue; allow-listed email to the office (`solved`, `closed` or `reopened`)"
+        ],
+        "x-optional": false
+      }
     }
   },
   "components": {
@@ -3422,6 +4012,168 @@
           "incident_merge"
         ],
         "title": "ActionType"
+      },
+      "ActivityOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "ticket_id": {
+            "type": "string",
+            "title": "Ticket Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "created",
+              "comment",
+              "note",
+              "status",
+              "forward",
+              "priority",
+              "student_action",
+              "reminder"
+            ],
+            "title": "Kind"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal"
+            ],
+            "title": "Visibility"
+          },
+          "actor_role": {
+            "type": "string",
+            "enum": [
+              "student",
+              "staff",
+              "admin",
+              "system"
+            ],
+            "title": "Actor Role"
+          },
+          "actor_alias": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Alias"
+          },
+          "actor_office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Office"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "from_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Status"
+          },
+          "to_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Status"
+          },
+          "from_office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Office"
+          },
+          "to_office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Office"
+          },
+          "from_priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Priority"
+          },
+          "to_priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Priority"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "ticket_id",
+          "kind",
+          "visibility",
+          "actor_role",
+          "actor_alias",
+          "actor_office",
+          "body",
+          "from_status",
+          "to_status",
+          "from_office",
+          "to_office",
+          "from_priority",
+          "to_priority",
+          "created_at"
+        ],
+        "title": "ActivityOut",
+        "description": "One row of a ticket's thread (mirrors a `ticket_activity` row)."
       },
       "ArtifactOut": {
         "properties": {
@@ -3801,6 +4553,44 @@
         ],
         "title": "ClarifyRequest",
         "description": "Body of `POST /v1/triage/{request_id}/clarify`: exactly one of `option_id` or `free_text`."
+      },
+      "CommentRequest": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "internal": {
+            "type": "boolean",
+            "title": "Internal",
+            "default": false
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "in_progress",
+                  "solved",
+                  "closed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "CommentRequest",
+        "description": "Body of `POST /v1/tickets/{ticket_id}/comments`.\n\nA requester sends a public comment. Staff send a public reply, an `internal` note (never shown to the\nrequester) or a reply that also sets `status` (then one status email carries the comment)."
       },
       "ConfusionOut": {
         "properties": {
@@ -5031,6 +5821,31 @@
         "title": "PriorityOut",
         "description": "Priority decision: label, probability, conformal set and the evidence that drove it."
       },
+      "PriorityRequest": {
+        "properties": {
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "priority"
+        ],
+        "title": "PriorityRequest",
+        "description": "Body of `POST /v1/tickets/{ticket_id}/priority`: the clock restarts with the new priority's period."
+      },
       "ProblemClusterOut": {
         "properties": {
           "cluster_id": {
@@ -5671,6 +6486,26 @@
         "title": "SimulateResponse",
         "description": "A started simulated burst. All its requests carry `simulated=true`."
       },
+      "StudentActionRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "solved",
+              "close",
+              "keep_open"
+            ],
+            "title": "Action"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "StudentActionRequest",
+        "description": "Body of `POST /v1/tickets/{ticket_id}/student-action`: the requester's three buttons."
+      },
       "TicketOut": {
         "properties": {
           "id": {
@@ -5772,6 +6607,13 @@
             "type": "boolean",
             "title": "Awaiting Student",
             "description": "Staff replied and wait for the requester."
+          },
+          "reminder_count": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Reminder Count",
+            "description": "SLA reminders sent in the current period (0 to 2)."
           }
         },
         "additionalProperties": false,
@@ -5792,7 +6634,8 @@
           "links",
           "clock_started_at",
           "reminder_sent_at",
-          "awaiting_student"
+          "awaiting_student",
+          "reminder_count"
         ],
         "title": "TicketOut",
         "description": "A CampusPulse ticket (system of record in Supabase)."
@@ -5839,6 +6682,24 @@
         ],
         "title": "TicketStatusRequest",
         "description": "Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25)."
+      },
+      "TicketThreadOut": {
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/TicketOut"
+          },
+          "activity": {
+            "$ref": "#/components/schemas/ActivityOut"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ticket",
+          "activity"
+        ],
+        "title": "TicketThreadOut",
+        "description": "Answer of `POST /v1/tickets/{ticket_id}/comments`: the ticket after the comment and the new row."
       },
       "Tier": {
         "type": "string",

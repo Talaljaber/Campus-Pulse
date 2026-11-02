@@ -20,17 +20,18 @@ from fixtures.containers import (
     link_student_advisor,
     load_yaml,
 )
+from fixtures.lifecycle import build_lifecycle
 
 from campuspulse_ai.adapters.memory.inmemory import InMemoryMemoryStore
 from campuspulse_ai.application.dto import FeedbackRequest, TriageRequest, TriageResponse
 from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
-from campuspulse_ai.application.use_cases.forward import FORWARDED_TAG, TicketForwardUseCase
 from campuspulse_ai.application.use_cases.offices import OfficeMap
 from campuspulse_ai.application.use_cases.reviews import (
     KIND_REVIEW_ASSIGNED,
     KIND_TICKET_FORWARDED,
     ReviewsUseCase,
 )
+from campuspulse_ai.application.use_cases.ticket_lifecycle import FORWARDED_TAG, TicketLifecycleUseCase
 from campuspulse_ai.config.paths import CONFIG_DIR
 from campuspulse_ai.domain.errors import InvalidInput, NotFound, Unauthorized
 from campuspulse_ai.domain.labels import Category, Priority
@@ -73,7 +74,7 @@ class H:
     memory: InMemoryMemoryStore
     feedback: FeedbackUseCase
     reviews: ReviewsUseCase
-    forward: TicketForwardUseCase
+    forward: TicketLifecycleUseCase
 
     @property
     def advisor(self) -> Who:
@@ -110,7 +111,7 @@ def h() -> H:
     sinks = (c.sink,)
     feedback = FeedbackUseCase(c.repo, c.repo, memory, c.act, FakeEncoder(), c.clock, sinks, directory=c.repo)
     reviews = ReviewsUseCase(c.repo, c.repo, feedback, offices(), c.repo, c.repo, c.messages, limit=50)
-    forward = TicketForwardUseCase(sinks, c.repo, offices(), c.messages)
+    forward = build_lifecycle(c).lifecycle
     return H(c, profile, memory, feedback, reviews, forward)
 
 
@@ -267,7 +268,7 @@ def test_staff_forward_a_ticket_to_another_office(h: H) -> None:
     assert r.action is not None and r.action.ticket_id
     tid = r.action.ticket_id
     registrar = Who("staff", "registrar", "staff-registrar")
-    fwd = h.forward.forward(tid, " it ", registrar, "portal outage, not a registration problem")
+    fwd = h.forward.forward(tid, registrar, " it ", "portal outage, not a registration problem")
     assert (fwd.ticket.office, fwd.ticket.category, fwd.from_office) == (
         "it",
         Category.IT_SUPPORT,
@@ -277,8 +278,14 @@ def test_staff_forward_a_ticket_to_another_office(h: H) -> None:
     assert saved.office == "it" and FORWARDED_TAG in saved.tags and saved.priority == Priority.HIGH
     assert saved.title.startswith("IT Support/high: ")  # the rule title's stale label prefix is replaced
     [event] = h.c.events("ticket.forwarded")
-    assert event["payload"] == {"from": "registrar", "to": "it", "note": fwd.note, "by": "staff-registrar"}
-    h.forward.propagate(fwd)
+    assert event["payload"] == {
+        "by": "staff-registrar",
+        "role": "staff",
+        "from": "registrar",
+        "to": "it",
+        "note": "portal outage, not a registration problem",
+    }
+    h.forward.deliver(fwd)
     assert h.c.sink.calls[-1] == ("update_status", tid)
     [note] = h.notes(KIND_TICKET_FORWARDED)
     assert note["alias"] == "office:it" and "registrar" in note["payload"]["message"]
@@ -289,13 +296,13 @@ def test_ticket_forward_errors(h: H) -> None:
     assert r.action is not None and r.action.ticket_id
     tid = r.action.ticket_id
     with pytest.raises(Unauthorized):
-        h.forward.forward(tid, "it", IT_STAFF)  # not the ticket's office
+        h.forward.forward(tid, IT_STAFF, "it")  # not the ticket's office
     with pytest.raises(InvalidInput):
-        h.forward.forward(tid, "registrar", ADMIN)  # already there
+        h.forward.forward(tid, ADMIN, "registrar")  # already there
     with pytest.raises(InvalidInput):
-        h.forward.forward(tid, "library", ADMIN)
+        h.forward.forward(tid, ADMIN, "library")
     with pytest.raises(NotFound):
-        h.forward.forward("00000000-0000-4000-8000-000000000000", "it", ADMIN)
+        h.forward.forward("00000000-0000-4000-8000-000000000000", ADMIN, "it")
 
 
 def test_office_map_is_one_to_one() -> None:
@@ -317,7 +324,7 @@ def test_office_map_is_one_to_one() -> None:
 
 def test_routes_over_http(h: H) -> None:
     r = h.triage(UNSURE)
-    client = api_client(h.c, feedback=h.feedback, reviews=h.reviews, forward=h.forward)
+    client = api_client(h.c, feedback=h.feedback, reviews=h.reviews, lifecycle=h.forward)
     as_advisor = auth("staff", "advisor", "academic")
 
     listed = client.get("/v1/reviews", headers=as_advisor)

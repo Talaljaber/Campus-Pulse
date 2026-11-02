@@ -1,0 +1,229 @@
+# رسائل التذاكر بالعربية الفصحى (P9.2). نفس مفاتيح ticket_emails.en.yaml (يتحقق منها اختبار).
+# العناصر النائبة بصيغة str.format. لا يُذكر اسم الجامعة.
+version: 1
+demo_line: "للعرض التجريبي فقط: كامبس بالس مشروع طلابي، ولم يتم التواصل مع أي قسم جامعي حقيقي."
+labels:
+  comment: "الرسالة"
+  note: "ملاحظة"
+  files: "{n} ملف مرفق؛ افتحها في التطبيق."
+  open: "فتح الطلب"
+  there: "بك"
+offices:
+  registrar: "التسجيل"
+  it: "الدعم التقني"
+  finance: "الشؤون المالية"
+  transport: "النقل"
+  facilities: "المرافق"
+  academic: "الدعم الأكاديمي"
+statuses:
+  new: "جديد"
+  in_progress: "قيد المعالجة"
+  solved: "تم الحل"
+  closed: "مغلق"
+  merged: "مدمج"
+priorities:
+  low: "منخفضة"
+  medium: "متوسطة"
+  high: "عالية"
+events:
+  received:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] تم تسجيل طلبك: {title}"
+      body: |
+        مرحبًا {recipient_name}،
+
+        تم تسجيل طلبك وإرساله إلى {department} (عرض تجريبي). رقم التذكرة #{ticket_number}.
+
+        طلبك: "{request_text}"
+
+        الخطوة التالية: سيرد عليك {department} في التطبيق، وستصلك رسالة بريدية عند كل رد.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] طلب جديد: {title}"
+      body: |
+        وصل طلب جديد إلى {department}. رقم التذكرة #{ticket_number}، الأولوية {priority}، الموعد النهائي {due_at}.
+
+        الطلب: "{request_text}"
+
+        {files_line}
+
+        الخطوة التالية: افتح الطلب، ثم ردّ على صاحبه أو غيّر حالته قبل الموعد النهائي.
+
+        {link}
+  in_progress:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] طلبك قيد المعالجة"
+      body: |
+        مرحبًا {recipient_name}،
+
+        بدأ {department} العمل على طلبك. رقم التذكرة #{ticket_number}.
+
+        طلبك: "{request_text}"
+
+        {comment_block}
+        الخطوة التالية: سيوافيك {department} بالمستجدات هنا، وستصلك رسالة بريدية عند كل رد.
+
+        {link}
+  forwarded:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] تم تحويل طلبك إلى {to_department}"
+      body: |
+        مرحبًا {recipient_name}،
+
+        تم تحويل طلبك من {from_department} إلى {department} لأنه الجهة الأنسب له. رقم التذكرة #{ticket_number}.
+
+        طلبك: "{request_text}"
+
+        {note_block}
+        الخطوة التالية: سيرد عليك {department} في التطبيق، وستصلك رسالة بريدية عند كل رد.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] طلب محوّل إلى {department}: {title}"
+      body: |
+        تم تحويل طلب من {from_department} إلى {department}. رقم التذكرة #{ticket_number}، الأولوية {priority}، الموعد النهائي {due_at}.
+
+        الطلب: "{request_text}"
+
+        {note_block}
+        {files_line}
+
+        الخطوة التالية: افتح الطلب، ثم ردّ على صاحبه أو غيّر حالته قبل الموعد النهائي.
+
+        {link}
+  staff_reply:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] ردّ {department} على طلبك"
+      body: |
+        مرحبًا {recipient_name}،
+
+        ردّ {department} على طلبك. رقم التذكرة #{ticket_number}.
+
+        طلبك: "{request_text}"
+
+        {comment_block}
+        الخطوة التالية: اقرأ الرد في التطبيق وأجب إن طلب منك {department} شيئًا، وحدّد الطلب على أنه محلول إذا أفادك الرد.
+
+        {link}
+  solved:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] تم وضع علامة الحل على طلبك"
+      body: |
+        مرحبًا {recipient_name}،
+
+        وضع {department} علامة الحل على طلبك. رقم التذكرة #{ticket_number}.
+
+        طلبك: "{request_text}"
+
+        {comment_block}
+        الخطوة التالية: إذا حُلّت مشكلتك فأغلق الطلب، وإن لم تُحلّ فأخبرنا في التطبيق وسيُعاد فتحه.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] تم حل الطلب: {title}"
+      body: |
+        تم وضع علامة الحل على الطلب التالي في {department}. رقم التذكرة #{ticket_number}.
+
+        الطلب: "{request_text}"
+
+        {comment_block}
+        الخطوة التالية: لا يلزم أي إجراء ما لم يعد صاحب الطلب فتحه.
+
+        {link}
+  closed:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] تم إغلاق طلبك"
+      body: |
+        مرحبًا {recipient_name}،
+
+        تم إغلاق طلبك المقدم إلى {department}. رقم التذكرة #{ticket_number}.
+
+        طلبك: "{request_text}"
+
+        {comment_block}
+        الخطوة التالية: لا يلزم أي إجراء آخر. إذا عادت المشكلة فاكتب ردًا في التطبيق وسيُعاد فتح الطلب.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] تم إغلاق الطلب: {title}"
+      body: |
+        تم إغلاق الطلب التالي في {department}. رقم التذكرة #{ticket_number}.
+
+        الطلب: "{request_text}"
+
+        {comment_block}
+        الخطوة التالية: لا يلزم أي إجراء ما لم يعد صاحب الطلب فتحه.
+
+        {link}
+  reopened:
+    requester:
+      subject: "[CampusPulse #{ticket_number}] تمت إعادة فتح طلبك"
+      body: |
+        مرحبًا {recipient_name}،
+
+        تمت إعادة فتح طلبك وعاد إلى {department}. رقم التذكرة #{ticket_number}.
+
+        طلبك: "{request_text}"
+
+        {comment_block}
+        الخطوة التالية: سيرد عليك {department} في التطبيق، وستصلك رسالة بريدية عند كل رد.
+
+        {link}
+    office:
+      subject: "[CampusPulse #{ticket_number}] إعادة فتح الطلب: {title}"
+      body: |
+        أُعيد فتح طلب في {department}. رقم التذكرة #{ticket_number}، الأولوية {priority}، الموعد النهائي {due_at}.
+
+        الطلب: "{request_text}"
+
+        {comment_block}
+        الخطوة التالية: افتح الطلب وردّ على صاحبه قبل الموعد النهائي الجديد.
+
+        {link}
+  reminder:
+    office:
+      subject: "[CampusPulse #{ticket_number}] تذكير: انتهى الموعد النهائي لطلب {title}"
+      body: |
+        تجاوز هذا الطلب في {department} موعده النهائي ({due_at}) وما زالت حالته: {status}. رقم التذكرة #{ticket_number}، الأولوية {priority}.
+
+        الطلب: "{request_text}"
+
+        الخطوة التالية: ردّ على صاحب الطلب أو غيّر حالته الآن. إن لم يتغير شيء فسيصل تذكير أخير مع نسخة إلى المشرف.
+
+        {link}
+  reminder_2:
+    office:
+      subject: "[CampusPulse #{ticket_number}] التذكير الثاني: الطلب ما زال مفتوحًا، {title}"
+      body: |
+        التذكير الثاني: ما زال هذا الطلب في {department} مفتوحًا بعد مرور فترة إضافية على موعده النهائي ({due_at}). تم إبلاغ المشرف. رقم التذكرة #{ticket_number}، الأولوية {priority}.
+
+        الطلب: "{request_text}"
+
+        الخطوة التالية: ردّ على صاحب الطلب أو غيّر حالته الآن. هذا هو التذكير الأخير في هذه الفترة.
+
+        {link}
+    admin:
+      subject: "[CampusPulse #{ticket_number}] نسخة المشرف، التذكير الثاني: {title}"
+      body: |
+        التذكير الثاني والأخير: ما زال هذا الطلب في {department} مفتوحًا بعد مرور فترة إضافية على موعده النهائي ({due_at}). وصلتك هذه الرسالة لأن المشرف يُبلَّغ في هذه المرحلة. رقم التذكرة #{ticket_number}، الأولوية {priority}، الحالة {status}.
+
+        الطلب: "{request_text}"
+
+        الخطوة التالية: تواصل مع {department} أو حوّل الطلب إلى جهة أخرى.
+
+        {link}
+  requester_reply:
+    office:
+      subject: "[CampusPulse #{ticket_number}] ردّ صاحب الطلب: {title}"
+      body: |
+        ردّ صاحب الطلب على طلب في {department}. رقم التذكرة #{ticket_number}، الأولوية {priority}، الموعد النهائي {due_at}.
+
+        الطلب: "{request_text}"
+
+        {comment_block}
+        {files_line}
+
+        الخطوة التالية: اقرأ الرد وأجب في التطبيق قبل الموعد النهائي.
+
+        {link}
