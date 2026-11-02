@@ -67,7 +67,7 @@ export function LabScreen({ alias = null }: LabScreenProps) {
   const empty = <EmptyState title={t("lab.empty.title")} hint={t("lab.empty.hint")} />;
 
   return (
-    <AppShell role="admin" current="lab" alias={alias}>
+    <AppShell role="admin" current="reports" alias={alias}>
       <PageHeader title={t("lab.title")} subtitle={t("lab.subtitle")} />
 
       <div className="flex flex-wrap items-center gap-2">

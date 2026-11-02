@@ -56,9 +56,16 @@ describe("LabScreen", () => {
     expect(screen.getByText("Model artifact v1 (3f9a2c71)")).toBeInTheDocument();
     expect(screen.getByText(/Report written/)).toBeInTheDocument();
     expect(screen.getByText("Questions asked back: 22%, Proxy estimate")).toBeInTheDocument();
-    const nav = screen.getByRole("navigation", { name: "Staff pages" });
-    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Model lab", "Staff desk", "Review queue", "Pulse map", "Outbox"]);
-    expect(within(nav).getByRole("link", { name: "Model lab" })).toHaveAttribute("aria-current", "page");
+    const nav = screen.getByRole("navigation", { name: "Main menu" });
+    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual([
+      "Queue",
+      "Announcements",
+      "Incidents",
+      "Corrections",
+      "Accounts",
+      "Reports",
+    ]);
+    expect(within(nav).getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("tab", { name: "Benchmark", selected: true })).toBeInTheDocument();
   });
 

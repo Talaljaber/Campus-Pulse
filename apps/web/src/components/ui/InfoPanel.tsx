@@ -44,8 +44,8 @@ export interface InfoPanelProps {
 }
 
 /**
- * Fieldset-style information panel: a thin grey border with the title in the legend, the way the
- * MyGJU profile page frames "Personal information". A real `<fieldset>` and `<legend>`, so the
+ * Fieldset-style information panel: a thin grey border with the title in the legend, the way a portal
+ * profile page frames "Personal information". A real `<fieldset>` and `<legend>`, so the
  * title is the group's accessible name. Put an {@link InfoGrid} inside for label/value pairs.
  */
 export function InfoPanel({ title, children, actions, className }: InfoPanelProps) {

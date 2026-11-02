@@ -6,15 +6,15 @@ import { CampusPulseMark } from "./CampusPulseMark";
 
 /** Props for {@link Brand}. */
 export interface BrandProps {
-  /** Hide the "for GJU students" subtitle (used where space is tight). */
+  /** Hide the "for students" subtitle (used where space is tight). */
   compact?: boolean;
   className?: string;
 }
 
 /**
  * Mark, wordmark and subtitle. The wordmark "CampusPulse" is the product name in Latin letters in
- * every language (`lang="en"`, `dir="ltr"`); only the subtitle is translated. "for GJU students"
- * says who it serves; it does not claim to be a GJU system (the footer says so in words).
+ * every language (`lang="en"`, `dir="ltr"`); only the subtitle is translated. "for students"
+ * says who it serves; it does not claim to be a university system (the footer says so in words).
  */
 export function Brand({ compact = false, className }: BrandProps) {
   const t = useT();

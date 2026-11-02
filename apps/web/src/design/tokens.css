@@ -2,8 +2,8 @@
  * CampusPulse design tokens. Every component styles against these variables.
  * The app is light only (no dark theme, no OS-following).
  *
- * Palette: GJU-inspired blue + orange-yellow + warm grey (UI batch 6). Original tokens, not
- * the official brand assets. Orange (--cp-orange) fails contrast against white, so it is for
+ * Palette: university-portal look (P9.0): light grey page, white header band, mid blue +
+ * orange accents, dark grey footer. Original tokens, not any official brand assets. Orange (--cp-orange) fails contrast against white, so it is for
  * borders, fills behind dark text and icons only; text that needs orange uses --cp-orange-ink.
  *
  * Rules enforced by src/design/__tests__/tokens.test.ts:
@@ -27,18 +27,19 @@
   --cp-text-3: #545b65;
   --cp-border: #ccd3db;
   --cp-border-strong: #76808f;
-  --cp-focus: #1a68ac;
+  --cp-focus: #196ea1;
   --cp-on-accent: #ffffff;
-  --cp-accent: #1a68ac;
+  --cp-accent: #196ea1;
 
-  /* GJU-style brand. brand = decorative blue (graphics >= 3:1); accent = interactive blue (text >= 4.5:1) */
-  --cp-brand: #1b84c9;
+  /* Portal brand. brand = #1f8ac9 for graphics only (active tab bar, borders; 3.8:1 on white, fails as text);
+     accent = the closest shade that passes 4.5:1 for text on white, panels and the input tint. */
+  --cp-brand: #1f8ac9;
   --cp-heading: #5b5d60;
-  --cp-page: #eef2f6;
-  --cp-band: #1f78c4;
-  --cp-band-2: #155a99;
-  --cp-on-band: #ffffff;
-  --cp-orange: #f0a81f;
+  --cp-page: #eceef0;
+  --cp-band: #ffffff;
+  --cp-band-2: #f4f6f8;
+  --cp-on-band: #1c2025;
+  --cp-orange: #f5a623;
   --cp-on-orange: #1c2025;
   --cp-orange-ink: #b86e00;
   --cp-panel: #52769a;
@@ -46,6 +47,7 @@
   --cp-footer: #3a3a3a;
   --cp-on-footer: #e8e8e8;
   --cp-footer-link: #9dcdf5;
+  --cp-input: #eef5fb;
 
   /* categories (Okabe-Ito inspired; the label is always shown next to colour) */
   --cp-cat-registration: #0066b3;
@@ -64,7 +66,7 @@
   --cp-ok: #17713a;
   --cp-warn: #8f5900;
   --cp-danger: #c4161c;
-  --cp-info: #1a68ac;
+  --cp-info: #196ea1;
 
   /* spacing (4px scale) */
   --cp-space-1: 0.25rem;
@@ -95,6 +97,7 @@
   --cp-shadow-1: 0 1px 2px rgb(18 22 29 / 0.08), 0 1px 1px rgb(18 22 29 / 0.06);
   --cp-shadow-2: 0 8px 24px rgb(18 22 29 / 0.16), 0 2px 6px rgb(18 22 29 / 0.1);
   --cp-shadow-card: 0 2px 6px rgb(20 50 90 / 0.06), 0 8px 32px rgb(20 50 90 / 0.12);
+  --cp-container-shadow: 0 0 0 1px rgb(20 30 45 / 0.06), 0 4px 24px rgb(20 30 45 / 0.14);
   --cp-motion-fast: 120ms;
   --cp-motion-slow: 280ms;
   --cp-overlay: rgb(18 22 29 / 0.5);
@@ -128,6 +131,7 @@
   --color-footer: var(--cp-footer);
   --color-on-footer: var(--cp-on-footer);
   --color-footer-link: var(--cp-footer-link);
+  --color-input: var(--cp-input);
   --color-cat-registration: var(--cp-cat-registration);
   --color-cat-it: var(--cp-cat-it);
   --color-cat-finance: var(--cp-cat-finance);
@@ -159,4 +163,5 @@
   --shadow-1: var(--cp-shadow-1);
   --shadow-2: var(--cp-shadow-2);
   --shadow-card: var(--cp-shadow-card);
+  --shadow-container: var(--cp-container-shadow);
 }

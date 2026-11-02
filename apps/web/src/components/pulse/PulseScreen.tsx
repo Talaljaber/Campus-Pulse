@@ -50,7 +50,7 @@ export function PulseScreen({ role, alias = null }: PulseScreenProps) {
   };
 
   return (
-    <AppShell role={role} current="pulse" alias={alias} width="wide">
+    <AppShell role={role} current="incidents" alias={alias} width="wide">
       <PageHeader title={t("pulse.title")} subtitle={t("pulse.subtitle")} badges={<Badge tone="ok">{t("pulse.live")}</Badge>} />
 
       <Loadable state={pulse.load} onRetry={pulse.reload} lines={6}>

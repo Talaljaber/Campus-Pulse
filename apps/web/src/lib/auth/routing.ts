@@ -11,21 +11,14 @@ export function isRole(v: unknown): v is Role {
   return v === "student" || v === "staff" || v === "admin";
 }
 
-/** The office whose staff are the student-facing advisors (D-005 `academic`, UD-13). */
-export const ADVISOR_OFFICE = "academic";
-
-/**
- * Where each role lands after signing in. An advisor (staff of the academic office) lands on the
- * review queue; other staff on the desk. `office` is optional because the proxy knows only the role.
- */
-export function homeFor(role: Role, office?: string | null): string {
-  if (role === "staff" && office === ADVISOR_OFFICE) return "/staff/reviews";
-  return role === "admin" ? "/lab" : role === "staff" ? "/staff" : "/";
+/** Where each role lands after signing in: students on Home, staff and admins on the queue. */
+export function homeFor(role: Role): string {
+  return role === "student" ? "/" : "/staff";
 }
 
 /** Paths that need at least staff, and the one that needs admin. */
 const STAFF_PATHS = ["/staff", "/pulse", "/outbox"] as const;
-const ADMIN_PATHS = ["/lab"] as const;
+const ADMIN_PATHS = ["/lab", "/admin"] as const;
 /** Reachable without a session. `/dev` 404s itself in production. */
 const PUBLIC_PATHS = ["/login", "/dev"] as const;
 
@@ -38,8 +31,8 @@ export type RouteDecision = { action: "next" } | { action: "redirect"; to: strin
  * Decides what to do with a page request.
  * - No session: only the public paths pass; the rest go to `/login?next=...`.
  * - Signed in on `/login`: sent to the role's home.
- * - `/staff`, `/pulse`, `/outbox` need staff or admin; `/lab` needs admin. Anyone else goes to their own home.
- * - Everything else (including `/` for every role) passes.
+ * - `/staff`, `/pulse`, `/outbox` need staff or admin; `/lab` and `/admin` need admin. Anyone else goes to their own home.
+ * - Everything else (`/`, `/ask`, `/requests`, `/profile` for every signed-in role) passes.
  */
 export function decideRoute(pathname: string, role: Role | null): RouteDecision {
   if (role === null) {

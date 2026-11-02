@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { signIn } from "@/lib/auth/signin";
+import { roleMatches, signIn } from "@/lib/auth/signin";
 import type { Sb } from "@/lib/supabase/types";
 
 function fakeSb(opts: {
@@ -28,15 +28,28 @@ describe("signIn", () => {
   it.each([
     ["student", "/"],
     ["staff", "/staff"],
-    ["admin", "/lab"],
+    ["admin", "/staff"],
   ])("routes a %s to %s", async (role, dest) => {
     const { sb } = fakeSb({ auth: ok, profile: { id: "u1", role, office: null, alias: "a" } });
     expect(await signIn(sb, " a@demo.local ", "pw")).toEqual({ ok: true, role, destination: dest });
   });
 
-  it("sends an advisor (staff of the academic office) to the review queue", async () => {
-    const { sb } = fakeSb({ auth: ok, profile: { id: "u1", role: "staff", office: "academic", alias: "advisor" } });
-    expect(await signIn(sb, "advisor@demo.local", "pw")).toEqual({ ok: true, role: "staff", destination: "/staff/reviews" });
+  it("signs out and reports wrong_role when the role does not fit the button", async () => {
+    const student = fakeSb({ auth: ok, profile: { id: "u1", role: "student", office: null, alias: "talal" } });
+    expect(await signIn(student.sb, "talal", "pw", null, "staff")).toEqual({ ok: false, reason: "wrong_role" });
+    expect(student.signOut).toHaveBeenCalledOnce();
+    const staff = fakeSb({ auth: ok, profile: { id: "u1", role: "staff", office: "it", alias: "staff-it" } });
+    expect(await signIn(staff.sb, "it", "pw", null, "student")).toEqual({ ok: false, reason: "wrong_role" });
+    expect(staff.signOut).toHaveBeenCalledOnce();
+  });
+
+  it("accepts staff and admin on the staff button and a student on the student button", async () => {
+    for (const [role, as] of [["staff", "staff"], ["admin", "staff"], ["student", "student"]] as const) {
+      const { sb, signOut } = fakeSb({ auth: ok, profile: { id: "u1", role, office: null, alias: "a" } });
+      expect(await signIn(sb, "a", "pw", null, as)).toMatchObject({ ok: true, role });
+      expect(signOut).not.toHaveBeenCalled();
+    }
+    expect(roleMatches("admin", "student")).toBe(false);
   });
 
   it("honours a safe next path and ignores an unsafe one", async () => {

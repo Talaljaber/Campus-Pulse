@@ -1,14 +1,24 @@
-import type { DictKey } from "@/i18n";
 import type { Role } from "./routing";
 
 /**
- * The three seeded demo logins (D-008). Emails only: the shared password is typed by the
- * presenter and never appears in code, env defaults or the repository.
+ * The seeded demo logins (fictional people, all `<username>@demo.local`). Usernames only: the shared
+ * password is typed by the presenter and never appears in code, env defaults or the repository.
  */
-export const DEMO_ACCOUNTS: readonly { id: string; role: Role; email: string; labelKey: DictKey }[] = [
-  { id: "student", role: "student", email: "talal@demo.local", labelKey: "auth.demoStudent" },
-  { id: "staff", role: "staff", email: "it@demo.local", labelKey: "auth.demoStaff" },
-  // The fictional Dr. Rana Haddad: staff of the academic office, who lands on the review queue (UD-13).
-  { id: "advisor", role: "staff", email: "advisor@demo.local", labelKey: "auth.demoAdvisor" },
-  { id: "admin", role: "admin", email: "admin@demo.local", labelKey: "auth.demoAdmin" },
+export const DEMO_ACCOUNTS: readonly { username: string; role: Role }[] = [
+  { username: "talal", role: "student" },
+  { username: "lina", role: "student" },
+  { username: "omar", role: "student" },
+  { username: "registrar", role: "staff" },
+  { username: "it", role: "staff" },
+  { username: "finance", role: "staff" },
+  { username: "transport", role: "staff" },
+  { username: "facilities", role: "staff" },
+  { username: "academic", role: "staff" },
+  { username: "admin", role: "admin" },
 ];
+
+/** The login email for a typed username: a bare name becomes `<name>@demo.local`; an address is kept. */
+export function toLoginEmail(username: string): string {
+  const u = username.trim();
+  return u.includes("@") ? u : `${u}@demo.local`;
+}
