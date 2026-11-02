@@ -1,36 +1,84 @@
 # P9 database hand-off
 
-> **Nobody applies anything until the lead says so.**
-> This document is read-only guidance. Nothing here has been applied to any database. The migrations are applied by the lead, as the `postgres` owner, in one short window together with the P9 deploy (see "When to apply").
+## Status (2026-11-02)
 
-## Test status (read this first)
+- **`0013_student_journey.sql` and `0014_reminder_count.sql` were APPLIED and verified on the live project on 2026-11-02 by the user (SQL editor). They are frozen: never edit them. Every further schema change goes into 0015 or later.**
+- Still pending: the items in "Pending" below. Nothing in it has been applied; the lead applies it.
+- Tests: the Python and web unit tests use in-memory stores and never touch SQL. `supabase/tests/rls.sql` checks 14 to 19 (thread visibility, office staff vs own request, hints without `embedding`, anon, announcements, no client writes) were not executed by the agents; `scripts/test_rls.py` runs them on a scratch database, or paste into the SQL editor (one transaction, rolls back).
+- `0015_ticket_files.sql` has **not been tested on a real Postgres** (reviewed by reading only).
 
-- **None of the P9 migrations (0013, 0014) has been run against a real Postgres.** Not locally, not on the live project. Review so far is by reading only.
-- What did pass: the Python unit tests and the web unit tests, which use in-memory stores (they never touch SQL).
-- `supabase/tests/rls.sql` checks 14 to 19 (thread visibility, office staff vs own request, hints without `embedding`, anon, announcements, no client writes) exist but were **never executed**. Expect to run them on a scratch database first if one is available (`scripts/test_rls.py`), otherwise paste into the SQL editor: the script runs in one transaction and rolls back.
-- Review result for 0013 and 0014 (by reading, against 0002/0003/0006/0009/0012): no defect found, no change made to either file. Details in each section.
+## Live data and facts assumed
 
-## Live data and facts the migrations assume
-
-Facts supplied by the DB owner (read-only look at the live project):
-
-1. `tickets.status` has an inline CHECK from 0002 whose real name is `tickets_status_check`.
-2. Live data is demo only: 8 tickets (open 6, in_progress 1, resolved 1, escalated 0), 9 requests, 12 notifications. Profiles: 1 student, 2 staff (office `it`, and the advisor login with office `academic`), 1 admin.
-3. RLS policies and helpers in 0003, 0006, 0012 do not reference ticket status names. Old names lived only in backend code (now updated). Confirmed by grep: no `'open'`, `'resolved'`, `'escalated'` in 0003 to 0012 outside the `incidents` table (a different enum that is not changed).
-4. `service_role` has SELECT/INSERT/UPDATE/DELETE on all existing public tables but cannot create objects. Migrations run as the `postgres` owner. New tables need explicit GRANTs.
-5. `pg_cron` and `pg_net` are not installed and are not needed: SLA reminders come from the GitHub cron `.github/workflows/sla-ping.yml` calling `POST /v1/cron/sla`, plus the in-process scan and the post-response sweep. The `storage` schema exists with 0 buckets.
+1. `tickets.status` had an inline CHECK from 0002 named `tickets_status_check`.
+2. Live data is demo only (8 tickets, 9 requests, 12 notifications; 1 student, 2 staff, 1 admin profile).
+3. `service_role` has SELECT/INSERT/UPDATE/DELETE on existing public tables but cannot create objects; migrations run as `postgres`. New tables need explicit GRANTs.
+4. `pg_cron` and `pg_net` are not installed and not needed: SLA reminders come from `.github/workflows/sla-ping.yml` calling `POST /v1/cron/sla`, plus the in-process scan and the post-response sweep.
 
 ## Apply order
 
 | # | File | Status |
 |---|---|---|
-| 1 | `supabase/migrations/0013_student_journey.sql` | ready, never executed |
-| 2 | `supabase/migrations/0014_reminder_count.sql` | ready, never executed |
-| 3 | `supabase/migrations/0015_ticket_files.sql` | placeholder: pending, will be added when P9.10 lands |
+| 1 | `supabase/migrations/0013_student_journey.sql` | APPLIED and verified 2026-11-02, frozen |
+| 2 | `supabase/migrations/0014_reminder_count.sql` | APPLIED and verified 2026-11-02, frozen |
+| 3 | `supabase/migrations/0015_ticket_files.sql` | PENDING (not applied) |
 
-Apply 0013 then 0014, each as one transaction (Supabase `apply_migration` / SQL editor wraps in a transaction; if you use `psql`, pass `-1`/`--single-transaction`). 0014 depends on the `tickets` table only, but keep the order.
+## Pending
+
+### (a) `supabase/migrations/0015_ticket_files.sql`
+
+Summary:
+
+- Private storage bucket `ticket-files`: 5 MB limit, 8 allowed MIME types, created with `insert into storage.buckets ... on conflict do nothing` (an existing bucket is left as is).
+- Table `ticket_files` with RLS mirroring `ticket_activity`. Column-level SELECT for `authenticated` that excludes `storage_path` and `uploader_alias`; `service_role` has all four verbs; `anon` nothing.
+- No `storage.objects` policies: only the service role reaches the bucket.
+- Two advisor-suggested FK indexes: `announcements_created_by_idx` and `ticket_hints_ticket_id_idx`.
+- Non-destructive. Safe to apply before or together with the p9 deploy, because main does not read it.
+
+Verification SQL (read-only):
+
+```sql
+-- bucket: expect one row, public = false, file_size_limit 5242880
+select id, public, file_size_limit, allowed_mime_types from storage.buckets where id = 'ticket-files';
+-- storage policies unchanged by this migration: compare with the count taken before applying
+select count(*) from pg_policies where schemaname = 'storage';
+-- table, RLS and policy
+select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relname = 'ticket_files';
+select policyname, cmd, roles from pg_policies where schemaname = 'public' and tablename = 'ticket_files';
+-- grants: authenticated has column-level select only, no storage_path / uploader_alias
+select grantee, privilege_type from information_schema.role_table_grants
+ where table_schema = 'public' and table_name = 'ticket_files' and grantee in ('anon','authenticated','service_role')
+ order by 1, 2;
+select has_column_privilege('authenticated', 'public.ticket_files', 'storage_path', 'select')   as reads_storage_path,   -- expect false
+       has_column_privilege('authenticated', 'public.ticket_files', 'uploader_alias', 'select') as reads_uploader_alias; -- expect false
+-- indexes
+select indexname from pg_indexes where schemaname = 'public'
+ and indexname in ('announcements_created_by_idx', 'ticket_hints_ticket_id_idx');
+```
+
+Rollback: `drop table public.ticket_files;` and delete the bucket only if it is empty (`delete from storage.buckets where id = 'ticket-files';`; Supabase refuses while objects exist). The indexes can stay or be dropped.
+
+### (b) Demo accounts: `python scripts/seed_demo_users.py`
+
+Creates or refreshes 10 fictional logins and upserts their profiles. Needs `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `DEMO_USER_PASSWORD` in the environment of the machine that runs it. Passwords are never written in any file. Details in "Seeds" below.
+
+### (c) `supabase/seed/05_announcements.sql`
+
+Run in the SQL editor as `postgres` (needs 0013, already applied). Details in "Seeds" below.
+
+### (d) GitHub, for `sla-ping.yml`
+
+Repository variable `API_URL` and repository secret `AI_SERVICE_TOKEN`. Details in "Environment variables" below.
+
+### (e) Note on the first SLA scan
+
+On the first scan after the p9 deploy, each existing overdue demo ticket (`reminder_count = 0`) gets one reminder email, only to allow-listed inboxes.
 
 ---
+
+## Applied
+
+0013 and 0014 below are applied and frozen. The sections are kept as reference, including the verification SQL.
+
 
 ## 0013_student_journey.sql
 
@@ -205,23 +253,6 @@ select conname, pg_get_constraintdef(oid) from pg_constraint
  where conrelid = 'public.tickets'::regclass and contype = 'c' and pg_get_constraintdef(oid) like '%reminder_count%';
 select reminder_count, count(*) from public.tickets group by 1;   -- expect all 0
 ```
-
----
-
-## 0015_ticket_files.sql (placeholder)
-
-Pending: this file will be added when P9.10 lands (last package, only if P9.0 to P9.9 are merged and green). It is not in the repo yet. Nothing to apply now.
-
-Expected content, from PLAN (h) P9.10: a `ticket_files` table (RLS read like `ticket_activity`, grants like 0013: SELECT to `authenticated`, full DML to `service_role`, nothing for `anon`) and the private storage bucket:
-
-```sql
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('ticket-files', 'ticket-files', false, 5242880, array[...]) on conflict (id) do nothing;
-```
-
-with no `storage.objects` policies for client roles (service role only). The `storage` schema exists with 0 buckets today.
-
-Manual alternative if the lead wants the bucket before the migration exists: Dashboard > Storage > New bucket, name `ticket-files`, **Private**, file size limit 5 MB, allowed MIME types as listed in PLAN (h) P9.10 (`image/png`, `image/jpeg`, `image/webp`, `application/pdf`, `text/plain`, and the docx, xlsx, pptx `application/vnd.openxmlformats-officedocument.*` types). Do not add storage policies. The later `insert ... on conflict do nothing` then leaves it as is. Add a verification block (`select id, public, file_size_limit from storage.buckets;`, `ticket_files` grants and policies) to this document when the file lands. Its timing is separate from the 0013/0014 window.
 
 ---
 

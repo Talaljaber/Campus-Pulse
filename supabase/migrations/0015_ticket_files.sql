@@ -49,3 +49,7 @@ revoke select on public.ticket_files from authenticated;
 grant select (id, ticket_id, activity_id, uploader_role, visibility, mime, size_bytes, ext, created_at)
   on public.ticket_files to authenticated;
 grant select, insert, update, delete on public.ticket_files to service_role;
+
+-- advisor-suggested FK indexes (lead, 2026-11-02)
+create index if not exists announcements_created_by_idx on public.announcements (created_by);
+create index if not exists ticket_hints_ticket_id_idx on public.ticket_hints (ticket_id);
