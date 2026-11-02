@@ -3830,6 +3830,171 @@
         ],
         "x-optional": false
       }
+    },
+    "/v1/cron/sla": {
+      "post": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "Run the SLA reminder scan",
+        "description": "Scans the overdue `new` and `in_progress` tickets and sends at most two reminders per clock period (level 1 when overdue, level 2 one SLA period later, also to the admin inbox). Called every 10 minutes by `.github/workflows/sla-ping.yml`; the request also wakes a sleeping service. Safe to repeat: a reminder level is claimed once.",
+        "operationId": "cron_sla",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlaScanOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_implemented`: Optional extra that is not built in this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "service"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "per reminded ticket: updates `reminder_count` and `reminder_sent_at`; inserts an internal `ticket_activity` row `reminder`, a `notifications` row for the office and an `events` row `sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)"
+        ],
+        "x-optional": false
+      }
     }
   },
   "components": {
@@ -6485,6 +6650,31 @@
         ],
         "title": "SimulateResponse",
         "description": "A started simulated burst. All its requests carry `simulated=true`."
+      },
+      "SlaScanOut": {
+        "properties": {
+          "ran_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ran At"
+          },
+          "reminded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reminded",
+            "description": "Ids of the tickets reminded now (a claimed level 1 or 2)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ran_at",
+          "reminded"
+        ],
+        "title": "SlaScanOut",
+        "description": "Result of `POST /v1/cron/sla`: the tickets that got a reminder in this scan."
       },
       "StudentActionRequest": {
         "properties": {

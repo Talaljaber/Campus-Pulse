@@ -41,6 +41,7 @@ Every non-2xx response has this shape:
 - [`POST /v1/tickets/{ticket_id}/comments`](#ticket_comment) Comment on a ticket
 - [`POST /v1/tickets/{ticket_id}/priority`](#ticket_priority) Change a ticket's priority
 - [`POST /v1/tickets/{ticket_id}/student-action`](#ticket_student_action) Requester buttons: solved, close, keep open
+- [`POST /v1/cron/sla`](#cron_sla) Run the SLA reminder scan
 - [Schemas](#schemas)
 
 <a id="triage"></a>
@@ -2542,6 +2543,56 @@ Response `200`:
 - updates the `tickets` row (status, `awaiting_student`, clock on keep open); inserts a `ticket_activity` row `student_action`; appends an `events` row `ticket.student_action`
 - after the response: updates the Linear issue; allow-listed email to the office (`solved`, `closed` or `reopened`)
 
+<a id="cron_sla"></a>
+## `POST /v1/cron/sla`
+
+**Run the SLA reminder scan.** Scans the overdue `new` and `in_progress` tickets and sends at most two reminders per clock period (level 1 when overdue, level 2 one SLA period later, also to the admin inbox). Called every 10 minutes by `.github/workflows/sla-ping.yml`; the request also wakes a sleeping service. Safe to repeat: a reminder level is claimed once.
+
+- **Roles:** `service`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [SlaScanOut](#schema-slascanout)
+
+**Example** (fixture `cron_sla`): The scheduled SLA scan (service token): two tickets got a reminder.
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/cron/sla" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "ran_at": "2026-11-02T09:10:00+03:00",
+  "reminded": [
+    "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+    "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0032"
+  ]
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 501 | `not_implemented`: Optional extra that is not built in this deployment. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- per reminded ticket: updates `reminder_count` and `reminder_sent_at`; inserts an internal `ticket_activity` row `reminder`, a `notifications` row for the office and an `events` row `sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)
+
 <a id="schemas"></a>
 ## Schemas
 
@@ -3247,6 +3298,16 @@ A started simulated burst. All its requests carry `simulated=true`.
 | `queued` | integer | yes | >= 0.0 |
 | `interval_s` | number | yes |  |
 | `label` | `"SIMULATED TRAFFIC"` | yes |  |
+
+<a id="schema-slascanout"></a>
+### SlaScanOut
+
+Result of `POST /v1/cron/sla`: the tickets that got a reminder in this scan.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `ran_at` | string (date-time) | yes |  |
+| `reminded` | array of string | yes | Ids of the tickets reminded now (a claimed level 1 or 2) |
 
 <a id="schema-studentactionrequest"></a>
 ### StudentActionRequest

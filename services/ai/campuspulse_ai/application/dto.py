@@ -917,3 +917,10 @@ class ReindexResponse(_Model):
     reindexed: int = Field(ge=0)
     dim: int = Field(ge=1)
     duration_ms: int = Field(ge=0)
+
+
+class SlaScanOut(_Model):
+    """Result of `POST /v1/cron/sla`: the tickets that got a reminder in this scan."""
+
+    ran_at: datetime
+    reminded: list[str] = Field(description="Ids of the tickets reminded now (a claimed level 1 or 2).")

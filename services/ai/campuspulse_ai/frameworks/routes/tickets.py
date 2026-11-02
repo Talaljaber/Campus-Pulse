@@ -16,6 +16,7 @@ from campuspulse_ai.application.dto import (
     CommentRequest,
     ForwardRequest,
     PriorityRequest,
+    SlaScanOut,
     StudentActionRequest,
     TicketOut,
     TicketStatusRequest,
@@ -141,3 +142,16 @@ def ticket_student_action(
     change = services.lifecycle.student_action(ticket_id, caller, StudentAction(body.action))
     background.add_task(services.lifecycle.deliver, change)
     return ticket_out(change.ticket)
+
+
+@router.api_route(**route_kwargs("cron_sla"))
+def cron_sla(
+    request: Request,
+    services: Services,
+    caller: Annotated[Principal, Depends(authorize("cron_sla"))],
+) -> SlaScanOut:
+    """Run the SLA reminder scan now (service token only; the scan is idempotent)."""
+    if services.sla is None or services.clock is None:
+        raise not_wired("SLA reminders")
+    now = services.clock.now()
+    return SlaScanOut(ran_at=now, reminded=services.sla.run(now))

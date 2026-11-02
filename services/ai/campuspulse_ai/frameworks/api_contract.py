@@ -33,6 +33,7 @@ from campuspulse_ai.application.dto import (
     ReviewItemOut,
     ScorecardOut,
     SimulateResponse,
+    SlaScanOut,
     TicketOut,
     TicketThreadOut,
     TriageResponse,
@@ -546,6 +547,27 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
             "`ticket_activity` row `student_action`; appends an `events` row `ticket.student_action`",
             "after the response: updates the Linear issue; allow-listed email to the office "
             "(`solved`, `closed` or `reopened`)",
+        ),
+        tag="staff",
+    ),
+    EndpointDoc(
+        op_id="cron_sla",
+        method="POST",
+        path="/v1/cron/sla",
+        summary="Run the SLA reminder scan",
+        purpose=(
+            "Scans the overdue `new` and `in_progress` tickets and sends at most two reminders per clock "
+            "period (level 1 when overdue, level 2 one SLA period later, also to the admin inbox). Called "
+            "every 10 minutes by `.github/workflows/sla-ping.yml`; the request also wakes a sleeping "
+            "service. Safe to repeat: a reminder level is claimed once."
+        ),
+        roles=("service",),
+        response_model=SlaScanOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_IMPLEMENTED),
+        side_effects=(
+            "per reminded ticket: updates `reminder_count` and `reminder_sent_at`; inserts an internal "
+            "`ticket_activity` row `reminder`, a `notifications` row for the office and an `events` row "
+            "`sla.reminder`; allow-listed email to the office (level 2: and the admin inbox)",
         ),
         tag="staff",
     ),

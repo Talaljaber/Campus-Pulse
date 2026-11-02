@@ -25,6 +25,7 @@ from campuspulse_ai.adapters.integrations.supabase_sink import SupabaseSink
 from campuspulse_ai.adapters.memory.inmemory import InMemoryMemoryStore
 from campuspulse_ai.adapters.notify.inapp import InAppNotifier
 from campuspulse_ai.adapters.store.inmemory import InMemoryRepository
+from campuspulse_ai.adapters.store.journey_inmemory import InMemoryJourneyStore
 from campuspulse_ai.adapters.vectors.local_numpy import LocalNumpyVectorStore
 from campuspulse_ai.composition import online
 from campuspulse_ai.composition.api import ApiServices
@@ -69,6 +70,7 @@ def wire(offline: OfflineContainer, **settings: Any) -> Wired:
         channels={"in_app": InAppNotifier(repo), "email": email},
         calendars=(SlotsTableCalendar(repo, clock, RecipientPolicy(cfg.demo_email_allowlist)),),
         vector_store="local",
+        journey=InMemoryJourneyStore(repo),
     )
     services = online.wire_online(cfg, offline, adapters, clock)
     return Wired(services, repo, vectors, memory, linear, email, api_client(services=services, settings=cfg))
