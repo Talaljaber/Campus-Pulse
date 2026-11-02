@@ -121,6 +121,7 @@ class Settings(BaseSettings):
 
     # Background loops
     sla_scan_minutes: int = 5
+    sla_sweep_min_interval_s: int = 60  # SLA sweep after API responses, at most this often; 0 disables
     incident_window_min: int = 30
 
     # Artifacts and runtime

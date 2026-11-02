@@ -954,3 +954,10 @@ class AnnouncementOut(_Model):
     archived_at: datetime | None
     created_by: str | None
     created_at: datetime | None
+
+
+class SlaScanOut(_Model):
+    """Result of `POST /v1/cron/sla`: the tickets that got a reminder in this scan."""
+
+    ran_at: datetime
+    reminded: list[str] = Field(description="Ids of the tickets reminded now (a claimed level 1 or 2).")

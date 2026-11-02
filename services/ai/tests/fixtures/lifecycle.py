@@ -20,6 +20,7 @@ from pydantic import SecretStr
 from campuspulse_ai.adapters.integrations.linear import LinearMapping, LinearSink, sign
 from campuspulse_ai.adapters.notify.email_templates import load_ticket_email_templates
 from campuspulse_ai.adapters.store.journey_inmemory import InMemoryJourneyStore
+from campuspulse_ai.application.use_cases.escalate_sla import SlaReminderUseCase
 from campuspulse_ai.application.use_cases.offices import OfficeMap
 from campuspulse_ai.application.use_cases.ticket_emails import InboxBook, TicketMailer
 from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
@@ -115,6 +116,7 @@ class LifecycleHarness:
     lifecycle: TicketLifecycleUseCase
     journey: InMemoryJourneyStore
     mail: FakeNotifier
+    sla: SlaReminderUseCase
 
 
 def build_lifecycle(
@@ -144,4 +146,5 @@ def build_lifecycle(
         c.messages,
         encoder,
     )
-    return LifecycleHarness(c, lifecycle, journey, mail)
+    sla = SlaReminderUseCase(c.repo, journey, mailer, c.messages, actions.sla_hours)
+    return LifecycleHarness(c, lifecycle, journey, mail, sla)

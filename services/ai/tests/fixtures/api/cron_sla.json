@@ -1,0 +1,18 @@
+{
+  "name": "cron_sla",
+  "description": "The scheduled SLA scan (service token): two tickets got a reminder.",
+  "method": "POST",
+  "path": "/v1/cron/sla",
+  "path_params": {},
+  "query": {},
+  "headers": {},
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "ran_at": "2026-11-02T09:10:00+03:00",
+    "reminded": [
+      "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+      "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0032"
+    ]
+  }
+}

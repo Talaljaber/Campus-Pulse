@@ -64,7 +64,7 @@ from campuspulse_ai.application.use_cases.announcement_ports import Announcement
 from campuspulse_ai.application.use_cases.announcements import AnnouncementsUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
-from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
+from campuspulse_ai.application.use_cases.escalate_sla import SlaReminderUseCase
 from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
@@ -501,22 +501,23 @@ def wire_online(
         ),
         reviews=assigner,
     )
+    mailer = TicketMailer(
+        load_ticket_email_templates(TEMPLATES_DIR / "email"),
+        notifier,
+        clock,
+        InboxBook(
+            student_inbox=settings.demo_student_inbox,
+            office_inboxes=settings.demo_office_inboxes,
+            default_office_inbox=settings.demo_office_inbox,
+            admin_inbox=settings.demo_admin_inbox,
+        ),
+        settings.public_web_url,
+    )
     lifecycle = (
         TicketLifecycleUseCase(
             repo,
             adapters.journey,
-            TicketMailer(
-                load_ticket_email_templates(TEMPLATES_DIR / "email"),
-                notifier,
-                clock,
-                InboxBook(
-                    student_inbox=settings.demo_student_inbox,
-                    office_inboxes=settings.demo_office_inboxes,
-                    default_office_inbox=settings.demo_office_inbox,
-                    admin_inbox=settings.demo_admin_inbox,
-                ),
-                settings.public_web_url,
-            ),
+            mailer,
             sinks,
             clock,
             actions_config.sla_hours,
@@ -525,6 +526,11 @@ def wire_online(
             # the encoder the online core runs: hints and the chat preview live in the same space
             offline.encoder,
         )
+        if adapters.journey is not None
+        else None
+    )
+    sla = (
+        SlaReminderUseCase(repo, adapters.journey, mailer, messages, actions_config.sla_hours)
         if adapters.journey is not None
         else None
     )
@@ -538,7 +544,7 @@ def wire_online(
         ),
         reviews=reviews,
         lifecycle=lifecycle,
-        sla=EscalateSlaUseCase(sinks, repo, messages),
+        sla=sla,
         clock=clock,
         incidents=IncidentsUseCase(
             adapters.reads,

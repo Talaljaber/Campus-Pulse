@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from campuspulse_ai.application.use_cases.announcements import AnnouncementsUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
-from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
+from campuspulse_ai.application.use_cases.escalate_sla import SlaReminderUseCase
 from campuspulse_ai.application.use_cases.explain import CounterfactualUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentsUseCase
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
@@ -56,7 +56,8 @@ class ApiServices:
 
     - `tickets` serves the inbound Linear webhook; `lifecycle` serves the ticket routes (status, forward,
       priority, comments, requester actions) and the `created` follow-up of triage (P9.3); `sla` is
-      the SLA scanner the lifespan runs every `SLA_SCAN_MINUTES` with `clock` (both must be set).
+      the SLA reminder scanner (loop every `SLA_SCAN_MINUTES`, sweep after responses, `POST
+      /v1/cron/sla`; needs `clock`).
     - `incidents` serves the Pulse routes (`GET /v1/incidents`, `POST /v1/incidents/{id}/resolve`).
     - `reviews` serves `GET /v1/reviews` and `POST /v1/reviews/{id}/forward` (UD-13 advisor routing).
     - `batch`, `metrics` and `redteam` serve the model lab (`composition.redteam.build_redteam` builds
@@ -71,7 +72,7 @@ class ApiServices:
     feedback: FeedbackHandler | None = None
     tickets: SyncTicketUseCase | None = None
     reviews: ReviewsUseCase | None = None
-    sla: EscalateSlaUseCase | None = None
+    sla: SlaReminderUseCase | None = None
     clock: Clock | None = None
     incidents: IncidentsUseCase | None = None
     batch: BatchCsvUseCase | None = None

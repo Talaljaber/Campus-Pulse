@@ -10,7 +10,7 @@ Real classes: `InMemoryRepository`, `DefaultDecisionPolicy` (tau_ood from a vali
 `RuleBasedUnderstander`, `TableActionPlanner` over `config/actions.yaml`, the allow-listed notifier
 chain (`AllowlistedNotifier` -> `ChannelNotifier` -> `FakeNotifier` for email + `InAppNotifier`), and
 `FallbackCalendar([SlotsTableCalendar])` over one seeded fictional advisor with free slots, and the
-ticket lifecycle (`SyncTicketUseCase`, `EscalateSlaUseCase`, P4.9) over the same sinks and notifier.
+ticket lifecycle (`SyncTicketUseCase`, P4.9) over the same sinks and notifier.
 Fakes: `FakeCore`, `ScriptedOracle` (empty script = LLM off), `FakeSink`, `FakeFAQ`, `FakeLAC`,
 `FrozenClock`. Every email address is a `*.invalid` demo address on the test allow-list.
 """
@@ -42,7 +42,6 @@ from campuspulse_ai.application.services.gaming import GamingDetector
 from campuspulse_ai.application.services.llm_merge import LLMMerger
 from campuspulse_ai.application.use_cases.act import ActConfig, ActUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
-from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.reviews import ReviewAssigner, ReviewRouter
@@ -131,7 +130,6 @@ class BackendTestContainer:
     triage: TriageUseCase
     clarify: ClarifyUseCase
     sync: SyncTicketUseCase
-    sla: EscalateSlaUseCase
     extras: dict[str, Any] = field(default_factory=dict)
 
     def outbox(self, status: str | None = None) -> list[dict[str, Any]]:
@@ -270,7 +268,6 @@ def build_test(
         triage=TriageUseCase(core, flow, repo, clock, marks=repo),
         clarify=ClarifyUseCase(core, flow, repo, clock),
         sync=SyncTicketUseCase(chosen, repo, notifier, clock, msgs, student_inbox=acfg.student_inbox),
-        sla=EscalateSlaUseCase(chosen, repo, msgs),
         extras={"incidents": incidents} if incidents else {},
     )
 

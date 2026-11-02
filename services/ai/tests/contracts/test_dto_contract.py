@@ -37,6 +37,7 @@ REQUEST_MODELS: dict[str, type[BaseModel] | None] = {
     "triage": dto.TriageRequest,
     "clarify": dto.ClarifyRequest,
     "explain_counterfactual": None,
+    "cron_sla": None,
     "feedback": dto.FeedbackRequest,
     "ticket_status": dto.TicketStatusRequest,
     "ticket_forward": dto.ForwardRequest,

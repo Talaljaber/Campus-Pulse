@@ -484,6 +484,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/cron/sla": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run the SLA reminder scan
+         * @description Scans the overdue `new` and `in_progress` tickets and sends at most two reminders per clock period (level 1 when overdue, level 2 one SLA period later, also to the admin inbox). Called every 10 minutes by `.github/workflows/sla-ping.yml`; the request also wakes a sleeping service. Safe to repeat: a reminder level is claimed once.
+         */
+        post: operations["cron_sla"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1602,6 +1622,22 @@ export interface components {
              * @constant
              */
             label: "SIMULATED TRAFFIC";
+        };
+        /**
+         * SlaScanOut
+         * @description Result of `POST /v1/cron/sla`: the tickets that got a reminder in this scan.
+         */
+        SlaScanOut: {
+            /**
+             * Ran At
+             * Format: date-time
+             */
+            ran_at: string;
+            /**
+             * Reminded
+             * @description Ids of the tickets reminded now (a claimed level 1 or 2).
+             */
+            reminded: string[];
         };
         /**
          * StudentActionRequest
@@ -3711,6 +3747,80 @@ export interface operations {
             };
             /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cron_sla: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlaScanOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_implemented`: Optional extra that is not built in this deployment. */
+            501: {
                 headers: {
                     [name: string]: unknown;
                 };

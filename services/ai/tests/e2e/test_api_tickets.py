@@ -196,20 +196,22 @@ WAIT_S = 5.0
 
 
 def test_lifespan_runs_the_sla_scanner_at_startup() -> None:
-    c = build_test()
+    h = build_lifecycle(build_test())
+    c = h.c
     overdue = seed_ticket(c, sla_due_at=c.clock.at - timedelta(minutes=1))
-    with TestClient(create_app(ApiServices(sla=c.sla, clock=c.clock), api_settings(sla_scan_minutes=5))):
+    with TestClient(create_app(ApiServices(sla=h.sla, clock=c.clock), api_settings(sla_scan_minutes=5))):
         waited = 0.0
-        while c.repo.get_ticket(overdue.id).escalated_at is None and waited < WAIT_S:
+        while c.repo.get_ticket(overdue.id).reminder_count == 0 and waited < WAIT_S:
             threading.Event().wait(POLL_S)
             waited += POLL_S
-    assert c.repo.get_ticket(overdue.id).escalated_at is not None
-    assert len(c.events("sla.escalated")) == 1  # the loop sleeps 5 min between scans
+    assert c.repo.get_ticket(overdue.id).reminder_count == 1
+    assert len(c.events("sla.reminder")) == 1  # the loop sleeps 5 min between scans
 
 
 def test_no_scanner_when_disabled() -> None:
-    c = build_test()
+    h = build_lifecycle(build_test())
+    c = h.c
     overdue = seed_ticket(c, sla_due_at=c.clock.at - timedelta(minutes=1))
-    with TestClient(create_app(ApiServices(sla=c.sla, clock=c.clock), api_settings(sla_scan_minutes=0))):
+    with TestClient(create_app(ApiServices(sla=h.sla, clock=c.clock), api_settings(sla_scan_minutes=0))):
         threading.Event().wait(0.2)
-    assert c.repo.get_ticket(overdue.id).status == TicketStatus.NEW
+    assert c.repo.get_ticket(overdue.id).reminder_count == 0

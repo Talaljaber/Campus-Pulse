@@ -9,8 +9,10 @@ with the same declarations as the mock app, so `create_app().openapi()` equals
   `501 not_implemented`, `/health` says `degraded`).
 - `settings`: defaults to `Settings()` from the env; stored on `app.state.settings`.
 
-The lifespan also starts the SLA scanner (`background.sla_loop`) when `services.sla` and
-`services.clock` are wired and `SLA_SCAN_MINUTES > 0`, and cancels it on shutdown.
+The lifespan also starts the SLA reminder loop (`background.sla_loop`) when `services.sla` and
+`services.clock` are wired and `SLA_SCAN_MINUTES > 0`, and cancels it on shutdown. A middleware also
+schedules `background.SlaSweeper.maybe_run()` after each response when `SLA_SWEEP_MIN_INTERVAL_S > 0`
+(throttled; it wakes the reminders on a service that was asleep).
 
 Errors are mapped in `frameworks/errors.py`; auth is `frameworks/auth.py`.
 """
@@ -21,17 +23,17 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.routing import APIRoute
 
 from campuspulse_ai import __version__
 from campuspulse_ai.composition.api import ApiServices
 from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.frameworks.api_contract import API_DESCRIPTION, API_TITLE, ENDPOINTS
-from campuspulse_ai.frameworks.background import SECONDS_PER_MINUTE, sla_loop
+from campuspulse_ai.frameworks.background import SECONDS_PER_MINUTE, SlaSweeper, sla_loop
 from campuspulse_ai.frameworks.errors import install_error_handlers
 from campuspulse_ai.frameworks.heap import trim_heap
 from campuspulse_ai.frameworks.routes import (
@@ -107,9 +109,32 @@ def create_app(
     )
     app.state.settings = resolved
     app.state.services = services or ApiServices()
+    _install_sla_sweep(app, resolved)
     app.include_router(contract_router())
     install_error_handlers(app)
     return app
+
+
+def _install_sla_sweep(app: FastAPI, settings: Settings) -> None:
+    """After each response, schedule the throttled SLA sweep (services are read per request: they may be
+    built in the lifespan). The response itself is never delayed."""
+    if settings.sla_sweep_min_interval_s <= 0:
+        return
+    sweeper: SlaSweeper | None = None
+    tasks: set[asyncio.Task[None]] = set()
+
+    @app.middleware("http")
+    async def sla_sweep(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        nonlocal sweeper
+        response = await call_next(request)
+        wired: ApiServices = app.state.services
+        if wired.sla is not None and wired.clock is not None:
+            if sweeper is None:
+                sweeper = SlaSweeper(wired.sla.run, wired.clock, settings.sla_sweep_min_interval_s)
+            task = asyncio.create_task(sweeper.maybe_run())
+            tasks.add(task)  # keep a reference until it finishes
+            task.add_done_callback(tasks.discard)
+        return response
 
 
 def contract_router() -> APIRouter:

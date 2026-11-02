@@ -339,6 +339,11 @@ def build_router(store: FixtureStore) -> APIRouter:
         """Archive an announcement (fixture-backed)."""
         return _respond(store.pick("announcement_archive", request, None))
 
+    @router.api_route(**route_kwargs("cron_sla"), dependencies=[Depends(_guard("cron_sla"))])
+    def cron_sla(request: Request) -> Any:
+        """Run the SLA reminder scan (fixture-backed)."""
+        return _respond(store.pick("cron_sla", request, None))
+
     return router
 
 

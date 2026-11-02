@@ -1,4 +1,4 @@
-"""TicketMirror: push a changed ticket to the ticket sinks (ActUseCase, SyncTicketUseCase, EscalateSla).
+"""TicketMirror: push a changed ticket to the ticket sinks (ActUseCase, SyncTicketUseCase).
 
 A sink failure never fails the caller: it is logged and kept on that sink's link as `error`
 (`ticket_links.last_error`, D-011). The record sink (`supabase`) is the ticket row itself, so it has
