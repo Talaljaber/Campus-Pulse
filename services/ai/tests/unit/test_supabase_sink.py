@@ -87,7 +87,7 @@ def test_create_is_the_system_of_record(h: Harness) -> None:
     link = sink.create(ticket)
     assert (link.ticket_id, link.sink, link.external_id, link.url) == (ticket.id, "supabase", ticket.id, None)
     stored = h.repo.get_ticket(ticket.id)
-    assert (stored.office, stored.priority, stored.status) == ("registrar", Priority.HIGH, TicketStatus.OPEN)
+    assert (stored.office, stored.priority, stored.status) == ("registrar", Priority.HIGH, TicketStatus.NEW)
     assert stored.title == ticket.title and stored.links == []
     sink.create(ticket)  # idempotent on the ticket id
     assert h.repo.get_ticket(ticket.id).id == ticket.id
@@ -97,12 +97,12 @@ def test_update_status_and_close(h: Harness) -> None:
     sink = SupabaseSink(h.repo)
     ticket = make_ticket(h.request(), id=str(uuid.uuid4()))
     sink.create(ticket)
-    ticket.status, ticket.priority = TicketStatus.ESCALATED, Priority.HIGH
+    ticket.status, ticket.priority = TicketStatus.IN_PROGRESS, Priority.HIGH
     sink.update_status(ticket)
-    assert h.repo.get_ticket(ticket.id).status == TicketStatus.ESCALATED
+    assert h.repo.get_ticket(ticket.id).status == TicketStatus.IN_PROGRESS
     sink.close(ticket)
     assert h.repo.get_ticket(ticket.id).status == TicketStatus.CLOSED
-    assert ticket.status == TicketStatus.ESCALATED  # the caller's object is not mutated
+    assert ticket.status == TicketStatus.IN_PROGRESS  # the caller's object is not mutated
 
 
 def test_inbound_is_not_handled_here(h: Harness) -> None:

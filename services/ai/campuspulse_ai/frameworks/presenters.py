@@ -38,6 +38,10 @@ def ticket_out(ticket: Ticket) -> TicketOut:
         escalated_at=ticket.escalated_at,
         resolved_at=ticket.resolved_at,
         title=ticket.title,
+        # Rows from before P9 carry no clock start: fall back to the due time (documented in P9.1 report).
+        clock_started_at=ticket.clock_started_at or ticket.sla_due_at,
+        reminder_sent_at=ticket.reminder_sent_at,
+        awaiting_student=ticket.awaiting_student,
         links=[
             ExternalRefOut(sink=link.sink, external_id=link.external_id, url=link.url)
             for link in ticket.links

@@ -24,13 +24,17 @@ const ticket = (o: Partial<TicketView> = {}): TicketView => ({
   office: "it",
   category: "IT Support",
   priority: "high",
-  status: "open",
+  status: "new",
   provisional: false,
   title: "Wi-Fi down in M",
   body: "",
   sla_due_at: at(10),
   escalated_at: null,
   resolved_at: null,
+  clock_started_at: "2026-11-08T08:00:00Z",
+  reminder_sent_at: null,
+  awaiting_student: false,
+  requester_alias: null,
   created_at: "2026-11-08T08:00:00Z",
   link: null,
   tags: [],
@@ -104,9 +108,9 @@ describe("TicketQueue", () => {
 
 describe("StatusSelect", () => {
   it("lists the settable statuses, never offers merged, and locks a merged ticket", () => {
-    const { rerender } = render(<StatusSelect value="open" label="s" onChange={() => {}} />);
+    const { rerender } = render(<StatusSelect value="new" label="s" onChange={() => {}} />);
     const names = within(screen.getByRole("combobox")).getAllByRole("option").map((o) => o.textContent);
-    expect(names).toEqual(["Open", "In progress", "Escalated", "Resolved", "Closed"]);
+    expect(names).toEqual(["New", "In progress", "Solved", "Closed"]);
     rerender(<StatusSelect value="merged" label="s" onChange={() => {}} />);
     expect(screen.getByRole("combobox")).toBeDisabled();
     expect(screen.getByRole("combobox")).toHaveValue("merged");

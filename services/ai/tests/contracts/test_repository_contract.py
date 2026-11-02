@@ -7,6 +7,7 @@ deleted in teardown.
 
 from __future__ import annotations
 
+import dataclasses
 import uuid
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
@@ -235,7 +236,7 @@ def make_prediction(
     )
 
 
-def make_ticket(request_id: str, *, sla: datetime, status: TicketStatus = TicketStatus.OPEN) -> Ticket:
+def make_ticket(request_id: str, *, sla: datetime, status: TicketStatus = TicketStatus.NEW) -> Ticket:
     return Ticket(
         id="",
         request_id=request_id,
@@ -335,10 +336,30 @@ def test_ticket_round_trip_with_links(h: Harness) -> None:
     ticket.links = [TicketLink("", "linear", f"{h.tag}-1", "https://linear.app/x/1")]
     saved = h.repo.save_ticket(ticket)
     assert saved.links[0].ticket_id == saved.id
-    assert h.repo.get_ticket(saved.id) == saved
-    assert h.repo.ticket_by_link("linear", f"{h.tag}-1") == saved
+    stored = h.repo.get_ticket(saved.id)
+    # P9: the DB fills these two on insert (column default, requester trigger); the entity sent none.
+    assert stored.clock_started_at is not None and stored.requester_alias == req.alias
+    expected = dataclasses.replace(
+        saved, clock_started_at=stored.clock_started_at, requester_alias=stored.requester_alias
+    )
+    assert stored == expected
+    assert h.repo.ticket_by_link("linear", f"{h.tag}-1") == expected
     h.repo.save_ticket_link(TicketLink(saved.id, "webhook", f"{h.tag}-w"))
     assert [link.sink for link in h.repo.get_ticket(saved.id).links] == ["linear", "webhook"]
+
+
+def test_ticket_clock_columns_round_trip(h: Harness) -> None:
+    req = h.repo.save_request(make_request(h))
+    ticket = make_ticket(req.id, sla=T0 + timedelta(hours=24))
+    started = T0 - timedelta(hours=1)
+    ticket.clock_started_at, ticket.reminder_sent_at, ticket.awaiting_student = started, T0, True
+    stored = h.repo.get_ticket(h.repo.save_ticket(ticket).id)
+    assert (stored.clock_started_at, stored.reminder_sent_at, stored.awaiting_student) == (started, T0, True)
+    # An update that sets no clock start keeps the stored one; the requester is never overwritten.
+    again = dataclasses.replace(stored, clock_started_at=None, reminder_sent_at=None, requester_alias="x")
+    kept = h.repo.get_ticket(h.repo.save_ticket(again).id)
+    assert kept.clock_started_at == started and kept.reminder_sent_at is None
+    assert kept.requester_alias == req.alias
 
 
 def test_ticket_tags_and_link_error_round_trip(h: Harness) -> None:
@@ -373,7 +394,7 @@ def test_overdue_open_tickets(h: Harness) -> None:
     late = h.repo.save_ticket(make_ticket(req.id, sla=now - timedelta(hours=1)))
     later = h.repo.save_ticket(make_ticket(req.id, sla=now - timedelta(hours=3)))
     h.repo.save_ticket(make_ticket(req.id, sla=now + timedelta(hours=1)))
-    h.repo.save_ticket(make_ticket(req.id, sla=now - timedelta(hours=2), status=TicketStatus.RESOLVED))
+    h.repo.save_ticket(make_ticket(req.id, sla=now - timedelta(hours=2), status=TicketStatus.SOLVED))
     mine = [t.id for t in h.repo.overdue_open_tickets(now) if t.request_id == req.id]
     assert mine == [later.id, late.id]
 

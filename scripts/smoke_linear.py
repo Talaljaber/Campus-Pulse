@@ -101,7 +101,7 @@ def smoke_ticket(office: str) -> Ticket:
         office=office,
         category=Category.IT_SUPPORT,
         priority=Priority.LOW,
-        status=TicketStatus.OPEN,
+        status=TicketStatus.NEW,
         provisional=False,
         sla_due_at=now + timedelta(days=14),
         title=TITLE,

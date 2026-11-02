@@ -165,6 +165,7 @@ def build_test(
     pulse: Pulse | None = None,
     pulse_encoder: SentenceEncoder | None = None,
     advisor_routing: bool = True,
+    booking_route: bool = False,
     tau_inc: float = 0.92,
     q_category: float = 0.5,
     q_priority: float = 0.5,
@@ -175,7 +176,9 @@ def build_test(
     script (or `llm_enabled=True`). `record_sink=True` puts `SupabaseSink(repo)` first, as production
     does (it writes to this container's repository). `q_*` are the FakeLAC quantiles used when an LLM
     answer is merged. `advisor_routing` wires the UD-13 `ReviewAssigner` over the repository (no
-    student is linked to an advisor until a test calls `link_student_advisor`).
+    student is linked to an advisor until a test calls `link_student_advisor`). `booking_route=True`
+    restores the pre-P9 booking cell (Academic Support/high) to exercise the booking code, which stays
+    in the codebase but is no longer routed by `config/actions.yaml`.
     """
     clock = FrozenClock()
     repo = InMemoryRepository(clock)
@@ -193,7 +196,10 @@ def build_test(
     notifier = AllowlistedNotifier(
         ChannelNotifier({"email": email, "in_app": InAppNotifier(repo)}), policy, repo
     )
-    planner = TableActionPlanner(ActionsConfig.from_dict(load_yaml(CONFIG_DIR / "actions.yaml")))
+    actions = load_yaml(CONFIG_DIR / "actions.yaml")
+    if booking_route:
+        actions["routes"]["Academic Support"]["high"] = {"kind": "booking", "also_ticket": True}
+    planner = TableActionPlanner(ActionsConfig.from_dict(actions))
     chosen: list[TicketSink] = sinks if sinks is not None else [sink]
     if record_sink:
         chosen = [SupabaseSink(repo), *chosen]

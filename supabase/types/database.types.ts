@@ -1,5 +1,5 @@
 // GENERATED — do not edit. Supabase MCP generate_typescript_types for project efsanbaklpiakhsndhph
-// after migration 0012. Regenerate after every migration: see docs/db/schema.md › TypeScript types.
+// after migration 0012, then hand-edited for 0013 (P9.1; regenerate to confirm). Regenerate after every migration: see docs/db/schema.md › TypeScript types.
 export type Json =
   | string
   | number
@@ -93,6 +93,53 @@ export type Database = {
             foreignKeyName: "advisors_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          archived_at: string | null
+          body: string
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          kind: string
+          office: string | null
+          starts_at: string
+          title: string
+        }
+        Insert: {
+          archived_at?: string | null
+          body: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          kind?: string
+          office?: string | null
+          starts_at?: string
+          title: string
+        }
+        Update: {
+          archived_at?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          kind?: string
+          office?: string | null
+          starts_at?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -600,23 +647,38 @@ export type Database = {
         Row: {
           advisor_id: string | null
           alias: string | null
+          demo_inbox: string | null
+          display_name: string | null
+          faculty: string | null
           id: string
           office: string | null
           role: string
+          student_number: string | null
+          university_email: string | null
         }
         Insert: {
           advisor_id?: string | null
           alias?: string | null
+          demo_inbox?: string | null
+          display_name?: string | null
+          faculty?: string | null
           id: string
           office?: string | null
           role?: string
+          student_number?: string | null
+          university_email?: string | null
         }
         Update: {
           advisor_id?: string | null
           alias?: string | null
+          demo_inbox?: string | null
+          display_name?: string | null
+          faculty?: string | null
           id?: string
           office?: string | null
           role?: string
+          student_number?: string | null
+          university_email?: string | null
         }
         Relationships: [
           {
@@ -864,6 +926,127 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_activity: {
+        Row: {
+          actor_alias: string | null
+          actor_office: string | null
+          actor_role: string
+          body: string
+          created_at: string
+          from_office: string | null
+          from_priority: string | null
+          from_status: string | null
+          id: string
+          kind: string
+          ticket_id: string
+          to_office: string | null
+          to_priority: string | null
+          to_status: string | null
+          visibility: string
+        }
+        Insert: {
+          actor_alias?: string | null
+          actor_office?: string | null
+          actor_role: string
+          body?: string
+          created_at?: string
+          from_office?: string | null
+          from_priority?: string | null
+          from_status?: string | null
+          id?: string
+          kind: string
+          ticket_id: string
+          to_office?: string | null
+          to_priority?: string | null
+          to_status?: string | null
+          visibility?: string
+        }
+        Update: {
+          actor_alias?: string | null
+          actor_office?: string | null
+          actor_role?: string
+          body?: string
+          created_at?: string
+          from_office?: string | null
+          from_priority?: string | null
+          from_status?: string | null
+          id?: string
+          kind?: string
+          ticket_id?: string
+          to_office?: string | null
+          to_priority?: string | null
+          to_status?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_activity_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_hints: {
+        Row: {
+          author_alias: string | null
+          author_role: string | null
+          corrected_category: string
+          corrected_priority: string
+          created_at: string
+          embedding: string | null
+          id: string
+          kind: string
+          lang: string | null
+          model_category: string | null
+          model_priority: string | null
+          note: string | null
+          request_text: string
+          ticket_id: string | null
+        }
+        Insert: {
+          author_alias?: string | null
+          author_role?: string | null
+          corrected_category: string
+          corrected_priority: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          kind: string
+          lang?: string | null
+          model_category?: string | null
+          model_priority?: string | null
+          note?: string | null
+          request_text: string
+          ticket_id?: string | null
+        }
+        Update: {
+          author_alias?: string | null
+          author_role?: string | null
+          corrected_category?: string
+          corrected_priority?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          kind?: string
+          lang?: string | null
+          model_category?: string | null
+          model_priority?: string | null
+          note?: string | null
+          request_text?: string
+          ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_hints_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_links: {
         Row: {
           created_at: string
@@ -904,8 +1087,10 @@ export type Database = {
       }
       tickets: {
         Row: {
+          awaiting_student: boolean
           body: string
           category: string
+          clock_started_at: string
           created_at: string
           escalated_at: string | null
           id: string
@@ -913,7 +1098,9 @@ export type Database = {
           office: string
           priority: string
           provisional: boolean
+          reminder_sent_at: string | null
           request_id: string
+          requester_alias: string | null
           resolved_at: string | null
           sla_due_at: string
           status: string
@@ -921,8 +1108,10 @@ export type Database = {
           title: string
         }
         Insert: {
+          awaiting_student?: boolean
           body?: string
           category: string
+          clock_started_at?: string
           created_at?: string
           escalated_at?: string | null
           id?: string
@@ -930,7 +1119,9 @@ export type Database = {
           office: string
           priority: string
           provisional?: boolean
+          reminder_sent_at?: string | null
           request_id: string
+          requester_alias?: string | null
           resolved_at?: string | null
           sla_due_at: string
           status?: string
@@ -938,8 +1129,10 @@ export type Database = {
           title?: string
         }
         Update: {
+          awaiting_student?: boolean
           body?: string
           category?: string
+          clock_started_at?: string
           created_at?: string
           escalated_at?: string | null
           id?: string
@@ -947,7 +1140,9 @@ export type Database = {
           office?: string
           priority?: string
           provisional?: boolean
+          reminder_sent_at?: string | null
           request_id?: string
+          requester_alias?: string | null
           resolved_at?: string | null
           sla_due_at?: string
           status?: string
@@ -1077,6 +1272,20 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      match_ticket_hints: {
+        Args: { p_k: number; p_min_sim: number; p_query: string }
+        Returns: {
+          corrected_category: string
+          corrected_priority: string
+          created_at: string
+          id: string
+          kind: string
+          model_category: string
+          model_priority: string
+          request_text: string
+          sim: number
+        }[]
       }
       match_vectors: {
         Args: {

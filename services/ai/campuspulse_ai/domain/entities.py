@@ -125,6 +125,11 @@ class Ticket:
     resolved_at: datetime | None = None
     links: list[TicketLink] = field(default_factory=list)
     tags: tuple[str, ...] = ()
+    clock_started_at: datetime | None = None
+    reminder_sent_at: datetime | None = None
+    awaiting_student: bool = False
+    requester_alias: str | None = None
+    """Read-only copy of the request's alias (filled by a DB trigger); the codec never writes it."""
 
 
 @dataclass

@@ -164,7 +164,7 @@ def report(
         "created_at": created.isoformat(),
     }
     h.vectors.upsert("requests", [VectorItem(req.id, emb, text, Lang.EN, meta)])
-    ticket = h.repo.save_ticket(Ticket("", req.id, None, "it", category, priority, TicketStatus.OPEN, False,
+    ticket = h.repo.save_ticket(Ticket("", req.id, None, "it", category, priority, TicketStatus.NEW, False,
                                        created + timedelta(days=1)))  # fmt: skip
     TICKETS[req.id] = ticket.id
     decision = det.detect(req, prediction(req.id, category, priority), emb)

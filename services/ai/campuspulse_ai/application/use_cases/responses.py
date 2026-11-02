@@ -176,6 +176,10 @@ def ticket_out(ticket: Ticket) -> dto.TicketOut:
         escalated_at=ticket.escalated_at,
         resolved_at=ticket.resolved_at,
         title=ticket.title,
+        # Rows from before P9 carry no clock start: fall back to the due time.
+        clock_started_at=ticket.clock_started_at or ticket.sla_due_at,
+        reminder_sent_at=ticket.reminder_sent_at,
+        awaiting_student=ticket.awaiting_student,
         links=external_refs(ticket),
     )
 

@@ -42,22 +42,21 @@ linear:
   priority_map: {high: 2, medium: 3, low: 4, safety: 1}
 
   # Outbound: our ticket status -> the Linear workflow state TYPE to move the issue to (the team's
-  # first state of that type). null = leave the state alone (escalation changes only the priority).
-  # New issues land in the team's default state (Backlog on CDP), which maps back to `open`.
+  # first state of that type). null = leave the state alone.
+  # New issues land in the team's default state (Backlog on CDP), which maps back to `new`.
   state_type_by_status:
-    open: unstarted
+    new: unstarted
     in_progress: started
-    resolved: completed
+    solved: completed
     closed: completed
     merged: duplicate        # merged into an incident; CDP has a Duplicate state of type duplicate
-    escalated: null
 
   # Inbound (webhook): Linear state type -> our ticket status. Unlisted types are ignored.
   status_by_state_type:
-    triage: open
-    backlog: open
-    unstarted: open
+    triage: new
+    backlog: new
+    unstarted: new
     started: in_progress
-    completed: resolved
+    completed: solved
     canceled: closed
     duplicate: closed

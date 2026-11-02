@@ -10,6 +10,8 @@ import { WATCHED_FLAGS, buildFlagEvents, knownFlags } from "../flags";
 import { buildReviewViews, mayNeedReview, withoutReview } from "../review";
 import { staffErrorKind } from "../service";
 import {
+  ACTIVE_STATUSES,
+  SETTABLE_STATUSES,
   applyTicketOut,
   durationParts,
   filterTickets,
@@ -30,13 +32,17 @@ const ticket = (o: Partial<TicketRow> = {}): TicketRow => ({
   office: "it",
   category: "IT Support",
   priority: "medium",
-  status: "open",
+  status: "new",
   provisional: false,
   title: "Wi-Fi",
   body: "",
   sla_due_at: new Date(NOW.getTime() + 10 * H).toISOString(),
   escalated_at: null,
   resolved_at: null,
+  clock_started_at: "2026-11-08T08:00:00Z",
+  reminder_sent_at: null,
+  awaiting_student: false,
+  requester_alias: null,
   created_at: "2026-11-08T08:00:00Z",
   tags: [],
   ...o,
@@ -98,15 +104,20 @@ describe("ticket ordering and filtering", () => {
   it("puts active tickets by SLA first, then finished ones newest first, without mutating the input", () => {
     const a = ticket({ id: "a", sla_due_at: new Date(NOW.getTime() + 5 * H).toISOString() });
     const b = ticket({ id: "b", sla_due_at: new Date(NOW.getTime() - 2 * H).toISOString() });
-    const done1 = ticket({ id: "d1", status: "resolved", created_at: "2026-11-07T00:00:00Z" });
+    const done1 = ticket({ id: "d1", status: "solved", created_at: "2026-11-07T00:00:00Z" });
     const done2 = ticket({ id: "d2", status: "closed", created_at: "2026-11-08T00:00:00Z" });
     const input = [done1, a, done2, b];
     expect(sortTickets(input).map((t) => t.id)).toEqual(["b", "a", "d2", "d1"]);
     expect(input.map((t) => t.id)).toEqual(["d1", "a", "d2", "b"]);
   });
 
+  it("uses the P9 status model: new and in_progress are active, merged is never settable", () => {
+    expect([...ACTIVE_STATUSES]).toEqual(["new", "in_progress"]);
+    expect([...SETTABLE_STATUSES]).toEqual(["new", "in_progress", "solved", "closed"]);
+  });
+
   it("filters active, done and all", () => {
-    const list = [ticket({ id: "a" }), ticket({ id: "b", status: "escalated" }), ticket({ id: "c", status: "resolved" }), ticket({ id: "d", status: "merged" })];
+    const list = [ticket({ id: "a" }), ticket({ id: "b", status: "in_progress" }), ticket({ id: "c", status: "solved" }), ticket({ id: "d", status: "merged" })];
     expect(filterTickets(list, "active").map((t) => t.id)).toEqual(["a", "b"]);
     expect(filterTickets(list, "done").map((t) => t.id)).toEqual(["c", "d"]);
     expect(filterTickets(list, "all")).toHaveLength(4);
@@ -146,7 +157,7 @@ describe("links and live merges", () => {
 
   it("applyTicketOut keeps the office code from the database row", () => {
     const merged = applyTicketOut(ticket({ office: "registrar" }), {
-      status: "resolved",
+      status: "solved",
       resolved_at: "2026-11-08T10:00:00Z",
       escalated_at: null,
       provisional: false,
@@ -154,18 +165,18 @@ describe("links and live merges", () => {
       sla_due_at: "2026-11-09T10:00:00Z",
     });
     expect(merged.office).toBe("registrar");
-    expect(merged.status).toBe("resolved");
+    expect(merged.status).toBe("solved");
     expect(merged.priority).toBe("high");
   });
 });
 
 describe("sla", () => {
   it("is overdue, soon, ok or done", () => {
-    const at = (h: number, status = "open") => slaState({ status, sla_due_at: new Date(NOW.getTime() + h * H).toISOString() }, NOW).kind;
+    const at = (h: number, status = "new") => slaState({ status, sla_due_at: new Date(NOW.getTime() + h * H).toISOString() }, NOW).kind;
     expect(at(-1)).toBe("overdue");
     expect(at(3)).toBe("soon");
     expect(at(5)).toBe("ok");
-    expect(at(-5, "resolved")).toBe("done");
+    expect(at(-5, "solved")).toBe("done");
   });
 
   it("splits a span into a unit and a count", () => {

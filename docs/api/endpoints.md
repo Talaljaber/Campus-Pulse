@@ -638,9 +638,12 @@ Response `200`:
     "office": "Registrar",
     "category": "Registration",
     "priority": "medium",
-    "status": "open",
+    "status": "new",
     "provisional": false,
     "sla_due_at": "2026-11-08T10:02:00+03:00",
+    "clock_started_at": "2026-11-07T10:02:00+03:00",
+    "reminder_sent_at": null,
+    "awaiting_student": false,
     "escalated_at": null,
     "resolved_at": null,
     "title": "Account still on hold after fee payment; grades not visible",
@@ -721,7 +724,7 @@ Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `status` | [TicketStatus](#schema-ticketstatus) | yes |  |
+| `status` | `new` \| `in_progress` \| `solved` \| `closed` | yes |  |
 | `note` | string \| null | no |  |
 
 **Response `200`:** `application/json` [TicketOut](#schema-ticketout)
@@ -758,6 +761,9 @@ Response `200`:
   "status": "in_progress",
   "provisional": false,
   "sla_due_at": "2026-11-06T09:14:00+03:00",
+  "clock_started_at": "2026-11-05T09:14:00+03:00",
+  "reminder_sent_at": null,
+  "awaiting_student": false,
   "escalated_at": null,
   "resolved_at": null,
   "title": "Water leak next to power sockets in M 214",
@@ -846,6 +852,9 @@ Response `200`:
   "status": "in_progress",
   "provisional": false,
   "sla_due_at": "2026-11-06T11:30:00+03:00",
+  "clock_started_at": "2026-11-05T11:30:00+03:00",
+  "reminder_sent_at": null,
+  "awaiting_student": false,
   "escalated_at": null,
   "resolved_at": null,
   "title": "Projector in C 105 has no power during the lecture",
@@ -1053,9 +1062,12 @@ Response `200`:
     "office": "it",
     "category": "IT Support",
     "priority": "medium",
-    "status": "open",
+    "status": "new",
     "provisional": false,
     "sla_due_at": "2026-11-08T10:15:00+03:00",
+    "clock_started_at": "2026-11-07T10:15:00+03:00",
+    "reminder_sent_at": null,
+    "awaiting_student": false,
     "escalated_at": null,
     "resolved_at": null,
     "title": "Cannot reach the e-learning page to submit the assignment",
@@ -1412,7 +1424,7 @@ Response `200`:
 
 **Response `200`:** `application/json` [WebhookAck](#schema-webhookack)
 
-**Example** (fixture `linear_webhook_status_sync`): Linear moved CDP-43 to Done (`updatedFrom.stateId` marks a state change): the linked ticket becomes resolved.
+**Example** (fixture `linear_webhook_status_sync`): Linear moved CDP-43 to Done (`updatedFrom.stateId` marks a state change): the linked ticket becomes solved.
 
 `request.json`:
 
@@ -1448,7 +1460,7 @@ Response `200`:
 {
   "accepted": true,
   "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0003",
-  "status": "resolved"
+  "status": "solved"
 }
 ```
 
@@ -2909,11 +2921,14 @@ A CampusPulse ticket (system of record in Supabase).
 | `resolved_at` | string (date-time) \| null | yes |  |
 | `title` | string | yes |  |
 | `links` | array of [ExternalRefOut](#schema-externalrefout) | yes |  |
+| `clock_started_at` | string (date-time) | yes | Start of the running SLA period (P9) |
+| `reminder_sent_at` | string (date-time) \| null | yes | When the overdue reminder went out, if it did |
+| `awaiting_student` | boolean | yes | Staff replied and wait for the requester |
 
 <a id="schema-ticketstatus"></a>
 ### TicketStatus
 
-Values: `open`, `in_progress`, `resolved`, `closed`, `escalated`, `merged`
+Values: `new`, `in_progress`, `solved`, `closed`, `merged`
 
 <a id="schema-ticketstatusrequest"></a>
 ### TicketStatusRequest
@@ -2922,7 +2937,7 @@ Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25).
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `status` | [TicketStatus](#schema-ticketstatus) | yes |  |
+| `status` | `new` \| `in_progress` \| `solved` \| `closed` | yes |  |
 | `note` | string \| null | no |  |
 
 <a id="schema-tier"></a>

@@ -42,7 +42,7 @@ const row = (o: Record<string, unknown> = {}) => ({
   office: "it",
   category: "IT Support",
   priority: "medium",
-  status: "open",
+  status: "new",
   provisional: false,
   tags: [],
   title: "Wi-Fi",
@@ -84,8 +84,8 @@ describe("useTicketQueue", () => {
     const push = tickets.subscribe.mock.calls[0]![2] as (r: unknown) => void;
     act(() => push(row({ id: "t2", title: "New" })));
     await waitFor(() => expect(result.current.tickets.find((t) => t.id === "t2")?.link?.id).toBe("CP-2"));
-    act(() => push(row({ id: "t1", status: "resolved" })));
-    expect(result.current.tickets.find((t) => t.id === "t1")?.status).toBe("resolved");
+    act(() => push(row({ id: "t1", status: "solved" })));
+    expect(result.current.tickets.find((t) => t.id === "t1")?.status).toBe("solved");
   });
 
   it("goes to the error state on a failed read and recovers on reload", async () => {
@@ -118,7 +118,7 @@ describe("useTicketQueue", () => {
       kind = await result.current.changeStatus("t1", "closed");
     });
     expect(kind).toBe("forbidden");
-    expect(result.current.tickets[0]!.status).toBe("open");
+    expect(result.current.tickets[0]!.status).toBe("new");
   });
 });
 

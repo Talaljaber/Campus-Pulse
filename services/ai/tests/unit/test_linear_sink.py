@@ -269,8 +269,9 @@ def test_503_is_retried_then_raised(linear: FakeLinear, make_sink: SinkFactory) 
          "no-success", "not-json"],
 )  # fmt: skip
 def test_error_mapping(linear: FakeLinear, make_sink: SinkFactory, reply: Reply, retryable: bool) -> None:
+    linear.on("CampusPulseTeams", ok("teams.json"))  # a state change looks up the team states first
     linear.on("CampusPulseIssueUpdate", reply)
-    ticket = linked(make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.ESCALATED))
+    ticket = linked(make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.IN_PROGRESS))
     with pytest.raises(SinkError) as info:
         make_sink().update_status(ticket)
     assert info.value.retryable is retryable and API_KEY not in str(info.value)
@@ -291,12 +292,13 @@ def test_update_status_moves_to_the_first_state_of_the_type(
     assert sent["labelIds"] and sent["title"] and "office: " in sent["description"]
 
 
-def test_escalation_changes_only_the_priority(linear: FakeLinear, make_sink: SinkFactory) -> None:
+def test_a_null_state_mapping_changes_only_the_priority(linear: FakeLinear, make_sink: SinkFactory) -> None:
     linear.on("CampusPulseIssueUpdate", ok("issue_update.json"))
     ticket = linked(
-        make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.ESCALATED, priority=Priority.HIGH)
+        make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.IN_PROGRESS, priority=Priority.HIGH)
     )
-    make_sink().update_status(ticket)
+    states = {**mapping_dict()["state_type_by_status"], "in_progress": None}
+    make_sink(state_type_by_status=states).update_status(ticket)
     assert [op for op in linear.ops() if op != "CampusPulseLabels"] == ["CampusPulseIssueUpdate"]
     sent = linear.calls[-1][1]["input"]
     assert sent["priority"] == 2 and "stateId" not in sent
@@ -307,7 +309,7 @@ def test_a_forwarded_ticket_gets_its_new_label_and_office(
 ) -> None:
     linear.on("CampusPulseTeams", ok("teams.json"))
     linear.on("CampusPulseIssueUpdate", ok("issue_update.json"))
-    ticket = linked(make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.OPEN))
+    ticket = linked(make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.NEW))
     to_it = dataclasses.replace(ticket, office="it", category=Category.IT_SUPPORT, tags=("forwarded",))
     make_sink().update_status(to_it)
     sent = linear.calls[-1][1]["input"]
@@ -323,7 +325,7 @@ def test_a_forwarded_ticket_gets_its_new_label_and_office(
 def test_close_moves_to_completed(linear: FakeLinear, make_sink: SinkFactory) -> None:
     linear.on("CampusPulseTeams", ok("teams.json"))
     linear.on("CampusPulseIssueUpdate", ok("issue_update.json"))
-    make_sink().close(linked(make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.RESOLVED)))
+    make_sink().close(linked(make_ticket(REQUEST_ID, id=TICKET_ID, status=TicketStatus.SOLVED)))
     assert linear.calls[-1][1]["input"]["stateId"] == "st-done"
 
 
@@ -386,18 +388,18 @@ def test_signed_state_change_becomes_an_inbound_event(make_sink: SinkFactory, cl
     raw = webhook(clock)
     event = make_sink().handle_inbound(raw, sign(SECRET, raw))
     assert event is not None
-    assert (event.sink, event.external_id, event.status) == ("linear", TICKET_ID, TicketStatus.RESOLVED)
+    assert (event.sink, event.external_id, event.status) == ("linear", TICKET_ID, TicketStatus.SOLVED)
     assert event.occurred_at == clock.at and event.payload["identifier"] == "CDP-43"
 
 
 @pytest.mark.parametrize(
     ("state_type", "status"),
     [
-        ("triage", TicketStatus.OPEN),
-        ("backlog", TicketStatus.OPEN),
-        ("unstarted", TicketStatus.OPEN),
+        ("triage", TicketStatus.NEW),
+        ("backlog", TicketStatus.NEW),
+        ("unstarted", TicketStatus.NEW),
         ("started", TicketStatus.IN_PROGRESS),
-        ("completed", TicketStatus.RESOLVED),
+        ("completed", TicketStatus.SOLVED),
         ("canceled", TicketStatus.CLOSED),
         ("duplicate", TicketStatus.CLOSED),
         ("something_new", None),

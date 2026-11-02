@@ -43,7 +43,7 @@ export function useNoticeText(): (n: NoticeData) => string {
         : t("notice.ticketForwardedNoTitle");
     }
     if (n.type === "generic") return t("chat.updateGeneric");
-    const known = ["open", "in_progress", "resolved", "closed", "escalated", "merged"];
+    const known = ["new", "in_progress", "solved", "closed", "merged"];
     const status = known.includes(n.status) ? t(`chat.status.${n.status}` as DictKey) : n.status;
     return n.title ? t("chat.ticketStatus", { title: n.title, status }) : t("chat.ticketStatusNoTitle", { status });
   };
