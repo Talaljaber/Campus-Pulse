@@ -479,6 +479,7 @@ class TicketOut(_Model):
     clock_started_at: datetime = Field(description="Start of the running SLA period (P9).")
     reminder_sent_at: datetime | None = Field(description="When the overdue reminder went out, if it did.")
     awaiting_student: bool = Field(description="Staff replied and wait for the requester.")
+    reminder_count: int = Field(ge=0, le=2, description="SLA reminders sent in the current period (0 to 2).")
 
 
 class MemoryWriteOut(_Model):

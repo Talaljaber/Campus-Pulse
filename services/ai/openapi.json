@@ -5772,6 +5772,13 @@
             "type": "boolean",
             "title": "Awaiting Student",
             "description": "Staff replied and wait for the requester."
+          },
+          "reminder_count": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Reminder Count",
+            "description": "SLA reminders sent in the current period (0 to 2)."
           }
         },
         "additionalProperties": false,
@@ -5792,7 +5799,8 @@
           "links",
           "clock_started_at",
           "reminder_sent_at",
-          "awaiting_student"
+          "awaiting_student",
+          "reminder_count"
         ],
         "title": "TicketOut",
         "description": "A CampusPulse ticket (system of record in Supabase)."

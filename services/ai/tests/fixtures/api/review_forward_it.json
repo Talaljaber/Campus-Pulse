@@ -39,6 +39,7 @@
       "clock_started_at": "2026-11-07T10:15:00+03:00",
       "reminder_sent_at": null,
       "awaiting_student": false,
+      "reminder_count": 0,
       "escalated_at": null,
       "resolved_at": null,
       "title": "Cannot reach the e-learning page to submit the assignment",

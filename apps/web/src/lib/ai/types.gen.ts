@@ -1414,6 +1414,11 @@ export interface components {
              * @description Staff replied and wait for the requester.
              */
             awaiting_student: boolean;
+            /**
+             * Reminder Count
+             * @description SLA reminders sent in the current period (0 to 2).
+             */
+            reminder_count: number;
         };
         /**
          * TicketStatus

@@ -644,6 +644,7 @@ Response `200`:
     "clock_started_at": "2026-11-07T10:02:00+03:00",
     "reminder_sent_at": null,
     "awaiting_student": false,
+    "reminder_count": 0,
     "escalated_at": null,
     "resolved_at": null,
     "title": "Account still on hold after fee payment; grades not visible",
@@ -764,6 +765,7 @@ Response `200`:
   "clock_started_at": "2026-11-05T09:14:00+03:00",
   "reminder_sent_at": null,
   "awaiting_student": false,
+  "reminder_count": 0,
   "escalated_at": null,
   "resolved_at": null,
   "title": "Water leak next to power sockets in M 214",
@@ -855,6 +857,7 @@ Response `200`:
   "clock_started_at": "2026-11-05T11:30:00+03:00",
   "reminder_sent_at": null,
   "awaiting_student": false,
+  "reminder_count": 0,
   "escalated_at": null,
   "resolved_at": null,
   "title": "Projector in C 105 has no power during the lecture",
@@ -1068,6 +1071,7 @@ Response `200`:
     "clock_started_at": "2026-11-07T10:15:00+03:00",
     "reminder_sent_at": null,
     "awaiting_student": false,
+    "reminder_count": 0,
     "escalated_at": null,
     "resolved_at": null,
     "title": "Cannot reach the e-learning page to submit the assignment",
@@ -2924,6 +2928,7 @@ A CampusPulse ticket (system of record in Supabase).
 | `clock_started_at` | string (date-time) | yes | Start of the running SLA period (P9) |
 | `reminder_sent_at` | string (date-time) \| null | yes | When the overdue reminder went out, if it did |
 | `awaiting_student` | boolean | yes | Staff replied and wait for the requester |
+| `reminder_count` | integer | yes | SLA reminders sent in the current period (0 to 2); >= 0.0, <= 2.0 |
 
 <a id="schema-ticketstatus"></a>
 ### TicketStatus
