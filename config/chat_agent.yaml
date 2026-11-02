@@ -1,0 +1,46 @@
+# P9.8: the chat agent (docs/plan/p9/PLAN.md section f). The LLM only talks: it returns {"reply", "intent"} and
+# never category, priority, office or flags (those come from the classifier on the requester's own words).
+# Never part of the scored offline path; runs only with OPENROUTER_API_KEY and CHAT_AGENT_ENABLED != false.
+# The model id is pinned; change it only with a new decision. Temperature 0 (project rule), responses cached.
+model: deepseek/deepseek-v4.1-flash      # alternative: qwen/qwen3.8-flash
+prompt_version: chat-v1
+prompt_file: config/prompts/chat_agent_v1.md
+temperature: 0
+max_tokens: 500
+timeout_s: 12
+max_retries: 1
+reasoning: {enabled: false}               # sent as the OpenRouter `reasoning` parameter (off)
+history_turns: 12                         # last N messages sent to the model
+hint_min_sim: 0.85                        # a staff correction this similar changes the proposed department
+proposal_ttl_min: 30                      # a signed proposal token is valid this long
+cache_path: .cache/chat_agent.sqlite
+
+# Words the code shows itself (the reply post-check falls back to these). Localized department names are the
+# ones of the ticket emails; Arabizi readers get the Arabic texts.
+departments:
+  en: {registrar: "Registration", it: "IT Support", finance: "Finance", transport: "Transportation", facilities: "Facilities", academic: "Academic Support"}
+  ar: {registrar: "التسجيل", it: "الدعم التقني", finance: "الشؤون المالية", transport: "النقل", facilities: "المرافق", academic: "الدعم الأكاديمي"}
+templates:
+  en:
+    proposal: "I can send this to {department}. Shall I record the request?"
+    proposal_faq: "{answer} If that does not solve it, I can record a request for {department} anyway. Shall I?"
+    more_detail: "Could you tell me a bit more about what you need?"
+    confirmed: "Request recorded: #{number} for {department} (demo, no real department was contacted)."
+    confirmed_none: "Thanks, I have noted that for {department} (demo, no real department was contacted)."
+    no_proposal: "I do not have a request ready to record yet. Tell me what you need and I will prepare it."
+    expired: "That request is no longer ready to record. Tell me again what you need and I will prepare it."
+    generic: "I can help with campus requests. Tell me what you need."
+    fallback: "The assistant is not available right now. Please describe your request in the form and I will route it."
+    declined: "No problem, I have not recorded anything. Tell me if you need something else."
+  ar:
+    proposal: "بقدر أرسل طلبك إلى {department}. بدك أسجّل الطلب؟"
+    proposal_faq: "{answer} إذا ما حلّت المشكلة، بقدر أسجّل طلب لـ{department} بكل الأحوال. بدك أسجّله؟"
+    more_detail: "ممكن تعطيني تفاصيل أكثر عن اللي بدك إياه؟"
+    confirmed: "تم تسجيل الطلب: رقم #{number} لـ{department} (عرض تجريبي، لم يتم التواصل مع أي قسم حقيقي)."
+    confirmed_none: "تمام، سجّلت ملاحظتك لـ{department} (عرض تجريبي، لم يتم التواصل مع أي قسم حقيقي)."
+    no_proposal: "ما عندي طلب جاهز للتسجيل لسا. احكيلي شو بدك وبجهّزه."
+    expired: "هاد الطلب ما عاد جاهز للتسجيل. احكيلي شو بدك مرة ثانية وبجهّزه."
+    generic: "بقدر أساعدك بطلبات الجامعة. احكيلي شو بدك."
+    fallback: "المساعد مش متاح هلأ. اكتب طلبك في النموذج وأنا بوجّهه."
+    declined: "ولا يهمك، ما سجّلت شي. احكيلي إذا بدك شي ثاني."
+banned_phrases: [contacted, notified, confidence, conformal, probability, "تم إبلاغ", "تم التواصل"]
