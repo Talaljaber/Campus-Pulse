@@ -63,7 +63,7 @@ export function AdvisorScreen({ role, alias = null, office }: AdvisorScreenProps
   };
 
   return (
-    <AppShell role={role} current="reviews" alias={alias}>
+    <AppShell role={role} current="corrections" alias={alias}>
       <PageHeader
         title={t("advisor.title")}
         badges={

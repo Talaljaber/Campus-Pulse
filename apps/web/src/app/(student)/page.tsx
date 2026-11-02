@@ -1,17 +1,11 @@
-import { redirect } from "next/navigation";
-import { ChatScreen } from "@/components/chat/ChatScreen";
-import { fetchProfile } from "@/lib/auth/profile";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { HomeScreen } from "@/components/home/HomeScreen";
+import { requireProfile } from "@/lib/auth/guard";
 
 /**
- * `/`: the student chat. The proxy already sends signed-out users to `/login`; the check
- * here is the second lock, and it supplies the alias for the live notifications.
+ * `/`: Home (welcome and, later, announcements) for every signed-in role. The proxy already sends
+ * signed-out visitors to `/login`; the check here is the second lock.
  */
-export default async function StudentHome() {
-  const sb = await createServerSupabase();
-  const { data } = await sb.auth.getUser();
-  if (!data.user) redirect("/login");
-  const profile = await fetchProfile(sb, data.user.id);
-  if (!profile) redirect("/login");
-  return <ChatScreen alias={profile.alias} />;
+export default async function HomePage() {
+  const profile = await requireProfile();
+  return <HomeScreen role={profile.role} alias={profile.alias} />;
 }

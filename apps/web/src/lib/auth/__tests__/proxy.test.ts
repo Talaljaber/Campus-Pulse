@@ -57,9 +57,9 @@ describe("proxy redirect matrix (session mocked)", () => {
     expect(await run("/login")).toEqual({ status: 307, to: "/staff" });
     expect(await run("/lab")).toEqual({ status: 307, to: "/staff" });
   });
-  it("admin on /login goes to /lab and may open /pulse", async () => {
+  it("admin on /login goes to /staff and may open /pulse", async () => {
     setUser("admin");
-    expect(await run("/login")).toEqual({ status: 307, to: "/lab" });
+    expect(await run("/login")).toEqual({ status: 307, to: "/staff" });
     expect((await run("/pulse")).to).toBeNull();
   });
   it("a user without a profile is treated as signed out", async () => {

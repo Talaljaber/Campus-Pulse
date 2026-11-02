@@ -6,6 +6,7 @@ import { useChat } from "@/hooks/useChat";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useLang, useT } from "@/i18n";
 import { speechLangFor } from "@/lib/voice/speech";
+import type { Role } from "@/lib/auth/routing";
 import { AppShell } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
 import { BuildingPicker } from "./BuildingPicker";
@@ -18,13 +19,15 @@ import { Disclaimer } from "./Disclaimer";
 export interface ChatScreenProps {
   /** The signed-in student's alias, from their profile. It scopes the live notifications. */
   alias: string | null;
+  /** The signed-in role. Staff and admins use the agent too (`/ask`); default student. */
+  role?: Role;
 }
 
 /**
- * The student page `/`: header, conversation, optional building and the composer. It only
+ * The ask page `/ask` (any signed-in role): header, conversation, optional building and the composer. It only
  * wires the `useChat`, `useNotifications` and `useBuildings` hooks to presentational parts.
  */
-export function ChatScreen({ alias }: ChatScreenProps) {
+export function ChatScreen({ alias, role = "student" }: ChatScreenProps) {
   const t = useT();
   const { lang } = useLang();
   const chat = useChat();
@@ -33,7 +36,7 @@ export function ChatScreen({ alias }: ChatScreenProps) {
   useNotifications(alias, chat.notice);
 
   return (
-    <AppShell role="student" current="request" alias={alias} width="narrow">
+    <AppShell role={role} current="ask" alias={alias} width="narrow">
       <PageHeader title={t("chat.title")} subtitle={t("app.tagline")} />
 
       <div className="flex-1">

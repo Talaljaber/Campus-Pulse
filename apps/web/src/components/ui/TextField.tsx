@@ -2,7 +2,7 @@ import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type Texta
 import { cn } from "./cn";
 
 const CONTROL =
-  "w-full rounded-md border border-line-strong bg-surface-0 px-3 text-base text-fg-1 placeholder:text-fg-3 " +
+  "w-full rounded-md border border-line-strong bg-input px-3 text-base text-fg-1 placeholder:text-fg-3 " +
   "transition-colors duration-(--cp-motion-fast) hover:border-accent focus-visible:border-accent " +
   "disabled:cursor-not-allowed disabled:opacity-55";
 
@@ -30,7 +30,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
   const descId = description ? `${inputId}-desc` : undefined;
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={inputId} className="text-sm font-semibold text-fg-1">
+      <label htmlFor={inputId} className="text-sm font-bold text-accent">
         {label}
       </label>
       <input ref={ref} id={inputId} aria-describedby={descId} className={cn(CONTROL, "min-h-11")} {...rest} />
@@ -59,7 +59,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
   const descId = description ? `${areaId}-desc` : undefined;
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={areaId} className={hideLabel ? "sr-only" : "text-sm font-semibold text-fg-1"}>
+      <label htmlFor={areaId} className={hideLabel ? "sr-only" : "text-sm font-bold text-accent"}>
         {label}
       </label>
       <textarea

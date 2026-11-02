@@ -1,19 +1,12 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { signInAs } from "./support/login";
 
 // P5.11 acceptance (the snapshot half). The fake Supabase does not speak Realtime, so live inserts
 // and bumps are covered by the reducer and hook unit tests; this checks the real page, the real
 // proxy and the mock API end to end: map, dots, ring, feed, building filter, resolve, RTL, guard.
-const PASSWORD = process.env.E2E_PASSWORD ?? "e2e-password";
-
-async function signInAs(page: Page, button: string) {
-  await page.goto("/login");
-  await page.getByRole("button", { name: button }).click();
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-}
 
 test("staff see dots, an incident ring and the feed, filter by building and resolve the incident", async ({ page }) => {
-  await signInAs(page, "Sign in as IT staff");
+  await signInAs(page, "staff");
   await expect(page).toHaveURL(/\/staff$/);
   await page.goto("/pulse");
   await expect(page.getByRole("heading", { level: 1, name: "Campus Pulse" })).toBeVisible();
@@ -46,7 +39,7 @@ test("staff see dots, an incident ring and the feed, filter by building and reso
 });
 
 test("the pulse page works in Arabic and right to left, and the map keeps its geometry", async ({ page }) => {
-  await signInAs(page, "Sign in as IT staff");
+  await signInAs(page, "staff");
   await page.goto("/pulse");
   await page.getByRole("button", { name: /العربية/ }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
@@ -58,7 +51,7 @@ test("the pulse page works in Arabic and right to left, and the map keeps its ge
 });
 
 test("a student cannot open the pulse page", async ({ page }) => {
-  await signInAs(page, "Sign in as Student");
+  await signInAs(page, "student");
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await page.goto("/pulse");
   await expect(page).toHaveURL(/localhost:\d+\/$/);

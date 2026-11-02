@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const submit = vi.fn();
-let hookState = { pending: false, error: null as null | "invalid" | "no_profile" | "network" };
+let hookState = { pending: false, error: null as null | "invalid" | "no_profile" | "network" | "wrong_role" };
 
 vi.mock("@/hooks/useSignIn", () => ({
   useSignIn: () => ({ submit, ...hookState }),
@@ -18,34 +18,53 @@ beforeEach(() => {
 });
 
 describe("LoginForm", () => {
-  it("offers the four demo accounts and each one fills only the email", async () => {
+  it("offers the ten demo usernames (no advisor) and each one fills only the username", async () => {
     const user = userEvent.setup();
     render(<LoginForm />);
-    const email = screen.getByLabelText("Email") as HTMLInputElement;
+    const username = screen.getByLabelText("Username") as HTMLInputElement;
     const password = screen.getByLabelText("Password") as HTMLInputElement;
-
-    await user.click(screen.getByRole("button", { name: "Sign in as Student" }));
-    expect(email.value).toBe("talal@demo.local");
+    for (const name of ["talal", "lina", "omar", "registrar", "it", "finance", "transport", "facilities", "academic", "admin"]) {
+      await user.click(screen.getByRole("button", { name }));
+      expect(username.value).toBe(name);
+    }
+    expect(screen.queryByRole("button", { name: "advisor" })).toBeNull();
     expect(password.value).toBe("");
     expect(password).toHaveFocus();
-
-    await user.click(screen.getByRole("button", { name: "Sign in as IT staff" }));
-    expect(email.value).toBe("it@demo.local");
-    await user.click(screen.getByRole("button", { name: "Sign in as Advisor" }));
-    expect(email.value).toBe("advisor@demo.local");
-    await user.click(screen.getByRole("button", { name: "Sign in as Admin" }));
-    expect(email.value).toBe("admin@demo.local");
-    expect(password.value).toBe("");
   });
 
-  it("keeps the submit button off until both fields are filled, then submits", async () => {
+  it("keeps both buttons off until both fields are filled", async () => {
     const user = userEvent.setup();
     render(<LoginForm />);
-    const go = screen.getByRole("button", { name: "Sign in" });
-    expect(go).toBeDisabled();
-    await user.type(screen.getByLabelText("Email"), "it@demo.local");
-    await user.type(screen.getByLabelText("Password"), "typed-by-hand{Enter}");
-    expect(submit).toHaveBeenCalledWith("it@demo.local", "typed-by-hand");
+    expect(screen.getByRole("button", { name: "Log in as student" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Log in as staff" })).toBeDisabled();
+    await user.type(screen.getByLabelText("Username"), "talal");
+    await user.type(screen.getByLabelText("Password"), "typed-by-hand");
+    expect(screen.getByRole("button", { name: "Log in as student" })).toBeEnabled();
+  });
+
+  it("turns a bare username into <username>@demo.local and passes the pressed role", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+    await user.type(screen.getByLabelText("Username"), "it");
+    await user.type(screen.getByLabelText("Password"), "typed-by-hand");
+    await user.click(screen.getByRole("button", { name: "Log in as staff" }));
+    expect(submit).toHaveBeenLastCalledWith("it@demo.local", "typed-by-hand", "staff");
+    await user.click(screen.getByRole("button", { name: "Log in as student" }));
+    expect(submit).toHaveBeenLastCalledWith("it@demo.local", "typed-by-hand", "student");
+  });
+
+  it("keeps an email as typed, and Enter in the password field logs in as student", async () => {
+    const user = userEvent.setup();
+    render(<LoginForm />);
+    await user.type(screen.getByLabelText("Username"), "someone@demo.local");
+    await user.type(screen.getByLabelText("Password"), "pw{Enter}");
+    expect(submit).toHaveBeenCalledWith("someone@demo.local", "pw", "student");
+  });
+
+  it("shows the wrong-role message in an alert", () => {
+    hookState = { pending: false, error: "wrong_role" };
+    render(<LoginForm />);
+    expect(screen.getByRole("alert")).toHaveTextContent("cannot log in with that button");
   });
 
   it("shows a translated alert for a failed sign-in", () => {
@@ -54,8 +73,9 @@ describe("LoginForm", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("The email or the password is wrong.");
   });
 
-  it("never renders a password value", () => {
+  it("shows the simulated login note and never renders a password value", () => {
     const { container } = render(<LoginForm />);
+    expect(screen.getByText("Simulated university login: fictional accounts only.")).toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/value="[^"]+"/);
   });
 });

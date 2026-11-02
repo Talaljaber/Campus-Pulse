@@ -118,7 +118,7 @@ export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
   }));
 
   return (
-    <AppShell role={role} current="staff" alias={alias}>
+    <AppShell role={role} current="queue" alias={alias}>
       <PageHeader
         title={t("staff.title")}
         badges={

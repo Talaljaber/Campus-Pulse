@@ -91,13 +91,17 @@ describe.each([
 });
 
 /**
- * Named foreground/background pairs of the GJU-style shell (UI batch 6). Each is checked in both
+ * Named foreground/background pairs of the portal-style shell (P9.0). Each is checked in the
  * light palette against its WCAG 2.2 AA minimum: 4.5 for text, 3 for large text, icons and borders.
  * Orange itself is decorative; the pairs below are the only ways orange appears with text.
  */
 const PAIRS: { name: string; fg: string; bg: string; min: number }[] = [
-  { name: "white text on the top band", fg: "--cp-on-band", bg: "--cp-band", min: 4.5 },
-  { name: "white text on the icon bar", fg: "--cp-on-band", bg: "--cp-band-2", min: 4.5 },
+  { name: "dark text on the white header band", fg: "--cp-on-band", bg: "--cp-band", min: 4.5 },
+  { name: "dark text on the utility strip", fg: "--cp-on-band", bg: "--cp-band-2", min: 4.5 },
+  { name: "accent text (labels, links) on the pale input tint", fg: "--cp-accent", bg: "--cp-input", min: 4.5 },
+  { name: "body text on the pale input tint", fg: "--cp-text-1", bg: "--cp-input", min: 4.5 },
+  { name: "brand blue (active tab bar, borders) on the page background", fg: "--cp-brand", bg: "--cp-page", min: 3 },
+  { name: "white text on the accent blue (buttons)", fg: "--cp-on-accent", bg: "--cp-accent", min: 4.5 },
   { name: "nav link (accent) on the page card", fg: "--cp-accent", bg: "--cp-surface-0", min: 4.5 },
   { name: "nav link (accent) on the inactive tab", fg: "--cp-accent", bg: "--cp-surface-2", min: 4.5 },
   { name: "nav link (accent) on a panel", fg: "--cp-accent", bg: "--cp-surface-1", min: 4.5 },
@@ -117,7 +121,7 @@ const PAIRS: { name: string; fg: string; bg: string; min: number }[] = [
   { name: "footer text on the footer", fg: "--cp-on-footer", bg: "--cp-footer", min: 4.5 },
   { name: "footer link on the footer", fg: "--cp-footer-link", bg: "--cp-footer", min: 4.5 },
   { name: "focus ring on the card", fg: "--cp-focus", bg: "--cp-surface-0", min: 3 },
-  { name: "focus ring on the top band", fg: "--cp-on-band", bg: "--cp-band", min: 3 },
+  { name: "focus ring on the header band", fg: "--cp-on-band", bg: "--cp-band", min: 3 },
 ];
 
 describe.each([
@@ -142,6 +146,8 @@ describe("structure", () => {
       ...TONES,
       ...PAIRS.flatMap((p) => [p.fg, p.bg]),
       "--cp-shadow-card",
+      "--cp-container-shadow",
+      "--cp-input",
       "--cp-border",
       "--cp-focus",
       ...Array.from({ length: 8 }, (_, i) => `--cp-space-${i + 1}`),

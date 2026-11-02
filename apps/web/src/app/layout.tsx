@@ -18,7 +18,7 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 
 export const metadata: Metadata = {
   title: "CampusPulse",
-  description: "Bilingual campus-request triage for GJU students. A prototype, not an official GJU service.",
+  description: "Bilingual campus-request triage for students. A prototype, not an official university service.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

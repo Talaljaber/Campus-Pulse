@@ -1,18 +1,11 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { signInAs } from "./support/login";
 
 // P5.10 acceptance. Runs against the mock AI API and the fake Supabase (which stands in for row-level
 // security on tickets: the IT staff login only gets IT tickets). Realtime is not faked.
-const PASSWORD = process.env.E2E_PASSWORD ?? "e2e-password";
-
-async function signInAs(page: Page, button: string) {
-  await page.goto("/login");
-  await page.getByRole("button", { name: button }).click();
-  await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-}
 
 test("staff see their office queue, open a request, correct a review item and resolve an incident", async ({ page }) => {
-  await signInAs(page, "Sign in as IT staff");
+  await signInAs(page, "staff");
   await expect(page).toHaveURL(/\/staff$/);
   await expect(page.getByRole("heading", { level: 1, name: "Staff desk" })).toBeVisible();
   await expect(page.getByText("Office: IT Support")).toBeVisible();
@@ -59,7 +52,7 @@ test("staff see their office queue, open a request, correct a review item and re
 });
 
 test("the staff page works in Arabic and right to left", async ({ page }) => {
-  await signInAs(page, "Sign in as IT staff");
+  await signInAs(page, "staff");
   await expect(page).toHaveURL(/\/staff$/);
   await page.getByRole("button", { name: /العربية/ }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
@@ -70,7 +63,7 @@ test("the staff page works in Arabic and right to left", async ({ page }) => {
 });
 
 test("an admin sees every office", async ({ page }) => {
-  await signInAs(page, "Sign in as Admin");
+  await signInAs(page, "admin");
   await page.goto("/staff");
   await expect(page.getByText("All offices")).toBeVisible();
   await expect(page.getByRole("button", { name: "Open details for Fee receipt missing" })).toBeVisible();
