@@ -11,6 +11,8 @@ describe("matchAllowed", () => {
     ["POST", ["feedback"]],
     ["POST", ["tickets", ID, "status"]],
     ["POST", ["tickets", ID, "forward"]],
+    ["POST", ["tickets", ID, "comments"]],
+    ["POST", ["tickets", ID, "priority"]],
     ["GET", ["reviews"]],
     ["POST", ["reviews", ID, "forward"]],
     ["GET", ["incidents"]],
@@ -35,6 +37,8 @@ describe("matchAllowed", () => {
 
   it.each([
     ["GET", ["triage"]],
+    ["GET", ["tickets", ID, "comments"]],
+    ["POST", ["tickets", ID, "priority", "x"]],
     ["POST", ["health"]],
     ["GET", ["admin", "simulate"]],
     ["POST", ["admin", "users"]],

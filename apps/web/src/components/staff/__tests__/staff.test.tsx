@@ -1,122 +1,15 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { LangScope } from "@/i18n";
 import type { FlagEvent } from "@/lib/staff/flags";
 import type { ReviewView } from "@/lib/staff/review";
-import type { TicketView } from "@/lib/staff/tickets";
 import { IncidentList } from "../../pulse/IncidentList";
 import { FIXTURE_BUILDINGS } from "../../pulse/map/campus";
 import { CorrectionForm } from "../CorrectionForm";
 import { FlagsPanel } from "../FlagsPanel";
 import { ReviewQueue } from "../ReviewQueue";
-import { StatusSelect } from "../StatusSelect";
-import { TicketQueue } from "../TicketQueue";
 
 const NOW = new Date("2026-11-08T10:00:00Z");
-const H = 3_600_000;
-const at = (h: number) => new Date(NOW.getTime() + h * H).toISOString();
-
-const ticket = (o: Partial<TicketView> = {}): TicketView => ({
-  id: "t1",
-  request_id: "r1",
-  incident_id: null,
-  office: "it",
-  category: "IT Support",
-  priority: "high",
-  status: "new",
-  provisional: false,
-  title: "Wi-Fi down in M",
-  body: "",
-  sla_due_at: at(10),
-  escalated_at: null,
-  resolved_at: null,
-  clock_started_at: "2026-11-08T08:00:00Z",
-  reminder_sent_at: null,
-  awaiting_student: false,
-  reminder_count: 0,
-  requester_alias: null,
-  created_at: "2026-11-08T08:00:00Z",
-  link: null,
-  tags: [],
-  ...o,
-});
-
-describe("TicketQueue", () => {
-  it("orders by SLA, marks the overdue ticket and shows words, not only colour", () => {
-    render(
-      <TicketQueue
-        now={NOW}
-        onStatus={() => {}}
-        tickets={[ticket({ id: "later", title: "Later", sla_due_at: at(30) }), ticket({ id: "late", title: "Late one", sla_due_at: at(-3) })]}
-      />,
-    );
-    const rows = within(screen.getByRole("list", { name: "Ticket queue" })).getAllByRole("article");
-    expect(rows[0]).toHaveTextContent("Late one");
-    expect(rows[0]).toHaveAttribute("data-sla", "overdue");
-    expect(rows[0]).toHaveTextContent("Overdue by 3 h");
-    expect(rows[1]).toHaveTextContent("Due in 1 d");
-  });
-
-  it("shows the priority, an unconfirmed marker and a Linear link only for http(s) urls", () => {
-    render(
-      <TicketQueue
-        now={NOW}
-        onStatus={() => {}}
-        tickets={[
-          ticket({ id: "a", title: "A", provisional: true, link: { id: "CP-1", url: "https://linear.app/x/CP-1" } }),
-          ticket({ id: "b", title: "B", link: { id: "CP-2", url: "javascript:alert(1)" } }),
-        ]}
-      />,
-    );
-    expect(screen.getByText("Unconfirmed")).toBeInTheDocument();
-    expect(screen.getAllByText("High")).toHaveLength(2);
-    expect(screen.getByRole("link", { name: "Open CP-1 in Linear" })).toHaveAttribute("href", "https://linear.app/x/CP-1");
-    expect(screen.queryByRole("link", { name: /CP-2/ })).not.toBeInTheDocument();
-  });
-
-  it("reports a status change and a selection", async () => {
-    const user = userEvent.setup();
-    const onStatus = vi.fn();
-    const onSelect = vi.fn();
-    render(<TicketQueue now={NOW} tickets={[ticket()]} onStatus={onStatus} onSelect={onSelect} />);
-    await user.selectOptions(screen.getByRole("combobox", { name: "Status of Wi-Fi down in M" }), "in_progress");
-    expect(onStatus).toHaveBeenCalledWith("t1", "in_progress");
-    await user.click(screen.getByRole("button", { name: "Open details for Wi-Fi down in M" }));
-    expect(onSelect).toHaveBeenCalledWith("t1");
-  });
-
-  it("disables the picker of a ticket whose change is being saved", () => {
-    render(<TicketQueue now={NOW} tickets={[ticket()]} onStatus={() => {}} pendingIds={new Set(["t1"])} />);
-    expect(screen.getByRole("combobox", { name: /Status of/ })).toBeDisabled();
-  });
-
-  it("shows an empty state", () => {
-    render(<TicketQueue now={NOW} tickets={[]} onStatus={() => {}} />);
-    expect(screen.getByText("No tickets here")).toBeInTheDocument();
-  });
-
-  it("renders in Arabic, right to left, with translated labels", () => {
-    render(
-      <LangScope lang="ar">
-        <TicketQueue now={NOW} tickets={[ticket({ sla_due_at: at(-3) })]} onStatus={() => {}} />
-      </LangScope>,
-    );
-    expect(screen.getByRole("list", { name: "طابور التذاكر" })).toBeInTheDocument();
-    expect(screen.getByText(/متأخرة/)).toBeInTheDocument();
-  });
-});
-
-describe("StatusSelect", () => {
-  it("lists the settable statuses, never offers merged, and locks a merged ticket", () => {
-    const { rerender } = render(<StatusSelect value="new" label="s" onChange={() => {}} />);
-    const names = within(screen.getByRole("combobox")).getAllByRole("option").map((o) => o.textContent);
-    expect(names).toEqual(["New", "In progress", "Solved", "Closed"]);
-    rerender(<StatusSelect value="merged" label="s" onChange={() => {}} />);
-    expect(screen.getByRole("combobox")).toBeDisabled();
-    expect(screen.getByRole("combobox")).toHaveValue("merged");
-  });
-});
 
 const review = (o: Partial<ReviewView> = {}): ReviewView => ({
   id: "rv1",

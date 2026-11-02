@@ -1,4 +1,5 @@
 export * from "./announcements";
+export * from "./hints";
 export * from "./incidents";
 export * from "./metrics";
 export * from "./notifications";

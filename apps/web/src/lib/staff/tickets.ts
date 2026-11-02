@@ -29,18 +29,55 @@ export function filterTickets<T extends Pick<TicketRow, "status">>(tickets: read
 
 const time = (iso: string | null): number => (iso ? new Date(iso).getTime() : Number.POSITIVE_INFINITY);
 
+const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+const rank = (p: string): number => PRIORITY_RANK[p] ?? 3;
+
 /**
- * Soonest SLA first among active tickets, then the finished ones (newest first). The sort
- * is stable and does not mutate its input.
+ * The queue's default order: running tickets first (priority high, medium, low, then the earliest
+ * deadline), then the finished ones, newest first. The sort is stable and does not mutate its input.
  */
-export function sortTickets<T extends Pick<TicketRow, "status" | "sla_due_at" | "created_at" | "id">>(tickets: readonly T[]): T[] {
+export function sortTickets<T extends Pick<TicketRow, "status" | "priority" | "sla_due_at" | "created_at" | "id">>(tickets: readonly T[]): T[] {
   return [...tickets].sort((a, b) => {
     const aa = isActive(a);
     const bb = isActive(b);
     if (aa !== bb) return aa ? -1 : 1;
-    const bySla = aa ? time(a.sla_due_at) - time(b.sla_due_at) : time(b.created_at) - time(a.created_at);
-    return bySla !== 0 && Number.isFinite(bySla) ? bySla : a.id.localeCompare(b.id);
+    let diff = 0;
+    if (aa) diff = rank(a.priority) - rank(b.priority) || time(a.sla_due_at) - time(b.sla_due_at);
+    else diff = time(b.created_at) - time(a.created_at);
+    return diff !== 0 && Number.isFinite(diff) ? diff : a.id.localeCompare(b.id);
   });
+}
+
+/** The queue never shows a staff member their own request (they cannot work it). */
+export function withoutOwn<T extends Pick<TicketRow, "requester_alias">>(tickets: readonly T[], myAlias: string | null): T[] {
+  return myAlias ? tickets.filter((t) => t.requester_alias !== myAlias) : [...tickets];
+}
+
+/** The queue's filter form. `"all"` means no restriction. */
+export interface QueueCriteria {
+  status: QueueFilter;
+  priority: "all" | "low" | "medium" | "high";
+  /** An office code, or `"all"`. Only an admin sees this control. */
+  office: string;
+  /** Matches the title or the ticket number, case-insensitive. */
+  search: string;
+}
+
+export const DEFAULT_CRITERIA: QueueCriteria = { status: "active", priority: "all", office: "all", search: "" };
+
+/** Applies {@link QueueCriteria}. `number` turns an id into the ticket number (injected so this file stays free of it). */
+export function applyCriteria<T extends Pick<TicketRow, "id" | "status" | "priority" | "office" | "title">>(
+  tickets: readonly T[],
+  c: QueueCriteria,
+  number: (id: string) => string,
+): T[] {
+  const q = c.search.trim().toLowerCase();
+  return filterTickets(tickets, c.status).filter(
+    (t) =>
+      (c.priority === "all" || t.priority === c.priority) &&
+      (c.office === "all" || t.office === c.office) &&
+      (q === "" || t.title.toLowerCase().includes(q) || number(t.id).toLowerCase().includes(q)),
+  );
 }
 
 /** Inserts or replaces a ticket by id. Returns a new array. */
@@ -93,10 +130,15 @@ export function slaState(t: Pick<TicketRow, "status" | "sla_due_at">, now: Date)
  */
 export function applyTicketOut<T extends TicketRow>(
   row: T,
-  out: Pick<TicketRow, "status" | "resolved_at" | "escalated_at" | "provisional" | "priority" | "sla_due_at">,
+  out: Pick<TicketRow, "status" | "resolved_at" | "escalated_at" | "provisional" | "priority" | "sla_due_at"> &
+    Partial<Pick<TicketRow, "clock_started_at" | "reminder_sent_at" | "awaiting_student" | "reminder_count">>,
 ): T {
   return {
     ...row,
+    clock_started_at: out.clock_started_at ?? row.clock_started_at,
+    reminder_sent_at: out.reminder_sent_at === undefined ? row.reminder_sent_at : out.reminder_sent_at,
+    awaiting_student: out.awaiting_student ?? row.awaiting_student,
+    reminder_count: out.reminder_count ?? row.reminder_count,
     status: out.status,
     resolved_at: out.resolved_at,
     escalated_at: out.escalated_at,
@@ -112,7 +154,7 @@ export function applyTicketOut<T extends TicketRow>(
  */
 export function applyForward<T extends TicketRow>(
   row: T,
-  out: Pick<TicketRow, "status" | "resolved_at" | "escalated_at" | "provisional" | "priority" | "sla_due_at" | "category">,
+  out: Parameters<typeof applyTicketOut>[1] & Pick<TicketRow, "category">,
   office: string,
 ): T {
   return { ...applyTicketOut(row, out), office, category: out.category };

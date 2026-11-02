@@ -1,121 +1,110 @@
 "use client";
 
-import { useState } from "react";
-import { useFlagEvents } from "@/hooks/useFlagEvents";
-import { useIncidents } from "@/hooks/useIncidents";
-import { useMapBuildings } from "@/hooks/useMapBuildings";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useReviewQueue } from "@/hooks/useReviewQueue";
-import { useTicketDetail } from "@/hooks/useTicketDetail";
 import { useTicketQueue } from "@/hooks/useTicketQueue";
-import { useT, type DictKey } from "@/i18n";
-import type { Category, Priority } from "@/lib/ai/types";
+import { labelOf, useLang, useT, type DictKey } from "@/i18n";
 import type { NoticeData } from "@/lib/chat/types";
-import { incidentView } from "@/lib/incidents";
-import type { StaffErrorKind } from "@/lib/staff/service";
-import { filterTickets, type QueueFilter } from "@/lib/staff/tickets";
+import { DEFAULT_CRITERIA, applyCriteria, sortTickets, type QueueCriteria, type TicketView } from "@/lib/staff/tickets";
+import { timeLeft } from "@/lib/tickets/clock";
+import { ticketNumber } from "@/lib/tickets/number";
+import { formatDateTime } from "@/lib/time";
 import { useNoticeText } from "../chat/ChatThread";
 import { useNow } from "../explain/useNow";
 import { AppShell } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
+import { ClockLabel } from "../tickets/ClockLabel";
+import { PriorityBadge } from "../tickets/PriorityBadge";
 import { Badge } from "../ui/Badge";
+import { DataTable, type Column, type SortState } from "../ui/DataTable";
+import { FilterGroup } from "../ui/FilterGroup";
 import { Loadable } from "../ui/Loadable";
 import { Select } from "../ui/Select";
-import { TabPanel, Tabs } from "../ui/Tabs";
+import { TextField } from "../ui/TextField";
 import { useToast } from "../ui/Toast";
-import { FlagsPanel } from "./FlagsPanel";
-import { IncidentsPanel } from "./IncidentsPanel";
-import { useOfficeLabel } from "./office";
-import { RequestDetail } from "./RequestDetail";
-import { ReviewQueue } from "./ReviewQueue";
-import { TicketQueue } from "./TicketQueue";
+import { OFFICE_CODES, useOfficeLabel } from "./office";
 
 /** Props for {@link StaffScreen}. */
 export interface StaffScreenProps {
   role: "staff" | "admin";
-  /** The signed-in user's alias, for the header greeting. */
+  /** The signed-in user's alias: the greeting, and the requests that are hidden from this queue. */
   alias?: string | null;
   /** The staff member's office code (D-005). Null for an admin, who sees every office. */
   office: string | null;
 }
 
-const TAB_IDS = ["tickets", "review", "incidents", "flags"] as const;
-type TabId = (typeof TAB_IDS)[number];
-const ID_BASE = "staff";
+const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
+/** Sort value for "no clock" (finished tickets sort after every running one when ascending). */
+const NO_CLOCK = 8.64e15;
 
 /**
- * The staff dashboard `/staff`: the office's ticket queue with request details, the human
- * review queue (confirm or correct), open incidents and flagged requests. It only wires the
- * data hooks to presentational components. Which rows appear is decided by row-level security
- * in the database, never by filtering here.
+ * The staff queue `/staff`: a filter box and a sortable table of the office's tickets (all offices for
+ * an admin). A row opens the ticket workspace. Which rows appear is decided by row-level security; the
+ * only filter applied here is hiding the viewer's own requests.
  */
 export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
   const t = useT();
+  const { lang } = useLang();
+  const router = useRouter();
   const toast = useToast();
   const officeLabel = useOfficeLabel();
-  const clock = useNow();
-  const now = new Date(clock ?? 0);
-
-  const queue = useTicketQueue(office);
-  const review = useReviewQueue();
-  const incidents = useIncidents();
-  const flags = useFlagEvents();
-  const buildings = useMapBuildings();
-
-  // UD-13: a ticket forwarded to this office, and an item landing in the advisor's or the office's review queue.
   const noticeText = useNoticeText();
+  const clock = useNow();
+
+  const queue = useTicketQueue(office, alias);
+
+  // UD-13: a ticket forwarded to this office.
   const onNotice = (n: NoticeData) => {
-    if (n.type === "ticket_forwarded" || n.type === "review_assigned") toast.show(noticeText(n), "info");
-    if (n.type === "review_assigned") review.reload();
+    if (n.type === "ticket_forwarded") toast.show(noticeText(n), "info");
   };
   useNotifications(alias, onNotice);
   useNotifications(office ? `office:${office}` : null, onNotice);
 
-  const [tab, setTab] = useState<TabId>("tickets");
-  const [filter, setFilter] = useState<QueueFilter>("active");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<QueueCriteria>(DEFAULT_CRITERIA);
+  const [applied, setApplied] = useState<QueueCriteria>(DEFAULT_CRITERIA);
+  const [sort, setSort] = useState<SortState>(null);
 
-  const selected = queue.tickets.find((x) => x.id === selectedId) ?? null;
-  const detail = useTicketDetail(selected?.request_id ?? null);
+  const rows = useMemo(() => sortTickets(applyCriteria(queue.tickets, applied, ticketNumber)), [queue.tickets, applied]);
 
-  const fail = (kind: StaffErrorKind) => toast.show(t(`staff.error.${kind}` as DictKey), "danger");
+  const left = (r: TicketView) => (clock === null ? null : timeLeft(r.sla_due_at, r.status, clock));
+  const statusText = (r: TicketView) => t(`staff.status.${r.status}` as DictKey);
 
-  const onStatus = async (id: string, status: Parameters<typeof queue.changeStatus>[1]) => {
-    const kind = await queue.changeStatus(id, status);
-    if (kind) fail(kind);
-    else toast.show(t("staff.toast.statusChanged", { status: t(`staff.status.${status}` as DictKey) }), "ok");
-  };
-
-  const [forwardError, setForwardError] = useState<{ id: string; kind: StaffErrorKind } | null>(null);
-  const onForward = async (id: string, to: string, note: string) => {
-    setForwardError(null);
-    const kind = await queue.forward(id, to, note);
-    if (kind) setForwardError({ id, kind });
-    else toast.show(t("forward.toast", { office: officeLabel(to) }), "ok");
-  };
-
-  const decide = async (run: () => ReturnType<typeof review.confirm>) => {
-    const out = await run();
-    if (!out.ok) fail(out.kind);
-    else toast.show(t("staff.memoryToast"), "ok");
-  };
-
-  const onResolve = async (id: string, note?: string) => {
-    const out = await incidents.resolve(id, note);
-    if (!out.ok) fail(out.kind);
-    else toast.show(t("staff.toast.incidentResolved", { count: out.notified }), "ok");
-  };
-
-  const incidentViews = incidents.rows.map(incidentView);
-  const items = TAB_IDS.map((id) => ({
-    id,
-    label:
-      id === "review"
-        ? t("staff.tabs.review", { count: review.items.length })
-        : id === "incidents"
-          ? t("staff.tabs.incidents", { count: incidents.rows.length })
-          : t(`staff.tabs.${id}` as DictKey),
-  }));
+  const columns: Column<TicketView>[] = [
+    { id: "number", header: t("queue.col.number"), cell: (r) => <span className="font-mono">{ticketNumber(r.id)}</span>, sortValue: (r) => ticketNumber(r.id) },
+    {
+      id: "title",
+      header: t("queue.col.title"),
+      cell: (r) => (
+        <span dir="auto" className="font-medium">
+          {r.title}
+        </span>
+      ),
+      sortValue: (r) => r.title,
+    },
+    { id: "category", header: t("queue.col.category"), cell: (r) => labelOf("category", r.category, lang), sortValue: (r) => labelOf("category", r.category, lang) },
+    { id: "priority", header: t("queue.col.priority"), cell: (r) => <PriorityBadge priority={r.priority} />, sortValue: (r) => PRIORITY_RANK[r.priority] ?? 3 },
+    { id: "status", header: t("queue.col.status"), cell: statusText, sortValue: statusText },
+    ...(office === null
+      ? [{ id: "office", header: t("queue.col.office"), cell: (r: TicketView) => officeLabel(r.office), sortValue: (r: TicketView) => officeLabel(r.office) } satisfies Column<TicketView>]
+      : []),
+    { id: "deadline", header: t("queue.col.deadline"), cell: (r) => formatDateTime(r.sla_due_at, lang), sortValue: (r) => new Date(r.sla_due_at).getTime() },
+    {
+      id: "left",
+      header: t("queue.col.left"),
+      cell: (r) => <ClockLabel dueIso={r.sla_due_at} status={r.status} now={clock} />,
+      sortValue: (r) => {
+        const l = left(r);
+        return l && l.state !== "stopped" ? l.ms : NO_CLOCK;
+      },
+    },
+    {
+      id: "overdue",
+      header: t("queue.col.overdue"),
+      cell: (r) => (left(r)?.state === "overdue" ? <Badge tone="danger">{t("queue.overdue")}</Badge> : null),
+      sortValue: (r) => (left(r)?.state === "overdue" ? 0 : 1),
+    },
+  ];
 
   return (
     <AppShell role={role} current="queue" alias={alias}>
@@ -128,86 +117,68 @@ export function StaffScreen({ role, alias = null, office }: StaffScreenProps) {
         }
       />
 
-      <Tabs items={items} value={tab} onChange={(id) => setTab(id as TabId)} label={t("staff.tabs.label")} idBase={ID_BASE} />
+      <FilterGroup
+        onSubmit={() => {
+          setApplied(draft);
+          setSort(null);
+        }}
+        onReset={() => {
+          setDraft(DEFAULT_CRITERIA);
+          setApplied(DEFAULT_CRITERIA);
+          setSort(null);
+        }}
+      >
+        <Select
+          label={t("queue.filter.status")}
+          value={draft.status}
+          onChange={(e) => setDraft({ ...draft, status: e.target.value as QueueCriteria["status"] })}
+          options={[
+            { value: "active", label: t("staff.queue.filterActive") },
+            { value: "done", label: t("staff.queue.filterDone") },
+            { value: "all", label: t("staff.queue.filterAll") },
+          ]}
+        />
+        <Select
+          label={t("queue.filter.priority")}
+          value={draft.priority}
+          onChange={(e) => setDraft({ ...draft, priority: e.target.value as QueueCriteria["priority"] })}
+          options={[
+            { value: "all", label: t("queue.filter.any") },
+            { value: "high", label: t("queue.urgent") },
+            { value: "medium", label: labelOf("priority", "medium", lang) },
+            { value: "low", label: labelOf("priority", "low", lang) },
+          ]}
+        />
+        {office === null && (
+          <Select
+            label={t("queue.filter.office")}
+            value={draft.office}
+            onChange={(e) => setDraft({ ...draft, office: e.target.value })}
+            options={[{ value: "all", label: t("queue.filter.any") }, ...OFFICE_CODES.map((o) => ({ value: o, label: officeLabel(o) }))]}
+          />
+        )}
+        <TextField label={t("queue.filter.search")} value={draft.search} onChange={(e) => setDraft({ ...draft, search: e.target.value })} />
+      </FilterGroup>
 
-      <TabPanel idBase={ID_BASE} id="tickets" value={tab}>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <section aria-label={t("staff.queue.title")} className="flex flex-col gap-3">
-            <Select
-              label={t("staff.queue.filterLabel")}
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as QueueFilter)}
-              options={[
-                { value: "active", label: t("staff.queue.filterActive") },
-                { value: "done", label: t("staff.queue.filterDone") },
-                { value: "all", label: t("staff.queue.filterAll") },
-              ]}
-              className="max-w-48"
-            />
-            <Loadable state={queue.load} onRetry={queue.reload}>
-              <TicketQueue
-                tickets={filterTickets(queue.tickets, filter)}
-                now={now}
-                onStatus={(id, s) => void onStatus(id, s)}
-                onSelect={setSelectedId}
-                selectedId={selectedId}
-                pendingIds={queue.pending}
-                showOffice={office === null}
-              />
-            </Loadable>
-          </section>
-          <aside aria-label={t("staff.detail.title")}>
-            {selected ? (
-              <RequestDetail
-                key={`${selected.id}:${selected.office}`}
-                ticket={selected}
-                onForward={(to, note) => void onForward(selected.id, to, note)}
-                forwardBusy={queue.pending.has(selected.id)}
-                forwardError={forwardError?.id === selected.id ? t(`staff.error.${forwardError.kind}` as DictKey) : null}
-                detail={detail.detail}
-                load={detail.load}
-                audience={role}
-                counterfactual={detail.counterfactual}
-                onCounterfactual={(token) => void detail.askCounterfactual(token)}
-                onClose={() => setSelectedId(null)}
-              />
-            ) : (
-              <p className="rounded-lg border border-dashed border-line-strong p-6 text-center text-fg-2">{t("staff.detail.empty")}</p>
-            )}
-          </aside>
-        </div>
-      </TabPanel>
-
-      <TabPanel idBase={ID_BASE} id="review" value={tab}>
-        <Loadable state={review.load} onRetry={review.reload}>
-          <ReviewQueue
-            items={review.items}
-            pendingIds={review.pending}
-            onConfirm={(pid) => void decide(() => review.confirm(pid))}
-            onCorrect={(pid, category, priority, note) =>
-              void decide(() =>
-                review.correct(pid, {
-                  category: (category as Category | undefined) ?? null,
-                  priority: (priority as Priority | undefined) ?? null,
-                  note: note ?? "",
-                }),
-              )
+      <section aria-label={t("staff.queue.title")} className="flex flex-col gap-2">
+        <Loadable state={queue.load} onRetry={queue.reload}>
+          <DataTable
+            caption={t("staff.queue.title")}
+            columns={columns}
+            rows={rows}
+            rowKey={(r) => r.id}
+            sort={sort}
+            onSortChange={setSort}
+            onRowClick={(r) => router.push(`/staff/tickets/${r.id}`)}
+            empty={
+              <>
+                <strong className="block text-fg-1">{t("staff.queue.empty")}</strong>
+                {t("staff.queue.emptyHint")}
+              </>
             }
           />
         </Loadable>
-      </TabPanel>
-
-      <TabPanel idBase={ID_BASE} id="incidents" value={tab}>
-        <Loadable state={incidents.load} onRetry={incidents.reload}>
-          <IncidentsPanel incidents={incidentViews} buildings={buildings} onResolve={onResolve} />
-        </Loadable>
-      </TabPanel>
-
-      <TabPanel idBase={ID_BASE} id="flags" value={tab}>
-        <Loadable state={flags.load} onRetry={flags.reload}>
-          <FlagsPanel events={flags.events} audience={role} />
-        </Loadable>
-      </TabPanel>
+      </section>
     </AppShell>
   );
 }
