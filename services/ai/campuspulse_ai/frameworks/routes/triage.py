@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request
 
 from campuspulse_ai.application.dto import (
     ClarifyRequest,
@@ -14,6 +14,7 @@ from campuspulse_ai.application.dto import (
     TriageRequest,
     TriageResponse,
 )
+from campuspulse_ai.composition.api import ApiServices
 from campuspulse_ai.frameworks.api_contract import route_kwargs
 from campuspulse_ai.frameworks.auth import Principal, authorize
 from campuspulse_ai.frameworks.errors import ApiError, not_wired
@@ -33,12 +34,20 @@ def student_alias(caller: Principal) -> str | None:
     return caller.alias if caller.role == "student" else None
 
 
+def schedule_created(services: ApiServices, background: BackgroundTasks, response: TriageResponse) -> None:
+    """After the response: the thread's `created` row and the "received" emails of the ticket the
+    action opened (idempotent; skipped when the lifecycle is not wired)."""
+    if services.lifecycle is not None and response.action is not None and response.action.ticket_id:
+        background.add_task(services.lifecycle.on_created, response.action.ticket_id)
+
+
 @router.api_route(**route_kwargs("triage"))
 def triage(
     body: TriageRequest,
     query: Annotated[TriageQuery, Query()],
     request: Request,
     services: Services,
+    background: BackgroundTasks,
     caller: Annotated[Principal, Depends(authorize("triage"))],
 ) -> TriageResponse:
     """Triage one message. The alias comes from the caller when it has one, never from another user's
@@ -51,7 +60,9 @@ def triage(
     cmd = body if caller.alias is None else body.model_copy(update={"student_alias": caller.alias})
     if cmd.simulated and caller.role not in SIMULATION_ROLES:
         cmd = cmd.model_copy(update={"simulated": False})  # only scripts and admins mark traffic
-    return triage_view(services.triage.run(cmd, debug_members=debug), caller.role)
+    response = services.triage.run(cmd, debug_members=debug)
+    schedule_created(services, background, response)
+    return triage_view(response, caller.role)
 
 
 @router.api_route(**route_kwargs("clarify"))
@@ -60,10 +71,12 @@ def clarify(
     body: ClarifyRequest,
     request: Request,
     services: Services,
+    background: BackgroundTasks,
     caller: Annotated[Principal, Depends(authorize("clarify"))],
 ) -> TriageResponse:
     """Answer the pending clarifying question of a request (a student only for their own request)."""
     if services.clarify is None:
         raise not_wired("clarify")
     response = services.clarify.run(request_id, body, caller_alias=student_alias(caller))
+    schedule_created(services, background, response)
     return triage_view(response, caller.role)

@@ -19,13 +19,13 @@ from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import EscalateSlaUseCase
 from campuspulse_ai.application.use_cases.explain import CounterfactualUseCase
-from campuspulse_ai.application.use_cases.forward import TicketForwardUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentsUseCase
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
 from campuspulse_ai.application.use_cases.ports import FeedbackHandler, IdentityVerifier
 from campuspulse_ai.application.use_cases.reviews import ReviewsUseCase
 from campuspulse_ai.application.use_cases.run_redteam import RunRedTeamUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
+from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import TriageUseCase
 from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.domain.ports import Clock
@@ -53,11 +53,11 @@ class HealthInfo:
 class ApiServices:
     """The use cases behind the `/v1` routes. None = not wired here (the route answers 501).
 
-    - `tickets` serves the Linear webhook and the dashboard status route; `sla` is the SLA scanner the
-      lifespan runs every `SLA_SCAN_MINUTES` with `clock` (both must be set for it to run).
+    - `tickets` serves the inbound Linear webhook; `lifecycle` serves the ticket routes (status, forward,
+      priority, comments, requester actions) and the `created` follow-up of triage (P9.3); `sla` is
+      the SLA scanner the lifespan runs every `SLA_SCAN_MINUTES` with `clock` (both must be set).
     - `incidents` serves the Pulse routes (`GET /v1/incidents`, `POST /v1/incidents/{id}/resolve`).
-    - `reviews` serves `GET /v1/reviews` and `POST /v1/reviews/{id}/forward`; `forward` serves
-      `POST /v1/tickets/{id}/forward` (UD-13 advisor routing).
+    - `reviews` serves `GET /v1/reviews` and `POST /v1/reviews/{id}/forward` (UD-13 advisor routing).
     - `batch`, `metrics` and `redteam` serve the model lab (`composition.redteam.build_redteam` builds
       `redteam` from the online core, its policy and the repository, with live memory on).
     - `identity` verifies user tokens in `AUTH_MODE=supabase_jwt`; without it a request carrying a
@@ -69,7 +69,6 @@ class ApiServices:
     counterfactual: CounterfactualUseCase | None = None
     feedback: FeedbackHandler | None = None
     tickets: SyncTicketUseCase | None = None
-    forward: TicketForwardUseCase | None = None
     reviews: ReviewsUseCase | None = None
     sla: EscalateSlaUseCase | None = None
     clock: Clock | None = None
@@ -79,6 +78,7 @@ class ApiServices:
     redteam: RunRedTeamUseCase | None = None
     identity: IdentityVerifier | None = None
     health: HealthInfo = field(default_factory=HealthInfo)
+    lifecycle: TicketLifecycleUseCase | None = None
 
 
 def build_identity(settings: Settings) -> IdentityVerifier | None:

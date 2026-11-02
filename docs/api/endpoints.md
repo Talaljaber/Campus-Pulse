@@ -38,6 +38,9 @@ Every non-2xx response has this shape:
 - [`GET /health`](#health_root) Health (root alias)
 - [`POST /v1/admin/simulate`](#admin_simulate) Start simulated Pulse traffic (optional extra)
 - [`POST /v1/admin/reindex`](#admin_reindex) Re-embed a vector collection (optional extra)
+- [`POST /v1/tickets/{ticket_id}/comments`](#ticket_comment) Comment on a ticket
+- [`POST /v1/tickets/{ticket_id}/priority`](#ticket_priority) Change a ticket's priority
+- [`POST /v1/tickets/{ticket_id}/student-action`](#ticket_student_action) Requester buttons: solved, close, keep open
 - [Schemas](#schemas)
 
 <a id="triage"></a>
@@ -706,7 +709,7 @@ Error example (`feedback_error_student_forbidden`, 403):
 <a id="ticket_status"></a>
 ## `POST /v1/tickets/{ticket_id}/status`
 
-**Change a ticket's status from the dashboard.** Dashboard status change (LD-25); same path as the inbound Linear sync.
+**Change a ticket's status from the dashboard.** Status change by staff of the ticket's office or an admin (never on their own request). Only the transitions of the lifecycle table are allowed (`transition <from> -> <to> not allowed`, 422): new -> in_progress, new/in_progress -> solved, new/in_progress/solved -> closed, solved/closed -> in_progress (reopen, the clock restarts). The optional note becomes a public comment inside the status email. Same status = no-op.
 
 - **Roles:** `staff`, `admin`
 - **Auth:** service token
@@ -792,13 +795,13 @@ Response `200`:
 
 **Side effects**
 
-- updates the `tickets` row; updates the Linear issue
-- in-app notification to the student; email on `resolved` if allow-listed
+- updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a `ticket_activity` row `status`; appends an `events` row `ticket.status`
+- after the response: updates the Linear issue; in-app notification to the requester; one allow-listed email to the requester (`in_progress`, `solved`, `closed` or `reopened`)
 
 <a id="ticket_forward"></a>
 ## `POST /v1/tickets/{ticket_id}/forward`
 
-**Forward a ticket to another office.** Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, keeps its status, priority and SLA, and the Linear issue is updated.
+**Forward a ticket to another office.** Staff hand a ticket to another office (UD-13): the ticket takes that office and its category, goes back to `new`, keeps its priority, its SLA clock restarts, and the Linear issue is updated. Only `new` and `in_progress` tickets can be forwarded.
 
 - **Roles:** `staff`, `admin`
 - **Auth:** service token
@@ -884,8 +887,8 @@ Response `200`:
 
 **Side effects**
 
-- updates the `tickets` row (office, category, tag `forwarded`); appends an `events` row `ticket.forwarded`
-- after the response: updates the Linear issue (label, title, description); one in-app `ticket_forwarded` notification for `office:<new office>`
+- updates the `tickets` row (office, category, status `new`, tag `forwarded`, clock); inserts a `ticket_activity` row `forward` and a `ticket_hints` row; appends an `events` row `ticket.forwarded`
+- after the response: updates the Linear issue (label, title, description); one in-app `ticket_forwarded` notification for `office:<new office>`; allow-listed emails to the requester and the new office (`forwarded`)
 - no prediction change and no live-memory write
 
 <a id="list_reviews"></a>
@@ -2243,6 +2246,302 @@ Error example (`admin_reindex_error_not_built`, 501):
 
 - rewrites every `faq.embedding`
 
+<a id="ticket_comment"></a>
+## `POST /v1/tickets/{ticket_id}/comments`
+
+**Comment on a ticket.** The requester adds a public comment (a comment on a solved or closed ticket reopens it). Staff of the ticket's office or an admin reply publicly (the ticket moves to in_progress and waits for the requester), add an `internal` note the requester never sees, or send a reply that also sets `status` (one status email carries the comment). A caller who owns the request is always treated as the requester.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [CommentRequest](#schema-commentrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `body` | string | yes | min len 1 |
+| `internal` | boolean | no | default `false` |
+| `status` | `in_progress` \| `solved` \| `closed` \| null | no |  |
+
+**Response `200`:** `application/json` [TicketThreadOut](#schema-ticketthreadout)
+
+**Example** (fixture `ticket_comment_requester_reply`): The requester answers; the office is emailed (and the admin inbox when the ticket was forwarded).
+
+`request.json`:
+
+```json
+{
+  "body": "Room 2, the CampusNet network.",
+  "internal": false,
+  "status": null
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031/comments" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "ticket": {
+    "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+    "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0031",
+    "incident_id": null,
+    "office": "it",
+    "category": "IT Support",
+    "priority": "medium",
+    "status": "in_progress",
+    "provisional": false,
+    "sla_due_at": "2026-11-06T11:30:00+03:00",
+    "clock_started_at": "2026-11-05T11:30:00+03:00",
+    "reminder_sent_at": null,
+    "awaiting_student": false,
+    "reminder_count": 0,
+    "escalated_at": null,
+    "resolved_at": null,
+    "title": "Wi-Fi drops in the library",
+    "links": []
+  },
+  "activity": {
+    "id": "a3f1c2d4-0b5e-4c7a-8d19-2e3f4a5b6c02",
+    "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+    "kind": "comment",
+    "visibility": "public",
+    "actor_role": "student",
+    "actor_alias": "demo-17",
+    "actor_office": null,
+    "body": "Room 2, the CampusNet network.",
+    "from_status": null,
+    "to_status": null,
+    "from_office": null,
+    "to_office": null,
+    "from_priority": null,
+    "to_priority": null,
+    "created_at": "2026-11-05T12:05:00+03:00"
+  }
+}
+```
+
+**More examples** (send `X-Mock-Fixture: <name>` to the mock app to get one)
+
+| Fixture | Status | What it shows |
+| --- | --- | --- |
+| `ticket_comment_error_student_internal` | 403 | A requester may not add an internal note: 403 forbidden. |
+| `ticket_comment_staff_reply` | 200 | IT staff reply publicly: the ticket moves to in_progress and waits for the requester; the requester gets one email. |
+
+Error example (`ticket_comment_error_student_internal`, 403):
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "a requester can only add a public comment",
+    "details": null
+  }
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- updates the `tickets` row (status, `awaiting_student`, clock on a reopen); inserts a `ticket_activity` row (`comment`, `note` or `status`); appends an `events` row
+- after the response: allow-listed email (`staff_reply` to the requester, `requester_reply` to the office and, on a forwarded ticket, the admin inbox, or the status/`reopened` email); in-app notification to the requester on a staff reply; none for an internal note
+
+<a id="ticket_priority"></a>
+## `POST /v1/tickets/{ticket_id}/priority`
+
+**Change a ticket's priority.** Staff of the ticket's office or an admin (never on their own request) change the priority of a `new` or `in_progress` ticket. The SLA clock restarts with the new priority's period. Same priority = no-op. No email.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [PriorityRequest](#schema-priorityrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `note` | string \| null | no |  |
+
+**Response `200`:** `application/json` [TicketOut](#schema-ticketout)
+
+**Example** (fixture `ticket_priority_high`): IT staff raise the priority to high: the clock restarts with the one-hour period; no email.
+
+`request.json`:
+
+```json
+{
+  "priority": "high",
+  "note": "The whole library floor is offline."
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031/priority" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+  "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0031",
+  "incident_id": null,
+  "office": "it",
+  "category": "IT Support",
+  "priority": "high",
+  "status": "in_progress",
+  "provisional": false,
+  "sla_due_at": "2026-11-05T13:10:00+03:00",
+  "clock_started_at": "2026-11-05T12:10:00+03:00",
+  "reminder_sent_at": null,
+  "awaiting_student": true,
+  "reminder_count": 0,
+  "escalated_at": null,
+  "resolved_at": null,
+  "title": "Wi-Fi drops in the library",
+  "links": []
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- updates the `tickets` row (priority, clock); inserts a `ticket_activity` row `priority` and a `ticket_hints` row; appends an `events` row `ticket.priority`
+- after the response: updates the Linear issue
+
+<a id="ticket_student_action"></a>
+## `POST /v1/tickets/{ticket_id}/student-action`
+
+**Requester buttons: solved, close, keep open.** The requester confirms the fix (`solved`), closes the ticket (`close`) or asks to keep it open (`keep_open`: back to in_progress, the clock restarts). Only the owner of the request may call it.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `ticket_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [StudentActionRequest](#schema-studentactionrequest)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `action` | `solved` \| `close` \| `keep_open` | yes |  |
+
+**Response `200`:** `application/json` [TicketOut](#schema-ticketout)
+
+**Example** (fixture `ticket_student_action_solved`): The requester confirms the fix: the ticket becomes solved and the office is emailed.
+
+`request.json`:
+
+```json
+{
+  "action": "solved"
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/tickets/c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031/student-action" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0031",
+  "request_id": "5b0e7c52-3f0a-4d8e-9c41-0a1b2c3d0031",
+  "incident_id": null,
+  "office": "it",
+  "category": "IT Support",
+  "priority": "medium",
+  "status": "solved",
+  "provisional": false,
+  "sla_due_at": "2026-11-06T11:30:00+03:00",
+  "clock_started_at": "2026-11-05T11:30:00+03:00",
+  "reminder_sent_at": null,
+  "awaiting_student": false,
+  "reminder_count": 0,
+  "escalated_at": null,
+  "resolved_at": "2026-11-05T12:30:00+03:00",
+  "title": "Wi-Fi drops in the library",
+  "links": []
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- updates the `tickets` row (status, `awaiting_student`, clock on keep open); inserts a `ticket_activity` row `student_action`; appends an `events` row `ticket.student_action`
+- after the response: updates the Linear issue; allow-listed email to the office (`solved`, `closed` or `reopened`)
+
 <a id="schemas"></a>
 ## Schemas
 
@@ -2281,6 +2580,29 @@ What happened next (SPEC §5.1 [11]).
 ### ActionType
 
 Values: `faq_answer`, `ticket`, `booking`, `safety_alert`, `incident_merge`
+
+<a id="schema-activityout"></a>
+### ActivityOut
+
+One row of a ticket's thread (mirrors a `ticket_activity` row).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `ticket_id` | string | yes |  |
+| `kind` | `created` \| `comment` \| `note` \| `status` \| `forward` \| `priority` \| `student_action` \| `reminder` | yes |  |
+| `visibility` | `public` \| `internal` | yes |  |
+| `actor_role` | `student` \| `staff` \| `admin` \| `system` | yes |  |
+| `actor_alias` | string \| null | yes |  |
+| `actor_office` | string \| null | yes |  |
+| `body` | string | yes |  |
+| `from_status` | string \| null | yes |  |
+| `to_status` | string \| null | yes |  |
+| `from_office` | string \| null | yes |  |
+| `to_office` | string \| null | yes |  |
+| `from_priority` | string \| null | yes |  |
+| `to_priority` | string \| null | yes |  |
+| `created_at` | string (date-time) | yes |  |
 
 <a id="schema-artifactout"></a>
 ### ArtifactOut
@@ -2399,6 +2721,17 @@ Body of `POST /v1/triage/{request_id}/clarify`: exactly one of `option_id` or `f
 | `question_id` | string | yes | min len 1 |
 | `option_id` | string \| null | no |  |
 | `free_text` | string \| null | no |  |
+
+<a id="schema-commentrequest"></a>
+### CommentRequest
+
+Body of `POST /v1/tickets/{ticket_id}/comments`.  A requester sends a public comment. Staff send a public reply, an `internal` note (never shown to the requester) or a reply that also sets `status` (then one status email carries the comment).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `body` | string | yes | min len 1 |
+| `internal` | boolean | no | default `false` |
+| `status` | `in_progress` \| `solved` \| `closed` \| null | no |  |
 
 <a id="schema-confusionout"></a>
 ### ConfusionOut
@@ -2728,6 +3061,16 @@ Priority decision: label, probability, conformal set and the evidence that drove
 | `set` | array of [Priority](#schema-priority) | yes |  |
 | `evidence` | array of [EvidenceOut](#schema-evidenceout) | yes |  |
 
+<a id="schema-priorityrequest"></a>
+### PriorityRequest
+
+Body of `POST /v1/tickets/{ticket_id}/priority`: the clock restarts with the new priority's period.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `note` | string \| null | no |  |
+
 <a id="schema-problemclusterout"></a>
 ### ProblemClusterOut
 
@@ -2905,6 +3248,15 @@ A started simulated burst. All its requests carry `simulated=true`.
 | `interval_s` | number | yes |  |
 | `label` | `"SIMULATED TRAFFIC"` | yes |  |
 
+<a id="schema-studentactionrequest"></a>
+### StudentActionRequest
+
+Body of `POST /v1/tickets/{ticket_id}/student-action`: the requester's three buttons.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `action` | `solved` \| `close` \| `keep_open` | yes |  |
+
 <a id="schema-ticketout"></a>
 ### TicketOut
 
@@ -2944,6 +3296,16 @@ Body of `POST /v1/tickets/{ticket_id}/status` (dashboard status change, LD-25).
 | --- | --- | --- | --- |
 | `status` | `new` \| `in_progress` \| `solved` \| `closed` | yes |  |
 | `note` | string \| null | no |  |
+
+<a id="schema-ticketthreadout"></a>
+### TicketThreadOut
+
+Answer of `POST /v1/tickets/{ticket_id}/comments`: the ticket after the comment and the new row.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `ticket` | [TicketOut](#schema-ticketout) | yes |  |
+| `activity` | [ActivityOut](#schema-activityout) | yes |  |
 
 <a id="schema-tier"></a>
 ### Tier

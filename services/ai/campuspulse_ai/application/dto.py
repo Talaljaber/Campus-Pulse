@@ -524,6 +524,61 @@ class ForwardRequest(_Model):
     note: str | None = None
 
 
+# --- ticket thread (P9.3) ---------------------------------------------------------------------------
+
+
+class CommentRequest(_Model):
+    """Body of `POST /v1/tickets/{ticket_id}/comments`.
+
+    A requester sends a public comment. Staff send a public reply, an `internal` note (never shown to the
+    requester) or a reply that also sets `status` (then one status email carries the comment).
+    """
+
+    body: str = Field(min_length=1, max_length=4000)
+    internal: bool = False
+    status: Literal["in_progress", "solved", "closed"] | None = None
+
+
+class PriorityRequest(_Model):
+    """Body of `POST /v1/tickets/{ticket_id}/priority`: the clock restarts with the new priority's period."""
+
+    priority: Priority
+    note: str | None = None
+
+
+class StudentActionRequest(_Model):
+    """Body of `POST /v1/tickets/{ticket_id}/student-action`: the requester's three buttons."""
+
+    action: Literal["solved", "close", "keep_open"]
+
+
+class ActivityOut(_Model):
+    """One row of a ticket's thread (mirrors a `ticket_activity` row)."""
+
+    id: str
+    ticket_id: str
+    kind: Literal["created", "comment", "note", "status", "forward", "priority", "student_action", "reminder"]
+    visibility: Literal["public", "internal"]
+    actor_role: Literal["student", "staff", "admin", "system"]
+    actor_alias: str | None
+    actor_office: str | None
+    body: str
+    from_status: str | None
+    to_status: str | None
+    from_office: str | None
+    to_office: str | None
+    from_priority: str | None
+    to_priority: str | None
+    created_at: datetime
+
+
+class TicketThreadOut(_Model):
+    """Answer of `POST /v1/tickets/{ticket_id}/comments`: the ticket after the comment and the new row."""
+
+    ticket: TicketOut
+    activity: ActivityOut
+
+
 # --- advisor review (UD-13) -------------------------------------------------------------------------
 
 

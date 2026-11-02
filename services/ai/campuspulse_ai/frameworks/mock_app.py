@@ -38,6 +38,7 @@ from campuspulse_ai import __version__
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
     ClarifyRequest,
+    CommentRequest,
     CounterfactualQuery,
     ErrorBody,
     ErrorCode,
@@ -46,12 +47,14 @@ from campuspulse_ai.application.dto import (
     ForwardRequest,
     IncidentListQuery,
     PrincipalHeaders,
+    PriorityRequest,
     RecurringQuery,
     RedTeamRunRequest,
     ReindexRequest,
     ResolveIncidentRequest,
     ReviewListQuery,
     SimulateRequest,
+    StudentActionRequest,
     TicketStatusRequest,
     TriageQuery,
     TriageRequest,
@@ -301,6 +304,23 @@ def build_router(store: FixtureStore) -> APIRouter:
     def admin_reindex(body: ReindexRequest, request: Request) -> Any:
         """Optional extra: re-embed a collection (fixture-backed)."""
         return _respond(store.pick("admin_reindex", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("ticket_comment"), dependencies=[Depends(_guard("ticket_comment"))])
+    def ticket_comment(ticket_id: str, body: CommentRequest, request: Request) -> Any:
+        """Comment on a ticket (fixture-backed)."""
+        return _respond(store.pick("ticket_comment", request, body.model_dump(mode="json")))
+
+    @router.api_route(**route_kwargs("ticket_priority"), dependencies=[Depends(_guard("ticket_priority"))])
+    def ticket_priority(ticket_id: str, body: PriorityRequest, request: Request) -> Any:
+        """Change a ticket's priority (fixture-backed)."""
+        return _respond(store.pick("ticket_priority", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("ticket_student_action"), dependencies=[Depends(_guard("ticket_student_action"))]
+    )
+    def ticket_student_action(ticket_id: str, body: StudentActionRequest, request: Request) -> Any:
+        """Requester buttons (fixture-backed)."""
+        return _respond(store.pick("ticket_student_action", request, body.model_dump(mode="json")))
 
     return router
 
