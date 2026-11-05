@@ -68,7 +68,14 @@ export const en = {
     high: "High",
   },
   ui: {
-    table: { empty: "No rows to show" },
+    table: {
+      empty: "No rows to show",
+      showDetails: "Show details",
+      hideDetails: "Hide details",
+      sortBy: "Sort by",
+      sortAscending: "Ascending",
+      sortDescending: "Descending",
+    },
     dialog: { closeLabel: "Close dialog" },
     toast: { region: "Notifications" },
     skeleton: { label: "Loading content" },
@@ -103,6 +110,7 @@ export const en = {
   },
   profile: {
     panel: "Personal information",
+    settings: "Language and session",
     name: "Name",
     studentNumber: "Student number",
     faculty: "Faculty",
@@ -121,6 +129,7 @@ export const en = {
     subtitle: "Notices that appear on the students' Home page.",
     campusWide: "Campus-wide",
     kind: { info: "Info", outage: "Outage", maintenance: "Maintenance" },
+    showDetails: "Show details",
     form: {
       legend: "New announcement",
       submit: "Post announcement",
@@ -197,6 +206,9 @@ export const en = {
     agent: {
       demo: "Demo: no real department is contacted.",
       welcome: "Tell me what you need. I suggest where it goes, and you decide whether to send it.",
+      starterWifi: "The Wi-Fi is not working.",
+      starterRegistration: "I need help with registration.",
+      starterTransport: "I have a transport issue.",
       assistant: "CampusPulse",
       fallbackNote: "The assistant is not available right now. Describe your request below and check where it would go.",
       formLabel: "Your request",

@@ -1,0 +1,12 @@
+{
+  "name": "profile_email_put",
+  "description": "A student explicitly consents to demo notification email.",
+  "method": "PUT",
+  "path": "/v1/profile/email",
+  "path_params": {},
+  "query": {},
+  "headers": {"X-CP-Role": "student", "X-CP-Alias": "talal"},
+  "request": {"email": "talal@example.com", "consent": true},
+  "status_code": 200,
+  "response": {"email": "talal@example.com", "consented_at": "2026-11-03T09:00:00+03:00", "opt_in_enabled": true}
+}

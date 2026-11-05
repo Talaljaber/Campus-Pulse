@@ -17,7 +17,7 @@ export function Card({ title, actions, children, className }: CardProps) {
   return (
     <section
       aria-labelledby={title ? titleId : undefined}
-      className={cn("rounded-lg border border-line bg-surface-1 p-4 shadow-1", className)}
+      className={cn("rounded-lg border border-line bg-surface-1 p-4 shadow-1 sm:p-5", className)}
     >
       {(title || actions) && (
         <header className="mb-3 flex items-center justify-between gap-3">

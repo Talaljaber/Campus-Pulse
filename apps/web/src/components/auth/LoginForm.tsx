@@ -7,6 +7,7 @@ import { DEMO_ACCOUNTS, toLoginEmail } from "@/lib/auth/demo";
 import type { LoginAs } from "@/lib/auth/signin";
 import { Button } from "../ui/Button";
 import { InfoPanel } from "../ui/InfoPanel";
+import { LanguageSwitch } from "../ui/LanguageSwitch";
 import { TextField } from "../ui/TextField";
 
 const ERROR_KEY: Record<SignInError, DictKey> = {
@@ -36,17 +37,19 @@ export function LoginForm({ next }: LoginFormProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const passwordRef = useRef<HTMLInputElement>(null);
-  const pressed = useRef<LoginAs>("student");
+  const [pressed, setPressed] = useState<LoginAs>("student");
+  const pressedRef = useRef<LoginAs>("student");
   const hint = process.env.NEXT_PUBLIC_DEMO_LOGIN_HINT;
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    void submit(toLoginEmail(username), password, pressed.current);
+    void submit(toLoginEmail(username), password, pressedRef.current);
   };
   const ready = username.trim() !== "" && password !== "";
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-4">
+      <LanguageSwitch className="self-end" />
       <form onSubmit={onSubmit} className="flex flex-col gap-4 border border-line-strong bg-surface-0 p-5 shadow-1" noValidate>
         <TextField
           label={t("login.username")}
@@ -75,12 +78,21 @@ export function LoginForm({ next }: LoginFormProps) {
           </p>
         )}
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button type="submit" loading={pending} disabled={!ready} onClick={() => (pressed.current = "student")} className="flex-1">
-            {t("login.asStudent")}
-          </Button>
-          <Button type="submit" loading={pending} disabled={!ready} onClick={() => (pressed.current = "staff")} className="flex-1">
-            {t("login.asStaff")}
-          </Button>
+          {(["student", "staff"] as const).map((as) => (
+            <Button
+              key={as}
+              type="submit"
+              loading={pending && pressed === as}
+              disabled={!ready || pending}
+              onClick={() => {
+                pressedRef.current = as;
+                setPressed(as);
+              }}
+              className="flex-1"
+            >
+              {t(as === "student" ? "login.asStudent" : "login.asStaff")}
+            </Button>
+          ))}
         </div>
         <p className="text-sm font-medium text-orange-ink">{t("login.note")}</p>
       </form>

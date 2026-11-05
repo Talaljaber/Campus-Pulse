@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signInAs } from "./support/login";
+import { signInAs, switchToArabic } from "./support/login";
 
 // P9.6 acceptance. Runs against the mock AI API and the fake Supabase (which stands in for row-level
 // security on tickets: the IT staff login only gets IT tickets). Realtime is not faked. The comments
@@ -91,7 +91,8 @@ test("the corrections page lists the flagged requests and the past corrections",
 test("the staff page works in Arabic and right to left", async ({ page }) => {
   await signInAs(page, "staff");
   await expect(page).toHaveURL(/\/staff$/);
-  await page.getByRole("button", { name: /العربية/ }).click();
+  await switchToArabic(page);
+  await page.goto("/staff");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("heading", { level: 1, name: "مكتب الموظفين" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: /رقم التذكرة/ })).toBeVisible();

@@ -108,11 +108,10 @@ describe("OutboxScreen", () => {
     expect(m.list).toHaveBeenCalledWith(expect.anything(), { limit: 200 });
   });
 
-  it("greets by display name in the header, not the alias", async () => {
+  it("shows no greeting in the header", async () => {
     render(<OutboxScreen role="staff" alias="staff-it-1" name="Omar Nasser" />);
     await screen.findByRole("table");
-    expect(screen.getByText("Hello Omar Nasser")).toBeInTheDocument();
-    expect(screen.queryByText("Hello staff-it-1")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Hello/)).not.toBeInTheDocument();
   });
 
   it("filters to one status and offers a way back when none match", async () => {
@@ -154,16 +153,15 @@ describe("OutboxScreen", () => {
     expect(await screen.findByRole("table")).toBeInTheDocument();
   });
 
-  it("offers the Reports tab only to an admin, and the Outbox tile (marked current) only to an admin", async () => {
+  it("offers the Reports tab only to an admin, and has no Outbox tab or tile (admins reach it from Profile)", async () => {
     const { unmount } = render(<OutboxScreen role="staff" />);
     await screen.findByRole("table");
     const nav = screen.getByRole("navigation", { name: "Main menu" });
     expect(within(nav).queryByRole("link", { name: "Reports" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Outbox" })).not.toBeInTheDocument();
     unmount();
     render(<OutboxScreen role="admin" />);
     await screen.findByRole("table");
     expect(within(screen.getByRole("navigation", { name: "Main menu" })).getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/lab");
-    expect(screen.getByRole("link", { name: "Outbox" })).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("link", { name: "Outbox" })).not.toBeInTheDocument();
   });
 });

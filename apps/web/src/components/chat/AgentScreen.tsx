@@ -11,6 +11,7 @@ import { AppShell } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
 import { Button } from "../ui/Button";
 import { cn } from "../ui/cn";
+import { Icon } from "../ui/Icon";
 import { TextArea } from "../ui/TextField";
 import { Composer } from "./Composer";
 import { DistressCard } from "./DistressCard";
@@ -34,7 +35,7 @@ function Bubble({ message }: { message: AgentMessage }) {
       <p
         dir={textDir(message.content)}
         className={cn(
-          "max-w-prose whitespace-pre-wrap rounded-lg px-3 py-2",
+          "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 shadow-1 sm:max-w-[72%]",
           mine ? "bg-accent text-on-accent" : "bg-surface-2 text-fg-1",
         )}
       >
@@ -83,22 +84,55 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
   const t = useT();
   const { lang } = useLang();
   const agent = useAgent({ recorded: t("chat.agent.recorded"), declined: t("chat.agent.declined") });
-  const endRef = useRef<HTMLDivElement>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
   const fallback = agent.mode === "fallback";
   const count = agent.messages.length;
+  const [starter, setStarter] = useState("");
 
   useEffect(() => {
-    endRef.current?.scrollIntoView?.({ block: "end" });
+    const thread = threadRef.current;
+    if (!thread) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (typeof thread.scrollTo === "function") {
+      thread.scrollTo({ top: thread.scrollHeight, behavior: reduced ? "auto" : "smooth" });
+    } else {
+      thread.scrollTop = thread.scrollHeight;
+    }
   }, [count, agent.proposal]);
 
-  return (
-    <AppShell role={role} current="ask" name={name} alias={alias} width="narrow">
-      <PageHeader title={t("chat.title")} subtitle={t("app.tagline")} />
-      <p className="rounded-md bg-surface-2 px-3 py-2 text-sm text-fg-2">{t("chat.agent.demo")}</p>
+  const chooseStarter = (text: string) => {
+    setStarter("");
+    requestAnimationFrame(() => setStarter(text));
+  };
 
-      <div className="flex-1">
-        <ol aria-label={t("chat.thread")} className="flex flex-col gap-4 py-4">
-          {agent.messages.length === 0 && !fallback && <li className="text-fg-2">{t("chat.agent.welcome")}</li>}
+  return (
+    <AppShell role={role} current="ask" name={name} alias={alias} workspace>
+      <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-line bg-surface-1 shadow-card">
+        <div className="shrink-0 border-b border-line bg-surface-raised px-4 py-3 sm:px-6 sm:py-4">
+          <PageHeader title={t("chat.title")} subtitle={t("app.tagline")} />
+          <p className="mt-3 rounded-md bg-surface-2 px-3 py-2 text-sm text-fg-2">{t("chat.agent.demo")}</p>
+        </div>
+
+        <div ref={threadRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6" aria-label={t("chat.thread")}>
+          <ol role="log" className="mx-auto flex w-full max-w-5xl flex-col gap-4" aria-live="polite">
+          {agent.messages.length === 0 && !fallback && (
+            <li className="mx-auto flex w-full max-w-xl flex-col items-center gap-3 rounded-lg border border-line bg-surface-raised p-5 text-center shadow-1">
+              <span className="grid size-11 place-items-center rounded-full bg-surface-soft text-accent"><Icon name="chat" size={22} /></span>
+              <p className="text-fg-2">{t("chat.agent.welcome")}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {([t("chat.agent.starterWifi"), t("chat.agent.starterRegistration"), t("chat.agent.starterTransport")] as const).map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => chooseStarter(prompt)}
+                    className="min-h-11 rounded-full border border-line bg-surface-0 px-3 text-sm font-medium text-accent transition-colors hover:bg-surface-soft"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </li>
+          )}
           {agent.messages.map((m) =>
             m.distress || m.triage?.status === "distress" ? (
               <li key={m.id}>
@@ -123,26 +157,27 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
               />
             </li>
           )}
-        </ol>
-        {agent.error && (
-          <p role="alert" className="rounded-md border border-danger px-3 py-2 text-fg-1">
-            {t(ERROR_KEY[agent.error])}
-          </p>
-        )}
-        <div ref={endRef} />
-      </div>
+          </ol>
+          {agent.error && (
+            <p role="alert" className="mx-auto mt-3 w-full max-w-5xl rounded-md border border-danger bg-surface-raised px-3 py-2 text-fg-1">
+              {t(ERROR_KEY[agent.error])}
+            </p>
+          )}
+        </div>
 
-      <div className="sticky bottom-0 flex flex-col gap-3 border-t border-line bg-surface-0 pb-2 pt-3">
+      <div className="shrink-0 border-t border-line bg-surface-raised p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-float sm:px-6">
         {fallback ? (
           <FallbackForm key={count} initial={agent.messages[count - 1]?.role === "user" ? agent.draft : ""} busy={agent.busy} onCheck={(text) => void agent.check(text)} />
         ) : (
           <Composer
             busy={agent.busy}
+            initialText={starter}
             onSubmit={(text) => void agent.send(text)}
             micSlot={(mic) => <MicButton lang={speechLangFor(lang)} onStart={mic.begin} onTranscript={mic.apply} disabled={agent.busy} />}
           />
         )}
       </div>
+      </section>
     </AppShell>
   );
 }

@@ -20,6 +20,7 @@ from fastapi.security import HTTPBearer
 
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
+    AnnouncementDraftOut,
     AnnouncementOut,
     ChatConfirmResponse,
     ChatTurnResponse,
@@ -33,6 +34,7 @@ from campuspulse_ai.application.dto import (
     IncidentOut,
     MetricsResponse,
     ProblemClusterOut,
+    ProfileEmailOut,
     ProposalOut,
     ReindexResponse,
     ResolveIncidentResponse,
@@ -60,7 +62,7 @@ SERVICE_TOKEN_SCHEME = HTTPBearer(
 )
 """The one security scheme. Both apps use this instance so `openapi.json` is identical."""
 
-Method = Literal["GET", "POST"]
+Method = Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
 Auth = Literal["service_token", "hmac", "none"]
 
 _COMMON_ERRORS: tuple[ErrorCode, ...] = (
@@ -103,6 +105,58 @@ class EndpointDoc:
 
 
 ENDPOINTS: tuple[EndpointDoc, ...] = (
+    EndpointDoc(
+        op_id="announcement_drafts_list", method="GET", path="/v1/announcement-drafts",
+        summary="List announcement drafts", purpose="List pending drafts for the caller's office.",
+        roles=("staff", "admin"), response_model=list[AnnouncementDraftOut],
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.STORE_UNAVAILABLE), side_effects=(), tag="staff",
+    ),
+    EndpointDoc(
+        op_id="announcement_drafts_edit", method="PATCH", path="/v1/announcement-drafts/{draft_id}",
+        summary="Edit announcement draft", purpose="Edit a pending draft using its version.",
+        roles=("staff", "admin"), response_model=AnnouncementDraftOut,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.FORBIDDEN, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("updates a pending draft",), tag="staff",
+    ),
+    EndpointDoc(
+        op_id="announcement_drafts_publish",
+        method="POST",
+        path="/v1/announcement-drafts/{draft_id}/publish",
+        summary="Publish announcement draft",
+        purpose="Publish an approved draft once and queue its broadcast.",
+        roles=("staff", "admin"), response_model=AnnouncementDraftOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("publishes announcement and queues broadcast",), tag="staff",
+    ),
+    EndpointDoc(
+        op_id="announcement_drafts_dismiss", method="POST", path="/v1/announcement-drafts/{draft_id}/dismiss",
+        summary="Dismiss announcement draft", purpose="Dismiss a pending draft without publishing.",
+        roles=("staff", "admin"), response_model=AnnouncementDraftOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("dismisses a pending draft",), tag="staff",
+    ),
+    EndpointDoc(
+        op_id="profile_email_get", method="GET", path="/v1/profile/email",
+        summary="Read notification email",
+        purpose="Read the caller's private notification email and consent state.",
+        roles=("student", "staff", "admin"), response_model=ProfileEmailOut,
+        errors=(ErrorCode.UNAUTHENTICATED, ErrorCode.STORE_UNAVAILABLE), side_effects=(), tag="profile",
+    ),
+    EndpointDoc(
+        op_id="profile_email_put", method="PUT", path="/v1/profile/email",
+        summary="Save notification email",
+        purpose="Save the caller's address after explicit demo email consent.",
+        roles=("student", "staff", "admin"), response_model=ProfileEmailOut,
+        errors=(ErrorCode.INVALID_INPUT, ErrorCode.UNAUTHENTICATED, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("stores address and server consent time under a rate limit",), tag="profile",
+    ),
+    EndpointDoc(
+        op_id="profile_email_delete", method="DELETE", path="/v1/profile/email",
+        summary="Remove notification email", purpose="Remove the caller's address and consent immediately.",
+        roles=("student", "staff", "admin"), response_model=ProfileEmailOut,
+        errors=(ErrorCode.UNAUTHENTICATED, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("clears address and consent",), tag="profile",
+    ),
     EndpointDoc(
         op_id="triage",
         method="POST",

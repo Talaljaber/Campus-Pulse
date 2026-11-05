@@ -80,12 +80,12 @@ def test_confirm_with_the_token_opens_exactly_one_ticket() -> None:
     assert len(t.c.repo.tables["requests"]) == 1
 
 
-def test_a_second_confirm_of_the_same_token_is_refused_and_opens_no_second_ticket() -> None:
+def test_a_second_confirm_returns_the_saved_result_and_opens_no_second_ticket() -> None:
     t = build_chat(agent=proposing())
     token = propose(t).token
-    t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
-    with pytest.raises(InvalidInput, match="already sent"):
-        t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    first = t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    again = t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    assert again == first
     assert len(t.tickets()) == 1
 
 
@@ -98,31 +98,32 @@ def test_a_turn_re_confirm_answers_the_expired_template_and_opens_no_second_tick
     first = t.uc.turn(turn_of(*history, token=token), Caller())
     again = t.uc.turn(turn_of(*history, token=token), Caller())
     assert first.ticket_id is not None
-    assert again.ticket_id is None and again.clear_proposal and again.triage is None
-    assert again.reply == t.uc._text("en")["expired"]
+    assert again.ticket_id == first.ticket_id and again.clear_proposal
+    assert again.reply == first.reply
     assert len(t.tickets()) == 1
-    with pytest.raises(InvalidInput, match="already sent"):  # the same token via the confirm route too
-        t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    assert t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller()).ticket_id == first.ticket_id
 
 
-def test_a_failed_triage_releases_the_token_so_the_user_can_retry(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_failed_triage_keeps_the_durable_claim_for_safe_retry_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     t = build_chat(agent=proposing())
     token = propose(t).token
-    real = t.c.triage.run
     calls = {"n": 0}
 
     def flaky(*args: Any, **kwargs: Any) -> Any:
         calls["n"] += 1
         if calls["n"] == 1:
             raise RuntimeError("boom")
-        return real(*args, **kwargs)
+        raise AssertionError("the durable claim must prevent a second triage run")
 
     monkeypatch.setattr(t.c.triage, "run", flaky)
     with pytest.raises(RuntimeError):
         t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
     assert t.tickets() == []
-    t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
-    assert len(t.tickets()) == 1
+    with pytest.raises(InvalidInput, match="already sent"):
+        t.uc.confirm(dto.ChatConfirmRequest(proposal_token=token), Caller())
+    assert calls["n"] == 1 and t.tickets() == []
 
 
 def test_confirm_reply_is_arabic_for_an_arabic_request() -> None:
@@ -337,12 +338,12 @@ def test_confirm_never_asks_again_and_opens_a_provisional_ticket() -> None:
     assert ticket["provisional"] is True and "unconfirmed" in ticket["tags"]
 
 
-def test_request_text_starts_after_the_last_proposal_or_ticket_message() -> None:
+def test_request_text_preserves_problem_after_proposal_and_resets_after_ticket() -> None:
     agent = ScriptedAgent(replies=[says("x", "request"), says("x", "request")])
     t = build_chat(agent=agent)
     history = (user("my wifi is down"), assistant("proposal", "proposal"), user("also the printer is jammed"))
     t.uc.turn(turn_of(*history), Caller())
-    assert t.core.calls[-1][0] == "also the printer is jammed"
+    assert t.core.calls[-1][0] == "my wifi is down\nalso the printer is jammed"
     t.uc.turn(turn_of(user("a"), assistant("t", "ticket"), user("b"), assistant("why?"), user("c")), Caller())
     assert t.core.calls[-1][0] == "b\nc"
 
@@ -369,6 +370,20 @@ def test_live_announcements_reach_the_agent_as_data() -> None:
     r = t.uc.turn(turn_of(user("the wifi in building C is down")), Caller())
     assert r.proposal is None and r.ticket_id is None and r.reply == "There is a notice about that."
     assert agent.reply_calls[0][0].announcements == ["[outage] Wi-Fi maintenance: Building C until 14:00"]
+    assert agent.reply_calls[0][0].sources[0].scope == "building c"
+
+
+def test_library_notice_is_a_scoped_current_turn_source() -> None:
+    agent = ScriptedAgent(replies=[says("Where is your problem?", "chat")])
+    t = build_chat(agent=agent)
+    t.announcements.save_announcement(
+        Announcement("", None, "outage", "Library Wi-Fi", "Library Wi-Fi is down", t.c.clock.at)
+    )
+    t.uc.turn(turn_of(user("wifi is down why")), Caller())
+    (ctx, _) = agent.reply_calls[0]
+    assert len(ctx.sources) == 1 and ctx.sources[0].kind == "announcement"
+    assert ctx.sources[0].scope == "library"
+    assert "Library Wi-Fi is down" in ctx.sources[0].text
 
 
 def test_decline_clears_the_proposal() -> None:

@@ -50,10 +50,10 @@ export interface InfoPanelProps {
  */
 export function InfoPanel({ title, children, actions, className }: InfoPanelProps) {
   return (
-    <fieldset className={cn("min-w-0 rounded-md border border-line-strong bg-surface-0 px-4 pb-4 pt-1", className)}>
+    <fieldset className={cn("min-w-0 rounded-lg border border-line-strong bg-surface-0 px-4 pb-4 pt-1 shadow-1 sm:px-5", className)}>
       <legend className="px-2 text-base font-bold text-accent">{title}</legend>
       <div className="flex flex-col gap-3 pt-2">{children}</div>
-      {actions && <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">{actions}</div>}
+      {actions && <div className="mt-4 flex flex-col items-stretch gap-2 border-t border-line pt-3 sm:flex-row sm:flex-wrap sm:items-center">{actions}</div>}
     </fieldset>
   );
 }

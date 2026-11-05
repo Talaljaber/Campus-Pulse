@@ -21,6 +21,15 @@ ReplyLang = Literal["en", "ar"]
 class AgentReply:
     reply: str
     intent: Intent
+    source_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class GroundingSource:
+    id: str
+    kind: Literal["announcement", "faq", "routing_hint"]
+    text: str
+    scope: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +55,7 @@ class ChatContext:
     first_name: str | None = None
     announcements: Sequence[str] = field(default_factory=tuple)
     proposal: str | None = None
+    sources: Sequence[GroundingSource] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)

@@ -4,6 +4,114 @@
  */
 
 export interface paths {
+    "/v1/announcement-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List announcement drafts
+         * @description List pending drafts for the caller's office.
+         */
+        get: operations["announcement_drafts_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/announcement-drafts/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit announcement draft
+         * @description Edit a pending draft using its version.
+         */
+        patch: operations["announcement_drafts_edit"];
+        trace?: never;
+    };
+    "/v1/announcement-drafts/{draft_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish announcement draft
+         * @description Publish an approved draft once and queue its broadcast.
+         */
+        post: operations["announcement_drafts_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/announcement-drafts/{draft_id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss announcement draft
+         * @description Dismiss a pending draft without publishing.
+         */
+        post: operations["announcement_drafts_dismiss"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/profile/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read notification email
+         * @description Read the caller's private notification email and consent state.
+         */
+        get: operations["profile_email_get"];
+        /**
+         * Save notification email
+         * @description Save the caller's address after explicit demo email consent.
+         */
+        put: operations["profile_email_put"];
+        post?: never;
+        /**
+         * Remove notification email
+         * @description Remove the caller's address and consent immediately.
+         */
+        delete: operations["profile_email_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/triage": {
         parameters: {
             query?: never;
@@ -721,6 +829,42 @@ export interface components {
              */
             created_at: string;
         };
+        /** AnnouncementDraftChangeIn */
+        AnnouncementDraftChangeIn: {
+            /** Version */
+            version: number;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+        };
+        /** AnnouncementDraftOut */
+        AnnouncementDraftOut: {
+            /** Id */
+            id: string;
+            /** Incident Id */
+            incident_id: string;
+            /** Office */
+            office: string;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "published" | "dismissed";
+            /** Version */
+            version: number;
+            /** Published Announcement Id */
+            published_announcement_id: string | null;
+        };
+        /** AnnouncementDraftVersionIn */
+        AnnouncementDraftVersionIn: {
+            /** Version */
+            version: number;
+        };
         /**
          * AnnouncementIn
          * @description Body of `POST /v1/announcements`.
@@ -1432,7 +1576,7 @@ export interface components {
             /** Id */
             id: string;
             /** Building */
-            building: string;
+            building: string | null;
             category: components["schemas"]["Category"];
             /** Title */
             title: string;
@@ -1634,6 +1778,22 @@ export interface components {
             representative_text: string;
             /** Sample Request Ids */
             sample_request_ids: string[];
+        };
+        /** ProfileEmailIn */
+        ProfileEmailIn: {
+            /** Email */
+            email: string;
+            /** Consent */
+            consent: boolean;
+        };
+        /** ProfileEmailOut */
+        ProfileEmailOut: {
+            /** Email */
+            email: string | null;
+            /** Consented At */
+            consented_at: string | null;
+            /** Opt In Enabled */
+            opt_in_enabled: boolean;
         };
         /**
          * ProposalOut
@@ -2178,6 +2338,519 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    announcement_drafts_list: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementDraftOut"][];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    announcement_drafts_edit: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementDraftChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementDraftOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    announcement_drafts_publish: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementDraftVersionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementDraftOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    announcement_drafts_dismiss: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnouncementDraftVersionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementDraftOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    profile_email_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEmailOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    profile_email_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileEmailIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEmailOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    profile_email_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEmailOut"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     triage: {
         parameters: {
             query?: {

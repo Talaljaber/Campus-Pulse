@@ -1,0 +1,12 @@
+{
+  "name": "profile_email_get",
+  "description": "A signed-in student reads their consented demo notification address.",
+  "method": "GET",
+  "path": "/v1/profile/email",
+  "path_params": {},
+  "query": {},
+  "headers": {"X-CP-Role": "student", "X-CP-Alias": "talal"},
+  "request": null,
+  "status_code": 200,
+  "response": {"email": "talal@example.com", "consented_at": "2026-11-03T09:00:00+03:00", "opt_in_enabled": true}
+}

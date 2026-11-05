@@ -12,15 +12,19 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from collections.abc import Sequence
+from dataclasses import replace
 from string import Template
 from typing import Any
 
 from campuspulse_ai.adapters.llm.cached_chat import CachedChat, prompt_hash
+from campuspulse_ai.application.use_cases.issue_context import IssueContextPreparer
 from campuspulse_ai.application.use_cases.chat_ports import (
     INTENTS,
     AgentReply,
     ChatContext,
+    GroundingSource,
     ProposalFacts,
     Turn,
 )
@@ -49,8 +53,28 @@ PHRASE_TASK = (
     "ask whether they want you to record the request. Name the department exactly as given in the facts. "
     "If a FAQ answer is given, give that answer first (do not change it), then offer to record a request "
     "anyway. If a question is given, ask exactly that question. Do not mention scores, priorities or "
-    'categories. Reply with ONE JSON object: {"reply": "<your message>"}.'
+    'categories. Cite current-turn source ids for any operational claim. Reply with ONE JSON object: '
+    '{"reply": "<your message>", "source_ids": []}.'
 )
+
+_UNSUPPORTED = re.compile(
+    r"\b(?:working on it|team is working|meanwhile|please use|use the (?:lab|other)|"
+    r"will be (?:fixed|restored)|back (?:by|at)|resolved (?:by|at))\b|"
+    r"(?:الفريق يعمل|نعمل على|استخدم|استعمل|بإمكانك استخدام|سيتم إصلاح|رح ينحل|خلال ساعة)",
+    re.IGNORECASE,
+)
+_OPERATIONAL = re.compile(
+    r"\b(?:notice|announcement|maintenance|outage|down in|available at|"
+    r"working on|please use|will be fixed)\b|(?:إعلان|صيانة|انقطاع|عطل|استخدم)",
+    re.IGNORECASE,
+)
+_SAFE = {
+    "en": (
+        "I do not have information about the cause, a workaround, or when it will be fixed. "
+        "Where is the problem? I can help record a request."
+    ),
+    "ar": "ما عندي معلومات عن السبب أو حل مؤقت أو وقت الإصلاح. وين المشكلة؟ بقدر أساعدك تسجّل طلب.",
+}
 
 
 def parse_reply(raw: str | None) -> AgentReply | None:
@@ -61,7 +85,10 @@ def parse_reply(raw: str | None) -> AgentReply | None:
     text, intent = data.get("reply"), data.get("intent")
     if not isinstance(text, str) or not text.strip() or len(text) > REPLY_MAX_CHARS or intent not in INTENTS:
         return None
-    return AgentReply(reply=text.strip(), intent=intent)
+    ids = data.get("source_ids", [])
+    if not isinstance(ids, list) or any(not isinstance(x, str) for x in ids):
+        return None
+    return AgentReply(reply=text.strip(), intent=intent, source_ids=tuple(ids))
 
 
 def parse_phrase(raw: str | None) -> str | None:
@@ -70,6 +97,15 @@ def parse_phrase(raw: str | None) -> str | None:
     if not isinstance(text, str) or not text.strip() or len(text) > REPLY_MAX_CHARS:
         return None
     return text.strip()
+
+
+def _phrase_with_sources(raw: str | None) -> tuple[str, tuple[str, ...]] | None:
+    data = _json_object(raw)
+    text = parse_phrase(raw)
+    ids = data.get("source_ids", []) if data is not None else []
+    if text is None or not isinstance(ids, list) or any(not isinstance(x, str) for x in ids):
+        return None
+    return text, tuple(ids)
 
 
 def _json_object(raw: str | None) -> dict[str, Any] | None:
@@ -92,6 +128,7 @@ class ChatAgentLLM:
         self, chat: CachedChat, prompt: str, prompt_version: str, *, history_turns: int = 12
     ) -> None:
         self._chat = chat
+        self.preparer: IssueContextPreparer | None = None
         self._prompt = prompt
         self._version = prompt_version
         self._history = history_turns
@@ -115,7 +152,40 @@ class ChatAgentLLM:
             if ctx.announcements
             else "[]",
             proposal=json.dumps(ctx.proposal, ensure_ascii=False) if ctx.proposal else "null",
+            sources=json.dumps([{"id": s.id, "kind": s.kind, "text": s.text, "scope": s.scope}
+                                for s in ctx.sources], ensure_ascii=False),
         )
+
+    @staticmethod
+    def _grounded(text: str, source_ids: Sequence[str], ctx: ChatContext) -> bool:
+        sources = {s.id: s for s in ctx.sources}
+        if any(identifier not in sources for identifier in source_ids):
+            return False
+        operational = bool(_OPERATIONAL.search(text))
+        if operational and not source_ids:
+            return False
+        if operational and any(
+            sources[identifier].kind == "announcement"
+            and sources[identifier].scope
+            and sources[identifier].scope.casefold() not in text.casefold()
+            for identifier in source_ids
+        ):
+            return False
+        if not _UNSUPPORTED.search(text):
+            return True
+        # This is deliberately conservative: a cited source must state the risky wording.
+        cited = " ".join(sources[identifier].text for identifier in source_ids)
+        return all(match.group().casefold() in cited.casefold() for match in _UNSUPPORTED.finditer(text))
+
+    @staticmethod
+    def _safe(ctx: ChatContext) -> str:
+        notice = next((s for s in ctx.sources if s.kind == "announcement"), None)
+        if notice is None:
+            return _SAFE[ctx.lang]
+        quoted = notice.text.strip()[:300]
+        if ctx.lang == "ar":
+            return f"الإعلان يقول: «{quoted}». هل المشكلة بنفس المكان؟ بقدر أساعدك تسجّل طلب."
+        return f'The notice says: "{quoted}". Is your problem in the same place? I can help record a request.'
 
     def reply(self, ctx: ChatContext, messages: Sequence[Turn]) -> AgentReply | None:
         turns = list(messages)[-self._history :]
@@ -126,11 +196,18 @@ class ChatAgentLLM:
             *({"role": t.role, "content": t.content} for t in turns),
         ]
         parsed = parse_reply(self._chat.ask(self._purpose, payload, wire, response_format=JSON_OBJECT))
+        if parsed is not None and not self._grounded(parsed.reply, parsed.source_ids, ctx):
+            log.info("chat agent: unsupported operational claim replaced (%s)", self._version)
+            return AgentReply(self._safe(ctx), "chat")
         if parsed is None:
             log.info("chat agent: no usable reply (%s)", self._version)
         return parsed
 
     def phrase(self, ctx: ChatContext, facts: ProposalFacts) -> str | None:
+        if facts.faq_answer:
+            ctx = replace(
+                ctx, sources=(*ctx.sources, GroundingSource("faq:proposal", "faq", facts.faq_answer))
+            )
         system = self.render_system(ctx, greet=False)
         lines = {
             "department": facts.department,
@@ -142,6 +219,12 @@ class ChatAgentLLM:
         user = f"{PHRASE_TASK}\nFACTS (data): {json.dumps(lines, ensure_ascii=False)}"
         payload = json.dumps([system, user], ensure_ascii=False)
         wire = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-        return parse_phrase(
+        parsed = _phrase_with_sources(
             self._chat.ask(f"{self._purpose}:phrase", payload, wire, response_format=JSON_OBJECT)
         )
+        if parsed is None:
+            return None
+        text, ids = parsed
+        if not self._grounded(text, ids, ctx):
+            return self._safe(ctx)
+        return text

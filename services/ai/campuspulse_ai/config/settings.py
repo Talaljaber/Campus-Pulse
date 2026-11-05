@@ -96,6 +96,7 @@ class Settings(BaseSettings):
     smtp_daily_cap: int = 100  # far below Gmail's 500/day; counted per Amman day in-process
     # Comma-separated, lower-cased. Empty rejects every recipient.
     demo_email_allowlist: Annotated[frozenset[str], NoDecode] = frozenset()
+    email_opt_in: bool = False
     # Allow-listed demo inboxes the action engine emails (P4.8). Unset = that email is skipped.
     demo_student_inbox: str | None = None  # stands in for every student's email (booking confirmations)
     demo_office_inbox: str | None = None  # safety and transport alerts
@@ -128,6 +129,7 @@ class Settings(BaseSettings):
     sla_scan_minutes: int = 5
     sla_sweep_min_interval_s: int = 60  # SLA sweep after API responses, at most this often; 0 disables
     incident_window_min: int = 30
+    shared_issues_enabled: bool = False
 
     # Artifacts and runtime
     artifact_dir: Path = Path("models/frozen")

@@ -18,10 +18,11 @@ describe("TabBar", () => {
     ]);
   });
 
-  it("gives staff the queue, announcements, incidents and corrections, and no accounts or reports", () => {
+  it("gives staff the queue, Ask, announcements, incidents and corrections, and no accounts or reports", () => {
     render(<TabBar role="staff" current="queue" />);
     expect(pairs()).toEqual([
       ["Queue", "/staff"],
+      ["Ask", "/ask"],
       ["Announcements", "/staff/announcements"],
       ["Incidents", "/pulse"],
       ["Corrections", "/staff/reviews"],
@@ -30,11 +31,11 @@ describe("TabBar", () => {
 
   it("gives an admin the staff tabs plus Accounts and Reports", () => {
     render(<TabBar role="admin" current="reports" />);
-    expect(pairs().slice(4)).toEqual([
+    expect(pairs().slice(5)).toEqual([
       ["Accounts", "/admin/accounts"],
       ["Reports", "/lab"],
     ]);
-    expect(links()).toHaveLength(6);
+    expect(links()).toHaveLength(7);
   });
 
   it("marks exactly the current tab with aria-current", () => {
@@ -60,10 +61,22 @@ describe("TabBar", () => {
 });
 
 describe("nav tiles", () => {
-  it("has no tiles for students, two for staff and the outbox too for admins", () => {
+  it("has no shortcuts for students, My requests for staff and the outbox too for admins (Ask is a tab)", () => {
     expect(tilesFor("student")).toEqual([]);
-    expect(tilesFor("staff").map((t) => t.href)).toEqual(["/ask", "/requests"]);
-    expect(tilesFor("admin").map((t) => t.href)).toEqual(["/ask", "/requests", "/outbox"]);
+    expect(tilesFor("staff").map((t) => t.href)).toEqual(["/requests"]);
+    expect(tilesFor("admin").map((t) => t.href)).toEqual(["/requests", "/outbox"]);
+  });
+
+  it("puts Ask in every role's tab bar", () => {
+    for (const role of ["student", "staff", "admin"] as const) {
+      expect(tabsFor(role).map((t) => t.href)).toContain("/ask");
+    }
+  });
+
+  it("gives every tab an icon", () => {
+    for (const role of ["student", "staff", "admin"] as const) {
+      expect(tabsFor(role).every((t) => t.icon)).toBe(true);
+    }
   });
 
   it("only lists tabs whose routes the proxy lets that role open", () => {

@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DataTable, sortRows, type Column, type SortState } from "../DataTable";
 
 interface Row {
@@ -127,5 +127,51 @@ describe("DataTable", () => {
     expect(screen.getAllByRole("row")[1]).toHaveAttribute("tabindex", "0");
     rerender(<DataTable columns={COLUMNS} rows={[]} rowKey={(r) => r.id} sort={null} onSortChange={() => {}} caption="Fruit" />);
     expect(screen.getByText("No rows to show")).toBeInTheDocument();
+  });
+
+  describe("on a phone", () => {
+    const realMatchMedia = window.matchMedia;
+    beforeEach(() => {
+      window.matchMedia = ((query: string) => ({
+        matches: true,
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      })) as unknown as typeof window.matchMedia;
+    });
+    afterEach(() => {
+      window.matchMedia = realMatchMedia;
+    });
+
+    it("renders cards with the primary columns and hides the rest behind Show details", async () => {
+      const user = userEvent.setup();
+      const cols: Column<Row>[] = [
+        { id: "name", header: "Name", primary: true, cell: (r) => r.name, sortValue: (r) => r.name },
+        { id: "due", header: "Due", cell: (r) => `due ${r.due}`, sortValue: (r) => r.due },
+      ];
+      render(<DataTable columns={cols} rows={ROWS} rowKey={(r) => r.id} sort={null} onSortChange={() => {}} caption="Fruit" />);
+      expect(screen.queryByRole("table")).toBeNull();
+      expect(screen.getAllByRole("listitem")).toHaveLength(3);
+      expect(screen.getByText("banana")).toBeInTheDocument();
+      expect(screen.queryByText("due 30")).toBeNull();
+      const first = screen.getAllByRole("button", { name: "Show details" })[0]!;
+      await user.click(first);
+      expect(first).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByText("due 30")).toBeInTheDocument();
+      expect(screen.getByText("Due", { selector: "dt" })).toBeInTheDocument();
+    });
+
+    it("sorts through the select and opens a row from its card", async () => {
+      const user = userEvent.setup();
+      const onSortChange = vi.fn();
+      const onRowClick = vi.fn();
+      render(
+        <DataTable columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} sort={null} onSortChange={onSortChange} onRowClick={onRowClick} caption="Fruit" />,
+      );
+      await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "due");
+      expect(onSortChange).toHaveBeenCalledWith({ columnId: "due", dir: "asc" });
+      await user.click(screen.getByText("banana"));
+      expect(onRowClick).toHaveBeenCalledWith(ROWS[0]);
+    });
   });
 });

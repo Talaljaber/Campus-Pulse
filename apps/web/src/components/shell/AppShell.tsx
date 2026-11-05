@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useT } from "@/i18n";
 import { homeFor, type Role } from "@/lib/auth/routing";
-import { labelKeyOf, tilesFor, type PageId } from "@/lib/nav";
+import { labelKeyOf, type PageId } from "@/lib/nav";
 import { cn } from "../ui/cn";
 import { Breadcrumb, type Crumb } from "./Breadcrumb";
 import { SiteHeader } from "./SiteHeader";
@@ -14,39 +14,35 @@ export type { Crumb, TileSpec };
 
 /** Props for {@link AppShell}. */
 export interface AppShellProps {
-  /** The signed-in role, or null on the login page (no tabs, no tiles, no breadcrumb). */
+  /** The signed-in role, or null on the login page (no tabs, no breadcrumb). */
   role: Role | null;
-  /** The page being shown: marks the tab (or the outbox tile) as current. */
+  /** The page being shown: marks the tab as current. */
   current?: PageId;
-  /** The name for "Hello <name>": the display name, falling back to the alias. */
+  /** No longer shown (the greeting was removed from the header); accepted so callers need not change. */
   name?: string | null;
-  /** The signed-in alias. Used as the name until profiles carry a display name. */
+  /** No longer shown; see `name`. */
   alias?: string | null;
-  /** Breadcrumb steps. Default: the role's home, then the current page. Pass `[]` for none. */
+  /** Breadcrumb steps. Default: the role's home, then the current page, shown from `sm` up. Pass `[]` for none; custom steps show on phones too. */
   crumbs?: Crumb[];
-  /** Tile row under the tabs. Default: the role's shortcuts (none for students). Pass `[]` for none. */
+  /** Optional tile row above the page. None by default. */
   tiles?: TileSpec[];
-  /** `narrow` and `default` use the 1000 px portal container; `wide` (the Pulse map) 1200 px. */
+  /** `narrow` keeps reading content (forms, chat) to a readable column; the others use the full width. */
   width?: "narrow" | "default" | "wide";
+  /** A bounded work area, such as chat, that owns the remaining viewport height and scrolls inside itself. */
+  workspace?: boolean;
   children: ReactNode;
 }
 
-const WIDTH = { narrow: "max-w-[1000px]", default: "max-w-[1000px]", wide: "max-w-[1200px]" } as const;
+const NARROW = "max-w-[1080px]";
 
 /**
- * Page chrome for every screen: the grey page with one centred white container holding the header
- * band, the tab bar, the tile row, the breadcrumb and `<main id="content">`. The dark footer with the
- * "Demo: simulated portal" line is rendered by the root layout, so it also covers pages that do not
- * use the shell.
+ * Page chrome for every screen. The shell fills the whole viewport (width and height): the header and
+ * the tab bar stay put and `<main id="content">` takes the rest, so the page itself never scrolls. The
+ * content area scrolls only when its content is taller than the space left (or, for a `workspace`,
+ * the work area scrolls inside itself).
  */
-export function AppShell({ role, current, name, alias, crumbs, tiles, width = "default", children }: AppShellProps) {
+export function AppShell({ role, current, crumbs, tiles, width = "default", workspace = false, children }: AppShellProps) {
   const t = useT();
-
-  const tileList: TileSpec[] =
-    tiles ??
-    (role
-      ? tilesFor(role).map((d) => ({ id: d.id, icon: d.icon, href: d.href, label: t(d.labelKey), selected: d.id === current }))
-      : []);
 
   const trail: Crumb[] =
     crumbs ??
@@ -57,13 +53,25 @@ export function AppShell({ role, current, name, alias, crumbs, tiles, width = "d
       : []);
 
   return (
-    <div className={cn("mx-auto my-0 flex w-full flex-1 flex-col bg-surface-0 shadow-container sm:my-6", WIDTH[width])}>
-      <SiteHeader role={role} name={name ?? alias} />
+    <div className="flex min-h-0 w-full flex-1 flex-col bg-surface-0">
+      <SiteHeader role={role} />
       {role && <TabBar role={role} current={current} />}
-      <TileRow tiles={tileList} label={t("shell.shortcuts")} />
-      <Breadcrumb crumbs={trail} />
-      <main id="content" tabIndex={-1} className="flex flex-col gap-4 p-4 outline-none sm:p-6">
-        {children}
+      <TileRow tiles={tiles ?? []} label={t("shell.shortcuts")} className="shrink-0 px-3 pt-3 sm:px-4 sm:pt-4" />
+      <Breadcrumb crumbs={trail} className={cn("shrink-0", crumbs === undefined && "max-sm:hidden")} />
+      <main
+        id="content"
+        tabIndex={-1}
+        className={cn("flex min-h-0 flex-1 flex-col outline-none", workspace ? "overflow-hidden" : "overflow-y-auto overscroll-contain")}
+      >
+        <div
+          className={cn(
+            "mx-auto flex w-full flex-1 flex-col",
+            workspace ? "min-h-0 p-2 sm:p-4" : "gap-3 p-3 sm:gap-4 sm:p-6",
+            width === "narrow" && NARROW,
+          )}
+        >
+          {children}
+        </div>
       </main>
     </div>
   );

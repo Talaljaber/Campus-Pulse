@@ -62,7 +62,14 @@ export const ar: Dict = {
     high: "عالية",
   },
   ui: {
-    table: { empty: "ما في صفوف للعرض" },
+    table: {
+      empty: "ما في صفوف للعرض",
+      showDetails: "عرض التفاصيل",
+      hideDetails: "إخفاء التفاصيل",
+      sortBy: "ترتيب حسب",
+      sortAscending: "تصاعدي",
+      sortDescending: "تنازلي",
+    },
     dialog: { closeLabel: "إغلاق النافذة" },
     toast: { region: "الإشعارات" },
     skeleton: { label: "جاري تحميل المحتوى" },
@@ -97,6 +104,7 @@ export const ar: Dict = {
   },
   profile: {
     panel: "المعلومات الشخصية",
+    settings: "اللغة والجلسة",
     name: "الاسم",
     studentNumber: "الرقم الجامعي",
     faculty: "الكلية",
@@ -115,6 +123,7 @@ export const ar: Dict = {
     subtitle: "إشعارات بتظهر على الصفحة الرئيسية للطلاب.",
     campusWide: "كل الحرم الجامعي",
     kind: { info: "معلومة", outage: "انقطاع", maintenance: "صيانة" },
+    showDetails: "عرض التفاصيل",
     form: {
       legend: "إعلان جديد",
       submit: "انشر الإعلان",
@@ -191,6 +200,9 @@ export const ar: Dict = {
     agent: {
       demo: "تجريبي: ما في أي قسم حقيقي بنتواصل معه.",
       welcome: "احكيلي شو بدك. بقترح وين بروح طلبك، وانت بتقرر إذا بدك ترسله.",
+      starterWifi: "الواي فاي مش شغال.",
+      starterRegistration: "بدي مساعدة بالتسجيل.",
+      starterTransport: "عندي مشكلة بالمواصلات.",
       assistant: "كامبس بلس",
       fallbackNote: "المساعد مش متوفر هلأ. اكتب طلبك تحت وتأكد وين رح يروح.",
       formLabel: "طلبك",

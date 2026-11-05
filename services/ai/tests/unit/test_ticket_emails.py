@@ -202,6 +202,32 @@ def test_inbox_book() -> None:
     assert InboxBook().requester(Contact("s1", "student")) is None and InboxBook().office("it") is None
 
 
+def test_consent_recipients_prefer_requester_and_fan_out_to_office() -> None:
+    book = InboxBook(
+        student_inbox="student@demo.example",
+        office_inboxes={"it": "shared@demo.example"},
+        notification_for_alias=lambda alias: "student@personal.example" if alias == "s1" else None,
+        staff_notifications_for_office=lambda office: [
+            ("staff1", "staff1@personal.example"),
+            ("s1", "student@personal.example"),
+            ("staff2", "shared@DEMO.example"),
+        ],
+        opt_in_enabled=True,
+    )
+    contact = Contact("s1", "student")
+    assert book.requester(contact) == "student@personal.example"
+    recipients = book.office_recipients(
+        "it", exclude_alias=contact.alias, exclude_email=book.requester(contact)
+    )
+    assert recipients == (
+        "shared@demo.example", "staff1@personal.example",
+    )
+    disabled = InboxBook(
+        student_inbox="student@demo.example", notification_for_alias=lambda _: "personal@example.com"
+    )
+    assert disabled.requester(contact) == "student@demo.example"
+
+
 # --------------------------------------------------------------------------- settings
 
 

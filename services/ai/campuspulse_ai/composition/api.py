@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from campuspulse_ai.application.use_cases.announcement_drafts import AnnouncementDraftsUseCase
 from campuspulse_ai.application.use_cases.announcements import AnnouncementsUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
 from campuspulse_ai.application.use_cases.chat import ChatUseCase
@@ -24,6 +25,7 @@ from campuspulse_ai.application.use_cases.explain import CounterfactualUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentsUseCase
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
 from campuspulse_ai.application.use_cases.ports import FeedbackHandler, IdentityVerifier
+from campuspulse_ai.application.use_cases.profile_email import ProfileEmailService
 from campuspulse_ai.application.use_cases.reviews import ReviewsUseCase
 from campuspulse_ai.application.use_cases.run_redteam import RunRedTeamUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
@@ -84,6 +86,8 @@ class ApiServices:
     redteam: RunRedTeamUseCase | None = None
     identity: IdentityVerifier | None = None
     announcements: AnnouncementsUseCase | None = None
+    announcement_drafts: AnnouncementDraftsUseCase | None = None
+    profile_email: ProfileEmailService | None = None
     health: HealthInfo = field(default_factory=HealthInfo)
     lifecycle: TicketLifecycleUseCase | None = None
     chat: ChatUseCase | None = None

@@ -1277,3 +1277,10 @@
 - **Acceptance:** Arabizi category macro-F1 A to D1: our_test 0.500 to 0.825, arabizi.csv + new scenarios 0.599 to 0.837, from-official 0.567 to 0.945; priority unchanged; scored offline path unchanged (models.md 29).
 - **Limitations / TODO / known issues:** the API does not yet surface which requests used a translation (logged at debug only); a per-instance SQLite cache; the conformal quantile for Arabizi is still the offline one.
 - **Affects streams:** Backend (settings, container), DevOps (env vars on Render).
+
+### P10 — notification consent, grounded chat and shared-issue foundations (integration, 2026-11-03)
+
+- **What now exists:** profile notification-email consent endpoints and UI; recipient resolution that rechecks consent at send time; a cited, source-scoped chat prompt with a deterministic unsupported-advice fallback and one scoped retry; migrations 0016–0018; optional-location shared-issue detection; durable chat confirmation claims; staff announcement-draft endpoints and generated API contracts.
+- **Config / env added:** `EMAIL_OPT_IN=false`, `SHARED_ISSUES_ENABLED=false`.
+- **Acceptance:** Python ruff and strict mypy passed; focused P10 tests passed (133, excluding live Supabase); API contract fixture suite passed (136); web typecheck passed.
+- **Limitations / TODO / known issues:** migrations have not been applied. Shared issue join/separate choices, threshold-driven draft creation and broadcast worker wiring remain incomplete, so shared issues stay disabled by default.

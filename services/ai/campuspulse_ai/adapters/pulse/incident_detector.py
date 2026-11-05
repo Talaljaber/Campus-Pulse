@@ -16,6 +16,7 @@ from datetime import UTC, datetime, timedelta
 
 import numpy as np
 
+from campuspulse_ai.application.services.shared_issue import shared_issue_eligible
 from campuspulse_ai.domain.entities import Incident, IncidentDecision, Prediction, Request, Ticket
 from campuspulse_ai.domain.labels import CATEGORY_ORDER, Category, Priority
 from campuspulse_ai.domain.ports import Clock, Repository, VectorStore
@@ -85,6 +86,7 @@ class WindowedCentroidDetector:
         window_min: int,
         min_reports: int = 3,
         bump_at: int = 6,
+        shared_issues_enabled: bool = False,
     ) -> None:
         self._repo = repo
         self._vectors = vectors
@@ -93,16 +95,20 @@ class WindowedCentroidDetector:
         self.window = timedelta(minutes=window_min)
         self.min_reports = min_reports
         self.bump_at = bump_at
+        self.shared_issues_enabled = shared_issues_enabled
 
     def detect(self, req: Request, pred: Prediction, embedding: Sequence[float]) -> IncidentDecision:
         location = req.normalized.location if req.normalized else None
-        if location is None:
+        if location is None and not self.shared_issues_enabled:
+            return IncidentDecision(kind="none", incident=None)
+        if self.shared_issues_enabled and not shared_issue_eligible(pred.category, req.raw_text):
             return IncidentDecision(kind="none", incident=None)
         own = _unit(np.asarray(embedding, dtype=np.float64))
-        scope: dict[str, object] = {"building_id": location.building}
+        building = location.building if location else None
+        scope: dict[str, object] = {"building_id": building} if building else {}
         open_members: set[str] = set()
         states: list[_State] = []
-        for incident in self._repo.open_incidents(location.building, None, ANY_AGE):
+        for incident in self._repo.open_incidents(building, None, ANY_AGE):
             members = {r.id for _, r in self._repo.incident_members(incident.id)} - {req.id}
             open_members |= members
             found = self._centroid(embedding, scope, members)
@@ -116,15 +122,20 @@ class WindowedCentroidDetector:
             if sim >= self.tau_inc and (best is None or sim > best[0]):
                 best = (sim, state)
         if best is not None:
-            return self._attach(
-                best[1], [req.id], [pred.category], pred.priority, location.building, absorbed
-            )
+            return self._attach(best[1], [req.id], [pred.category], pred.priority, building, absorbed)
 
         filters = {**scope, "since": self._clock.now() - self.window, "with_embedding": True}
         hits = [
             h
             for h in self._vectors.search("requests", embedding, k=SEARCH_K, min_sim=0.0, filters=filters)
-            if h.id != req.id and h.id not in open_members and h.embedding is not None
+            if h.id != req.id
+            and h.id not in open_members
+            and h.embedding is not None
+            and (building is not None or h.meta.get("building_id") is None)
+            and (
+                not self.shared_issues_enabled
+                or shared_issue_eligible(_category(h.meta.get("category")) or pred.category, h.text)
+            )
         ]
         rows = np.vstack([_unit(np.asarray(h.embedding, dtype=np.float64)) for h in hits] + [own])
         centroid = _unit(rows.mean(axis=0))
@@ -147,25 +158,43 @@ class WindowedCentroidDetector:
         joined = [(sim, s) for sim, s in joined if sim >= self.tau_inc]
         if joined:
             target = max(joined, key=lambda j: j[0])[1]
-            return self._attach(
-                target, members_ids, [*reported, pred.category], base, location.building, absorbed
-            )
+            return self._attach(target, members_ids, [*reported, pred.category], base, building, absorbed)
 
         category = majority([*reported, pred.category], pred.category)
         incident = Incident(
             id="",
-            building=location.building,
+            building=building,
             category=category,
-            title=_title(category, location.building),
+            title=_title(category, building),
             priority=self._priority(base, 0, len(members_ids)),
             report_count=len(members_ids),
             status="open",
             member_ticket_ids=[],
             opened_at=self._clock.now(),
+            scope="building" if building else "unknown",
         )
         return IncidentDecision(
             kind="new", incident=self._repo.save_incident(incident), members=members_ids, absorbed=absorbed
         )
+
+    def match_open(self, req: Request, pred: Prediction, embedding: Sequence[float]) -> Incident | None:
+        """Read-only match for a confirmed shared issue proposal; never mutates incidents."""
+        if not self.shared_issues_enabled or not shared_issue_eligible(pred.category, req.raw_text):
+            return None
+        location = req.normalized.location if req.normalized else None
+        building = location.building if location else None
+        scope: dict[str, object] = {"building_id": building} if building else {}
+        own = _unit(np.asarray(embedding, dtype=np.float64))
+        best: tuple[float, Incident] | None = None
+        for incident in self._repo.open_incidents(building, None, ANY_AGE):
+            members = {r.id for _, r in self._repo.incident_members(incident.id)}
+            found = self._centroid(embedding, scope, members)
+            if found is None:
+                continue
+            similarity = float(own @ found[0])
+            if similarity >= self.tau_inc and (best is None or similarity > best[0]):
+                best = (similarity, incident)
+        return best[1] if best is not None else None
 
     def _attach(
         self,
@@ -173,7 +202,7 @@ class WindowedCentroidDetector:
         member_ids: list[str],
         categories: list[Category | None],
         priority: Priority,
-        building: str,
+        building: str | None,
         absorbed: list[Ticket],
     ) -> IncidentDecision:
         current = state.incident
@@ -302,8 +331,10 @@ def _category(value: object) -> Category | None:
         return None
 
 
-def _title(category: Category, building: str) -> str:
-    return f"{category} reports in building {building}"
+def _title(category: Category, building: str | None) -> str:
+    return (
+        f"{category} reports in building {building}" if building else f"{category} reports (location unknown)"
+    )
 
 
 def _rank(p: Priority) -> int:

@@ -19,6 +19,13 @@ Every non-2xx response has this shape:
 
 ## Contents
 
+- [`GET /v1/announcement-drafts`](#announcement_drafts_list) List announcement drafts
+- [`PATCH /v1/announcement-drafts/{draft_id}`](#announcement_drafts_edit) Edit announcement draft
+- [`POST /v1/announcement-drafts/{draft_id}/publish`](#announcement_drafts_publish) Publish announcement draft
+- [`POST /v1/announcement-drafts/{draft_id}/dismiss`](#announcement_drafts_dismiss) Dismiss announcement draft
+- [`GET /v1/profile/email`](#profile_email_get) Read notification email
+- [`PUT /v1/profile/email`](#profile_email_put) Save notification email
+- [`DELETE /v1/profile/email`](#profile_email_delete) Remove notification email
 - [`POST /v1/triage`](#triage) Triage one request
 - [`POST /v1/triage/{request_id}/clarify`](#clarify) Answer a clarifying question
 - [`GET /v1/explain/{request_id}/counterfactual`](#explain_counterfactual) Live counterfactual
@@ -50,6 +57,441 @@ Every non-2xx response has this shape:
 - [`POST /v1/tickets/{ticket_id}/files`](#ticket_file_upload) Attach a file to a ticket
 - [`GET /v1/files/{file_id}/link`](#file_link) Get a signed link to a file
 - [Schemas](#schemas)
+
+<a id="announcement_drafts_list"></a>
+## `GET /v1/announcement-drafts`
+
+**List announcement drafts.** List pending drafts for the caller's office.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` array of [AnnouncementDraftOut](#schema-announcementdraftout)
+
+**Example** (fixture `announcement_drafts_list`): IT staff view their pending incident announcement draft.
+
+```powershell
+curl.exe -s -X GET "$env:AI_URL/v1/announcement-drafts" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+[
+  {
+    "id": "draft-1",
+    "incident_id": "incident-1",
+    "office": "it",
+    "title": "Wi-Fi disruption",
+    "body": "Reports of Wi-Fi disruption in Building M.",
+    "status": "pending",
+    "version": 1,
+    "published_announcement_id": null
+  }
+]
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- none
+
+<a id="announcement_drafts_edit"></a>
+## `PATCH /v1/announcement-drafts/{draft_id}`
+
+**Edit announcement draft.** Edit a pending draft using its version.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `draft_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [AnnouncementDraftChangeIn](#schema-announcementdraftchangein)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `version` | integer | yes |  |
+| `title` | string | yes |  |
+| `body` | string | yes |  |
+
+**Response `200`:** `application/json` [AnnouncementDraftOut](#schema-announcementdraftout)
+
+**Example** (fixture `announcement_drafts_edit`): IT staff edit the factual text of a pending draft.
+
+`request.json`:
+
+```json
+{
+  "version": 1,
+  "title": "Wi-Fi disruption",
+  "body": "Reports of Wi-Fi disruption in Building M."
+}
+```
+
+```powershell
+curl.exe -s -X PATCH "$env:AI_URL/v1/announcement-drafts/draft-1" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "draft-1",
+  "incident_id": "incident-1",
+  "office": "it",
+  "title": "Wi-Fi disruption",
+  "body": "Reports of Wi-Fi disruption in Building M.",
+  "status": "pending",
+  "version": 2,
+  "published_announcement_id": null
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- updates a pending draft
+
+<a id="announcement_drafts_publish"></a>
+## `POST /v1/announcement-drafts/{draft_id}/publish`
+
+**Publish announcement draft.** Publish an approved draft once and queue its broadcast.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `draft_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [AnnouncementDraftVersionIn](#schema-announcementdraftversionin)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `version` | integer | yes |  |
+
+**Response `200`:** `application/json` [AnnouncementDraftOut](#schema-announcementdraftout)
+
+**Example** (fixture `announcement_drafts_publish`): IT staff publish a reviewed draft once.
+
+`request.json`:
+
+```json
+{
+  "version": 2
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/announcement-drafts/draft-1/publish" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "draft-1",
+  "incident_id": "incident-1",
+  "office": "it",
+  "title": "Wi-Fi disruption",
+  "body": "Reports of Wi-Fi disruption in Building M.",
+  "status": "published",
+  "version": 3,
+  "published_announcement_id": "notice-1"
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- publishes announcement and queues broadcast
+
+<a id="announcement_drafts_dismiss"></a>
+## `POST /v1/announcement-drafts/{draft_id}/dismiss`
+
+**Dismiss announcement draft.** Dismiss a pending draft without publishing.
+
+- **Roles:** `staff`, `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `draft_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [AnnouncementDraftVersionIn](#schema-announcementdraftversionin)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `version` | integer | yes |  |
+
+**Response `200`:** `application/json` [AnnouncementDraftOut](#schema-announcementdraftout)
+
+**Example** (fixture `announcement_drafts_dismiss`): IT staff dismiss a pending draft.
+
+`request.json`:
+
+```json
+{
+  "version": 1
+}
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/announcement-drafts/draft-1/dismiss" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "draft-1",
+  "incident_id": "incident-1",
+  "office": "it",
+  "title": "Wi-Fi disruption",
+  "body": "Reports of Wi-Fi disruption in Building M.",
+  "status": "dismissed",
+  "version": 2,
+  "published_announcement_id": null
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- dismisses a pending draft
+
+<a id="profile_email_get"></a>
+## `GET /v1/profile/email`
+
+**Read notification email.** Read the caller's private notification email and consent state.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [ProfileEmailOut](#schema-profileemailout)
+
+**Example** (fixture `profile_email_get`): A signed-in student reads their consented demo notification address.
+
+```powershell
+curl.exe -s -X GET "$env:AI_URL/v1/profile/email" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "email": "talal@example.com",
+  "consented_at": "2026-11-03T09:00:00+03:00",
+  "opt_in_enabled": true
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- none
+
+<a id="profile_email_put"></a>
+## `PUT /v1/profile/email`
+
+**Save notification email.** Save the caller's address after explicit demo email consent.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`application/json`: [ProfileEmailIn](#schema-profileemailin)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `email` | string | yes | min len 3 |
+| `consent` | boolean | yes |  |
+
+**Response `200`:** `application/json` [ProfileEmailOut](#schema-profileemailout)
+
+**Example** (fixture `profile_email_put`): A student explicitly consents to demo notification email.
+
+`request.json`:
+
+```json
+{
+  "email": "talal@example.com",
+  "consent": true
+}
+```
+
+```powershell
+curl.exe -s -X PUT "$env:AI_URL/v1/profile/email" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -H "Content-Type: application/json" `
+  --data-binary "@request.json"
+```
+
+Response `200`:
+
+```json
+{
+  "email": "talal@example.com",
+  "consented_at": "2026-11-03T09:00:00+03:00",
+  "opt_in_enabled": true
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- stores address and server consent time under a rate limit
+
+<a id="profile_email_delete"></a>
+## `DELETE /v1/profile/email`
+
+**Remove notification email.** Remove the caller's address and consent immediately.
+
+- **Roles:** `student`, `staff`, `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [ProfileEmailOut](#schema-profileemailout)
+
+**Example** (fixture `profile_email_delete`): A student removes their notification address and consent.
+
+```powershell
+curl.exe -s -X DELETE "$env:AI_URL/v1/profile/email" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "email": null,
+  "consented_at": null,
+  "opt_in_enabled": true
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- clears address and consent
 
 <a id="triage"></a>
 ## `POST /v1/triage`
@@ -3460,6 +3902,36 @@ One row of a ticket's thread (mirrors a `ticket_activity` row).
 | `to_priority` | string \| null | yes |  |
 | `created_at` | string (date-time) | yes |  |
 
+<a id="schema-announcementdraftchangein"></a>
+### AnnouncementDraftChangeIn
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `version` | integer | yes |  |
+| `title` | string | yes |  |
+| `body` | string | yes |  |
+
+<a id="schema-announcementdraftout"></a>
+### AnnouncementDraftOut
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `incident_id` | string | yes |  |
+| `office` | string | yes |  |
+| `title` | string | yes |  |
+| `body` | string | yes |  |
+| `status` | `pending` \| `published` \| `dismissed` | yes |  |
+| `version` | integer | yes |  |
+| `published_announcement_id` | string \| null | yes |  |
+
+<a id="schema-announcementdraftversionin"></a>
+### AnnouncementDraftVersionIn
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `version` | integer | yes |  |
+
 <a id="schema-announcementin"></a>
 ### AnnouncementIn
 
@@ -3956,7 +4428,7 @@ A Pulse incident: several reports of the same problem in one building.
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `id` | string | yes |  |
-| `building` | string | yes |  |
+| `building` | string \| null | yes |  |
 | `category` | [Category](#schema-category) | yes |  |
 | `title` | string | yes |  |
 | `priority` | [Priority](#schema-priority) | yes |  |
@@ -4087,6 +4559,23 @@ A recurring problem (UD-6): semantically similar requests in one category/buildi
 | `last_seen` | string (date-time) | yes |  |
 | `representative_text` | string | yes |  |
 | `sample_request_ids` | array of string | yes |  |
+
+<a id="schema-profileemailin"></a>
+### ProfileEmailIn
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `email` | string | yes | min len 3 |
+| `consent` | boolean | yes |  |
+
+<a id="schema-profileemailout"></a>
+### ProfileEmailOut
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `email` | string \| null | yes |  |
+| `consented_at` | string (date-time) \| null | yes |  |
+| `opt_in_enabled` | boolean | yes |  |
 
 <a id="schema-proposalout"></a>
 ### ProposalOut

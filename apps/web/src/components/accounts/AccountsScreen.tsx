@@ -23,8 +23,8 @@ export function AccountsScreen({ alias, name = null, rows }: AccountsScreenProps
   const dash = t("common.none");
   const roleLabel = (r: string) => (r === "student" || r === "staff" || r === "admin" ? t(`profile.roles.${r}`) : r);
   const columns: Column<ProfileRow>[] = [
-    { id: "name", header: t("profile.name"), cell: (r) => r.display_name ?? dash, sortValue: (r) => r.display_name ?? "" },
-    { id: "role", header: t("profile.role"), cell: (r) => roleLabel(r.role), sortValue: (r) => r.role },
+    { id: "name", primary: true, header: t("profile.name"), cell: (r) => r.display_name ?? dash, sortValue: (r) => r.display_name ?? "" },
+    { id: "role", primary: true, header: t("profile.role"), cell: (r) => roleLabel(r.role), sortValue: (r) => r.role },
     { id: "office", header: t("profile.office"), cell: (r) => (r.office ? officeLabel(r.office) : dash), sortValue: (r) => r.office ?? "" },
     { id: "alias", header: t("accounts.alias"), cell: (r) => r.alias ?? dash, sortValue: (r) => r.alias ?? "" },
     {

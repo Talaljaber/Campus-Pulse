@@ -59,6 +59,7 @@ describe("LabScreen", () => {
     const nav = screen.getByRole("navigation", { name: "Main menu" });
     expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual([
       "Queue",
+      "Ask",
       "Announcements",
       "Incidents",
       "Corrections",

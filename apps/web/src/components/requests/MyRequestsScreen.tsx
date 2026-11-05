@@ -46,9 +46,10 @@ export function MyRequestsScreen({ role, alias, name }: MyRequestsScreenProps) {
 
   const statusText = (r: MyTicket) => t(`staff.status.${r.status}` as DictKey);
   const columns: Column<MyTicket>[] = [
-    { id: "number", header: t("queue.col.number"), cell: (r) => <span className="font-mono">{ticketNumber(r.id)}</span>, sortValue: (r) => ticketNumber(r.id) },
+    { id: "number", primary: true, header: t("queue.col.number"), cell: (r) => <span className="font-mono">{ticketNumber(r.id)}</span>, sortValue: (r) => ticketNumber(r.id) },
     {
       id: "title",
+      primary: true,
       header: t("queue.col.title"),
       cell: (r) => (
         <span dir="auto" className="font-medium">
@@ -58,7 +59,7 @@ export function MyRequestsScreen({ role, alias, name }: MyRequestsScreenProps) {
       sortValue: (r) => r.title,
     },
     { id: "office", header: t("myRequests.col.department"), cell: (r) => officeLabel(r.office), sortValue: (r) => officeLabel(r.office) },
-    { id: "status", header: t("queue.col.status"), cell: statusText, sortValue: statusText },
+    { id: "status", primary: true, header: t("queue.col.status"), cell: statusText, sortValue: statusText },
     { id: "updated", header: t("myRequests.col.updated"), cell: (r) => formatDateTime(r.lastUpdate, lang), sortValue: (r) => new Date(r.lastUpdate).getTime() },
     {
       id: "deadline",

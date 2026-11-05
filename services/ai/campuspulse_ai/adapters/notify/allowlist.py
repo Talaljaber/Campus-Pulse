@@ -1,8 +1,8 @@
 """AllowlistedNotifier: the demo allow-list in front of every notifier (P4.4, ARCHITECTURE §3.13).
 
-CLAUDE.md non-negotiable: never send email to real people. Every external channel (email, and
-WhatsApp if it is ever wired) is checked against `RecipientPolicy(DEMO_EMAIL_ALLOWLIST)` before the
-inner notifier is called; an empty allow-list rejects everything. In-app messages go to an alias's
+Every external channel is checked against `RecipientPolicy` before the inner notifier is called.
+The policy permits a configured demo inbox or a currently consented notification address while
+opt-in is enabled. In-app messages go to an alias's
 `notifications` row inside our own database, so they are not checked, but they are recorded the
 same way ("symmetry of logging").
 """
@@ -23,7 +23,7 @@ class AllowlistedNotifier:
     """`Notifier` decorator: allow-list check, then the inner send, then exactly one outbox row.
 
     `send(msg)`:
-    - external kind and `msg.to_address` not allow-listed -> outbox row `rejected` + audit event,
+    - external kind and `msg.to_address` not authorized -> outbox row `rejected` + audit event,
       the inner notifier is **never called**, and `RecipientNotAllowed` is raised;
     - the inner notifier raises `NotificationError` -> outbox row `failed` + audit event, re-raised
       (`ActUseCase` catches it; triage never fails because of a notification, LD-15);

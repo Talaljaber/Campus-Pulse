@@ -201,6 +201,7 @@ class DecisionFlow:
         clarified: bool = False,
         debug_members: bool = False,
         force_ticket: bool = False,
+        skip_incident: bool = False,
     ) -> dto.TriageResponse:
         if DISTRESS in core.flags:
             return self._distress(request, req, core)
@@ -234,6 +235,7 @@ class DecisionFlow:
             clarified=clarified,
             debug_members=debug_members,
             force_ticket=force_ticket,
+            skip_incident=skip_incident,
         )
 
     # ------------------------------------------------------------------ outcomes
@@ -357,6 +359,7 @@ class DecisionFlow:
         clarified: bool,
         debug_members: bool,
         force_ticket: bool = False,
+        skip_incident: bool = False,
     ) -> dto.TriageResponse:
         category, priority = out.decided_labels(core)
         flags = set(core.flags) | extra_flags
@@ -394,7 +397,7 @@ class DecisionFlow:
         if provisional:
             self._enqueue_review(request, pred, plan.office)
 
-        decision = self._pulse_step(request, req, pred, plan.kind)
+        decision = None if skip_incident else self._pulse_step(request, req, pred, plan.kind)
         action = self._merge(decision, request, pred, plan, understanding, provisional)
         if action is None:
             action = self._act.run(pred, request, provisional, understanding, force_ticket=force_ticket)
@@ -500,7 +503,7 @@ class DecisionFlow:
             pulse.vectors.upsert(
                 REQUESTS_COLLECTION, [VectorItem(request.id, embedding, req.text_norm, req.lang, meta)]
             )
-            if pulse.incidents is None or location is None:
+            if pulse.incidents is None:
                 return None
             if pulse.actions is not None and kind != ActionType.TICKET:
                 return None  # FAQ answers, bookings and safety alerts are never folded into an incident
@@ -576,12 +579,15 @@ class TriageUseCase:
         self._max_questions = max_questions
         self._marks = marks
 
-    def run(self, cmd: dto.TriageRequest, *, debug_members: bool = False) -> dto.TriageResponse:
+    def run(
+        self, cmd: dto.TriageRequest, *, debug_members: bool = False, request_id: str | None = None,
+        separate_request: bool = False,
+    ) -> dto.TriageResponse:
         picked = Location(cmd.location.building, cmd.location.room, "picked") if cmd.location else None
         req, core = self._core.classify(cmd.text, picked)
         request = self._repo.save_request(
             Request(
-                id="",
+                id=request_id or "",
                 alias=cmd.student_alias,
                 raw_text=cmd.text,
                 normalized=req,
@@ -603,6 +609,7 @@ class TriageUseCase:
             budget=ClarificationBudget(max_questions=0 if cmd.chat_confirmed else self._max_questions),
             debug_members=debug_members,
             force_ticket=cmd.chat_confirmed,
+            skip_incident=separate_request,
         )
 
 

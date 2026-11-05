@@ -1,0 +1,12 @@
+{
+  "name": "announcement_drafts_list",
+  "description": "IT staff view their pending incident announcement draft.",
+  "method": "GET",
+  "path": "/v1/announcement-drafts",
+  "path_params": {},
+  "query": {},
+  "headers": {"X-CP-Role": "staff", "X-CP-Alias": "staff-it", "X-CP-Office": "it"},
+  "request": null,
+  "status_code": 200,
+  "response": [{"id": "draft-1", "incident_id": "incident-1", "office": "it", "title": "Wi-Fi disruption", "body": "Reports of Wi-Fi disruption in Building M.", "status": "pending", "version": 1, "published_announcement_id": null}]
+}

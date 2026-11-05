@@ -1,0 +1,12 @@
+{
+  "name": "announcement_drafts_dismiss",
+  "description": "IT staff dismiss a pending draft.",
+  "method": "POST",
+  "path": "/v1/announcement-drafts/{draft_id}/dismiss",
+  "path_params": {"draft_id": "draft-1"},
+  "query": {},
+  "headers": {"X-CP-Role": "staff", "X-CP-Alias": "staff-it", "X-CP-Office": "it"},
+  "request": {"version": 1},
+  "status_code": 200,
+  "response": {"id": "draft-1", "incident_id": "incident-1", "office": "it", "title": "Wi-Fi disruption", "body": "Reports of Wi-Fi disruption in Building M.", "status": "dismissed", "version": 2, "published_announcement_id": null}
+}

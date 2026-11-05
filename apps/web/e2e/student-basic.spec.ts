@@ -29,7 +29,7 @@ test("a student signs in, asks about the bus timetable and gets a Transportation
 
   // Home, with the student tabs; the Ask tab opens the chat.
   await expect(page).toHaveURL(/localhost:\d+\/$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Welcome, talal" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Announcements" })).toBeVisible();
   await expect(page.getByText(DEMO_LINE).first()).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Main menu" });
   await expect(nav.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");

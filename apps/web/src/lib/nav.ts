@@ -22,6 +22,7 @@ export interface TabSpec {
   id: TabId;
   href: string;
   labelKey: DictKey;
+  icon: IconName;
 }
 
 export interface TileDef {
@@ -32,20 +33,20 @@ export interface TileDef {
 }
 
 const TAB: Record<TabId, TabSpec> = {
-  home: { id: "home", href: "/", labelKey: "nav.home" },
-  ask: { id: "ask", href: "/ask", labelKey: "nav.ask" },
-  requests: { id: "requests", href: "/requests", labelKey: "nav.requests" },
-  profile: { id: "profile", href: "/profile", labelKey: "nav.profile" },
-  queue: { id: "queue", href: "/staff", labelKey: "nav.queue" },
-  announcements: { id: "announcements", href: "/staff/announcements", labelKey: "nav.announcements" },
-  incidents: { id: "incidents", href: "/pulse", labelKey: "nav.incidents" },
-  corrections: { id: "corrections", href: "/staff/reviews", labelKey: "nav.corrections" },
-  accounts: { id: "accounts", href: "/admin/accounts", labelKey: "nav.accounts" },
-  reports: { id: "reports", href: "/lab", labelKey: "nav.reports" },
+  home: { id: "home", href: "/", labelKey: "nav.home", icon: "home" },
+  ask: { id: "ask", href: "/ask", labelKey: "nav.ask", icon: "chat" },
+  requests: { id: "requests", href: "/requests", labelKey: "nav.requests", icon: "ticket" },
+  profile: { id: "profile", href: "/profile", labelKey: "nav.profile", icon: "user" },
+  queue: { id: "queue", href: "/staff", labelKey: "nav.queue", icon: "briefcase" },
+  announcements: { id: "announcements", href: "/staff/announcements", labelKey: "nav.announcements", icon: "megaphone" },
+  incidents: { id: "incidents", href: "/pulse", labelKey: "nav.incidents", icon: "map" },
+  corrections: { id: "corrections", href: "/staff/reviews", labelKey: "nav.corrections", icon: "check" },
+  accounts: { id: "accounts", href: "/admin/accounts", labelKey: "nav.accounts", icon: "user" },
+  reports: { id: "reports", href: "/lab", labelKey: "nav.reports", icon: "flask" },
 };
 
 const STUDENT_TABS: readonly TabId[] = ["home", "ask", "requests", "profile"];
-const STAFF_TABS: readonly TabId[] = ["queue", "announcements", "incidents", "corrections"];
+const STAFF_TABS: readonly TabId[] = ["queue", "ask", "announcements", "incidents", "corrections"];
 const ADMIN_TABS: readonly TabId[] = [...STAFF_TABS, "accounts", "reports"];
 
 /** The tabs a role sees, in display order. Only what the role may open, so no link ever bounces. */
@@ -54,14 +55,16 @@ export function tabsFor(role: Role): TabSpec[] {
   return ids.map((id) => TAB[id]);
 }
 
-const ASK_TILE: TileDef = { id: "ask", href: "/ask", icon: "chat", labelKey: "nav.askForHelp" };
 const REQUESTS_TILE: TileDef = { id: "requests", href: "/requests", icon: "ticket", labelKey: "nav.requests" };
 const OUTBOX_TILE: TileDef = { id: "outbox", href: "/outbox", icon: "mail", labelKey: "nav.outbox" };
 
-/** The icon-tile row under the tabs. Students have none; staff use the agent and track their own requests; admin adds the outbox. */
+/**
+ * Pages that staff and admins reach from Profile because they are not in the tab bar: their own
+ * requests, and for admins the outbox. Students have My requests as a tab, so they get none.
+ */
 export function tilesFor(role: Role): TileDef[] {
   if (role === "student") return [];
-  return role === "admin" ? [ASK_TILE, REQUESTS_TILE, OUTBOX_TILE] : [ASK_TILE, REQUESTS_TILE];
+  return role === "admin" ? [REQUESTS_TILE, OUTBOX_TILE] : [REQUESTS_TILE];
 }
 
 /** Label key for the breadcrumb's last item: the tab's own label, or the outbox. */

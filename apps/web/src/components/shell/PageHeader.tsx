@@ -20,7 +20,7 @@ export function PageHeader({ title, subtitle, badges, className }: PageHeaderPro
   return (
     <header className={cn("flex flex-col gap-1 border-s-4 border-orange ps-3", className)}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <h1 className="text-lg font-bold sm:text-2xl">{title}</h1>
         {badges}
       </div>
       {subtitle && <p className="text-fg-2">{subtitle}</p>}

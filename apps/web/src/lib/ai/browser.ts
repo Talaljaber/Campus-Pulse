@@ -1,7 +1,7 @@
 import { failFromNetwork, failFromResponse, type AiResult } from "./result";
 
 export interface CallAiInit {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   /** JSON-serialisable body, or `FormData` (the browser then sets the multipart boundary itself). */
   body?: unknown;
   /** Abort after this many milliseconds. Default: none (the server proxy already times out at 20 s). */

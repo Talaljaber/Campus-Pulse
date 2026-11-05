@@ -119,6 +119,18 @@ def detector(h: Harness, **overrides: Any) -> WindowedCentroidDetector:
     return WindowedCentroidDetector(h.repo, h.vectors, h.clock, **kwargs)
 
 
+def test_p10_unknown_location_shared_reports_cluster_separately() -> None:
+    h = LocalHarness()
+    det = detector(h, shared_issues_enabled=True)
+    first = report(h, det, around(77, 1), building=None)
+    second = report(h, det, around(77, 2), building=None)
+    third = report(h, det, around(77, 3), building=None)
+    assert first.kind == "none" and second.kind == "none"
+    assert third.kind == "new"
+    assert third.incident is not None
+    assert third.incident.scope == "unknown" and third.incident.building is None
+
+
 def prediction(request_id: str, category: Category, priority: Priority) -> Prediction:
     flat = (1 / len(CATEGORY_LABELS),) * len(CATEGORY_LABELS)
     core = CoreResult(

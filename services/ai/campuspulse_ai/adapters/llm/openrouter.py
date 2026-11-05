@@ -76,6 +76,8 @@ class OpenRouterClient:
         transport: httpx.BaseTransport | None = None,
         provider: Mapping[str, object] | None = None,
         reasoning_off: bool = False,
+        retry_on_rate_limit: bool = False,
+        total_deadline_s: float | None = None,
     ) -> None:
         import httpx  # lazy: keeps httpx out of the offline import graph (§1.5)
 
@@ -85,6 +87,8 @@ class OpenRouterClient:
         self._max_retries = max_retries
         self._provider = dict(provider) if provider else None  # OpenRouter provider preferences (P8.11)
         self._reasoning_off = reasoning_off
+        self._retry_on_rate_limit = retry_on_rate_limit
+        self._total_deadline_s = total_deadline_s
         self._backoff_s = retry_backoff_s
         self._sleep = sleep
         self._client = httpx.Client(
@@ -117,12 +121,22 @@ class OpenRouterClient:
             body["response_format"] = dict(response_format)
         httpx = self._httpx
         last_error = "no attempt made"
+        deadline = time.monotonic() + self._total_deadline_s if self._total_deadline_s is not None else None
         for attempt in range(self._max_retries + 1):
             if attempt:
-                self._sleep(self._backoff_s * attempt)
+                delay = self._backoff_s * attempt
+                if deadline is not None and time.monotonic() + delay >= deadline:
+                    break
+                self._sleep(delay)
+            remaining = deadline - time.monotonic() if deadline is not None else None
+            if remaining is not None and remaining <= 0:
+                break
             started = time.perf_counter()
             try:
-                resp = self._client.post("/chat/completions", json=body)
+                if remaining is None:
+                    resp = self._client.post("/chat/completions", json=body)
+                else:
+                    resp = self._client.post("/chat/completions", json=body, timeout=remaining)
             except httpx.TimeoutException:
                 last_error = "OpenRouter timed out"
                 continue
@@ -133,6 +147,15 @@ class OpenRouterClient:
             if resp.status_code >= _SERVER_ERROR:
                 last_error = f"OpenRouter server error {resp.status_code}"
                 continue
+            if resp.status_code == _RATE_LIMITED and self._retry_on_rate_limit:
+                retry_after = resp.headers.get("Retry-After")
+                try:
+                    wait_s = float(retry_after) if retry_after is not None else 0.0
+                except ValueError:
+                    wait_s = 0.0
+                if attempt < self._max_retries and wait_s <= self._backoff_s * (attempt + 1):
+                    last_error = "OpenRouter rate limited (429)"
+                    continue
             if resp.status_code in (_NO_CREDITS, _RATE_LIMITED):
                 raise LLMUnavailable(
                     f"OpenRouter refused the call ({resp.status_code}: credits or rate limit)"

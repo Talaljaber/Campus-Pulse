@@ -22,7 +22,7 @@ export function Breadcrumb({ crumbs, className }: BreadcrumbProps) {
   const t = useT();
   if (crumbs.length === 0) return null;
   return (
-    <nav aria-label={t("shell.breadcrumb")} className={cn("px-4 pt-3 text-sm text-fg-3", className)}>
+    <nav aria-label={t("shell.breadcrumb")} className={cn("px-3 pt-2 text-sm text-fg-3 sm:px-4 sm:pt-3", className)}>
       <ol className="flex flex-wrap items-center gap-x-1.5">
         {crumbs.map((c, i) => {
           const last = i === crumbs.length - 1;

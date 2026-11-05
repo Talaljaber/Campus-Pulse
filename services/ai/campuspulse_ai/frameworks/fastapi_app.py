@@ -37,6 +37,7 @@ from campuspulse_ai.frameworks.background import SECONDS_PER_MINUTE, SlaSweeper,
 from campuspulse_ai.frameworks.errors import install_error_handlers
 from campuspulse_ai.frameworks.heap import trim_heap
 from campuspulse_ai.frameworks.routes import (
+    announcement_drafts,
     announcements,
     chat,
     explain,
@@ -47,6 +48,7 @@ from campuspulse_ai.frameworks.routes import (
     integrations,
     lab,
     pending,
+    profile_email,
     redteam,
     reviews,
     tickets,
@@ -70,8 +72,10 @@ _ROUTERS = (
     pending.router,
     health.router,
     announcements.router,
+    announcement_drafts.router,
     chat.router,
     files.router,
+    profile_email.router,
 )
 _ORDER = {e.op_id: i for i, e in enumerate(ENDPOINTS)}
 

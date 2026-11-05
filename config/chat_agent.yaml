@@ -3,8 +3,9 @@
 # Never part of the scored offline path; runs only with OPENROUTER_API_KEY and CHAT_AGENT_ENABLED != false.
 # The model id is pinned; change it only with a new decision. Temperature 0 (project rule), responses cached.
 model: deepseek/deepseek-v4.1-flash      # alternative: qwen/qwen3.8-flash
-prompt_version: chat-v1
-prompt_file: config/prompts/chat_agent_v1.md
+prompt_version: chat-v2
+issue_context_enabled: false  # staged until snapshot/priority integration and acceptance checks are complete
+prompt_file: config/prompts/chat_agent_v2.md
 temperature: 0
 max_tokens: 500
 timeout_s: 12

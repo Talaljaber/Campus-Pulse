@@ -10,13 +10,13 @@ from campuspulse_ai.adapters.llm.cache_dict import DictCache
 from campuspulse_ai.adapters.llm.cached_chat import CachedChat
 from campuspulse_ai.adapters.llm.chat_agent import ChatAgentLLM, parse_phrase, parse_reply
 from campuspulse_ai.adapters.llm.openrouter import ChatResult
-from campuspulse_ai.application.use_cases.chat_ports import ChatContext, ProposalFacts, Turn
+from campuspulse_ai.application.use_cases.chat_ports import ChatContext, GroundingSource, ProposalFacts, Turn
 from campuspulse_ai.composition.chat import load_chat_yaml
 from campuspulse_ai.config.paths import REPO_ROOT
 from campuspulse_ai.config.settings import Settings
 from campuspulse_ai.domain.errors import LLMUnavailable
 
-PROMPT = (REPO_ROOT / "config" / "prompts" / "chat_agent_v1.md").read_text(encoding="utf-8")
+PROMPT = (REPO_ROOT / "config" / "prompts" / "chat_agent_v2.md").read_text(encoding="utf-8")
 
 
 class ScriptedClient:
@@ -45,7 +45,7 @@ class ScriptedClient:
 
 def agent_over(client: ScriptedClient) -> ChatAgentLLM:
     chat = CachedChat(client, "pinned/model", DictCache(), max_tokens=500)
-    return ChatAgentLLM(chat, PROMPT, "chat-v1", history_turns=3)
+    return ChatAgentLLM(chat, PROMPT, "chat-v2", history_turns=3)
 
 
 def ok(reply: str = "Hello!", intent: str = "chat") -> str:
@@ -149,4 +149,36 @@ def test_phrase_asks_for_the_department_and_the_facts_as_data() -> None:
 def test_the_pinned_yaml_is_valid_and_temperature_zero() -> None:
     raw = load_chat_yaml(Settings(_env_file=None))  # type: ignore[call-arg]
     assert raw["temperature"] == 0 and raw["model"] == "deepseek/deepseek-v4.1-flash"
-    assert raw["prompt_version"] == "chat-v1" and Path(REPO_ROOT / raw["prompt_file"]).is_file()
+    assert raw["prompt_version"] == "chat-v2" and Path(REPO_ROOT / raw["prompt_file"]).is_file()
+
+
+def test_library_notice_cannot_support_invented_workaround() -> None:
+    client = ScriptedClient(
+        json.dumps({"reply": "Our team is working on it. Please use the lab network meanwhile.",
+                    "intent": "announcement", "source_ids": ["notice-1"]})
+    )
+    ctx = ChatContext(role="student", lang="en", sources=(
+        GroundingSource("notice-1", "announcement", "Library Wi-Fi is down", "library"),
+    ))
+    reply = agent_over(client).reply(ctx, [Turn("user", "wifi is down why")])
+    assert reply is not None and "Library Wi-Fi is down" in reply.reply
+    assert "lab network" not in reply.reply and reply.intent == "chat"
+
+
+def test_current_source_id_is_required_for_operational_claim() -> None:
+    client = ScriptedClient(json.dumps({"reply": "A notice says the library Wi-Fi is down.",
+                                        "intent": "announcement", "source_ids": ["invented"]}))
+    ctx = ChatContext(role="student", lang="en")
+    reply = agent_over(client).reply(ctx, [Turn("user", "library wifi?")])
+    assert reply is not None and reply.intent == "chat" and "do not have information" in reply.reply
+
+
+def test_scoped_notice_cannot_be_rephrased_as_campus_wide_outage() -> None:
+    client = ScriptedClient(json.dumps({"reply": "A notice says Wi-Fi is down campus wide.",
+                                        "intent": "announcement", "source_ids": ["notice-1"]}))
+    ctx = ChatContext(role="student", lang="en", sources=(
+        GroundingSource("notice-1", "announcement", "Library Wi-Fi is down", "library"),
+    ))
+    reply = agent_over(client).reply(ctx, [Turn("user", "wifi is down")])
+    assert reply is not None and "Library Wi-Fi is down" in reply.reply
+    assert "campus wide" not in reply.reply

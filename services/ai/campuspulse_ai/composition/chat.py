@@ -17,10 +17,12 @@ from campuspulse_ai.adapters.llm.cache_sqlite import SqliteCache
 from campuspulse_ai.adapters.llm.cached_chat import PINNED_PARAMS, CachedChat
 from campuspulse_ai.adapters.llm.chat_agent import ChatAgentLLM
 from campuspulse_ai.adapters.llm.cost import InMemoryCostLogger
+from campuspulse_ai.adapters.llm.issue_context import IssueContextLLM
 from campuspulse_ai.adapters.llm.openrouter import OpenRouterClient
 from campuspulse_ai.application.use_cases.act import ActUseCase
 from campuspulse_ai.application.use_cases.announcement_ports import AnnouncementStore
 from campuspulse_ai.application.use_cases.chat import ChatConfig, ChatUseCase
+from campuspulse_ai.application.use_cases.chat_claims import ChatClaimStore
 from campuspulse_ai.application.use_cases.chat_ports import ChatAgent
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.ports import Clarifier, TriageClassifier
@@ -53,8 +55,10 @@ def build_chat_agent(settings: Settings, raw: dict[str, Any]) -> ChatAgent | Non
     client = OpenRouterClient(
         key.get_secret_value(),
         timeout_s=float(raw["timeout_s"]),
-        max_retries=int(raw["max_retries"]),
-        retry_backoff_s=settings.llm_retry_backoff_s,
+        max_retries=1,
+        retry_backoff_s=1.0,
+        retry_on_rate_limit=True,
+        total_deadline_s=float(raw["timeout_s"]),
         provider=settings.llm_provider_preferences(),
     )
     cache_path = resolve(Path(str(raw["cache_path"])))
@@ -68,7 +72,11 @@ def build_chat_agent(settings: Settings, raw: dict[str, Any]) -> ChatAgent | Non
         extra_params={"reasoning": dict(raw["reasoning"])} if raw.get("reasoning") else None,
     )
     prompt = resolve(Path(str(raw["prompt_file"]))).read_text(encoding="utf-8")
-    return ChatAgentLLM(chat, prompt, str(raw["prompt_version"]), history_turns=int(raw["history_turns"]))
+    agent = ChatAgentLLM(chat, prompt, str(raw["prompt_version"]), history_turns=int(raw["history_turns"]))
+    agent.preparer = IssueContextLLM(
+        chat, resolve(Path("config/prompts/issue_context_v1.md")).read_text(encoding="utf-8")
+    )
+    return agent
 
 
 def build_chat(
@@ -86,6 +94,7 @@ def build_chat(
     announcements: AnnouncementStore | None,
     encoder: SentenceEncoder,
     agent: ChatAgent | None = None,
+    claims: ChatClaimStore | None = None,
 ) -> ChatUseCase | None:
     """The chat use case, or None without `AI_SERVICE_TOKEN` (proposals could not be signed; every route
     answers 401 in that case anyway). `agent` overrides the LLM wiring (tests)."""
@@ -93,6 +102,7 @@ def build_chat(
     if token is None:
         return None
     raw = load_chat_yaml(settings)
+    selected_agent = agent if agent is not None else build_chat_agent(settings, raw)
     return ChatUseCase(
         classifier=classifier,
         policy=policy,
@@ -103,9 +113,15 @@ def build_chat(
         clock=clock,
         key=derive_key(token.get_secret_value()),
         config=ChatConfig.from_dict(raw),
-        agent=agent if agent is not None else build_chat_agent(settings, raw),
+        agent=selected_agent,
+        preparer=(
+            selected_agent.preparer
+            if raw.get("issue_context_enabled", False) and isinstance(selected_agent, ChatAgentLLM)
+            else None
+        ),
         lifecycle=lifecycle,
         journey=journey,
         announcements=announcements,
         encoder=encoder,
+        claims=claims,
     )

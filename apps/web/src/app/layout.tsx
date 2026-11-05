@@ -29,9 +29,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <RtlProvider lang={lang}>
           <ToastProvider>
-            <div className="flex min-h-dvh flex-col">
+            <div className="flex h-dvh flex-col">
               <ServiceStatus />
-              <div className="flex flex-1 flex-col">{children}</div>
+              <div className="flex min-h-0 flex-1 flex-col">{children}</div>
               <SiteFooter />
             </div>
           </ToastProvider>

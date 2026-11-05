@@ -1,4 +1,6 @@
-# P10: three follow-ups found while testing the P9 build (PAUSED, nothing implemented)
+# P10: three follow-ups found while testing the P9 build (IN PROGRESS)
+
+**2026-11-03: implementation started.** P10.1 and P10.2 are implemented locally and covered by focused checks. P10.3 has its schema, scoped detector, durable confirmation claims and staff draft API prepared locally; the proposed join/separate chat choice, automatic draft creation and broadcast worker still require their final integration. Migrations 0016–0018 have not been applied. Use [ARCHITECTURE.md](ARCHITECTURE.md) for the implementation contracts, package ownership, sequencing and acceptance cases.
 
 Written 2026-11-02 at the user's request: document, stop the agents, implement nothing now. Two agents (P10.1, P10.2) were started and stopped before any commit, so nothing from them is merged; any files left in their worktrees are unreviewed and should be discarded or re-done. P10.3 was never started.
 
@@ -34,4 +36,4 @@ Written 2026-11-02 at the user's request: document, stop the agents, implement n
 - Needs first: a read-only check of how the P9 chat proposal flow and ticket creation interact with the existing incident detector and `merged` status; the threshold, window and similarity values to be set from tests on synthetic probes; the email audience depends on P10.1.
 
 ## Order when work resumes
-P10.1 and P10.2 in parallel (different files); P10.3 after P10.1 merges (its broadcast uses the recipient resolution). Each is a Sonnet package with the usual gates (ruff, mypy, pytest default, web lint, typecheck, vitest), no push, ready-to-paste report in `docs/plan/p10/`. DB: migration 0016 (and any later) applied by the user in the SQL editor, then recorded in the migration history by the DB session.
+Use the smaller packages A–G and integrator I in [ARCHITECTURE.md §2](ARCHITECTURE.md#2-delivery-gates-and-ownership). Notification persistence and grounded chat can begin together; their dependent packages follow the frozen contracts. Run the usual applicable gates (ruff, mypy, pytest default, web lint, typecheck, vitest), no push, ready-to-paste reports in `docs/plan/p10/`. DB: migration 0016 (and any later) applied by the user in the SQL editor, then recorded in the migration history by the DB session.

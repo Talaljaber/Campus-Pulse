@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { signInAs } from "./support/login";
+import { signInAs, switchToArabic } from "./support/login";
 
 // P5.12 (model lab) and P5.15 (outbox) acceptance. Runs against the mock AI API (the metrics and
 // red-team fixtures) and the fake Supabase (outbox rows, one for each status that matters).
@@ -47,8 +47,8 @@ test("the admin lands on the queue, opens Reports (the model lab), reads the ben
 test("the model lab works in Arabic and right to left, with no sideways scroll on a phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signInAs(page, "admin");
+  await switchToArabic(page);
   await page.goto("/lab");
-  await page.getByRole("button", { name: /العربية/ }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("heading", { level: 1, name: "مختبر النماذج" })).toBeVisible();
   await expect(page.getByRole("table", { name: /مقارنة التصنيف/ })).toBeVisible();
@@ -106,16 +106,17 @@ test("staff read the outbox, filter it by status and see why a message was rejec
   await expect(table.locator("tbody tr")).toHaveCount(5);
 });
 
-test("the admin moves between queue, incidents, reports, accounts and the outbox tile", async ({ page }) => {
+test("the admin moves between queue, incidents, reports, accounts and the outbox shortcut on Profile", async ({ page }) => {
   await signInAs(page, "admin");
   await expect(page).toHaveURL(/\/staff$/);
   const nav = () => page.getByRole("navigation", { name: "Main menu" });
   await expect(nav().getByRole("link", { name: "Queue" })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Queue");
 
+  await page.getByRole("link", { name: "Profile" }).click();
+  await expect(page).toHaveURL(/\/profile$/);
   await page.getByRole("link", { name: "Outbox" }).click();
   await expect(page).toHaveURL(/\/outbox$/);
-  await expect(page.getByRole("link", { name: "Outbox" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("heading", { level: 1, name: "Outbox" })).toBeVisible();
 
   await nav().getByRole("link", { name: "Incidents" }).click();
   await expect(page).toHaveURL(/\/pulse$/);
@@ -137,8 +138,8 @@ test("the admin moves between queue, incidents, reports, accounts and the outbox
 test("the outbox works in Arabic and right to left with no sideways scroll on a phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signInAs(page, "staff");
+  await switchToArabic(page);
   await page.goto("/outbox");
-  await page.getByRole("button", { name: /العربية/ }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("heading", { level: 1, name: "صندوق الرسائل الصادرة" })).toBeVisible();
   await expect(page.getByText("حسابات تجريبية فقط")).toBeVisible();

@@ -35,32 +35,37 @@ restart (the token's own 30-minute expiry still applies).
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
-import threading
+import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from campuspulse_ai.application import dto
 from campuspulse_ai.application.use_cases import responses as out
 from campuspulse_ai.application.use_cases.act import ActUseCase
 from campuspulse_ai.application.use_cases.announcement_ports import AnnouncementStore
+from campuspulse_ai.application.use_cases.chat_claims import ChatClaimStore, InMemoryChatClaimStore
 from campuspulse_ai.application.use_cases.chat_ports import (
     AgentReply,
     ChatAgent,
     ChatContext,
+    GroundingSource,
     ProposalFacts,
     ReplyLang,
     Turn,
 )
+from campuspulse_ai.application.use_cases.issue_context import IssueContextPreparer
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.ports import Actor, Clarifier, TriageClassifier
 from campuspulse_ai.application.use_cases.proposals import ProposalClaims, sign, verify
 from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import DISTRESS, TriageUseCase
 from campuspulse_ai.domain.entities import CoreResult, Prediction
-from campuspulse_ai.domain.errors import CampusPulseError, InvalidInput
+from campuspulse_ai.domain.errors import CampusPulseError, InvalidInput, StoreError
 from campuspulse_ai.domain.journey import HintMatch, ticket_number
 from campuspulse_ai.domain.labels import Category, Priority
 from campuspulse_ai.domain.policy import DefaultDecisionPolicy
@@ -156,6 +161,8 @@ class ChatUseCase:
         journey: JourneyStore | None = None,
         announcements: AnnouncementStore | None = None,
         encoder: SentenceEncoder | None = None,
+        claims: ChatClaimStore | None = None,
+        preparer: IssueContextPreparer | None = None,
     ) -> None:
         self._classifier = classifier
         self._policy = policy
@@ -171,8 +178,8 @@ class ChatUseCase:
         self._journey = journey
         self._announcements = announcements
         self._encoder = encoder
-        self._consumed: dict[str, int] = {}  # token signature -> expiry (epoch seconds)
-        self._consumed_lock = threading.Lock()
+        self._claims_store = claims or InMemoryChatClaimStore()
+        self._preparer = preparer
 
     @property
     def llm_enabled(self) -> bool:
@@ -198,11 +205,26 @@ class ChatUseCase:
         claims, token_bad = self._claims(cmd.proposal_token, alias)
         ctx = self._context(caller, lang, claims)
         turns = [Turn(role=m.role, content=m.content) for m in messages]
+        prepared_text: str | None = None
+        if self._preparer is not None:
+            prepared = self._preparer.prepare(turns, self._clock.now().isoformat())
+            if prepared is None:
+                return self._fallback(lang)
+            prepared_text = prepared.classifier_text
         agent_reply = self._agent.reply(ctx, turns)
         if agent_reply is None:
             return self._fallback(lang)
         return self._answer(
-            agent_reply, cmd.proposal_token or "", messages, caller, lang, ctx, claims, token_bad, later
+            agent_reply,
+            cmd.proposal_token or "",
+            messages,
+            caller,
+            lang,
+            ctx,
+            claims,
+            token_bad,
+            later,
+            prepared_text,
         )
 
     def _answer(
@@ -216,10 +238,15 @@ class ChatUseCase:
         claims: ProposalClaims | None,
         token_bad: bool,
         later: Later | None,
+        prepared_text: str | None = None,
     ) -> dto.ChatTurnResponse:
         text = self._text(lang)
         if reply.intent == "request":
-            return self._proposal_turn(_request_text(messages), caller, lang, ctx)
+            if prepared_text is not None and not prepared_text:
+                return self._plain(text["more_detail"], clear=False)
+            return self._proposal_turn(
+                prepared_text if prepared_text is not None else _request_text(messages), caller, lang, ctx
+            )
         if reply.intent == "confirm":
             if claims is None:  # nothing to confirm: never let the model's words claim a recorded request
                 return self._plain(text["expired"] if token_bad else text["no_proposal"], clear=token_bad)
@@ -442,34 +469,30 @@ class ChatUseCase:
     def _confirm_claims(
         self, token: str, claims: ProposalClaims, caller: Actor, later: Later | None
     ) -> dto.ChatConfirmResponse:
-        """Claim the token first (`InvalidInput` if already used), then triage; release on failure."""
+        """Claim the token durably; repeated completed confirms return the stored result."""
         signature = token.partition(".")[2]
-        self._claim(signature, claims.exp)
-        try:
-            triage = self._triage.run(
-                dto.TriageRequest(text=claims.text, student_alias=caller.alias or "", chat_confirmed=True)
-            )
-        except BaseException:
-            with self._consumed_lock:
-                self._consumed.pop(signature, None)
-            raise
+        digest = hashlib.sha256(signature.encode("ascii")).hexdigest()
+        request_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"campuspulse-chat:{digest}"))
+        claim = self._claims_store.claim(
+            digest, caller.alias or "", request_id, datetime.fromtimestamp(claims.exp, tz=UTC)
+        )
+        if claim.status == "completed" and claim.result is not None:
+            return claim.result
+        if claim.status != "claimed":
+            raise InvalidInput(ALREADY_SENT if claim.status == "in_progress" else "invalid proposal claim")
+        triage = self._triage.run(
+            dto.TriageRequest(text=claims.text, student_alias=caller.alias or "", chat_confirmed=True),
+            request_id=request_id,
+        )
         action = triage.action
         ticket_id = action.ticket_id if action is not None else None
         applied = False
         if ticket_id and claims.hint_id and action is not None and action.type == ActionType.TICKET:
             applied = self._apply_hint(ticket_id, claims, later)
-        return dto.ChatConfirmResponse(triage=triage, ticket_id=ticket_id, hint_applied=applied)
-
-    def _claim(self, signature: str, exp: int) -> None:
-        now = int(self._clock.now().timestamp())
-        with self._consumed_lock:
-            for sig in [s for s, e in self._consumed.items() if e <= now]:
-                del self._consumed[sig]
-            if signature in self._consumed:
-                raise InvalidInput(ALREADY_SENT)
-            while len(self._consumed) >= CONSUMED_MAX:  # bounded: drop the oldest claim
-                del self._consumed[next(iter(self._consumed))]
-            self._consumed[signature] = exp
+        result = dto.ChatConfirmResponse(triage=triage, ticket_id=ticket_id, hint_applied=applied)
+        if not self._claims_store.complete(digest, result):
+            raise StoreError("chat confirmation result could not be recorded")
+        return result
 
     def _apply_hint(self, ticket_id: str, claims: ProposalClaims, later: Later | None) -> bool:
         lifecycle = self._lifecycle
@@ -524,23 +547,38 @@ class ChatUseCase:
         proposal = None
         if claims is not None:
             proposal = f"{self._department(claims.office, 'en')}: {claims.text[:200]}"
+        announcements, sources = self._announcement_context()
         return ChatContext(
             role=caller.role,
             lang=lang,
             first_name=first_name,
-            announcements=self._announcement_lines(),
+            announcements=announcements,
             proposal=proposal,
+            sources=sources,
         )
 
     def _announcement_lines(self) -> list[str]:
+        return self._announcement_context()[0]
+
+    def _announcement_context(self) -> tuple[list[str], tuple[GroundingSource, ...]]:
         if self._announcements is None:
-            return []
+            return [], ()
         try:
             live = self._announcements.live_announcements(self._clock.now(), ANNOUNCEMENTS_SHOWN)
         except CampusPulseError:
             log.warning("announcements unavailable for the chat", exc_info=True)
-            return []
-        return [f"[{a.kind}] {a.title}: {a.body}"[:ANNOUNCEMENT_CHARS] for a in live]
+            return [], ()
+        lines = [f"[{a.kind}] {a.title}: {a.body}"[:ANNOUNCEMENT_CHARS] for a in live]
+        sources = tuple(
+            GroundingSource(
+                id=f"announcement:{a.id}",
+                kind="announcement",
+                text=line,
+                scope=_notice_scope(line),
+            )
+            for a, line in zip(live, lines, strict=True)
+        )
+        return lines, sources
 
     def _text(self, lang: ReplyLang) -> Mapping[str, str]:
         return self._cfg.templates[lang]
@@ -559,11 +597,20 @@ class ChatUseCase:
         return reply if self._clean(reply) else fallback
 
 
+def _notice_scope(text: str) -> str:
+    """Recognize only explicit place words; an unrecognized place stays unscoped."""
+    low = text.casefold()
+    for place in ("library", "المكتبة", "building m", "building c", "building a", "مبنى m", "مبنى c"):
+        if place in low:
+            return place
+    return ""
+
+
 def _request_text(messages: Sequence[dto.ChatMessage]) -> str:
     """The user messages after the last assistant message of kind proposal or ticket, last 1000 chars."""
     start = 0
     for i, m in enumerate(messages):
-        if m.role == "assistant" and m.kind in ("proposal", "ticket"):
+        if m.role == "assistant" and m.kind == "ticket":
             start = i + 1
     joined = "\n".join(m.content.strip() for m in messages[start:] if m.role == "user")
     return joined[-REQUEST_TEXT_MAX:]

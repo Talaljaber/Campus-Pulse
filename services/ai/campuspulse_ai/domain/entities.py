@@ -137,7 +137,7 @@ class Ticket:
 @dataclass
 class Incident:
     id: str
-    building: str
+    building: str | None
     category: Category
     title: str
     priority: Priority
@@ -146,6 +146,8 @@ class Incident:
     member_ticket_ids: list[str]
     opened_at: datetime
     resolved_at: datetime | None = None
+    scope: Literal["building", "campus", "unknown"] = "building"
+    announcement_id: str | None = None
 
 
 @dataclass

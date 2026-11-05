@@ -27,7 +27,7 @@ export interface TileRowProps {
 export function TileRow({ tiles, label, className }: TileRowProps) {
   if (tiles.length === 0) return null;
   return (
-    <ul aria-label={label} className={cn("grid gap-3 px-4 pt-4 sm:grid-cols-2 lg:grid-cols-3", className)}>
+    <ul aria-label={label} className={cn("grid gap-3 sm:grid-cols-2 lg:grid-cols-3", className)}>
       {tiles.map((tile) => (
         <li key={tile.id}>
           <IconTile icon={tile.icon} label={tile.label} hint={tile.hint} href={tile.href} selected={tile.selected} />

@@ -37,6 +37,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from campuspulse_ai import __version__
 from campuspulse_ai.application.dto import (
     ERROR_HTTP_STATUS,
+    AnnouncementDraftChangeIn,
+    AnnouncementDraftVersionIn,
     AnnouncementIn,
     ChatConfirmRequest,
     ChatPreviewRequest,
@@ -52,6 +54,7 @@ from campuspulse_ai.application.dto import (
     IncidentListQuery,
     PrincipalHeaders,
     PriorityRequest,
+    ProfileEmailIn,
     RecurringQuery,
     RedTeamRunRequest,
     ReindexRequest,
@@ -188,6 +191,58 @@ def _guard(op_id: str) -> Callable[..., None]:
 def build_router(store: FixtureStore) -> APIRouter:
     """Every contract route, answered from `store`."""
     router = APIRouter()
+
+    @router.api_route(
+        **route_kwargs("announcement_drafts_list"),
+        dependencies=[Depends(_guard("announcement_drafts_list"))],
+    )
+    def announcement_drafts_list(request: Request) -> Any:
+        return _respond(store.pick("announcement_drafts_list", request, None))
+
+    @router.api_route(
+        **route_kwargs("announcement_drafts_edit"),
+        dependencies=[Depends(_guard("announcement_drafts_edit"))],
+    )
+    def announcement_drafts_edit(
+        draft_id: str, body: AnnouncementDraftChangeIn, request: Request
+    ) -> Any:
+        return _respond(store.pick("announcement_drafts_edit", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("announcement_drafts_publish"),
+        dependencies=[Depends(_guard("announcement_drafts_publish"))],
+    )
+    def announcement_drafts_publish(
+        draft_id: str, body: AnnouncementDraftVersionIn, request: Request
+    ) -> Any:
+        return _respond(store.pick("announcement_drafts_publish", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("announcement_drafts_dismiss"),
+        dependencies=[Depends(_guard("announcement_drafts_dismiss"))],
+    )
+    def announcement_drafts_dismiss(
+        draft_id: str, body: AnnouncementDraftVersionIn, request: Request
+    ) -> Any:
+        return _respond(store.pick("announcement_drafts_dismiss", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("profile_email_get"), dependencies=[Depends(_guard("profile_email_get"))]
+    )
+    def profile_email_get(request: Request) -> Any:
+        return _respond(store.pick("profile_email_get", request, None))
+
+    @router.api_route(
+        **route_kwargs("profile_email_put"), dependencies=[Depends(_guard("profile_email_put"))]
+    )
+    def profile_email_put(body: ProfileEmailIn, request: Request) -> Any:
+        return _respond(store.pick("profile_email_put", request, body.model_dump(mode="json")))
+
+    @router.api_route(
+        **route_kwargs("profile_email_delete"), dependencies=[Depends(_guard("profile_email_delete"))]
+    )
+    def profile_email_delete(request: Request) -> Any:
+        return _respond(store.pick("profile_email_delete", request, None))
 
     @router.api_route(**route_kwargs("triage"), dependencies=[Depends(_guard("triage"))])
     def triage(body: TriageRequest, query: Annotated[TriageQuery, Query()], request: Request) -> Any:

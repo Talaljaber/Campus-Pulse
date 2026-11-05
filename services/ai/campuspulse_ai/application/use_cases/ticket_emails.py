@@ -12,7 +12,7 @@ from __future__ import annotations
 import html
 import logging
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import timedelta, timezone, tzinfo
 from enum import StrEnum
@@ -243,15 +243,25 @@ class TicketEmailTemplates:
 
 @dataclass(frozen=True)
 class InboxBook:
-    """Demo inboxes the mailer may address (all must also be in DEMO_EMAIL_ALLOWLIST)."""
+    """Configured demo inboxes plus currently consented profile notification addresses."""
 
     student_inbox: str | None = None
     office_inboxes: Mapping[str, str] = field(default_factory=dict)
     default_office_inbox: str | None = None
     admin_inbox: str | None = None
+    notification_for_alias: Callable[[str], str | None] | None = None
+    staff_notifications_for_office: Callable[[str], list[tuple[str, str]]] | None = None
+    opt_in_enabled: bool = False
 
     def requester(self, contact: Contact) -> str | None:
         """The contact's own demo inbox, else the student inbox, else (staff requester) their office inbox."""
+        if self.opt_in_enabled and self.notification_for_alias is not None and contact.alias:
+            try:
+                own = self.notification_for_alias(contact.alias)
+                if own:
+                    return own
+            except Exception:
+                log.exception("notification email lookup failed for requester")
         if contact.demo_inbox:
             return contact.demo_inbox
         if contact.role == "student":
@@ -261,8 +271,37 @@ class InboxBook:
     def office(self, code: str | None) -> str | None:
         return (self.office_inboxes.get(code) if code else None) or self.default_office_inbox
 
+    def office_recipients(
+        self, code: str | None, *, exclude_alias: str = "", exclude_email: str | None = None
+    ) -> tuple[str, ...]:
+        """One office event per configured inbox and consented staff address, never the requester."""
+        addresses: list[str] = []
+        configured = self.office(code)
+        if configured:
+            addresses.append(configured)
+        if self.opt_in_enabled and code and self.staff_notifications_for_office is not None:
+            try:
+                addresses.extend(
+                    address for alias, address in self.staff_notifications_for_office(code)
+                    if alias != exclude_alias
+                )
+            except Exception:
+                log.exception("notification email lookup failed for office")
+        excluded = _email_key(exclude_email) if exclude_email else None
+        unique: dict[str, str] = {}
+        for address in addresses:
+            key = _email_key(address)
+            if key and key != excluded:
+                unique.setdefault(key, address)
+        return tuple(unique.values())
+
     def admin(self) -> str | None:
         return self.admin_inbox or self.default_office_inbox
+
+
+def _email_key(address: str) -> str:
+    local, sep, domain = address.strip().rpartition("@")
+    return f"{local}@{domain.lower()}" if sep else address.strip()
 
 
 class TicketMailer:

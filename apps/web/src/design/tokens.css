@@ -22,6 +22,8 @@
   --cp-surface-0: #ffffff;
   --cp-surface-1: #f4f6f8;
   --cp-surface-2: #e6eaee;
+  --cp-surface-raised: #ffffff;
+  --cp-surface-soft: #eef5fb;
   --cp-text-1: #1c2025;
   --cp-text-2: #3e444c;
   --cp-text-3: #545b65;
@@ -97,6 +99,7 @@
   --cp-shadow-1: 0 1px 2px rgb(18 22 29 / 0.08), 0 1px 1px rgb(18 22 29 / 0.06);
   --cp-shadow-2: 0 8px 24px rgb(18 22 29 / 0.16), 0 2px 6px rgb(18 22 29 / 0.1);
   --cp-shadow-card: 0 2px 6px rgb(20 50 90 / 0.06), 0 8px 32px rgb(20 50 90 / 0.12);
+  --cp-shadow-float: 0 -4px 16px rgb(20 50 90 / 0.10);
   --cp-container-shadow: 0 0 0 1px rgb(20 30 45 / 0.06), 0 4px 24px rgb(20 30 45 / 0.14);
   --cp-motion-fast: 120ms;
   --cp-motion-slow: 280ms;
@@ -109,6 +112,8 @@
   --color-surface-0: var(--cp-surface-0);
   --color-surface-1: var(--cp-surface-1);
   --color-surface-2: var(--cp-surface-2);
+  --color-surface-raised: var(--cp-surface-raised);
+  --color-surface-soft: var(--cp-surface-soft);
   --color-fg-1: var(--cp-text-1);
   --color-fg-2: var(--cp-text-2);
   --color-fg-3: var(--cp-text-3);
@@ -163,5 +168,6 @@
   --shadow-1: var(--cp-shadow-1);
   --shadow-2: var(--cp-shadow-2);
   --shadow-card: var(--cp-shadow-card);
+  --shadow-float: var(--cp-shadow-float);
   --shadow-container: var(--cp-container-shadow);
 }

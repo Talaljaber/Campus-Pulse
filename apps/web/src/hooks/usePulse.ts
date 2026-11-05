@@ -74,6 +74,8 @@ export function usePulse() {
       setResolving(null);
       if (!res.ok) return { ok: false, kind: staffErrorKind(res) };
       const closed = res.data.incident;
+      // A shared issue without a building is not drawn on the map, so there is no map row to update.
+      if (closed.building === null) return { ok: true, notified: res.data.notified_reporters };
       const row = {
         id: closed.id,
         building_id: closed.building,

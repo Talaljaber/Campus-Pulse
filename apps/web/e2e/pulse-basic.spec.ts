@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signInAs } from "./support/login";
+import { signInAs, switchToArabic } from "./support/login";
 
 // P5.11 acceptance (the snapshot half). The fake Supabase does not speak Realtime, so live inserts
 // and bumps are covered by the reducer and hook unit tests; this checks the real page, the real
@@ -40,8 +40,8 @@ test("staff see dots, an incident ring and the feed, filter by building and reso
 
 test("the pulse page works in Arabic and right to left, and the map keeps its geometry", async ({ page }) => {
   await signInAs(page, "staff");
+  await switchToArabic(page);
   await page.goto("/pulse");
-  await page.getByRole("button", { name: /العربية/ }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("heading", { level: 1, name: "نبض الجامعة" })).toBeVisible();
   await expect(page.getByRole("log", { name: "الأحداث المباشرة" })).toBeVisible();

@@ -1,29 +1,23 @@
 "use client";
 
-import { translate, useT } from "@/i18n";
+import { translate } from "@/i18n";
 
 /**
- * The dark footer, on every page (root layout, so also the login page). The demo line ("simulated
- * portal, not the official university system, no real department is contacted") is always shown in
- * both English and Arabic, whatever the UI language, because it is a disclosure, not a preference.
+ * The slim disclosure strip under every page (root layout, so also the login page). The demo line
+ * ("simulated portal, not the official university system, no real department is contacted") is always
+ * shown in both English and Arabic, whatever the UI language, because it is a disclosure, not a
+ * preference. It is one short band so the page keeps its height.
  */
 export function SiteFooter() {
-  const t = useT();
   return (
-    <footer data-footer className="bg-footer text-on-footer">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 text-sm sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-1.5">
-          <p lang="en" dir="ltr" className="font-semibold">
-            {translate("en", "shell.demoLine")}
-          </p>
-          <p lang="ar" dir="rtl" className="font-semibold">
-            {translate("ar", "shell.demoLine")}
-          </p>
-        </div>
-        <div className="flex flex-col gap-1.5 sm:text-end">
-          <p>{t("shell.footerFictional")}</p>
-          <p>{t("shell.footerBuilt")}</p>
-        </div>
+    <footer data-footer className="shrink-0 bg-footer text-on-footer">
+      <div className="mx-auto flex flex-col items-center gap-0.5 px-3 py-1.5 text-center text-[10px] leading-snug font-semibold sm:flex-row sm:justify-center sm:gap-6 sm:text-xs">
+        <p lang="en" dir="ltr">
+          {translate("en", "shell.demoLine")}
+        </p>
+        <p lang="ar" dir="rtl">
+          {translate("ar", "shell.demoLine")}
+        </p>
       </div>
     </footer>
   );

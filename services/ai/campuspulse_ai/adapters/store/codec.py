@@ -497,6 +497,8 @@ def incident_row(i: Incident) -> Row:
     return {
         "id": i.id,
         "building_id": i.building,
+        "scope": i.scope,
+        "announcement_id": i.announcement_id,
         "category": str(i.category),
         "title": i.title,
         "priority": str(i.priority),
@@ -519,6 +521,8 @@ def to_incident(row: Mapping[str, Any], member_ticket_ids: list[str]) -> Inciden
         member_ticket_ids=member_ticket_ids,
         opened_at=_req_dt(row["opened_at"]),
         resolved_at=parse_dt(row.get("resolved_at")),
+        scope=row.get("scope") or "building",
+        announcement_id=row.get("announcement_id"),
     )
 
 

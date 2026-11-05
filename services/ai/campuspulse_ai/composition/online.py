@@ -60,9 +60,11 @@ from campuspulse_ai.application.services.gaming import GamingDetector
 from campuspulse_ai.application.services.llm_merge import LLMMerger
 from campuspulse_ai.application.services.triage_core import TriageCore
 from campuspulse_ai.application.use_cases.act import ActConfig, ActUseCase
+from campuspulse_ai.application.use_cases.announcement_drafts import AnnouncementDraftsUseCase, DraftStore
 from campuspulse_ai.application.use_cases.announcement_ports import AnnouncementStore
 from campuspulse_ai.application.use_cases.announcements import AnnouncementsUseCase
 from campuspulse_ai.application.use_cases.batch import BatchCsvUseCase
+from campuspulse_ai.application.use_cases.chat_claims import ChatClaimStore
 from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import SlaReminderUseCase
 from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
@@ -79,6 +81,7 @@ from campuspulse_ai.application.use_cases.ports import (
     ReviewReads,
     SimulationMarks,
 )
+from campuspulse_ai.application.use_cases.profile_email import ProfileEmailService, ProfileEmailStore
 from campuspulse_ai.application.use_cases.reviews import ReviewAssigner, ReviewRouter, ReviewsUseCase
 from campuspulse_ai.application.use_cases.sync_ticket import SyncTicketUseCase
 from campuspulse_ai.application.use_cases.ticket_emails import InboxBook, TicketMailer
@@ -158,6 +161,10 @@ class OnlineAdapters:
     directory: AdvisorDirectory | None = None
     journey: JourneyStore | None = None
     announcements: AnnouncementStore | None = None  # P9.5; without it the routes answer 501
+    profile_email: ProfileEmailStore | None = None
+    recipient_policy: RecipientPolicy | None = None
+    chat_claims: ChatClaimStore | None = None
+    announcement_drafts: DraftStore | None = None
     files: FileStore | None = None  # P9.10: ticket file rows; with `blobs` it serves the file routes
     blobs: BlobStore | None = None  # P9.10: the private `ticket-files` bucket
 
@@ -249,15 +256,23 @@ def supabase_adapters(
     """The production adapters over one Supabase client (module docstring, steps 2-5)."""
     from campuspulse_ai.adapters.memory.cached import QueryCachingMemoryStore
     from campuspulse_ai.adapters.memory.pgvector_memory import PgVectorMemoryStore
+    from campuspulse_ai.adapters.store.announcement_drafts_supabase import SupabaseDraftStore
     from campuspulse_ai.adapters.store.announcements_supabase import SupabaseAnnouncementStore
+    from campuspulse_ai.adapters.store.chat_claims_supabase import SupabaseChatClaimStore
     from campuspulse_ai.adapters.store.files_supabase import SupabaseFileStore
     from campuspulse_ai.adapters.store.journey_supabase import SupabaseJourneyStore
+    from campuspulse_ai.adapters.store.profile_email_supabase import SupabaseProfileEmailStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
 
     repo = SupabaseRepository(client, clock)
     vectors = PgVectorStore(client, offline.config.encoder.dim)
-    policy = RecipientPolicy(settings.demo_email_allowlist)
+    profile_email = SupabaseProfileEmailStore(client)
+    policy = RecipientPolicy(
+        settings.demo_email_allowlist,
+        profile_email.has_active_consent,
+        opt_in_enabled=settings.email_opt_in,
+    )
     return OnlineAdapters(
         repo=repo,
         reads=repo,
@@ -275,6 +290,10 @@ def supabase_adapters(
         directory=repo,
         journey=SupabaseJourneyStore(client, clock),
         announcements=SupabaseAnnouncementStore(client),
+        profile_email=profile_email,
+        recipient_policy=policy,
+        chat_claims=SupabaseChatClaimStore(client),
+        announcement_drafts=SupabaseDraftStore(client),
         files=SupabaseFileStore(client),
         blobs=_blob_store(settings),
     )
@@ -436,7 +455,11 @@ def wire_online(
     repo = adapters.repo
     core = with_memory(offline.core, adapters.memory)
     policy = DefaultDecisionPolicy(config.thresholds.tau_ood)
-    recipients = RecipientPolicy(settings.demo_email_allowlist)
+    recipients = adapters.recipient_policy or RecipientPolicy(
+        settings.demo_email_allowlist,
+        adapters.profile_email.has_active_consent if adapters.profile_email is not None else None,
+        opt_in_enabled=settings.email_opt_in,
+    )
     messages = Messages.from_dict(_yaml(TEMPLATES_DIR / "messages.yaml"))
     act_config = ActConfig.from_dict(
         _yaml(CONFIG_DIR / "act.yaml"),
@@ -520,7 +543,12 @@ def wire_online(
             vectors=adapters.vectors,
             encoder=offline.encoder,
             incidents=WindowedCentroidDetector(
-                repo, adapters.vectors, clock, tuned.tau_inc, settings.incident_window_min
+                repo,
+                adapters.vectors,
+                clock,
+                tuned.tau_inc,
+                settings.incident_window_min,
+                shared_issues_enabled=settings.shared_issues_enabled,
             ),
             actions=incident_actions,
         ),
@@ -535,6 +563,15 @@ def wire_online(
             office_inboxes=settings.demo_office_inboxes,
             default_office_inbox=settings.demo_office_inbox,
             admin_inbox=settings.demo_admin_inbox,
+            notification_for_alias=(
+                adapters.profile_email.notification_for_alias if adapters.profile_email is not None else None
+            ),
+            staff_notifications_for_office=(
+                adapters.profile_email.staff_notifications_for_office
+                if adapters.profile_email is not None
+                else None
+            ),
+            opt_in_enabled=settings.email_opt_in,
         ),
         settings.public_web_url,
     )
@@ -579,6 +616,7 @@ def wire_online(
         journey=adapters.journey,
         announcements=adapters.announcements,
         encoder=offline.encoder,
+        claims=adapters.chat_claims,
     )
     manifest = offline.manifest
     return ApiServices(
@@ -615,6 +653,13 @@ def wire_online(
             if adapters.announcements is not None
             else None
         ),
+        announcement_drafts=(
+            AnnouncementDraftsUseCase(adapters.announcement_drafts)
+            if adapters.announcement_drafts is not None
+            else None
+        ),
+        profile_email=(ProfileEmailService(adapters.profile_email, opt_in_enabled=settings.email_opt_in)
+                       if adapters.profile_email is not None else None),
         health=HealthInfo(
             artifact=manifest.artifact_version,
             sha=manifest.sha,

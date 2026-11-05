@@ -17,3 +17,9 @@ export async function signInAs(page: Page, who: keyof typeof WHO): Promise<void>
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: button }).click();
 }
+
+/** Switches the portal to Arabic through the language switch on the Profile page (it is no longer in the header); the choice is kept in a cookie. */
+export async function switchToArabic(page: Page): Promise<void> {
+  await page.goto("/profile");
+  await page.getByRole("button", { name: /العربية/ }).click();
+}

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 from campuspulse_ai.domain.entities import CoreResult
 from campuspulse_ai.domain.errors import RecipientNotAllowed
@@ -132,16 +133,34 @@ class DefaultDecisionPolicy:
 
 
 class RecipientPolicy:
-    """Allow-list check for every outgoing address. An empty allow-list rejects everything."""
+    """Authorize an external address at send time from the demo list or active consent."""
 
-    def __init__(self, allowlist: frozenset[str]) -> None:
+    def __init__(
+        self,
+        allowlist: frozenset[str],
+        consent_lookup: Callable[[str], bool] | None = None,
+        *,
+        opt_in_enabled: bool = False,
+    ) -> None:
         self._allowed = frozenset(self._canonical(a) for a in allowlist if a.strip())
+        self._consent_lookup = consent_lookup
+        self._opt_in_enabled = opt_in_enabled
 
     @staticmethod
     def _canonical(address: str) -> str:
-        return address.strip().lower()
+        local, separator, domain = address.strip().rpartition("@")
+        return f"{local}@{domain.lower()}" if separator else address.strip()
 
     def check(self, address: str) -> None:
         """Raise RecipientNotAllowed unless `address` is on the allow-list."""
-        if self._canonical(address) not in self._allowed:
+        canonical = self._canonical(address)
+        if canonical in self._allowed:
+            return
+        if self._opt_in_enabled and self._consent_lookup is not None:
+            try:
+                if self._consent_lookup(canonical):
+                    return
+            except Exception:
+                pass  # a failed consent lookup must deny external delivery
+        if canonical not in self._allowed:
             raise RecipientNotAllowed(f"recipient not in DEMO allow-list: {address!r}")

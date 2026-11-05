@@ -24,6 +24,8 @@ export type IconName =
   | "map"
   | "mail"
   | "flask"
+  | "home"
+  | "megaphone"
   | "chevron-down";
 
 const PATHS: Record<IconName, string> = {
@@ -50,6 +52,8 @@ const PATHS: Record<IconName, string> = {
   map: "M9 4L3 6.5V20l6-2.5 6 2.5 6-2.5V4l-6 2.5L9 4z M9 4v13.5 M15 6.5V20",
   mail: "M3.5 6h17v12h-17z M3.5 7l8.5 6.5L20.5 7",
   flask: "M9 3h6 M10 3v6l-5 9a2 2 0 001.8 3h10.4A2 2 0 0019 18l-5-9V3 M7.5 15h9",
+  home: "M3 11l9-7.5 9 7.5 M5.5 9.5V20h13V9.5 M10 20v-5.5h4V20",
+  megaphone: "M3 10v4h3l8 4V6L6 10H3z M17.5 9a4 4 0 010 6 M20 7a7 7 0 010 10",
   "chevron-down": "M6 9l6 6 6-6",
 };
 

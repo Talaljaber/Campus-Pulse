@@ -46,7 +46,7 @@ async function handle(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
   // Only the verified session token is forwarded. Any Authorization or X-CP-* header the
   // browser sent is dropped here because aiFetch builds its headers from scratch.
   let body: unknown;
-  if (req.method === "POST") {
+  if (req.method !== "GET" && req.method !== "DELETE") {
     const type = req.headers.get("content-type") ?? "";
     try {
       body = type.includes("multipart/form-data") ? await req.formData() : await req.json();
@@ -60,7 +60,7 @@ async function handle(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
 
   const search = req.nextUrl.search;
   const result = await aiFetch<unknown>(`${allowed.path}${search}`, {
-    method: req.method === "POST" ? "POST" : "GET",
+    method: req.method as "GET" | "POST" | "PUT" | "DELETE",
     body,
     userJwt,
     timeoutMs: allowed.public ? 3_000 : undefined,
@@ -74,3 +74,5 @@ async function handle(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
 
 export const GET = handle;
 export const POST = handle;
+export const PUT = handle;
+export const DELETE = handle;

@@ -43,6 +43,44 @@ from campuspulse_ai.domain.values import (
     Tier,
 )
 
+
+class ProfileEmailIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: str = Field(min_length=3, max_length=254)
+    consent: bool
+
+
+class ProfileEmailOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: str | None
+    consented_at: datetime | None
+    opt_in_enabled: bool
+
+
+class AnnouncementDraftOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str
+    incident_id: str
+    office: str
+    title: str
+    body: str
+    status: Literal["pending", "published", "dismissed"]
+    version: int
+    published_announcement_id: str | None
+
+
+class AnnouncementDraftChangeIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    version: int
+    title: str
+    body: str
+
+
+class AnnouncementDraftVersionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    version: int
+
+
 # --- shared field types -----------------------------------------------------------------------------
 
 Probability = Annotated[float, Field(ge=0.0, le=1.0)]
@@ -633,7 +671,7 @@ class IncidentOut(_Model):
     """A Pulse incident: several reports of the same problem in one building."""
 
     id: str
-    building: str
+    building: str | None
     category: Category
     title: str
     priority: Priority

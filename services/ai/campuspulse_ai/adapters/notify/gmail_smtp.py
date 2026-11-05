@@ -4,7 +4,7 @@ Port 587: `SMTP` -> EHLO -> STARTTLS (default SSL context, so the certificate is
 -> LOGIN -> `send_message`. Port 465 (or `use_ssl=True`): `SMTP_SSL` with the same context. There is
 no mail SDK anywhere (LD-3).
 
-Recipients: the notifier holds its own `RecipientPolicy` and refuses a non-allow-listed address
+Recipients: the notifier holds its own `RecipientPolicy` and refuses an unauthorized address
 before opening a connection. This is defence in depth: `AllowlistedNotifier` (the outermost
 decorator) is where rejections are recorded, but a mis-wired chain still cannot reach a real person.
 """
@@ -31,7 +31,9 @@ from campuspulse_ai.domain.ports import Clock
 
 SSL_PORT = 465  # implicit TLS; any other port uses STARTTLS
 DEFAULT_SENDER_NAME = "CampusPulse (demo)"
-FOOTER = "Demo message from an integration-ready prototype; sent to a developer-owned inbox."
+FOOTER = (
+    "CampusPulse demo message. This address was configured for the demo or saved with notification consent."
+)
 PROVIDER = "gmail_smtp"
 _TRANSIENT_MIN, _TRANSIENT_MAX = 400, 500  # SMTP 4yz replies are transient (RFC 5321 §4.2.1)
 

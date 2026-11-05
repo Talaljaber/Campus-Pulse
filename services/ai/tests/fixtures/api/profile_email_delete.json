@@ -1,0 +1,12 @@
+{
+  "name": "profile_email_delete",
+  "description": "A student removes their notification address and consent.",
+  "method": "DELETE",
+  "path": "/v1/profile/email",
+  "path_params": {},
+  "query": {},
+  "headers": {"X-CP-Role": "student", "X-CP-Alias": "talal"},
+  "request": null,
+  "status_code": 200,
+  "response": {"email": null, "consented_at": null, "opt_in_enabled": true}
+}

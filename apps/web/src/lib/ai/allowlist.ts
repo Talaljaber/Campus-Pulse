@@ -4,7 +4,7 @@
  * purpose: `integrations/linear/webhook` (authenticated by its own HMAC, never from a browser).
  */
 
-export type AiMethod = "GET" | "POST";
+export type AiMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 /** One id segment (UUIDs and slugs). No dots, slashes or percent signs, so no traversal. */
 const ID = "[A-Za-z0-9_-]{1,64}";
@@ -53,6 +53,9 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   rule("POST", "chat/turn"),
   rule("POST", "chat/preview"),
   rule("POST", "chat/confirm"),
+  rule("GET", "profile/email"),
+  rule("PUT", "profile/email"),
+  rule("DELETE", "profile/email"),
   // P9.10 ticket files: a multipart upload (forwarded as is by the proxy) and the 60-second signed link.
   rule("POST", "tickets/{id}/files"),
   rule("GET", "files/{id}/link"),

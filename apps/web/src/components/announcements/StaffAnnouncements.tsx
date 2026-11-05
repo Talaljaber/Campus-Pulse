@@ -109,9 +109,10 @@ export function StaffAnnouncements({ role, alias, name = null, office }: StaffAn
   };
 
   const columns: Column<AnnouncementRow>[] = [
-    { id: "title", header: t("announcements.col.title"), cell: (a) => <span dir="auto">{a.title}</span>, sortValue: (a) => a.title },
+    { id: "title", primary: true, header: t("announcements.col.title"), cell: (a) => <span dir="auto">{a.title}</span>, sortValue: (a) => a.title },
     {
       id: "kind",
+      primary: true,
       header: t("announcements.col.kind"),
       cell: (a) => <Badge tone={kindTone(a.kind)}>{t(kindKey(a.kind))}</Badge>,
       sortValue: (a) => a.kind,
@@ -136,6 +137,7 @@ export function StaffAnnouncements({ role, alias, name = null, office }: StaffAn
     },
     {
       id: "status",
+      primary: true,
       header: t("announcements.col.status"),
       cell: (a) => {
         const s = status(a);

@@ -77,7 +77,7 @@ class PlannedEmail:
     event: EmailEvent
     audience: Audience
     ctx: EmailContext
-    to: str | None
+    to: str | tuple[str, ...] | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -355,11 +355,13 @@ class TicketLifecycleUseCase:
         if change.from_office is not None and change.activity is not None:
             self._guard("office note", ticket, lambda: self._notify_office(change))
         for planned in change.emails:
-            self._guard(
-                "email",
-                ticket,
-                partial(self._mailer.send, planned.event, planned.audience, planned.ctx, planned.to),
-            )
+            recipients = planned.to if isinstance(planned.to, tuple) else (planned.to,)
+            for recipient in recipients:
+                self._guard(
+                    "email",
+                    ticket,
+                    partial(self._mailer.send, planned.event, planned.audience, planned.ctx, recipient),
+                )
 
     # ------------------------------------------------------------------ staff paths
 
@@ -580,14 +582,18 @@ class TicketLifecycleUseCase:
             recipient_name=contact.display_name if requester else "",
             comment=comment, note=note, from_office=from_office, to_office=to_office,
         )  # fmt: skip
-        if to is None:
+        recipients: str | tuple[str, ...] | None = to
+        if recipients is None:
             if requester:
-                to = inboxes.requester(contact)
+                recipients = inboxes.requester(contact)
             elif audience == "office":
-                to = inboxes.office(ticket.office)
+                office_addresses = inboxes.office_recipients(
+                    ticket.office, exclude_alias=contact.alias, exclude_email=inboxes.requester(contact)
+                )
+                recipients = office_addresses[0] if len(office_addresses) == 1 else office_addresses
             else:
-                to = inboxes.admin()
-        return PlannedEmail(event, audience, ctx, to)
+                recipients = inboxes.admin()
+        return PlannedEmail(event, audience, ctx, recipients)
 
     def _hint(self, kind: str, ticket: Ticket, request: Request, actor: Actor, note: str) -> None:
         """Keep the staff correction for the chat agent (best effort: a failure never fails the action)."""

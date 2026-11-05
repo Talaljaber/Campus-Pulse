@@ -91,4 +91,20 @@ describe("ServiceBanner", () => {
     rerender(<ServiceBanner state="down" />);
     expect(screen.getByRole("status")).toHaveTextContent("not available");
   });
+
+  it("shows the spinner only on the pressed button and disables both while signing in", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<LoginForm />);
+    await user.type(screen.getByLabelText("Username"), "talal");
+    await user.type(screen.getByLabelText("Password"), "secret");
+    await user.click(screen.getByRole("button", { name: "Log in as staff" }));
+    hookState = { pending: true, error: null };
+    rerender(<LoginForm />);
+    const staff = screen.getByRole("button", { name: "Log in as staff" });
+    const student = screen.getByRole("button", { name: "Log in as student" });
+    expect(staff).toHaveAttribute("aria-busy", "true");
+    expect(student).not.toHaveAttribute("aria-busy");
+    expect(staff).toBeDisabled();
+    expect(student).toBeDisabled();
+  });
 });

@@ -12,6 +12,9 @@ const m = vi.hoisted(() => ({
   off: vi.fn(),
   create: vi.fn(),
   archive: vi.fn(),
+  getEmail: vi.fn(),
+  saveEmail: vi.fn(),
+  removeEmail: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/browser", () => ({ createBrowserSupabase: () => ({}) }));
@@ -26,6 +29,12 @@ vi.mock("@/lib/announcements/service", async (orig) => ({
   archiveAnnouncement: m.archive,
 }));
 vi.mock("@/hooks/useSignIn", () => ({ useSignOut: () => vi.fn() }));
+vi.mock("@/lib/profiles/email", async (orig) => ({
+  ...(await orig<typeof import("@/lib/profiles/email")>()),
+  getNotificationEmail: m.getEmail,
+  saveNotificationEmail: m.saveEmail,
+  removeNotificationEmail: m.removeEmail,
+}));
 
 import { AccountsScreen } from "../../accounts/AccountsScreen";
 import { HomeScreen } from "../../home/HomeScreen";
@@ -52,23 +61,28 @@ const MAINT = row("2", { kind: "maintenance", title: "Outlook unavailable for tw
 beforeEach(() => {
   vi.clearAllMocks();
   m.subscribe.mockReturnValue(m.off);
+  m.getEmail.mockResolvedValue({ ok: true, data: { email: null, consented_at: null, opt_in_enabled: true } });
+  m.saveEmail.mockResolvedValue({ ok: true, data: { email: "mine@example.com", consented_at: "2026-11-03T00:00:00Z", opt_in_enabled: true } });
+  m.removeEmail.mockResolvedValue({ ok: true, data: { email: null, consented_at: null, opt_in_enabled: true } });
 });
 
 describe("HomeScreen", () => {
-  it("greets by first name and lists the announcements with kind, office and time", async () => {
+  it("shows only the newest announcement title until details are requested", async () => {
     m.live.mockResolvedValue([OUTAGE, MAINT]);
     render(<HomeScreen role="student" alias="lina" name="Lina Haddad" />);
-    expect(screen.getByRole("heading", { level: 1, name: "Welcome, Lina" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Announcements" })).toBeInTheDocument();
+    expect(screen.queryByText(/Welcome|Hello/)).not.toBeInTheDocument();
     const list = await screen.findByRole("list", { name: "Announcements" });
     const items = within(list).getAllByRole("listitem");
-    expect(items).toHaveLength(2);
-    expect(within(items[0]!).getByText("Outage")).toBeInTheDocument();
-    expect(within(items[0]!).getByText("IT Support")).toBeInTheDocument();
+    expect(items).toHaveLength(1);
     expect(within(items[0]!).getByText("Library wifi is down")).toBeInTheDocument();
-    expect(within(items[0]!).getByText(/Use the lab network/)).toBeInTheDocument();
-    expect(within(items[0]!).getByText(/2026/)).toBeInTheDocument();
-    expect(within(items[1]!).getByText("Maintenance")).toBeInTheDocument();
-    expect(within(items[1]!).getByText("Campus-wide")).toBeInTheDocument();
+    expect(screen.queryByText(/Use the lab network/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Show details" }));
+    const dialog = screen.getByRole("dialog", { name: "Library wifi is down" });
+    expect(within(dialog).getByText("Outage")).toBeInTheDocument();
+    expect(within(dialog).getByText("IT Support")).toBeInTheDocument();
+    expect(within(dialog).getByText(/Use the lab network/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/2026/)).toBeInTheDocument();
   });
 
   it("shows the empty state when nothing is live", async () => {
@@ -84,12 +98,13 @@ describe("HomeScreen", () => {
     expect(await screen.findByText("Library wifi is down")).toBeInTheDocument();
   });
 
-  it("has the Ask and My requests tiles for a student", async () => {
+  it("has no shortcut tiles: Ask and My requests are tabs", async () => {
     m.live.mockResolvedValue([]);
     render(<HomeScreen role="student" alias="lina" name="Lina Haddad" />);
-    const tiles = screen.getByRole("list", { name: "Shortcuts" });
-    expect(within(tiles).getByRole("link", { name: /Ask a question/ })).toHaveAttribute("href", "/ask");
-    expect(within(tiles).getByRole("link", { name: /My requests/ })).toHaveAttribute("href", "/requests");
+    expect(screen.queryByRole("list", { name: "Shortcuts" })).not.toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "Main menu" });
+    expect(within(nav).getByRole("link", { name: "Ask" })).toHaveAttribute("href", "/ask");
+    expect(within(nav).getByRole("link", { name: "My requests" })).toHaveAttribute("href", "/requests");
   });
 
   it("adds a live announcement when Realtime delivers it, and drops it when it is archived", async () => {
@@ -112,8 +127,9 @@ describe("HomeScreen", () => {
         <HomeScreen role="student" alias="lina" name="Lina Haddad" />
       </LangScope>,
     );
-    expect(screen.getByRole("heading", { level: 1, name: "أهلاً Lina" })).toBeInTheDocument();
-    expect(await screen.findByText("انقطاع")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "الإعلانات" })).toBeInTheDocument();
+    expect(await screen.findByText("Library wifi is down")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "عرض التفاصيل" })).toBeInTheDocument();
   });
 });
 
@@ -242,7 +258,7 @@ describe("AccountsScreen", () => {
 });
 
 describe("ProfileScreen", () => {
-  it("shows a student's fields read-only with the simulated-account note", () => {
+  it("shows a student's account fields and notification email controls", async () => {
     render(<ProfileScreen role="student" profile={profiles[0]!} />);
     expect(screen.getByText("Lina Haddad")).toBeInTheDocument();
     expect(screen.getByText("20260001")).toBeInTheDocument();
@@ -250,12 +266,26 @@ describe("ProfileScreen", () => {
     expect(screen.getByText("lina@demo.invalid")).toBeInTheDocument();
     expect(screen.getByText("Student")).toBeInTheDocument();
     expect(screen.getByText("Simulated account: fictional data.")).toBeInTheDocument();
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(await screen.findByRole("textbox", { name: "Email address" })).toBeInTheDocument();
   });
 
   it("shows the office of a staff member and no student fields", () => {
     render(<ProfileScreen role="staff" profile={profiles[1]!} />);
     expect(screen.getByText("IT Support")).toBeInTheDocument();
     expect(screen.queryByText("Student number")).not.toBeInTheDocument();
+  });
+
+  it("requires explicit consent, saves and removes the chosen address", async () => {
+    const user = userEvent.setup();
+    render(<ProfileScreen role="student" profile={profiles[0]!} />);
+    await user.type(await screen.findByRole("textbox", { name: "Email address" }), "mine@example.com");
+    const save = screen.getByRole("button", { name: "Save" });
+    expect(save).toBeDisabled();
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(save);
+    await waitFor(() => expect(m.saveEmail).toHaveBeenCalledWith("mine@example.com", true));
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Remove" }));
+    await waitFor(() => expect(m.removeEmail).toHaveBeenCalledTimes(1));
   });
 });

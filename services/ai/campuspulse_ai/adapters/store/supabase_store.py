@@ -180,9 +180,12 @@ class SupabaseRepository:
             )
         return self._incidents([self._one("incidents", "id", saved.id)])[0]
 
-    def open_incidents(self, building: str, category: Category | None, since: datetime) -> list[Incident]:
+    def open_incidents(
+        self, building: str | None, category: Category | None, since: datetime
+    ) -> list[Incident]:
         def run() -> Any:
-            q = self._db.table("incidents").select("*").eq("status", "open").eq("building_id", building)
+            q = self._db.table("incidents").select("*").eq("status", "open")
+            q = q.eq("building_id", building) if building is not None else q.is_("building_id", "null")
             if category is not None:
                 q = q.eq("category", str(category))
             return q.gte("opened_at", codec.iso(since)).order("opened_at").order("id").execute()

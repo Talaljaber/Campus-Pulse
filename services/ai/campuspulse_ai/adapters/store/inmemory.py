@@ -198,7 +198,9 @@ class InMemoryRepository:
                 self.tables["tickets"][ticket_id]["incident_id"] = saved.id
         return self._incident(self.tables["incidents"][saved.id])
 
-    def open_incidents(self, building: str, category: Category | None, since: datetime) -> list[Incident]:
+    def open_incidents(
+        self, building: str | None, category: Category | None, since: datetime
+    ) -> list[Incident]:
         start = _ts(codec.iso(since) or "")
         rows = [
             r

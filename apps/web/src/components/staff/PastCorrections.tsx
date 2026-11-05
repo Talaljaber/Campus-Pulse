@@ -27,6 +27,7 @@ export function PastCorrections({ hints }: PastCorrectionsProps) {
   const columns: Column<HintRow>[] = [
     {
       id: "text",
+      primary: true,
       header: t("corrections.col.text"),
       cell: (r) => (
         <span dir={textDir(r.request_text)} className="line-clamp-2">
@@ -37,8 +38,8 @@ export function PastCorrections({ hints }: PastCorrectionsProps) {
     },
     { id: "modelCategory", header: t("corrections.col.modelCategory"), cell: (r) => cat(r.model_category), sortValue: (r) => cat(r.model_category) },
     { id: "modelPriority", header: t("corrections.col.modelPriority"), cell: (r) => pri(r.model_priority), sortValue: (r) => PRIORITY_RANK[r.model_priority ?? ""] ?? 3 },
-    { id: "category", header: t("corrections.col.category"), cell: (r) => cat(r.corrected_category), sortValue: (r) => cat(r.corrected_category) },
-    { id: "priority", header: t("corrections.col.priority"), cell: (r) => pri(r.corrected_priority), sortValue: (r) => PRIORITY_RANK[r.corrected_priority] ?? 3 },
+    { id: "category", primary: true, header: t("corrections.col.category"), cell: (r) => cat(r.corrected_category), sortValue: (r) => cat(r.corrected_category) },
+    { id: "priority", primary: true, header: t("corrections.col.priority"), cell: (r) => pri(r.corrected_priority), sortValue: (r) => PRIORITY_RANK[r.corrected_priority] ?? 3 },
     {
       id: "kind",
       header: t("corrections.col.kind"),

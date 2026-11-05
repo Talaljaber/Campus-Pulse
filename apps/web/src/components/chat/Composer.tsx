@@ -22,6 +22,8 @@ export interface ComposerProps {
   busy: boolean;
   /** Where the microphone button goes: a node, or a function of {@link ComposerMicApi}. Empty when voice is not offered. */
   micSlot?: ReactNode | ((api: ComposerMicApi) => ReactNode);
+  /** Prefills the editor from a starter prompt; the user can always change it before sending. */
+  initialText?: string;
 }
 
 /**
@@ -32,13 +34,23 @@ export interface ComposerProps {
  * Voice: a dictated transcript only fills the box. It is editable and is sent only when the
  * student presses send, with `mode` set to `voice`. Emptying the box resets the mode to `text`.
  */
-export function Composer({ onSubmit, busy, micSlot }: ComposerProps) {
+export function Composer({ onSubmit, busy, micSlot, initialText = "" }: ComposerProps) {
   const t = useT();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText);
   const [voice, setVoice] = useState(false);
   // What was typed before dictation began; the transcript is appended to it.
   const [base, setBase] = useState("");
   const empty = text.trim() === "";
+
+  // A new starter prompt replaces the text (adjusting state while rendering, not in an effect).
+  const [seenInitial, setSeenInitial] = useState(initialText);
+  if (initialText !== seenInitial) {
+    setSeenInitial(initialText);
+    if (initialText) {
+      setText(initialText);
+      setVoice(false);
+    }
+  }
 
   const send = () => {
     if (busy || empty) return;
@@ -73,11 +85,11 @@ export function Composer({ onSubmit, busy, micSlot }: ComposerProps) {
   };
 
   return (
-    <form onSubmit={onFormSubmit} className="flex items-end gap-2">
+    <form onSubmit={onFormSubmit} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-2 sm:flex">
       <TextArea
         label={t("chat.composerLabel")}
         hideLabel
-        className="flex-1"
+        className="col-span-3 min-w-0 sm:flex-1"
         placeholder={t("chat.placeholder")}
         value={text}
         onChange={onChange}
