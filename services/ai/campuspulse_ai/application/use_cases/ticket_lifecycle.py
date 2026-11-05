@@ -67,6 +67,7 @@ RUNNING = frozenset({TicketStatus.NEW, TicketStatus.IN_PROGRESS})
 DONE = frozenset({TicketStatus.SOLVED, TicketStatus.CLOSED})
 BODY_MAX = 4000
 PAST_CORRECTION = "past correction"
+FROM_CONVERSATION = "raised from what the requester described"
 SYSTEM = "system"
 
 
@@ -312,6 +313,28 @@ class TicketLifecycleUseCase:
             by, "ticket.hint_applied", updated, {"from": ticket.office, "to": office, "priority": str(raised)}
         )
         return LifecycleChange(updated, activity, (), mirror=True, from_office=ticket.office)
+
+    def raise_priority(self, ticket_id: str, priority: Priority) -> LifecycleChange:
+        """The requester's own words call for a higher priority than the ticket has: a reviewed chat
+        proposal above the new ticket, or a follow-up (an exam, a deadline) on an open one. System actor;
+        raise-only; only while the ticket is new or in progress; the clock restarts; no hint, no email.
+        A lower or equal priority is a no-op."""
+        ticket, _ = self._load(ticket_id)
+        self._not_merged(ticket)
+        if ticket.status not in RUNNING or priority.rank <= ticket.priority.rank:
+            return LifecycleChange(ticket, None)
+        now = self._clock.now()
+        updated = self._save(
+            dataclasses.replace(relabelled(ticket, ticket.category, priority), **self._restart(priority, now))
+        )
+        by = _SystemActor()
+        activity = self._activity(
+            updated, ActivityKind.PRIORITY, by, now, body=FROM_CONVERSATION,
+            from_priority=str(ticket.priority), to_priority=str(priority),
+        )  # fmt: skip
+        change = {"from": str(ticket.priority), "to": str(priority)}
+        self._audit(by, "ticket.priority_from_chat", updated, change)
+        return LifecycleChange(updated, activity, (), mirror=True)
 
     def on_created(self, ticket_id: str) -> None:
         """Row 1 (a background task, idempotent): the `created` thread row and the two `received` emails."""

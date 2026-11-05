@@ -324,6 +324,36 @@ def test_row10_priority_change_restarts_with_the_new_period_and_sends_no_email(h
     assert stored(h, t).sla_due_at == now(h) + 24 * HOUR and up.activity is not None
 
 
+def test_raise_priority_lifts_a_new_ticket_restarts_the_clock_and_never_lowers(h: LifecycleHarness) -> None:
+    t = seed(h, priority=Priority.MEDIUM)
+    ch = h.lifecycle.raise_priority(t.id, Priority.HIGH)
+    after = stored(h, t)
+    assert after.priority == Priority.HIGH
+    assert_restarted(h, after, 1)
+    a = ch.activity
+    assert a is not None and a.kind == ActivityKind.PRIORITY and a.actor_role == "system"
+    assert (a.from_priority, a.to_priority) == ("medium", "high")
+    assert ch.emails == () and ch.mirror
+    for same_or_lower in (Priority.HIGH, Priority.MEDIUM, Priority.LOW):
+        assert h.lifecycle.raise_priority(t.id, same_or_lower).activity is None
+    assert stored(h, t).priority == Priority.HIGH
+
+
+def test_raise_priority_also_lifts_a_ticket_in_progress(h: LifecycleHarness) -> None:
+    t = seed(h, priority=Priority.LOW, status=PROG)
+    assert h.lifecycle.raise_priority(t.id, Priority.HIGH).activity is not None
+    after = stored(h, t)
+    assert (after.priority, after.status) == (Priority.HIGH, PROG)
+    assert_restarted(h, after, 1)
+
+
+def test_raise_priority_leaves_a_finished_ticket_alone(h: LifecycleHarness) -> None:
+    for status in (SOLVED, CLOSED):
+        t = seed(h, priority=Priority.LOW, status=status)
+        assert h.lifecycle.raise_priority(t.id, Priority.HIGH).activity is None
+        assert stored(h, t).priority == Priority.LOW
+
+
 def test_priority_needs_a_running_ticket_and_office_staff(h: LifecycleHarness) -> None:
     done = seed(h, status=SOLVED)
     with pytest.raises(InvalidInput):

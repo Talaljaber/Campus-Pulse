@@ -19,7 +19,6 @@ from string import Template
 from typing import Any
 
 from campuspulse_ai.adapters.llm.cached_chat import CachedChat, prompt_hash
-from campuspulse_ai.application.use_cases.issue_context import IssueContextPreparer
 from campuspulse_ai.application.use_cases.chat_ports import (
     INTENTS,
     AgentReply,
@@ -28,6 +27,7 @@ from campuspulse_ai.application.use_cases.chat_ports import (
     ProposalFacts,
     Turn,
 )
+from campuspulse_ai.application.use_cases.issue_context import IssueContextPreparer
 
 log = logging.getLogger(__name__)
 
@@ -68,6 +68,7 @@ _OPERATIONAL = re.compile(
     r"working on|please use|will be fixed)\b|(?:إعلان|صيانة|انقطاع|عطل|استخدم)",
     re.IGNORECASE,
 )
+_KIND_TAG = re.compile(r"^\[[a-z_]+\]\s*")  # the internal "[outage] " prefix of an announcement line
 _SAFE = {
     "en": (
         "I do not have information about the cause, a workaround, or when it will be fixed. "
@@ -178,11 +179,14 @@ class ChatAgentLLM:
         return all(match.group().casefold() in cited.casefold() for match in _UNSUPPORTED.finditer(text))
 
     @staticmethod
-    def _safe(ctx: ChatContext) -> str:
-        notice = next((s for s in ctx.sources if s.kind == "announcement"), None)
+    def _safe(ctx: ChatContext, source_ids: Sequence[str] = ()) -> str:
+        """The canned reply for an ungrounded answer. It quotes a notice only when the model's own reply
+        cited it; a live notice that has nothing to do with the conversation is never pulled in."""
+        by_id = {s.id: s for s in ctx.sources}
+        notice = next((by_id[i] for i in source_ids if i in by_id and by_id[i].kind == "announcement"), None)
         if notice is None:
             return _SAFE[ctx.lang]
-        quoted = notice.text.strip()[:300]
+        quoted = _KIND_TAG.sub("", notice.text.strip())[:300]
         if ctx.lang == "ar":
             return f"الإعلان يقول: «{quoted}». هل المشكلة بنفس المكان؟ بقدر أساعدك تسجّل طلب."
         return f'The notice says: "{quoted}". Is your problem in the same place? I can help record a request.'
@@ -198,7 +202,7 @@ class ChatAgentLLM:
         parsed = parse_reply(self._chat.ask(self._purpose, payload, wire, response_format=JSON_OBJECT))
         if parsed is not None and not self._grounded(parsed.reply, parsed.source_ids, ctx):
             log.info("chat agent: unsupported operational claim replaced (%s)", self._version)
-            return AgentReply(self._safe(ctx), "chat")
+            return AgentReply(self._safe(ctx, parsed.source_ids), "chat")
         if parsed is None:
             log.info("chat agent: no usable reply (%s)", self._version)
         return parsed
@@ -226,5 +230,5 @@ class ChatAgentLLM:
             return None
         text, ids = parsed
         if not self._grounded(text, ids, ctx):
-            return self._safe(ctx)
+            return self._safe(ctx, ids)
         return text

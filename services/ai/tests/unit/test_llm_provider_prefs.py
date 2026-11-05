@@ -73,3 +73,18 @@ def test_client_sends_neither_by_default() -> None:
     body = _body({})
     assert "provider" not in body
     assert "reasoning" not in body
+
+
+def test_chat_may_use_another_provider_but_keeps_data_rule(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("CHAT_AGENT_ALLOW_FALLBACKS", raising=False)
+    s = _settings(monkeypatch)
+    assert s.chat_provider_preferences() == {"allow_fallbacks": True, "data_collection": "deny"}
+    assert s.llm_provider_preferences()["allow_fallbacks"] is False  # front end and oracle stay pinned
+
+
+def test_chat_fallbacks_switch_off_and_never_override_an_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    off = _settings(monkeypatch, CHAT_AGENT_ALLOW_FALLBACKS="false")
+    assert off.chat_provider_preferences()["allow_fallbacks"] is False
+    pinned = _settings(monkeypatch, LLM_PROVIDER_ORDER="deepinfra", CHAT_AGENT_ALLOW_FALLBACKS="true")
+    assert pinned.chat_provider_preferences() == {
+        "allow_fallbacks": False, "data_collection": "deny", "order": ["deepinfra"]}

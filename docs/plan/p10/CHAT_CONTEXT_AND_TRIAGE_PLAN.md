@@ -183,3 +183,43 @@ Adopt: LLM context preparation on every incoming user message; trained classifie
 Unspecified: bank building/name, functions of buildings other than L, exact urgency thresholds beyond existing policy, persistence retention period and latency budget. Keep these configurable or unknown; they do not block architecture work. The user's campus facts are the initial knowledge source, not a claim that all existing project seed data has already been reconciled.
 
 Completion of this planning task means this file only. Implementation, migrations, model calls, server restarts and edits to application code are intentionally deferred to a subsequent request.
+
+## 14. Follow-up decisions, 2026-11-05 (user-directed)
+
+- The preparation step is on (`issue_context_enabled: true`, prompt `config/prompts/issue_context_v2.md`) for every
+  message, English included. The chat prompt is `chat_agent_v3.md`.
+- `classifier_text` is now always plain English (Arabic and Arabizi are translated). This replaces the earlier
+  "keep Arabic in Arabic" rule of section 5. Evidence on ten Arabic/Arabizi messages: with an English rewrite all ten
+  got one confident category and the automatic route; with the Arabic wording most got 2 to 5 categories and went to
+  ask, review or the topic menu (offline classifier, conformal sets). The student's reply stays in their language.
+  Known cost: the stored request text is the English rewrite, not the student's own words (section 9's "original
+  evidence" is still open).
+- The campus facts now say M is the bank inside the university (the user's wording; Codex had left M unknown).
+- The priority recommendation is applied, raise-only: in the proposal, and again at confirmation through
+  `TicketLifecycleUseCase.raise_priority`. A message flagged `injection` or `queue_jump` never gets the raise.
+- A failing preparation no longer drops the chat to the plain form: the turn continues with the plain request text.
+  The reply call and the preparation call run side by side.
+- Known limit: a MyGJU problem about a record (a missing course, a payment not showing) still tilts to IT Support
+  because the website name is in the sentence; staff forwarding corrects it.
+
+## 15. One student, one issue, one ticket (2026-11-05, user-directed)
+
+Problem seen: the same student ended up with three open e-learning tickets in one conversation, and a follow-up
+("I also have an exam") proposed another ticket instead of changing the first.
+
+- Before a proposal, the chat reads the caller's own open tickets (`Repository.open_tickets_for_alias`, status new or
+  in progress, newest first, at most 5) and passes them to the issue preparer, which may answer `duplicate_of` with
+  one listed ticket number (a repeat, or only extra detail or urgency). The adapter drops any number it was not given.
+  Without the preparer, a request whose normalized words equal an open ticket's text counts as a repeat too.
+- A repeat never opens a second ticket. If the new priority (model, plus the evidence-backed recommendation) is higher
+  than the open ticket's, the ticket is raised (`TicketLifecycleUseCase.raise_priority`, new or in progress, system
+  actor, clock restarts, a `priority` activity row) and the student is told. Otherwise the student is told which
+  ticket is already open and at what priority. A different category from the open ticket, or a pending
+  clarification question, means the message is treated as a new request.
+- At confirmation, a token whose text equals another open ticket of the same student is refused
+  (`DuplicateOpenTicket`, 422 on the plain-form endpoint, the "already open" reply in the chat). The ticket made by the
+  same token never counts, so a repeated confirm still returns its stored result.
+- Not done: the student's follow-up words are not added to the existing ticket as a comment, and the office is not
+  emailed when a priority is raised this way (it shows in the queue and in the ticket thread). Tickets that were
+  already duplicated before this change are untouched.
+

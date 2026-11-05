@@ -53,6 +53,25 @@ class ChatResult:
     reasoning_tokens: int = 0
 
 
+_DETAIL_MAX_CHARS = 240
+
+
+def _error_detail(resp: httpx.Response) -> str:
+    """OpenRouter's own explanation of a 402/429 (message, provider, raw text), truncated; never the key."""
+    try:
+        body = resp.json()
+        err = body.get("error") if isinstance(body, dict) else None
+        if not isinstance(err, dict):
+            return "no detail in the response"
+        raw_meta = err.get("metadata")
+        meta = raw_meta if isinstance(raw_meta, dict) else {}
+        parts = [err.get("message"), meta.get("provider_name"), meta.get("raw")]
+        text = "; ".join(str(p) for p in parts if p)
+    except ValueError:
+        return "no detail in the response"
+    return text[:_DETAIL_MAX_CHARS] or "no detail in the response"
+
+
 class OpenRouterClient:
     """A minimal OpenRouter `/chat/completions` client over httpx (shared by the oracle and the
     understander).
@@ -157,9 +176,8 @@ class OpenRouterClient:
                     last_error = "OpenRouter rate limited (429)"
                     continue
             if resp.status_code in (_NO_CREDITS, _RATE_LIMITED):
-                raise LLMUnavailable(
-                    f"OpenRouter refused the call ({resp.status_code}: credits or rate limit)"
-                )
+                detail = _error_detail(resp)
+                raise LLMUnavailable(f"OpenRouter refused the call ({resp.status_code}: {detail})")
             if resp.status_code >= _CLIENT_ERROR:
                 raise LLMUnavailable(f"OpenRouter rejected the request ({resp.status_code})")
             return self._parse(resp, latency_ms)

@@ -51,3 +51,36 @@ def test_fabricated_evidence_is_rejected() -> None:
     )
     adapter = IssueContextLLM(CachedChat(client, "test", DictCache()), "prepare")
     assert adapter.prepare([Turn("user", "Wifi is down")], "now") is None
+
+
+def _prepare_with(duplicate: object, open_numbers: tuple[str, ...]) -> tuple[Any, ScriptedClient]:
+    from campuspulse_ai.application.use_cases.issue_context import OpenTicket
+
+    raw = json.dumps(
+        {"classifier_text": "e-learning is down", "priority_recommendation": None, "priority_evidence": [],
+         "duplicate_of": duplicate}
+    )
+    client = ScriptedClient(raw)
+    adapter = IssueContextLLM(CachedChat(client, "test", DictCache()), "prepare")
+    tickets = [OpenTicket(n, "e-learning is not working", "medium", "new") for n in open_numbers]
+    return adapter.prepare([Turn("user", "e-learning is down")], "now", tickets), client
+
+
+def test_the_open_tickets_are_sent_and_a_listed_number_is_accepted() -> None:
+    result, client = _prepare_with("B7249E6B", ("B7249E6B", "F7ED0A91"))
+    assert result is not None and result.duplicate_of == "B7249E6B"
+    wire = json.loads(client.calls[0][1][1]["content"])
+    assert [t["number"] for t in wire["open_tickets"]] == ["B7249E6B", "F7ED0A91"]
+    assert wire["open_tickets"][0]["priority"] == "medium" and wire["open_tickets"][0]["status"] == "new"
+
+
+def test_a_number_that_was_not_listed_or_is_not_a_string_is_dropped() -> None:
+    for bad in ("DEADBEEF", 12345, ["B7249E6B"], ""):
+        result, _ = _prepare_with(bad, ("B7249E6B",))
+        assert result is not None and result.duplicate_of is None, bad
+
+
+def test_without_open_tickets_nothing_is_sent_and_no_duplicate_is_possible() -> None:
+    result, client = _prepare_with("B7249E6B", ())
+    assert result is not None and result.duplicate_of is None
+    assert "open_tickets" not in json.loads(client.calls[0][1][1]["content"])

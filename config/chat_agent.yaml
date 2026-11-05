@@ -3,9 +3,10 @@
 # Never part of the scored offline path; runs only with OPENROUTER_API_KEY and CHAT_AGENT_ENABLED != false.
 # The model id is pinned; change it only with a new decision. Temperature 0 (project rule), responses cached.
 model: deepseek/deepseek-v4.1-flash      # alternative: qwen/qwen3.8-flash
-prompt_version: chat-v2
-issue_context_enabled: false  # staged until snapshot/priority integration and acceptance checks are complete
-prompt_file: config/prompts/chat_agent_v2.md
+prompt_version: chat-v3
+issue_context_enabled: true   # the LLM prepares the issue (and advises a priority) before every message, English too
+issue_context_prompt: config/prompts/issue_context_v2.md
+prompt_file: config/prompts/chat_agent_v3.md
 temperature: 0
 max_tokens: 500
 timeout_s: 12
@@ -33,6 +34,8 @@ templates:
     generic: "I can help with campus requests. Tell me what you need."
     fallback: "The assistant is not available right now. Please describe your request in the form and I will route it."
     declined: "No problem, I have not recorded anything. Tell me if you need something else."
+    already_open: "You already have an open request for this: #{number} (priority {priority}). I did not open another one."
+    priority_raised: "You already have an open request for this: #{number}. I raised its priority to {priority} instead of opening another one."
   ar:
     proposal: "بقدر أرسل طلبك إلى {department}. بدك أسجّل الطلب؟"
     proposal_faq: "{answer} إذا ما حلّت المشكلة، بقدر أسجّل طلب لـ{department} بكل الأحوال. بدك أسجّله؟"
@@ -44,4 +47,9 @@ templates:
     generic: "بقدر أساعدك بطلبات الجامعة. احكيلي شو بدك."
     fallback: "المساعد مش متاح هلأ. اكتب طلبك في النموذج وأنا بوجّهه."
     declined: "ولا يهمك، ما سجّلت شي. احكيلي إذا بدك شي ثاني."
+    already_open: "عندك طلب مفتوح لنفس المشكلة: رقم #{number} (الأولوية {priority}). ما فتحت طلب ثاني."
+    priority_raised: "عندك طلب مفتوح لنفس المشكلة: رقم #{number}. رفعت أولويته إلى {priority} بدل ما أفتح طلب جديد."
+priorities:
+  en: {low: "low", medium: "medium", high: "high"}
+  ar: {low: "منخفضة", medium: "متوسطة", high: "عالية"}
 banned_phrases: [contacted, notified, confidence, conformal, probability, "تم إبلاغ", "تم التواصل"]

@@ -162,6 +162,22 @@ class SupabaseRepository:
         )
         return self._tickets(rows)
 
+    def open_tickets_for_alias(self, alias: str, limit: int = 5) -> list[Ticket]:
+        rows = self._rows(
+            "open_tickets_for_alias",
+            lambda: (
+                self._db.table("tickets")
+                .select("*")
+                .eq("requester_alias", alias)
+                .in_("status", list(OPEN_TICKET_STATUSES))
+                .order("clock_started_at", desc=True)
+                .order("id", desc=True)
+                .limit(limit)
+                .execute()
+            ),
+        )
+        return self._tickets(rows)
+
     def save_ticket_link(self, link: TicketLink) -> None:
         self._upsert("ticket_links", codec.link_row(link), on_conflict="ticket_id,sink")
 

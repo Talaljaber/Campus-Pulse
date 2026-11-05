@@ -59,7 +59,7 @@ def build_chat_agent(settings: Settings, raw: dict[str, Any]) -> ChatAgent | Non
         retry_backoff_s=1.0,
         retry_on_rate_limit=True,
         total_deadline_s=float(raw["timeout_s"]),
-        provider=settings.llm_provider_preferences(),
+        provider=settings.chat_provider_preferences(),
     )
     cache_path = resolve(Path(str(raw["cache_path"])))
     chat = CachedChat(
@@ -74,7 +74,7 @@ def build_chat_agent(settings: Settings, raw: dict[str, Any]) -> ChatAgent | Non
     prompt = resolve(Path(str(raw["prompt_file"]))).read_text(encoding="utf-8")
     agent = ChatAgentLLM(chat, prompt, str(raw["prompt_version"]), history_turns=int(raw["history_turns"]))
     agent.preparer = IssueContextLLM(
-        chat, resolve(Path("config/prompts/issue_context_v1.md")).read_text(encoding="utf-8")
+        chat, resolve(Path(str(raw["issue_context_prompt"]))).read_text(encoding="utf-8")
     )
     return agent
 

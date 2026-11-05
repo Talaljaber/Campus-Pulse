@@ -180,6 +180,15 @@ class InMemoryRepository:
         ]
         return [self._ticket(r) for r in sorted(rows, key=lambda r: (_ts(r["sla_due_at"]), r["id"]))]
 
+    def open_tickets_for_alias(self, alias: str, limit: int = 5) -> list[Ticket]:
+        rows = [
+            r
+            for r in self.tables["tickets"].values()
+            if r.get("requester_alias") == alias and r["status"] in OPEN_TICKET_STATUSES
+        ]
+        rows.sort(key=lambda r: (_ts(r["clock_started_at"]), r["id"]), reverse=True)
+        return [self._ticket(r) for r in rows[:limit]]
+
     def save_ticket_link(self, link: TicketLink) -> None:
         self._fk("tickets", link.ticket_id)
         for key, row in self.tables["ticket_links"].items():

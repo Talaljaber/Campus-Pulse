@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     # Chat agent (P9.8): the LLM part runs only with OPENROUTER_API_KEY and CHAT_AGENT_ENABLED != false;
     # preview and confirm always work (the plain form). Model id and parameters are pinned in the yaml.
     chat_agent_enabled: bool = True
+    chat_agent_allow_fallbacks: bool = True  # chat only: another provider may answer if one is rate-limited
     chat_agent_config: Path = Path("config/chat_agent.yaml")
 
     # Supabase (service role is server-side only)
@@ -149,6 +150,15 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return tuple(p.strip() for p in value.split(",") if p.strip())
         return value
+
+    def chat_provider_preferences(self) -> dict[str, object]:
+        """Provider preferences for the chat agent. Without an explicit LLM_PROVIDER_ORDER, OpenRouter may
+        use another provider when one is rate-limited (the data_collection rule still applies), so a single
+        busy provider cannot take the chat down."""
+        prefs = self.llm_provider_preferences()
+        if not self.llm_provider_order:
+            prefs["allow_fallbacks"] = self.chat_agent_allow_fallbacks
+        return prefs
 
     def llm_provider_preferences(self) -> dict[str, object]:
         """The OpenRouter ``provider`` request object built from the settings (provider-routing docs)."""

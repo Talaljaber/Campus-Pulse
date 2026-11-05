@@ -40,6 +40,7 @@ import logging
 import re
 import uuid
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -58,13 +59,17 @@ from campuspulse_ai.application.use_cases.chat_ports import (
     ReplyLang,
     Turn,
 )
-from campuspulse_ai.application.use_cases.issue_context import IssueContextPreparer
+from campuspulse_ai.application.use_cases.issue_context import (
+    IssueContextPreparer,
+    OpenTicket,
+    PreparedIssue,
+)
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.ports import Actor, Clarifier, TriageClassifier
 from campuspulse_ai.application.use_cases.proposals import ProposalClaims, sign, verify
 from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import DISTRESS, TriageUseCase
-from campuspulse_ai.domain.entities import CoreResult, Prediction
+from campuspulse_ai.domain.entities import CoreResult, Prediction, Ticket
 from campuspulse_ai.domain.errors import CampusPulseError, InvalidInput, StoreError
 from campuspulse_ai.domain.journey import HintMatch, ticket_number
 from campuspulse_ai.domain.labels import Category, Priority
@@ -86,9 +91,13 @@ CONSUMED_MAX = 10_000
 ALREADY_SENT = "this proposal was already sent"
 ASKED_IN_CHAT = "chat"
 """Placeholder question id counted once the requester wrote more than one message (one-question budget)."""
+ADVICE_BLOCKING_FLAGS = frozenset({"injection", "queue_jump"})
+"""A message with one of these flags never gets a priority raise from the issue preparer."""
 DISTRESS_QUESTION_ID = "distress"
 MORE_DETAIL_ID = "more_detail"
 ANNOUNCEMENTS_SHOWN = 5
+OPEN_TICKETS_SHOWN = 5
+OPEN_TICKET_TEXT_CHARS = 300
 ANNOUNCEMENT_CHARS = 300
 FIRST_NAME_CHARS = 30
 SHORT_MESSAGE_WORDS = 3
@@ -97,11 +106,50 @@ _ARABIC = re.compile("[؀-ۿ]")
 _NAME = re.compile(r"[^\W\d_]+")
 _TEMPLATE_KEYS = (
     "proposal", "proposal_faq", "more_detail", "confirmed", "confirmed_none", "no_proposal", "expired",
-    "generic", "fallback", "declined",
+    "generic", "fallback", "declined", "already_open", "priority_raised",
 )  # fmt: skip
 _OFFICES = ("registrar", "it", "finance", "transport", "facilities", "academic")
 Later = list[Callable[[], None]]
 """Follow-up work of one call (the hint's delivery); the route runs it after the response."""
+
+
+def _norm(text: str) -> str:
+    """Words only, lower case: two texts that differ in case, spacing or punctuation compare equal."""
+    return " ".join(re.findall(r"\w+", text.casefold()))
+
+
+@dataclass(frozen=True, slots=True)
+class _Open:
+    """One open ticket of the requester with the text it was opened from."""
+
+    ticket: Ticket
+    text: str
+
+    @property
+    def number(self) -> str:
+        return ticket_number(self.ticket.id)
+
+    def for_preparer(self) -> OpenTicket:
+        return OpenTicket(self.number, self.text, str(self.ticket.priority), str(self.ticket.status))
+
+
+@dataclass(frozen=True, slots=True)
+class _Issue:
+    """What the issue preparation gave one turn: a clean request text, a priority recommendation, the open
+    ticket it says this message is about, and the requester's open tickets."""
+
+    text: str | None = None
+    advice: Priority | None = None
+    duplicate_of: str | None = None
+    open_tickets: Sequence[_Open] = ()
+
+
+class DuplicateOpenTicket(InvalidInput):
+    """The requester already has an open ticket with this very text (a second confirmation of it)."""
+
+    def __init__(self, ticket: Ticket) -> None:
+        super().__init__(f"you already have an open request #{ticket_number(ticket.id)} for this")
+        self.ticket = ticket
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,6 +161,7 @@ class ChatConfig:
     departments: Mapping[str, Mapping[str, str]]
     templates: Mapping[str, Mapping[str, str]]
     banned: tuple[str, ...]
+    priorities: Mapping[str, Mapping[str, str]]
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ChatConfig:
@@ -124,9 +173,15 @@ class ChatConfig:
             raise ValueError("chat_agent.yaml: proposal_ttl_min must be a positive integer")
         departments: dict[str, dict[str, str]] = {}
         templates: dict[str, dict[str, str]] = {}
+        priorities: dict[str, dict[str, str]] = {}
         for lang in ("en", "ar"):
             names = (data.get("departments") or {}).get(lang) or {}
             texts = (data.get("templates") or {}).get(lang) or {}
+            words = (data.get("priorities") or {}).get(lang) or {}
+            for level in ("low", "medium", "high"):
+                if not isinstance(words.get(level), str):
+                    raise ValueError(f"chat_agent.yaml: priorities.{lang}.{level} is missing")
+            priorities[lang] = dict(words)
             for office in _OFFICES:
                 if not isinstance(names.get(office), str):
                     raise ValueError(f"chat_agent.yaml: departments.{lang}.{office} is missing")
@@ -137,7 +192,7 @@ class ChatConfig:
         banned = data.get("banned_phrases")
         if not isinstance(banned, list) or not banned or not all(isinstance(b, str) and b for b in banned):
             raise ValueError("chat_agent.yaml: banned_phrases must be a non-empty list of strings")
-        return cls(float(sim), ttl, departments, templates, tuple(banned))
+        return cls(float(sim), ttl, departments, templates, tuple(banned), priorities)
 
 
 class ChatUseCase:
@@ -205,15 +260,14 @@ class ChatUseCase:
         claims, token_bad = self._claims(cmd.proposal_token, alias)
         ctx = self._context(caller, lang, claims)
         turns = [Turn(role=m.role, content=m.content) for m in messages]
-        prepared_text: str | None = None
-        if self._preparer is not None:
-            prepared = self._preparer.prepare(turns, self._clock.now().isoformat())
-            if prepared is None:
-                return self._fallback(lang)
-            prepared_text = prepared.classifier_text
-        agent_reply = self._agent.reply(ctx, turns)
+        open_tickets = self._open_tickets(alias)
+        agent_reply, prepared = self._reply_and_prepare(ctx, turns, open_tickets)
         if agent_reply is None:
             return self._fallback(lang)
+        issue = _Issue(open_tickets=open_tickets)
+        if prepared is not None:
+            advice = Priority(prepared.priority_recommendation) if prepared.priority_recommendation else None
+            issue = _Issue(prepared.classifier_text, advice, prepared.duplicate_of, open_tickets)
         return self._answer(
             agent_reply,
             cmd.proposal_token or "",
@@ -224,8 +278,47 @@ class ChatUseCase:
             claims,
             token_bad,
             later,
-            prepared_text,
+            issue,
         )
+
+    def _open_tickets(self, alias: str) -> list[_Open]:
+        """The requester's open tickets with their texts, newest first. A failing read gives none."""
+        if not alias:
+            return []
+        try:
+            tickets = self._repo.open_tickets_for_alias(alias, OPEN_TICKETS_SHOWN)
+            return [
+                _Open(t, self._repo.get_request(t.request_id).raw_text[:OPEN_TICKET_TEXT_CHARS])
+                for t in tickets
+            ]
+        except CampusPulseError:
+            log.warning("open tickets unavailable for the chat", exc_info=True)
+            return []
+
+    def _reply_and_prepare(
+        self, ctx: ChatContext, turns: Sequence[Turn], open_tickets: Sequence[_Open] = ()
+    ) -> tuple[AgentReply | None, PreparedIssue | None]:
+        """The agent's reply and, when enabled, the issue preparation. They run side by side so one slow
+        model call does not double the wait. The preparation only enriches the turn (a clean request text
+        and a priority recommendation), so when it fails the turn goes on without it."""
+        agent = self._agent
+        if agent is None:
+            return None, None
+        if self._preparer is None:
+            return agent.reply(ctx, turns), None
+        now = self._clock.now().isoformat()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            known = [o.for_preparer() for o in open_tickets]
+            future = pool.submit(self._preparer.prepare, turns, now, known)
+            reply = agent.reply(ctx, turns)
+            try:
+                prepared = future.result()
+            except Exception:  # an advisory step must never take the chat down
+                log.warning("issue preparation crashed; continuing without it", exc_info=True)
+                prepared = None
+        if prepared is None:
+            log.info("issue preparation gave no usable result; using the plain request text")
+        return reply, prepared
 
     def _answer(
         self,
@@ -238,20 +331,25 @@ class ChatUseCase:
         claims: ProposalClaims | None,
         token_bad: bool,
         later: Later | None,
-        prepared_text: str | None = None,
+        issue: _Issue | None = None,
     ) -> dto.ChatTurnResponse:
+        issue = issue or _Issue()
         text = self._text(lang)
         if reply.intent == "request":
-            if prepared_text is not None and not prepared_text:
+            if issue.text is not None and not issue.text:
                 return self._plain(text["more_detail"], clear=False)
-            return self._proposal_turn(
-                prepared_text if prepared_text is not None else _request_text(messages), caller, lang, ctx
-            )
+            request_text = issue.text if issue.text is not None else _request_text(messages)
+            repeat = self._repeat_turn(request_text, caller, lang, issue, later)
+            if repeat is not None:
+                return repeat
+            return self._proposal_turn(request_text, caller, lang, ctx, issue.advice)
         if reply.intent == "confirm":
             if claims is None:  # nothing to confirm: never let the model's words claim a recorded request
                 return self._plain(text["expired"] if token_bad else text["no_proposal"], clear=token_bad)
             try:
                 done = self._confirm_claims(cmd_token, claims, caller, later)
+            except DuplicateOpenTicket as dup:  # the same request is already open
+                return self._plain(self._already_open(dup.ticket, lang), clear=True)
             except InvalidInput:  # the proposal was already sent
                 return self._plain(text["expired"], clear=True)
             return dto.ChatTurnResponse(
@@ -266,11 +364,81 @@ class ChatUseCase:
             return self._plain(self._safe(reply.reply, text["declined"]), clear=True)
         return self._plain(self._safe(reply.reply, text["generic"]), clear=False)
 
+    def _repeat_turn(
+        self, request_text: str, caller: Actor, lang: ReplyLang, issue: _Issue, later: Later | None
+    ) -> dto.ChatTurnResponse | None:
+        """The requester already has an open ticket for this issue: no new ticket. When the message adds
+        urgency (an exam, a deadline) the existing ticket is raised to the new priority, otherwise the
+        requester is told which ticket is already open. None = not a repeat, go on with a proposal."""
+        match = self._match_open(request_text, issue)
+        if match is None:
+            return None
+        proposal = self._propose(request_text, [], None, caller, issue.advice)
+        if proposal.question is not None or str(proposal.category) != str(match.ticket.category):
+            return None  # unclear, or a different kind of problem: treat it as a new request
+        wanted = Priority(proposal.priority)
+        text = self._text(lang)
+        lifecycle = self._lifecycle
+        if lifecycle is not None and wanted.rank > match.ticket.priority.rank:
+            try:
+                change = lifecycle.raise_priority(match.ticket.id, wanted)
+            except (CampusPulseError, ValueError):
+                log.warning("priority not raised on ticket %s", match.ticket.id, exc_info=True)
+                change = None
+            if change is not None and change.activity is not None:
+                applied = change
+
+                def deliver() -> None:
+                    lifecycle.deliver(applied)
+
+                if later is None:
+                    deliver()
+                else:
+                    later.append(deliver)
+                reply = text["priority_raised"].format(
+                    number=match.number, priority=self._priority_word(wanted, lang)
+                )
+                return self._plain(reply, clear=True)
+        return self._plain(self._already_open(match.ticket, lang), clear=True)
+
+    @staticmethod
+    def _match_open(request_text: str, issue: _Issue) -> _Open | None:
+        """The open ticket the preparer named, else one opened from this very text."""
+        if issue.duplicate_of:
+            named = next((o for o in issue.open_tickets if o.number == issue.duplicate_of), None)
+            if named is not None:
+                return named
+        wanted = _norm(request_text)
+        return next((o for o in issue.open_tickets if wanted and _norm(o.text) == wanted), None)
+
+    def _already_open(self, ticket: Ticket, lang: ReplyLang) -> str:
+        return self._text(lang)["already_open"].format(
+            number=ticket_number(ticket.id), priority=self._priority_word(ticket.priority, lang)
+        )
+
+    def _priority_word(self, priority: Priority, lang: ReplyLang) -> str:
+        return self._cfg.priorities[lang].get(str(priority), str(priority))
+
+    def _guard_duplicate(self, alias: str, text: str, request_id: str) -> None:
+        """Refuses a confirmation whose text is already open as another ticket of the requester. The ticket
+        this very confirmation made (same request id) never counts, so a repeated confirm still returns it."""
+        wanted = _norm(text)
+        if not wanted:
+            return
+        for open_ticket in self._open_tickets(alias):
+            if open_ticket.ticket.request_id != request_id and _norm(open_ticket.text) == wanted:
+                raise DuplicateOpenTicket(open_ticket.ticket)
+
     def _proposal_turn(
-        self, request_text: str, caller: Actor, lang: ReplyLang, ctx: ChatContext
+        self,
+        request_text: str,
+        caller: Actor,
+        lang: ReplyLang,
+        ctx: ChatContext,
+        advice: Priority | None = None,
     ) -> dto.ChatTurnResponse:
         asked = [ASKED_IN_CHAT] if "\n" in request_text else []
-        proposal = self._propose(request_text, asked, None, caller)
+        proposal = self._propose(request_text, asked, None, caller, advice)
         if proposal.question is not None:
             return self._plain(_question_text(proposal.question), clear=False)
         text = self._text(lang)
@@ -325,7 +493,14 @@ class ChatUseCase:
     def preview(self, cmd: dto.ChatPreviewRequest, caller: Actor) -> dto.ProposalOut:
         return self._propose(cmd.text, cmd.asked, cmd.answer, caller)
 
-    def _propose(self, text: str, asked: Sequence[str], answer: str | None, caller: Actor) -> dto.ProposalOut:
+    def _propose(
+        self,
+        text: str,
+        asked: Sequence[str],
+        answer: str | None,
+        caller: Actor,
+        advice: Priority | None = None,
+    ) -> dto.ProposalOut:
         full = f"{text.strip()}\n{answer.strip()}" if answer and answer.strip() else text.strip()
         full = full[-REQUEST_TEXT_MAX:]
         req, core = self._classifier.classify(full)
@@ -350,6 +525,10 @@ class ChatUseCase:
         if hint is not None:
             category = Category(hint.corrected_category)
             priority = max(priority, Priority(hint.corrected_priority), key=lambda p: p.rank)
+        if advice is not None and question is None and ADVICE_BLOCKING_FLAGS.isdisjoint(core.flags):
+            # The preparer's recommendation (evidence-backed) can only raise the priority; a message that
+            # looks like an injection or a queue-jump never gets a raise from it.
+            priority = max(priority, advice, key=lambda p: p.rank)
         pred = Prediction(
             id="", request_id="", category=category, priority=priority, core=core, tier=core.tier,
             flags=set(core.flags), explanation=None, cost=Money(0.0), artifact_version=core.artifact.name,
@@ -473,6 +652,7 @@ class ChatUseCase:
         signature = token.partition(".")[2]
         digest = hashlib.sha256(signature.encode("ascii")).hexdigest()
         request_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"campuspulse-chat:{digest}"))
+        self._guard_duplicate(caller.alias or "", claims.text, request_id)
         claim = self._claims_store.claim(
             digest, caller.alias or "", request_id, datetime.fromtimestamp(claims.exp, tz=UTC)
         )
@@ -489,10 +669,39 @@ class ChatUseCase:
         applied = False
         if ticket_id and claims.hint_id and action is not None and action.type == ActionType.TICKET:
             applied = self._apply_hint(ticket_id, claims, later)
+        if ticket_id and action is not None and action.type == ActionType.TICKET:
+            self._raise_to_reviewed(ticket_id, claims, triage, later)
         result = dto.ChatConfirmResponse(triage=triage, ticket_id=ticket_id, hint_applied=applied)
         if not self._claims_store.complete(digest, result):
             raise StoreError("chat confirmation result could not be recorded")
         return result
+
+    def _raise_to_reviewed(
+        self, ticket_id: str, claims: ProposalClaims, triage: dto.TriageResponse, later: Later | None
+    ) -> None:
+        """The priority the requester reviewed is a floor. Confirmation triages the same text again, which can
+        rate it lower than the proposal (the proposal was raised from what the requester described), so the
+        ticket is raised to match. Never lowers anything."""
+        lifecycle = self._lifecycle
+        decided = triage.priority.label if triage.priority is not None else None
+        reviewed = Priority(claims.priority)
+        if lifecycle is None or decided is None or reviewed.rank <= decided.rank:
+            return
+        try:
+            change = lifecycle.raise_priority(ticket_id, reviewed)
+        except (CampusPulseError, ValueError):
+            log.warning("reviewed priority not applied to ticket %s", ticket_id, exc_info=True)
+            return
+        if change.activity is None:
+            return
+
+        def deliver() -> None:
+            lifecycle.deliver(change)
+
+        if later is None:
+            deliver()
+        else:
+            later.append(deliver)
 
     def _apply_hint(self, ticket_id: str, claims: ProposalClaims, later: Later | None) -> bool:
         lifecycle = self._lifecycle

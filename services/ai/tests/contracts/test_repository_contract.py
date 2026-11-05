@@ -399,6 +399,21 @@ def test_overdue_open_tickets(h: Harness) -> None:
     assert mine == [later.id, late.id]
 
 
+def test_open_tickets_for_alias(h: Harness) -> None:
+    req = h.repo.save_request(make_request(h))
+    other = h.repo.save_request(dataclasses.replace(make_request(h), alias=f"{h.tag}-other"))
+    first = h.repo.save_ticket(make_ticket(req.id, sla=T0))
+    second = h.repo.save_ticket(make_ticket(req.id, sla=T0, status=TicketStatus.IN_PROGRESS))
+    h.repo.save_ticket(make_ticket(req.id, sla=T0, status=TicketStatus.SOLVED))
+    h.repo.save_ticket(make_ticket(req.id, sla=T0, status=TicketStatus.CLOSED))
+    h.repo.save_ticket(make_ticket(other.id, sla=T0))
+    mine = h.repo.open_tickets_for_alias(h.tag)
+    assert {t.id for t in mine} == {first.id, second.id}
+    assert all(t.requester_alias == h.tag for t in mine)
+    assert len(h.repo.open_tickets_for_alias(h.tag, limit=1)) == 1
+    assert h.repo.open_tickets_for_alias(f"{h.tag}-nobody") == []
+
+
 def test_incidents_members_and_open_filter(h: Harness) -> None:
     r1 = h.repo.save_request(make_request(h))
     r2 = h.repo.save_request(make_request(h))

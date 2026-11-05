@@ -21,6 +21,7 @@ from campuspulse_ai.application.use_cases.chat_ports import (
     ProposalFacts,
     Turn,
 )
+from campuspulse_ai.application.use_cases.issue_context import OpenTicket, PreparedIssue
 from campuspulse_ai.application.use_cases.proposals import derive_key
 from campuspulse_ai.config.paths import CONFIG_DIR
 from campuspulse_ai.domain.policy import DefaultDecisionPolicy
@@ -74,6 +75,22 @@ class ScriptedAgent:
         return text(facts) if callable(text) else text
 
 
+@dataclass
+class FakePreparer:
+    """An `IssueContextPreparer` that returns one scripted result (None = the model failed)."""
+
+    result: PreparedIssue | None
+    calls: list[list[Turn]] = field(default_factory=list)
+    open_seen: list[list[OpenTicket]] = field(default_factory=list)
+
+    def prepare(
+        self, messages: Sequence[Turn], anchor: str, open_tickets: Sequence[OpenTicket] = ()
+    ) -> PreparedIssue | None:
+        self.calls.append(list(messages))
+        self.open_seen.append(list(open_tickets))
+        return self.result
+
+
 def says(text: str, intent: Intent) -> AgentReply:
     return AgentReply(reply=text, intent=intent)
 
@@ -99,7 +116,11 @@ def chat_config() -> ChatConfig:
 
 
 def build_chat(
-    *, agent: ScriptedAgent | None | str = "default", faq: FakeFAQ | None = None, core: FakeCore | None = None
+    *,
+    agent: ScriptedAgent | None | str = "default",
+    faq: FakeFAQ | None = None,
+    core: FakeCore | None = None,
+    preparer: FakePreparer | None = None,
 ) -> ChatHarness:
     """`agent="default"` = an empty ScriptedAgent, None = no LLM wired (fallback mode)."""
     c = build_test(core=core, faq=faq)
@@ -119,6 +140,7 @@ def build_chat(
         key=KEY,
         config=chat_config(),
         agent=scripted,
+        preparer=preparer,
         lifecycle=h.lifecycle,
         journey=h.journey,
         announcements=announcements,

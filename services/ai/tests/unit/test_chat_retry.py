@@ -49,3 +49,33 @@ def test_long_retry_after_falls_back_without_second_call() -> None:
         client.chat("test-model", [], params={})
     assert calls == 1
     client.close()
+
+
+def test_refusal_message_carries_openrouters_explanation_but_not_the_key() -> None:
+    body = {"error": {"code": 429, "message": "Provider returned error",
+                      "metadata": {"provider_name": "Relace", "raw": "rate-limited upstream, retry shortly"}}}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, json=body)
+
+    client = OpenRouterClient(
+        "fake-key", timeout_s=5, max_retries=0, retry_backoff_s=0,
+        sleep=lambda _: None, transport=httpx.MockTransport(handler),
+    )
+    with pytest.raises(LLMUnavailable) as exc:
+        client.chat("test-model", [], params={})
+    text = str(exc.value)
+    for part in ("429", "Provider returned error", "Relace", "rate-limited upstream"):
+        assert part in text
+    assert "fake-key" not in text
+    client.close()
+
+
+def test_refusal_without_a_json_error_body_still_raises_cleanly() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(402, text="not json")
+
+    client = OpenRouterClient("fake-key", timeout_s=5, max_retries=0, transport=httpx.MockTransport(handler))
+    with pytest.raises(LLMUnavailable, match="402: no detail in the response"):
+        client.chat("test-model", [], params={})
+    client.close()
