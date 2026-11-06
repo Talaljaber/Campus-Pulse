@@ -85,3 +85,29 @@ def test_arabizi_detection_on_augmentation(langid: LangIdentifier) -> None:
         pytest.skip("no reviewed Arabizi augmentation rows yet (P1.9 human check pending)")
     detected = sum(langid.identify(t) is Lang.ARABIZI for t in reviewed.text)
     assert detected / len(reviewed) >= floor, f"{detected}/{len(reviewed)}"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "kam si3r el sa3a el m3tamade la t5asos el IT? sa2alt 3al e-learning w ma 7ada rad",
+        "e7na 3al2een bel asanseir b mabna A, wa2ef bein el taba2at",
+        "el teams 3ala el laptop byfsel kol 5 da2ayi2 w byotlob mni a3mel sign in mn jdeed",
+        "missed my final today 3shan el mostashfa, ween a2addem el excuse 2abel ma ysakker",
+    ],
+)
+def test_a_borrowed_english_word_does_not_hide_clear_arabizi(langid: LangIdentifier, text: str) -> None:
+    """One guard word ("IT", "A", "in", "my today") no longer vetoes a sentence full of Arabizi evidence."""
+    assert langid.identify(text) == Lang.ARABIZI
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "My account is locked and I have an exam in 2 hours",
+        "the bus to building A left at 7:30 today without us",
+        "I need a copy of my payment receipt for cs201",
+    ],
+)
+def test_english_with_a_few_arabizi_looking_tokens_stays_english(langid: LangIdentifier, text: str) -> None:
+    assert langid.identify(text) == Lang.EN

@@ -23,7 +23,7 @@ from campuspulse_ai.adapters.models.llm_cue_floor import Condition, LlmCueFloor,
 from campuspulse_ai.adapters.models.llm_frontend_encoder import LlmFrontendEncoder
 from campuspulse_ai.composition.arabizi_llm import has_key
 from campuspulse_ai.config.settings import Settings
-from campuspulse_ai.domain.ports import CostLogger, ResponseCache, SentenceEncoder
+from campuspulse_ai.domain.ports import CostLogger, LabelOracle, ResponseCache, SentenceEncoder
 
 log = logging.getLogger(__name__)
 
@@ -121,3 +121,71 @@ def wrap_llm_frontend(
     cfg = cfg or FrontendCfg.load(settings.llm_frontend_config)
     frontend = make_frontend(settings, cfg, cost=cost)
     return LlmFrontendEncoder(encoder, frontend, workers=cfg.workers, explain_english=cfg.explain_english)
+
+
+def make_batch_oracle(settings: Settings, prompt_version: str, max_input_tokens: int) -> LabelOracle | None:
+    """D-058: the tier-1 set-constrained tie-breaker for predict.py's LLM mode, or None when it is off or no
+    key is configured. Same adapter as the live app (`composition.online.llm_wiring`); `oracle.prompt_version`
+    in the yaml overrides the frozen config's version (the frozen artifact stays unchanged)."""
+    if not has_key(settings):
+        return None
+    raw = yaml.safe_load(Path(settings.llm_frontend_config).read_text(encoding="utf-8")) or {}
+    cfg = dict(raw.get("oracle") or {})
+    enabled = settings.llm_oracle if settings.llm_oracle is not None else bool(cfg.get("enabled", False))
+    model = settings.openrouter_tier1_model or str(cfg.get("model") or "")
+    if not enabled or not model:
+        return None
+    from campuspulse_ai.adapters.llm.openrouter import OpenRouterOracle
+    from campuspulse_ai.adapters.llm.prompt import load_prompt
+    from campuspulse_ai.config.paths import CONFIG_DIR
+    from campuspulse_ai.domain.values import Tier
+
+    key = settings.openrouter_api_key
+    assert key is not None  # noqa: S101 - has_key above
+    version = settings.llm_oracle_prompt_version or str(cfg.get("prompt_version") or prompt_version)
+    http = OpenRouterClient(
+        key.get_secret_value(),
+        timeout_s=settings.llm_timeout_s,
+        max_retries=settings.llm_max_retries,
+        retry_backoff_s=settings.llm_retry_backoff_s,
+        provider=settings.chat_provider_preferences(),  # fallbacks on a 429, as in the chat (D-060)
+        reasoning_off=settings.llm_reasoning_off,
+    )
+    settings.llm_cache_path.parent.mkdir(parents=True, exist_ok=True)
+    return OpenRouterOracle(
+        Tier.TIER1,
+        model,
+        http,
+        SqliteCache(settings.llm_cache_path),
+        InMemoryCostLogger(),
+        prompt=load_prompt(CONFIG_DIR / "prompts", "oracle", version),
+        max_input_tokens=max_input_tokens,
+        daily_budget_usd=settings.llm_daily_budget_usd,
+    )
+
+
+def batch_llm_priority(settings: Settings) -> bool:
+    """D-058: whether the tie-breaker may also judge priority on every row (`oracle.priority`, env
+    LLM_ORACLE_PRIORITY overrides)."""
+    if settings.llm_oracle_priority is not None:
+        return settings.llm_oracle_priority
+    raw = yaml.safe_load(Path(settings.llm_frontend_config).read_text(encoding="utf-8")) or {}
+    return bool(dict(raw.get("oracle") or {}).get("priority", False))
+
+
+def batch_lower_unflagged_high(settings: Settings) -> bool:
+    """D-059: whether the tie-breaker may also correct a model `high` that no safety or deadline floor set
+    (`oracle.lower_unflagged_high`, env LLM_ORACLE_LOWER_HIGH overrides)."""
+    if settings.llm_oracle_lower_high is not None:
+        return settings.llm_oracle_lower_high
+    raw = yaml.safe_load(Path(settings.llm_frontend_config).read_text(encoding="utf-8")) or {}
+    return bool(dict(raw.get("oracle") or {}).get("lower_unflagged_high", False))
+
+
+def batch_category_top_k(settings: Settings) -> int:
+    """D-060: how many of the model's top categories the tie-breaker may choose from on every row (0 = only
+    the calibrated set; `oracle.category_top_k`, env LLM_ORACLE_CATEGORY_TOP_K overrides)."""
+    if settings.llm_oracle_category_top_k is not None:
+        return max(0, settings.llm_oracle_category_top_k)
+    raw = yaml.safe_load(Path(settings.llm_frontend_config).read_text(encoding="utf-8")) or {}
+    return max(0, int(dict(raw.get("oracle") or {}).get("category_top_k", 0)))

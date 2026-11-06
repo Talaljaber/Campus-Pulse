@@ -53,6 +53,11 @@ class Settings(BaseSettings):
 
     # Optional LLM front end: translate Arabic and Arabizi, plus an internal explanation (P7.4, D-050).
     llm_frontend: bool = False
+    llm_oracle: bool | None = None  # D-058: None = config/llm_frontend.yaml `oracle.enabled`
+    llm_oracle_priority: bool | None = None  # D-058: None = config/llm_frontend.yaml `oracle.priority`
+    llm_oracle_prompt_version: str | None = None  # D-059: None = yaml `oracle.prompt_version` (measurements)
+    llm_oracle_lower_high: bool | None = None  # D-059: None = yaml `oracle.lower_unflagged_high`
+    llm_oracle_category_top_k: int | None = None  # D-060: None = yaml `oracle.category_top_k`
     llm_frontend_config: Path = Path("config/llm_frontend.yaml")
     llm_frontend_model: str | None = None  # overrides the pinned model of the yaml (measurements only)
     llm_frontend_cache_path: Path | None = None  # overrides the yaml cache (scratch caches)

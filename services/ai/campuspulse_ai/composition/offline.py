@@ -61,8 +61,12 @@ from campuspulse_ai.application.use_cases.batch import read_batch_csv, write_pre
 from campuspulse_ai.application.use_cases.batch_predict import BatchPredictUseCase, BatchRow
 from campuspulse_ai.composition.arabizi_llm import has_key, llm_arabizi_requested, wrap_llm_arabizi
 from campuspulse_ai.composition.llm_frontend import (
+    batch_category_top_k,
+    batch_llm_priority,
+    batch_lower_unflagged_high,
     cue_floor_for,
     llm_frontend_requested,
+    make_batch_oracle,
     wrap_llm_frontend,
 )
 from campuspulse_ai.composition.translation import make_translator, wrap_encoder
@@ -246,13 +250,25 @@ def build_offline(
         urgency_floor=UrgencyFloorRule.from_yaml(lex / "urgency.yaml"),
         cue_floor=cue_floor_for(encoder, settings),
     )
-    oracle = NullOracle()
+    oracle: LabelOracle = NullOracle()
+    llm_priority = lower_high = False
+    top_k = 0
+    if encoder_override is None and use_llm:  # D-058: predict.py's LLM mode also gets the tie-breaker
+        tie_breaker = make_batch_oracle(settings, config.llm.prompt_version, config.guards.max_tokens)
+        if tie_breaker is not None:
+            oracle = tie_breaker
+            llm_priority = batch_llm_priority(settings)
+            lower_high = batch_lower_unflagged_high(settings)
+            top_k = batch_category_top_k(settings)
     return OfflineContainer(
         core=core,
         oracle=oracle,
         config=config,
         manifest=manifest,
-        batch=BatchPredictUseCase(core, oracle, config),
+        batch=BatchPredictUseCase(
+            core, oracle, config, llm_priority=llm_priority, lower_unflagged_high=lower_high,
+            category_top_k=top_k,
+        ),
         vectors=vectors,
         encoder=encoder,
         raw_encoder=raw_encoder,

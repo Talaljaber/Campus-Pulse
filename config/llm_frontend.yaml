@@ -22,3 +22,19 @@ cue_floor:
     account_compromise: {account_compromise: true}
     group_outage: {outage: true, affected: [group, campus], kind: [fault], urgency: [time_sensitive, urgent]}
     deadline_fault: {deadline: [hours], kind: [fault]}
+
+# D-058 (2026-11-06): the set-constrained tie-breaker (P3.3, prompt config/prompts/oracle_<version>.md) in
+# predict.py's LLM mode. Rows whose conformal category or priority set holds 2+ labels ask the LLM, which may
+# only pick inside those sets; LLMMerger mixes its vote in with the frozen w_llm. Injection-flagged rows never
+# reach it; any failure keeps the model's labels. OPENROUTER_TIER1_MODEL overrides `model`; LLM_ORACLE=false
+# turns it off (measurements).
+oracle:
+  enabled: true
+  model: deepseek/deepseek-v4.1-flash
+  prompt_version: v3  # config/prompts/oracle_v3.md (v2 + duration and outage wording; D-059)
+  priority: true      # ask about priority on every row with all labels open
+  lower_unflagged_high: true  # D-059: a model `high` no safety/deadline floor set may be corrected too
+  category_top_k: 3   # D-060: the LLM may choose among the model's top 3 categories (0 = calibrated set only)
+# Measurement switches (env): LLM_ORACLE=false (no tie-breaker), LLM_ORACLE_PRIORITY=false (category only),
+# LLM_ORACLE_PROMPT_VERSION=v1|v2|v3, LLM_ORACLE_LOWER_HIGH=false (always keep a model `high`),
+# LLM_ORACLE_CATEGORY_TOP_K=3 (category choice among the model's top 3).

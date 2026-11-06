@@ -17,6 +17,7 @@ from campuspulse_ai.domain.values import Lang
 
 _ARABIC_LETTER = re.compile(r"[؀-ۿ]")
 _LATIN_LETTER = re.compile(r"[A-Za-z]")
+GUARD_RATIO = 2.0  # Arabizi evidence must be more than twice the English guard hits to outweigh them
 # Latin-script tokens: letters, digits and the joiners used in Arabizi (3'), times (24/7) and codes (cs-201).
 _TOKEN = re.compile(r"[a-z0-9]+(?:['/.:-][a-z0-9]+)*'?")
 
@@ -31,7 +32,10 @@ class LangIdentifier:
 
     Rules, in order:
       1. Arabic-block characters outnumber Latin letters → `Lang.AR` (the `clean_data.detect_lang` rule).
-      2. Any guard hit (a token in `guard_tokens`, or fully matching a `guard_patterns` regex) → `Lang.EN`.
+      2. Guard hits (tokens in `guard_tokens`, or fully matching a `guard_patterns` regex) veto ARABIZI unless
+         the Arabizi evidence (digit-words + lexicon hits) is more than `guard_ratio` times the guard hits
+         (2026-11-06: one borrowed English word such as "IT", "in" or "today" inside a clearly Arabizi
+         sentence no longer makes it English).
       3. ≥ `min_digit_tokens` Arabizi digit-words, or ≥ `min_lexicon_hits` `lexicon` tokens → `Lang.ARABIZI`.
       4. Otherwise `Lang.EN`.
     An Arabizi digit-word has a signal digit (2/3/5/6/7/8/9) touching a Latin letter, at least
@@ -50,6 +54,7 @@ class LangIdentifier:
         guard_patterns: Sequence[str] = (),
         ignore_patterns: Sequence[str] = (),
         min_letters_in_digit_token: int = 1,
+        guard_ratio: float = GUARD_RATIO,
     ) -> None:
         """
         Args:
@@ -61,6 +66,7 @@ class LangIdentifier:
             guard_patterns: full-token regexes that also veto (ordinals, clock times, units, versions).
             ignore_patterns: full-token regexes for tokens that are neither evidence nor guards.
             min_letters_in_digit_token: letters a digit-word must contain.
+            guard_ratio: evidence must exceed this multiple of the guard hits to outweigh them.
 
         Raises:
             ValueError: a word is both evidence and a guard (a configuration error).
@@ -77,6 +83,7 @@ class LangIdentifier:
         self._min_digit_tokens = min_digit_tokens
         self._min_lexicon_hits = min_lexicon_hits
         self._min_letters = min_letters_in_digit_token
+        self._guard_ratio = guard_ratio
 
     @classmethod
     def from_yaml(cls, path: Path) -> LangIdentifier:
@@ -97,6 +104,7 @@ class LangIdentifier:
             guard_patterns=list(cfg.get("guard_patterns", [])),
             ignore_patterns=list(cfg.get("ignore_patterns", [])),
             min_letters_in_digit_token=int(cfg.get("min_letters_in_digit_token", 1)),
+            guard_ratio=float(cfg.get("guard_ratio", GUARD_RATIO)),
         )
 
     def _is_guard(self, token: str) -> bool:
@@ -121,7 +129,7 @@ class LangIdentifier:
         if len(_ARABIC_LETTER.findall(text)) > len(_LATIN_LETTER.findall(text)):
             return Lang.AR
         digit_words, hits, guards = self.signals(text)
-        if guards:
+        if guards and digit_words + hits <= self._guard_ratio * guards:
             return Lang.EN
         if digit_words >= self._min_digit_tokens or hits >= self._min_lexicon_hits:
             return Lang.ARABIZI

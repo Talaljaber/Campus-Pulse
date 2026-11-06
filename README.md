@@ -7,9 +7,9 @@ safety alert), detects incidents on a live map, and learns from staff correction
 
 > Integration-ready prototype on synthetic data. Not a verified university deployment.
 
-## Offline prediction (the scored path)
+## Prediction (the scored path)
 
-Python 3.11+ on CPU, no API key, no network after the model download:
+Python 3.11+ on CPU:
 
 ```
 pip install -r services/ai/requirements.txt
@@ -17,8 +17,20 @@ python scripts/fetch_models.py
 python services/ai/predict.py --input <requests.csv> --output predictions.csv
 ```
 
-`fetch_models.py` downloads the `models-v1-rc1` release asset and verifies every file against
+`fetch_models.py` downloads the model release asset and verifies every file against
 `models/frozen/v1/MANIFEST.json`. The input is `request_id,text`. The output is `request_id,category,priority`.
+
+**LLM mode on by default when a key is present (D-057, D-058).** If `OPENROUTER_API_KEY` is set (in the
+environment or a `.env` file), two LLM steps run around our trained model (pinned model, temperature 0, cached):
+Arabic and Arabizi requests are first translated to English, then a set-constrained tie-breaker chooses the
+category among the model's three most probable ones and re-judges priority. It never lowers a `high` set by a
+safety, distress or deadline rule, never moves the priority of a queue-jumping message, and injection-flagged rows
+never reach it. On our blind set 4 (144 rows, written after every design decision) category / priority macro-F1
+goes from 0.751 / 0.676 offline to 0.925 / 0.958; the official validation file stays at 1.000 / 1.000. A failed
+LLM call is retried once after the batch; the last output line reports `llm_failed=N` (rows that kept the
+offline labels). Without a key the same command
+runs fully offline on CPU and prints a one-line notice. Flags: `--offline` never calls a network; `--use-llm` requires the LLM (exit 3 without a key).
+The last output line says `llm_frontend=on` or `off`.
 
 ## Repository layout
 
@@ -57,6 +69,15 @@ components are added.
 - **OpenRouter**: the optional LLM tier in the live app, consulted only when the trained model is unsure
   (`ENABLE_LLM`, pinned model IDs, temperature 0, cached). Also used offline to draft training augmentation.
   `predict.py` never calls it.
+- **OpenRouter, LLM front end** (`deepseek/deepseek-v4.1-flash`, pinned in `config/llm_frontend.yaml`,
+  temperature 0, cached in `.cache/llm_frontend.sqlite`; P7.4/D-050, default since D-057): translates Arabic and
+  Arabizi request text to English in front of our encoder, and its structured cues can only raise a priority to
+  high (P7.9). On by default in `predict.py` when `OPENROUTER_API_KEY` is set; `--offline` turns it off. Only the
+  request text is sent. A failed call falls back to the offline path for that row.
+- **OpenRouter, tie-breaker** (`deepseek/deepseek-v4.1-flash`, prompt `config/prompts/oracle_v3.md`, temperature 0,
+  cached in `.cache/llm.sqlite`; D-058 to D-060): in `predict.py`'s LLM mode it picks one category from the model's
+  top three and one priority (a `high` set by a safety, distress or deadline rule is kept). Only the request text and the allowed labels are sent.
+  A failed or out-of-set answer keeps the model's labels.
 - **OpenRouter, optional Arabizi translator** (`openai/gpt-4o-mini-2024-07-18`, pinned, temperature 0, cached on
   disk; D-025): translates a Latin-script Arabic (Arabizi) request into English in front of the encoder only.
   Off by default, so the scored offline path is unchanged. It runs only with `predict.py --use-llm` or
@@ -82,8 +103,8 @@ components are added.
   assistant (Claude) from the challenge category definitions and public GJU pages, not copied from any dataset;
   embedded as the `m2proto` member's office prototypes. Its author had read the official training texts, so
   the office part is not fully held out from them (see `reports/results_v2.md`).
-- `data/our_test/`: our holdout, never trained on. Set 1 was hand-written by the developer; sets 2 and 3 were
-  written by an LLM (decision D-010 in `docs/PLAN.md`). Scores are reported per set.
+- `data/our_test/`: our holdout, never trained on. Sets 1 to 4 were written by an LLM (decision D-010 in
+  `docs/PLAN.md`). Scores are reported per set.
 
 **Code**
 - No copied code without attribution. Third-party libraries are listed in `services/ai/requirements*.txt`

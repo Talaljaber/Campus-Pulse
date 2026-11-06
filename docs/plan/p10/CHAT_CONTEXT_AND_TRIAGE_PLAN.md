@@ -219,7 +219,8 @@ Problem seen: the same student ended up with three open e-learning tickets in on
 - At confirmation, a token whose text equals another open ticket of the same student is refused
   (`DuplicateOpenTicket`, 422 on the plain-form endpoint, the "already open" reply in the chat). The ticket made by the
   same token never counts, so a repeated confirm still returns its stored result.
-- Not done: the student's follow-up words are not added to the existing ticket as a comment, and the office is not
-  emailed when a priority is raised this way (it shows in the queue and in the ticket thread). Tickets that were
-  already duplicated before this change are untouched.
-
+- The student's follow-up words (their own message, not the English rewrite) are added to the open ticket as a public
+  comment, unless they equal the ticket's text. That comment is what emails the office (the normal requester-reply
+  email, same consent and allowlist rules). Tickets that were already duplicated before this change are untouched
+  (user decision 2026-11-05).
+- Campus fact fixed: the bank is its own building (not M); the finance office is on the floor above it.

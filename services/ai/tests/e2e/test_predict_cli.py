@@ -41,7 +41,7 @@ def test_val_clean_offline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
                            capsys: pytest.CaptureFixture[str]) -> None:
     _no_network(monkeypatch)
     out = tmp_path / "pred.csv"
-    assert main(["--input", str(DATA_CLEAN / "val_clean.csv"), "--output", str(out)]) == 0
+    assert main(["--input", str(DATA_CLEAN / "val_clean.csv"), "--output", str(out), "--offline"]) == 0
     rows = _read(out)
     assert rows[0] == HEADER and len(rows) == 63
     assert [r[0] for r in rows[1:]] == _ids(DATA_CLEAN / "val_clean.csv")
@@ -54,7 +54,8 @@ def test_raw_validation_with_bom(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     _no_network(monkeypatch)
     assert (DATA_RAW / "validation.csv").read_bytes().startswith(b"\xef\xbb\xbf")
     out = tmp_path / "pred.csv"
-    assert main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out), "--debug"]) == 0
+    args = ["--input", str(DATA_RAW / "validation.csv"), "--output", str(out), "--debug", "--offline"]
+    assert main(args) == 0
     rows = _read(out)
     assert rows[0][:3] == HEADER and "p_category" in rows[0]
     assert [r[0] for r in rows[1:]] == _ids(DATA_RAW / "validation.csv")
@@ -65,7 +66,9 @@ def test_exit_2_without_encoder(tmp_path: Path, capsys: pytest.CaptureFixture[st
     dst = tmp_path / "v1"
     shutil.copytree(src, dst, ignore=shutil.ignore_patterns("encoder"))
     out = tmp_path / "pred.csv"
-    code = main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out), "--model-dir", str(dst)])
+    src_csv = str(DATA_RAW / "validation.csv")
+    args = ["--input", src_csv, "--output", str(out), "--model-dir", str(dst), "--offline"]
+    code = main(args)
     assert code == 2 and not out.exists()
     assert "python scripts/fetch_models.py" in capsys.readouterr().err
 
@@ -76,7 +79,7 @@ def test_predict_bytes_equal_v1_batch(tmp_path: Path) -> None:
     from campuspulse_ai.composition.offline import build_offline
 
     out = tmp_path / "pred.csv"
-    assert main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out)]) == 0
+    assert main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out), "--offline"]) == 0
     api = BatchCsvUseCase(build_offline(MODELS_FROZEN).labeler, max_rows=10_000)
     assert api.run((DATA_RAW / "validation.csv").read_bytes()) == out.read_bytes()
 
@@ -105,6 +108,25 @@ def test_predict_speed_1000_rows(tmp_path: Path, capsys: pytest.CaptureFixture[s
         for i in range(1000):
             # a distinct text per row (worst case: duplicate texts are scored once per batch)
             w.writerow([f"S-{i:04d}", f"{texts[i % len(texts)]} (ref {i})"])
-    assert main(["--input", str(big), "--output", str(tmp_path / "p.csv")]) == 0
+    assert main(["--input", str(big), "--output", str(tmp_path / "p.csv"), "--offline"]) == 0
     seconds = float(capsys.readouterr().out.rsplit(", ", 1)[1].split(" s")[0])
     assert seconds < 60
+
+
+def test_default_without_a_key_runs_offline_with_a_notice(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """D-057: the default uses the LLM only when a key exists; a judge without one still gets predictions."""
+    monkeypatch.chdir(tmp_path)  # no ".env" here
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    _no_network(monkeypatch)
+    out = tmp_path / "pred.csv"
+    assert main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out)]) == 0
+    captured = capsys.readouterr()
+    assert "OPENROUTER_API_KEY is not set" in captured.err
+    assert "llm_frontend=off" in captured.out and len(_read(out)) == 63
+
+
+def test_offline_and_use_llm_cannot_be_combined(tmp_path: Path) -> None:
+    with pytest.raises(SystemExit):
+        main(["--input", "x.csv", "--output", str(tmp_path / "p.csv"), "--offline", "--use-llm"])

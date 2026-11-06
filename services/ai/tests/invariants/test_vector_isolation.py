@@ -83,5 +83,5 @@ def test_predict_succeeds_with_unreachable_supabase_url(
     monkeypatch.setattr(socket.socket, "connect", blocked)
     monkeypatch.setattr(socket, "getaddrinfo", blocked)
     out = tmp_path / "pred.csv"
-    assert main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out)]) == 0
+    assert main(["--input", str(DATA_RAW / "validation.csv"), "--output", str(out), "--offline"]) == 0
     assert len(out.read_text(encoding="utf-8").splitlines()) == 63

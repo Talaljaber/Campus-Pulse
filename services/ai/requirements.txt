@@ -12,3 +12,5 @@ pydantic-settings==2.16.0
 # P2.15 translate-test (D-019): opus-mt-ar-en int8 in front of the encoder; no torch at inference
 ctranslate2==4.8.4
 sentencepiece==0.2.2
+# LLM mode of predict.py (D-057): the OpenRouter client, imported lazily so the offline path never loads it
+httpx==0.28.1
