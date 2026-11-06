@@ -71,6 +71,10 @@ danger:
   - '\b(bus|shuttle|driver|coach|minibus)\b[^.!?|]{0,40}\b(ran|running|jumped|jumps|skipped)\s+(a\s+|the\s+)?red\s+light\b'
   - '\bdriver\b[^.!?|]{0,40}\b(drunk|intoxicated|falling\s+asleep|fell\s+asleep|asleep\s+at\s+the\s+wheel|texting\s+while\s+driving)\b'
   - '\b(car|bus|traffic|road)\s+(accident|crash)\b|\bran\s+over\b|\bhit[-\s]and[-\s]run\b'
+  # a vehicle accident in any phrasing (production chat, 2026-11-06: "the bus made an accident" came out medium)
+  - '\b(bus|buses|shuttle|coach|minibus|van|car|taxi|vehicle)\b[^.!?|]{0,40}\b(had|made|was\s+in|got\s+in(to)?|caused|been\s+in|involved\s+in)\s+(an?\s+|a\s+bad\s+|a\s+serious\s+)?(accident|crash|collision)\b'
+  - '\b(bus|shuttle|coach|minibus|van|car|taxi|vehicle)\s+(just\s+)?(crashed|collided|overturned|flipped(\s+over)?|rolled\s+over|hit\s+(a|an|the|some|someone|somebody|students?|people|pedestrians?))\b'
+  - '\b(there\s+(was|is|has\s+been|just\s+was)|there''s)\s+(an?\s+)?(accident|crash|collision)\b'
   # --- EN: power cut with people at risk ---------------------------------------------------------------------
   - '(?=[^.!?|]*\b(power|blackout|black\s*out|electricity|lights?|outage)\b)(?=[^.!?|]*\b(dark|darkness|pitch\s+black|no\s+lights?|can''?t\s+see)\b)(?=[^.!?|]*\b(stairs?|stairwell|staircase|corridor|hallway|basement|parking|garage|elevator|lift)\b)(?=[^.!?|]*\b(stuck|trapped|fell|fallen|falling|tripp\w*|injur\w*|scared|afraid|panic\w*|people|students?|someone|somebody|girls?)\b)[^.!?|]+'
   - '\b(emergency\s+(lights?|lighting|exit\s+lights?)|exit\s+signs?)\b[^.!?|]{0,30}\b(off|out|dead|not\s+working|failed|down|dark|broken)\b'
@@ -97,6 +101,8 @@ danger:
   - '(السواق|السائق|الشوفير)[^.؟!|]{0,40}(قطع|طلع|مر)\s+(على\s+)?(الاشاره|اشاره)\s+(الحمرا|الحمراء|الحمره)'
   - '(السواق|السائق|الشوفير)[^.؟!|]{0,40}(سكران|ناعس|نايم|عم\s+ينام)'
   - 'حادث\s+(سير|دعس|طرق)|دعس\s+(طالب|طالبه|حدا|واحد)'
+  - '(الباص|باص|الباصات|الحافله|حافله|الكوستر|كوستر|السياره|سياره|التكسي|تكسي|الفان)[^.؟!|]{0,30}(حادث|انقلب|انقلبت|اتقلب|اتقلبت|صدم|صدمت|دعس|دعست)'
+  - '(صار|فيه|في|حصل|وقع)\s+حادث'
   - '(?=[^.؟!|]*(الكهربا|كهربا|الكهرباء|الانوار|الضو|النور|الاضاءه|الاضاءة))(?=[^.؟!|]*(عتمه|عتمة|معتم|ظلمه|ظلمة|مظلم|ظلام|دلمه))(?=[^.؟!|]*(الدرج|درج|السلالم|الممر|البدروم|القبو|الموقف|المصعد|الاسانسير|الأسانسير))(?=[^.؟!|]*(ناس|طلاب|طالب|بنات|حدا|عالقين|محبوسين|وقع|وقعت|خايفين|خايف|ما\s+بنشوف|مش\s+شايفين|ما\s+بشوف|مش\s+شايف|اصابه|انصاب))[^.؟!|]+'
   - '(اضاءه|اضاءة|انوار|اضواء|ضو|ضوء)\s+(ال)?(طوارئ|طوارىء|الطوارئ)[^.؟!|]{0,25}(طافيه|طافية|مطفاه|مش\s+شغاله|ما\s+بتشتغل|معطله|خربانه|مقطوعه|مش\s+شغالة|ما\s+اشتغلت)'
   - '(عالقين|محبوسين|ضلينا|ظلينا|ظلوا|ضلوا)\s+(ب|في\s+)(ال)?(عتمه|عتمة|ظلام|ظلمه|ظلمة)'
@@ -121,6 +127,8 @@ danger:
   - '\b(el\s*)?(bus|bas|baas)\b[^.!?|]{0,60}\b(fina|jowwa|jwa|juwwa|jowa|3al2aneen|3al2een|stranded|\d+\s*(6alib|taleb|talib|tolab|6olab|6alab|students?|shakhs|rakeb))\b[^.!?|]{0,60}\b(tari2|6ari2|tareeq|tare2|autostrad\w*|highway|sa7rawi|sahrawi)\b'
   - '\b(sawwa2|sawa2|sawwaq|sayyeq|shofer|chauffeur|sa2e2)\b[^.!?|]{0,30}\b(bisoo2|bisou2|bysoo2|bysou2|bysoq|bisooq|bsoo2|bsou2)\b[^.!?|]{0,25}\b(btahawwor|bi\s*tahawwor|metahawer|mtahawer|mtahawwer|metahawwer|zay\s*el\s*majnoon|zai\s*el\s*majnoon|majnoon|bsor3a\s+(jnoon|majnoona|kteer|zyade|5atira|khatira)|(5|kh)atar|(5|kh)atir\w*)'
   - '\b(kan|kano)\s*(rah|ra7|raye7|rayeh)\s*(ya3mel|y3mel|yosdem|ysdem|yed3as|yed3es)\s*(7adeth|7ades|7adth|7ade6|7ads|7adse)\b'
+  - '\b(el\s*)?(bus|bas|baas|sayyara|sayara|siyara|taxi|coaster)\b[^.!?|]{0,30}\b(7adeth|7ades|7adth|7ade6|7ads|7adse|7adis|in2alab|en2alab|it2alab|sadam|da3as|de3es)\b'
+  - '\b(sar|saar|fi|fee|7asal|wa2a3)\s+(7adeth|7ades|7adth|7ade6|7adse|7adis)\b'
   - '(?=[^.!?|]*\b(kahraba|kahrba|keherba|el\s*nour|el\s*dou|el\s*2anwar|lights?|power)\b)(?=[^.!?|]*\b(3atme|3atameh|3atmeh|mathlame|mathlameh|thalam|dalam|dalma|dark|zalame|zalam)\b)(?=[^.!?|]*\b(daraj|darj|salalem|salaleem|mamar|mamarat|corridor|stairs|stairwell|basement|ma2af|parking|elevator|mas3ad|asanser)\b)(?=[^.!?|]*\b(nas|tolab|6olab|talabe|banat|7ada|3al2aneen|ma7boseen|we2e3|we2e3et|wa2a3|5ayfeen|khayfeen|ma\s*bnshuf|ma\s*bnshoof|mish\s*shayfeen|msh\s*shayfeen|isaba|etsabet)\b)[^.!?|]+'
   - '\b(3al2aneen|ma7boseen|3al2een|3alqeen|dallo|dalleina|dallena)\s+(bel\s*|b\s*)?(3atme|3atameh|3atmeh|dark|dalam|dalma|thalam|mathlame|mathlameh)\b'
   - '\bemergency\s*(lights?|lighting|exit)\b[^.!?|]{0,25}\b(6afyeh|6afye|6afi|mish\s*sha8ale|msh\s*sha8ale|msh\s*shaghale|ma\s*bteshta3el|mkhorbane|m5arbane|mo3atale)\b'
@@ -132,6 +140,64 @@ danger:
   - '\b(3am\s*)?(b|by|bi|y|bye|bay)(seq|soq|soo2|sou2|sooq|souq|so2)\b[^.!?|]{0,25}\b(b\s*|bi\s*)?(sor3a|sur3a|sor3at)\s*(kteer|kteeer|ktir|kbira|kbeera|3aliye|3aliyye|3alye|jnoon|janoon|majnoona|zyede|zyadeh|khatira|5atira|2awi)\b'
   - '\b(sawwa2|sawa2|sa2e2|shofer|chauffeur|driver|bus|bas)\b[^.!?|]{0,60}\b(t3adda|ta3adda|3adda|ta3ada|2ata3|qata3|2at3|qat3|2ata3o|y3adda|by3adda|ya3ber|ye2ta3|bye2ta3|byeqta3|tjawaz|tjawwaz|ytjawaz|ma\s*waqaf|ma\s*wa2af|ma\s*wa2ef)\b[^.!?|]{0,25}\b(el\s*)?(ishara|eshara|ish2ara|esharet|isharet|esh2ara)?\s*(el\s*)?7amra\b'
   - '\b(sawwa2|sawa2|sa2e2|shofer|chauffeur|driver)\b[^.!?|]{0,40}\b(sakran|sakraan|sakran|na3es|na3san|nayem|3am\s*beno?am)\b'
+
+  # ===== P10.10 additions (2026-11-06): life-safety situations at a Jordanian university that had no pattern.
+  # Same gate: zero hits on every non-high official row. Each family needs a context word, so everyday uses stay
+  # silent ("طعن بالعلامه" is a grade appeal, "راسي رح ينفجر" is stress, "بطاقتي مفقوده" is lost property,
+  # "missing the lab" is absence).
+  # --- EN: fights and assault ---------------------------------------------------------------------------------
+  - '\b(fight|brawl|riot|stampede)\s+(just\s+)?(broke\s+out|is\s+(happening|going\s+on)|happening|going\s+on)\b'
+  - '\bthere(\s+is|''s|\s+was)\s+an?\s+(big\s+|huge\s+|violent\s+|mass\s+|massive\s+)?(fight|brawl|riot|stampede)\b'
+  - '\b(students?|guys|people|men|groups|families|clans?)\s+(are\s+|were\s+)?(fighting|brawling|beating\s+(each\s+other|someone|a\s+student))\b'
+  - '\b(was|were|got|been|being|is|are)\s+(physically\s+|sexually\s+)?(attacked|assaulted|beaten(\s+up)?|punched|stabbed)\b'
+  # --- EN: harassment and stalking ----------------------------------------------------------------------------
+  - '\bsexual(ly)?\s+harass\w*\b|\bharass(ing|ed)\s+(me|her|him|us|students?|girls?)\b|\b(following|stalking)\s+(me|her|us)\b|\bstalker\b'
+  # --- EN: medical emergencies ----------------------------------------------------------------------------------
+  - '\b(heart\s+attack|(had|having)\s+a\s+stroke|asthma\s+attack|allergic\s+reaction|anaphyla\w*|epi\s*pen|diabetic\s+(coma|emergency|shock)|heat\s*stroke|overdos(e|ed|ing))\b'
+  - '\b(call|calling|need|needs|send|get)\s+(an?\s+)?(ambulance|paramedics?)\b'
+  - '\bcollapsed\s+(in|on|at|during|inside|outside)\s+(the\s+|a\s+)?(class\w*|lecture|lab|exam|hall|corridor|street|bus|floor|ground|library|gym|cafeteria)\b'
+  - '\b(fell|collapsed)\b[^.!?|]{0,40}\b(not\s+moving|can''?t\s+(move|get\s+up|stand)|won''?t\s+wake|hit\s+(his|her|their)\s+head)\b'
+  - '\b(just|has\s+just)\s+(fell|fallen)\s+(down|off|from)\b|\bfell\s+(down|off|from)\s+(the\s+)?(stairs|staircase|balcony|roof|ladder|scaffold\w*)\s+(and|now|just)\b'
+  # --- EN: animals ------------------------------------------------------------------------------------------------
+  - '\b(stray\s+dogs?|dogs?|snakes?|scorpions?)\b[^.!?|]{0,30}\b(attack\w*|bit|bitten|biting|stung|chasing|chased)\b'
+  - '\b(bitten|stung)\s+by\s+(a\s+|the\s+)?(stray\s+)?(dog|snake|scorpion)\b'
+  - '\b(snake|scorpion)\s+(in|inside|near)\s+(the\s+|our\s+)?(class\w*|room|lab|library|dorm|hall|building|office)\b'
+  # --- EN: a missing person -------------------------------------------------------------------------------------
+  - '\b(friend|brother|sister|son|daughter|roommate|classmate|student|child|kid)\s+(is\s+|has\s+gone\s+|went\s+|has\s+been\s+)missing\s*($|[.!?,]|since|for\s+\w+|and\b)'
+  # --- EN: floods, earthquake, explosion, burns ---------------------------------------------------------------
+  - '\bflash\s+flood\w*\b|\bswept\s+away\b|\b(car|bus|people|students?)\s+(are\s+|is\s+)?(stuck|trapped)\s+in\s+(the\s+)?(flood\w*|water|snow)\b'
+  - '\bearthquake\b(?!\s+drills?)'
+  - '\b(an?\s+)?explosion\b|\b(cylinder|boiler|heater|battery|gas\s+tank|transformer)\s+(just\s+)?(exploded|blew\s+up)\b'
+  - '\b(acid|chemicals?)\b[^.!?|]{0,30}\b(burn\w*|splash\w*|in\s+(his|her|my|their)\s+eyes?|on\s+(his|her|my|their)\s+(skin|face|hands?))\b'
+  - '\b(burned|burnt|scalded)\s+(his|her|my|their)\s+(hands?|face|arms?|skin|eyes?)\b'
+  # --- AR -----------------------------------------------------------------------------------------------------------
+  - 'طوشه|طوشات|هوشه|مشاجره|مضاربه|مضاربات|خناقه|عركه'
+  - '(بتضاربوا|يتضاربوا|تضاربوا|اتضاربوا|بيتضاربوا|بتقاتلوا|بيتقاتلوا|يتقاتلوا|تهاوشوا|بتهاوشوا|يتهاوشوا)'
+  - '(ضربوه|ضربوها|ضربوني|انضرب|انضربت|اعتدى\s+عل|اعتدوا\s+عل|اعتداء\s+عل|انطعن|انطعنت|طعنوه|طعنوها)'
+  - 'تحرش|بتحرش|يتحرش|متحرش|بلحقني|بلحقها|عم\s+يلحقني|بلاحقني|يلاحقني|عم\s+يلاحقني'
+  - 'جلطه|نوبه\s+(قلبيه|ربو|صرع)|ازمه\s+(قلبيه|ربو)|ضربه\s+شمس|حساسيه\s+(شديده|قويه)|تشنجات|عم\s+يتشنج|عم\s+تتشنج|هبوط\s+(حاد|سكر|بالسكر)'
+  - '(اطلبوا|اطلبو|اطلب|اتصلوا\s+عل|اتصلو\s+عل|بدنا|بدها|بدو|بحاجه)\s+(ال)?اسعاف|سياره\s+(ال)?اسعاف'
+  - '(وقع|وقعت)\s+(عن|من)\s+(ال)?(درج|سطح|بلكونه|شرفه|سلم|طابق)'
+  - '(وقع|وقعت)\s+(و\s*)?(ما\s+(عم\s+)?(بتحرك|بيتحرك|تتحرك|يتحرك|بيقدر\s+يقوم|بتقدر\s+تقوم|قادر\s+يقوم|قادره\s+تقوم))'
+  - '(كلاب|كلب)[^.؟!|]{0,30}(هجم|هجموا|هجمت|عض|عضت|عضوا|لحقوا|لحقت|بهاجم|بهاجموا|بتهاجم)'
+  - '(عقرب|افعى)[^.؟!|]{0,30}(لدغ|لدغت|قرص|قرصت|في\s+(الصف|القاعه|المختبر|السكن|المكتبه|المكتب))|لدغه\s+(عقرب|افعى)'
+  - '(صاحبي|صاحبتي|اخوي|اختي|ابني|بنتي|زميلي|زميلتي)\s+(مفقود|مفقوده|اختفى|اختفت|ضايع|ضايعه)'
+  - '(السيول|سيول)[^.؟!|]{0,30}(علق|عالقين|جرف|جرفت|محاصرين)|جرف(ه|ها|ت|تهم)\s+(السيل|الميه|المي|السيول)'
+  - 'زلزال|هزه\s+ارضيه'
+  - 'انفجار|(انفجر|انفجرت)\s+(ال)?(جره|اسطوانه|غاز|بطاريه|سخان|بويلر|محول)'
+  - '(انحرق|انحرقت|احترق|احترقت|حروق)\s+(في\s+|ب)?(ايده|ايدها|ايدي|وجهه|وجهها|جلده|جلدها|عيونه|عيونها)'
+  - '(اسيد|حمض|كيماويات|مواد\s+كيماويه)[^.؟!|]{0,25}(عيونه|عيونها|عينه|عينها|وجهه|وجهها|ايده|ايدها|جلده|جلدها)'
+  # --- Arabizi (original half of model_text) ------------------------------------------------------------------------
+  - '\b(6osheh|6oshe|tosheh|toshe|6awshe|6awsheh|hosheh|hoshe|mshajara|mshajare|mdarabe|madarabeh|mo6arabe|5ena2a|5na2a|3arke|3arkeh)\b'
+  - '\b(3am\s*)?(b|by|bi|y)?(tdarabo|tdarbo|etdarabo|tdarabu|tharabo|yetdarabo|t2atlo|et2atlo|thawasho|tehawasho)\b'
+  - '\b(darabooh|darabooha|darabooni|darabuh|darabuni|indarab|endarab|indarabat|endarabet|e3tadu|e3tado|e3tada2|in6a3an|en6a3an|ta3anooh)\b'
+  - '\b(ta7arrosh|ta7arush|ta7arosh|bit7arash|bt7arash|yet7arash|mit7arish|bil7a2ni|bl7a2ni|byla7e2ni|3am\s*yel7a2ni|3am\s*bil7a2ni)\b'
+  - '\b(jal6a|jalta|jal6eh|nawbet\s*(2alb|qalb|rabw|sar3)|azmet\s*(2alb|qalb|rabw)|darbet\s*shams|darbit\s*shams|is3af|es3af)\b'
+  - '\b(we2e3|wi2i3|w2e3|wa2a3|we2e3et|w2e3et|wi2i3at)\s+(3an|3n|min|mn)\s+(el\s*)?(daraj|darj|sa6e7|sat7|balkone|balcony|stairs|sullam|selem)\b'
+  - '\b(klab|kilab|kalb|kleb)\b[^.!?|]{0,30}\b(hajam|hajamo|hajamu|hajamat|3ad|3addat|3addo|3ado|l7a2o|la7a2o|bil7a2o|bl7a2o)\b'
+  - '\b(3a2rab|3agrab|af3a)\b[^.!?|]{0,30}\b(ladagh|lada8|ladghat|lad8at|2arsa|2arasat|2arasha|2arasoh)\b'
+  - '\b(zilzal|zelzal|zelzaal|zilzaal)\b'
+  - '\b(infijar|enfijar|enfjar|infjar)\b'
 
 distress:
   # --- EN ---------------------------------------------------------------------------------------------
