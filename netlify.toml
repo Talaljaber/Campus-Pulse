@@ -11,3 +11,8 @@
   # scanner always finds them. AI_SERVICE_TOKEN is NOT listed: it must never appear in the output
   # (`pnpm run check:secrets` in apps/web verifies the client bundle and prerendered HTML).
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
+
+# Serves the Next.js app (SSR routes, middleware) as Netlify functions. Without it the build deployed
+# .next as static files: "0 new function(s) to upload" and every route returned 404.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
