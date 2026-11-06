@@ -29,13 +29,10 @@ describe("TabBar", () => {
     ]);
   });
 
-  it("gives an admin the staff tabs plus Accounts and Reports", () => {
-    render(<TabBar role="admin" current="reports" />);
-    expect(pairs().slice(5)).toEqual([
-      ["Accounts", "/admin/accounts"],
-      ["Reports", "/lab"],
-    ]);
-    expect(links()).toHaveLength(7);
+  it("gives an admin the staff tabs plus Accounts (Reports is hidden for now)", () => {
+    render(<TabBar role="admin" current="accounts" />);
+    expect(pairs().slice(5)).toEqual([["Accounts", "/admin/accounts"]]);
+    expect(links()).toHaveLength(6);
   });
 
   it("marks exactly the current tab with aria-current", () => {

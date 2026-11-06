@@ -47,7 +47,9 @@ const TAB: Record<TabId, TabSpec> = {
 
 const STUDENT_TABS: readonly TabId[] = ["home", "ask", "requests", "profile"];
 const STAFF_TABS: readonly TabId[] = ["queue", "ask", "announcements", "incidents", "corrections"];
-const ADMIN_TABS: readonly TabId[] = [...STAFF_TABS, "accounts", "reports"];
+// Reports (the model lab, /lab) is hidden from the tab bar for now (user decision 2026-11-06); the page still
+// works at /lab. To bring it back, restore "reports" in the list below.
+const ADMIN_TABS: readonly TabId[] = [...STAFF_TABS, "accounts" /* , "reports" */];
 
 /** The tabs a role sees, in display order. Only what the role may open, so no link ever bounces. */
 export function tabsFor(role: Role): TabSpec[] {

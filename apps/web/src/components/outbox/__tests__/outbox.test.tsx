@@ -153,7 +153,7 @@ describe("OutboxScreen", () => {
     expect(await screen.findByRole("table")).toBeInTheDocument();
   });
 
-  it("offers the Reports tab only to an admin, and has no Outbox tab or tile (admins reach it from Profile)", async () => {
+  it("offers no Reports tab (hidden for now), and has no Outbox tab or tile (admins reach it from Profile)", async () => {
     const { unmount } = render(<OutboxScreen role="staff" />);
     await screen.findByRole("table");
     const nav = screen.getByRole("navigation", { name: "Main menu" });
@@ -161,7 +161,7 @@ describe("OutboxScreen", () => {
     unmount();
     render(<OutboxScreen role="admin" />);
     await screen.findByRole("table");
-    expect(within(screen.getByRole("navigation", { name: "Main menu" })).getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/lab");
+    expect(within(screen.getByRole("navigation", { name: "Main menu" })).queryByRole("link", { name: "Reports" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Outbox" })).not.toBeInTheDocument();
   });
 });

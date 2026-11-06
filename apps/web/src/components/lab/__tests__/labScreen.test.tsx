@@ -64,9 +64,9 @@ describe("LabScreen", () => {
       "Incidents",
       "Corrections",
       "Accounts",
-      "Reports",
     ]);
-    expect(within(nav).getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
+    // Reports is hidden from the tab bar for now; the page itself still renders at /lab.
+    expect(within(nav).queryByRole("link", { name: "Reports" })).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Benchmark", selected: true })).toBeInTheDocument();
   });
 

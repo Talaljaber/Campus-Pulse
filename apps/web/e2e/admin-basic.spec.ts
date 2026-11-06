@@ -10,7 +10,9 @@ const noHorizontalOverflow = (page: Page) =>
 test("the admin lands on the queue, opens Reports (the model lab), reads the benchmark and runs the red team", async ({ page }) => {
   await signInAs(page, "admin");
   await expect(page).toHaveURL(/\/staff$/);
-  await page.getByRole("navigation", { name: "Main menu" }).getByRole("link", { name: "Reports" }).click();
+  // Reports is hidden from the tab bar for now; the page still opens by its address.
+  await expect(page.getByRole("navigation", { name: "Main menu" }).getByRole("link", { name: "Reports" })).toHaveCount(0);
+  await page.goto("/lab");
   await expect(page).toHaveURL(/\/lab$/);
   await expect(page.getByRole("heading", { level: 1, name: "Model lab" })).toBeVisible();
 
@@ -20,7 +22,7 @@ test("the admin lands on the queue, opens Reports (the model lab), reads the ben
   expect(await category.locator("tbody tr").count()).toBeGreaterThanOrEqual(5);
   await expect(category.getByText("432 rows, 30 groups").first()).toBeVisible();
   await expect(page.getByText("Model artifact v1 (3f9a2c71)")).toBeVisible();
-  await expect(page.getByText(/no separate rows for set 1, set 2 and set 3/)).toBeVisible();
+  await expect(page.getByText(/no separate rows for sets 1 to 4/)).toBeVisible();
 
   // Calibration and fairness.
   await page.getByRole("tab", { name: "Calibration and fairness" }).click();
