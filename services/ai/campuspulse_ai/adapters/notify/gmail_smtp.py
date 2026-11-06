@@ -183,6 +183,7 @@ class GmailSmtpNotifier:
                 log.warning("smtp dns: %s resolves to %s", self._host, found)
             except OSError as dns_exc:
                 log.warning("smtp dns: %s did not resolve (%s)", self._host, dns_exc)
+            _probe_egress_once(self._host)
 
     def _deliver(self, email: EmailMessage) -> None:
         context = ssl.create_default_context()
@@ -221,6 +222,39 @@ class GmailSmtpNotifier:
             page = f"<html><body><p>{body_html}</p>{footer_html}</body></html>"
         email.add_alternative(page, subtype="html")
         return email, message_id
+
+
+_probed = False
+
+
+def _probe_egress_once(smtp_host: str) -> None:
+    """One-time egress check, logged: which address families and ports can this host reach? Separates a
+    blocked SMTP port from no IPv4/IPv6 route from no outbound internet at all."""
+    global _probed
+    if _probed:
+        return
+    _probed = True
+    targets = [(smtp_host, 465), (smtp_host, 587), ("www.google.com", 443)]
+    for host, port in targets:
+        try:
+            infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+        except OSError as exc:
+            log.warning("smtp probe: %s:%s did not resolve (%s)", host, port, exc)
+            continue
+        seen: set[tuple[str, str]] = set()
+        for fam, _type, _proto, _canon, addr in infos:
+            key = (fam.name, str(addr[0]))
+            if key in seen:
+                continue
+            seen.add(key)
+            try:
+                with socket.socket(fam, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(4.0)
+                    sock.connect(addr)
+                outcome = "OK"
+            except OSError as exc:
+                outcome = f"{type(exc).__name__} errno={exc.errno} {exc.strerror or exc}"
+            log.warning("smtp probe: %s:%s %s %s -> %s", host, port, fam.name, addr[0], outcome)
 
 
 def classify(exc: OSError) -> NotificationError:
