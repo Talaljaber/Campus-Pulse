@@ -68,7 +68,7 @@ Judges grade "correct AI implementation, performance, clarity, responsible use�
 │   writes/commands:  Next.js route handlers ──► FastAPI        │
 └───────────────────────────────────────────────────────────────┘
                      │ service token (server-side only)
-┌──────────────────── FastAPI "brain" (Python, HF Spaces Docker, CPU) ───────────────────┐
+┌──────────────────── FastAPI "brain" (Python, Docker on Render, CPU) ───────────────────┐
 │ campuspulse_ai: preprocess · guards · models (M1–M4) · ensemble · conformal ·          │
 │ clarification · priority head · explain/counterfactual · memory · actions ·            │
 │ integrations (Linear/webhook) · calendar · email · pulse/incidents · SLA scheduler ·   │
@@ -440,7 +440,7 @@ campuspulse/
 │   ├── train.py            trains, calibrates, tunes thresholds, freezes artifacts
 │   ├── evaluate.py         benchmark, ablations, fairness, coverage → reports/ + JSON for the Model lab
 │   ├── predict.py          offline batch CLI
-│   ├── Dockerfile          HF Spaces
+│   ├── Dockerfile          Render (render.yaml at repo root)
 │   └── tests/
 ├── supabase/               migrations/ · seed/ (fictional campus, advisors, FAQ, tickets)
 ├── data/                   raw/ · clean/ · augmented/ · our_test/ · robustness/
@@ -472,7 +472,7 @@ Each phase ends in a working, demonstrable state. The scored core is complete af
 | **P3 Intelligence layer** | Decision policy, clarification engine (bank + info-gain), router tiers 1–2 with set-constrained outputs + caching + cost logging, explanations + counterfactuals, injection guard, anti-gaming signals, live memory + consolidation | `/triage` returns the full response contract; the clarification and memory demos work via API tests |
 | **P4 Product backend** | Supabase schema + RLS + seed, FastAPI endpoints, action engine + SLA scheduler, FAQ RAG, Resend (allow-list), Google Calendar booking (+ fallback), `TicketSink` (Supabase, Linear, webhook) + inbound sync, incident detection + broadcast, red-team runner | End-to-end request → ticket → Linear issue → status sync → notification works; simulator creates an incident |
 | **P5 Frontend** | Student chat (voice, Arabizi, clarification chips, explanation + counterfactual), staff dashboard, Pulse map, outbox, Model lab, AR/EN + RTL | All three video moments can be performed live in the UI |
-| **P6 Ship** | Deploy (Netlify + HF Spaces Docker + Supabase), clean-machine test of `predict.py`, final frozen artifacts + `predictions.csv`, README + Disclosures, 2-page report, ≤ 3-min video, submission email | Fresh clone → documented commands → identical predictions; video and report done |
+| **P6 Ship** | Deploy (Netlify + Render Docker + Supabase), clean-machine test of `predict.py`, final frozen artifacts + `predictions.csv`, README + Disclosures, 2-page report, ≤ 3-min video, submission email | Fresh clone → documented commands → identical predictions; video and report done |
 
 **Cut order if short on time** (never cut P1, P2-evaluation, P6):
 1. voice;

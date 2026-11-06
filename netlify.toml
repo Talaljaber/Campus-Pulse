@@ -4,3 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # These two are public by design: Next.js inlines NEXT_PUBLIC_* into the browser bundle, so the
+  # scanner always finds them. AI_SERVICE_TOKEN is NOT listed: it must never appear in the output
+  # (`pnpm run check:secrets` in apps/web verifies the client bundle and prerendered HTML).
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
