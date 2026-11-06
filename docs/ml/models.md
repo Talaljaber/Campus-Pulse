@@ -85,9 +85,10 @@ python scripts/add_derived_columns.py   # -> wrote data/clean/train_val_features
 
 ### 2.3 Holdout and augmentation folders
 
-- `data/our_test/` (P1.0, three sets per D-010: set1 by the developer, sets 2–3 by Claude; combined into
+- `data/our_test/` (P1.0, sets per D-010, written by Claude; combined into
   `our_test.csv` by `scripts/build_our_test.py`) and `data/robustness/` (P2.5) are **never trained on**;
-  only `evaluate.py` reads them. Their READMEs state the schema.
+  only `evaluate.py` reads them. Their READMEs state the schema. Pooled and per-language our_test numbers in
+  the dated sections below were measured on an earlier version of the file; `reports/` holds the current ones.
 - `data/augmented/README.md` holds the augmentation schema (ARCHITECTURE §4.2):
   `request_id,text,lang,source,source_scenario_id,cv_group,needs_human_check,author_method,category,priority`.
   Only `needs_human_check == False` rows are trained on.
@@ -143,8 +144,8 @@ combined file's shape (432 rows, 30 groups).
 
 ```bash
 python scripts/validate_dataset.py --kind our_test  data/our_test/our_test.csv
-# -> OK our_test: 204 rows; cells 18/18 (min ≥3); langs en=97 ar=75 arabizi=32; 0 overlaps with official text_norm;
-#    sets set1=60 set2=72 set3=72; 104 distinct cores
+# -> OK our_test: 396 rows; cells 18/18 (min ≥3); langs en=173 ar=132 arabizi=91; 0 overlaps with official text_norm;
+#    sets set1=72 set2=72 set3=108 set4=144; 370 distinct cores
 python scripts/validate_dataset.py --kind augmented data/augmented/arabizi.csv
 # -> OK augmented: <N> rows; <n> reviewed; cv_groups all known; labels match source scenarios; cells covered <c>/18
 python scripts/validate_dataset.py --kind probes    data/robustness/probes.csv
@@ -152,14 +153,14 @@ python scripts/validate_dataset.py --kind probes    data/robustness/probes.csv
 ```
 
 One `OK` line and exit 0, or one line per violation and exit 1 (e.g. `line 3 (OT-002): category 'IT support'
-is not an official category`, `cell Finance x low: 2 rows; need >= 3`, `T2-0005: normalized text equals an
+is not an official category`, `cell Finance x low: 2 rows; need >= 3`, `T1-0005: normalized text equals an
 official text_norm: 'where can i meet my academic advisor'`). It only reads files. Python API:
 `validate(path, kind, DatasetSpec.load(kind)) -> ValidationReport(kind, rows, errors, summary)` (`.ok`).
 
 | kind | checks (all floors and patterns from `config/datasets.yaml`) |
 | --- | --- |
 | all | columns exactly as configured; `utf-8-sig` read (a BOM is fine); unique `request_id` matching `id_pattern`; non-empty `text`; `lang` in `langs`; labels spelled exactly as `domain.labels` |
-| `our_test` (D-010) | columns `request_id,text,lang,category,priority,author_method,test_set,scenario_family,notes`; ids `^[A-Z0-9]+-\d{4}$` (`HT-`, `T2-`, `T3-`); `author_method` in {hand, claude}; `test_set` in {set1, set2, set3}; non-empty `scenario_family` and `notes`. On the **pooled** file (set1 alone covers 6/18 cells and no Arabizi): ≥ `min_rows` (60); ≥ `min_per_cell` (3) in each of the 18 category × priority cells; `min_per_lang` (en 20, ar 20, arabizi 10); ≥ `min_wrapped_rows` (6) rows with an official-style wrapper or urgency marker; rows sharing a normalized core (wrapper variants) must share labels; **no row whose normalized core equals an official `text_norm`** (`forbid_official_overlap`) |
+| `our_test` (D-010) | columns `request_id,text,lang,category,priority,author_method,test_set,scenario_family,notes`; ids `^[A-Z0-9]+-\d{4}$` (`T1-` to `T4-`); `author_method` in {claude}; `test_set` in {set1, set2, set3, set4}; non-empty `scenario_family` and `notes`. On the **pooled** file: ≥ `min_rows` (60); ≥ `min_per_cell` (3) in each of the 18 category × priority cells; `min_per_lang` (en 20, ar 20, arabizi 10); ≥ `min_wrapped_rows` (6) rows with an official-style wrapper or urgency marker; rows sharing a normalized core (wrapper variants) must share labels; **no row whose normalized core equals an official `text_norm`** (`forbid_official_overlap`) |
 | `augmented` | `source` in `sources`; `author_method` matches `^(rule\|hand\|llm(:\S+)?)$`; `needs_human_check` is `True`/`False`; `source_scenario_id` required; a row from an official scenario carries that scenario's `cv_group` and labels; other scenario ids and groups match `new_group_pattern` (`NEW-…`, `MEM-…`) unless merged into an official group; one label pair per new scenario |
 | `probes` | `style` in the 11 `styles` (≥ `min_per_style` 3 each); `author_method` in `hand`/`perturb`; `expected_flags` (`;`-separated) ⊆ `domain.values.FLAGS`; `base_request_id` (when set) exists in `data/our_test/our_test.csv`; no official-text overlap |
 
@@ -931,10 +932,9 @@ only to score). Never a random split. Artifact v1 sha 8fb011621fb6.
 | slice | rows | groups | cat macro-F1 | cat acc | pri macro-F1 | pri acc | joint acc |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | OOF, official rows | 432 | 30 | 0.490 | 0.512 | 0.904 | 0.903 | 0.440 |
-| our_test set1 (cross-lingual restatements) | 60 | 6 | 0.592 | 0.700 | 1.000 | 1.000 | 0.700 |
-| our_test set2 (unseen, official style, LLM-written) | 72 | 16 | 0.746 | 0.750 | 0.782 | 0.778 | 0.611 |
-| our_test set3 (unseen, free style, LLM-written) | 72 | 16 | 0.663 | 0.653 | 0.783 | 0.778 | 0.542 |
-| our_test pooled | 204 | 38 | 0.710 | 0.701 | 0.847 | 0.843 | 0.613 |
+| our_test set1 (unseen, official style, LLM-written) | 72 | 16 | 0.746 | 0.750 | 0.782 | 0.778 | 0.611 |
+| our_test set2 (unseen, free style, LLM-written) | 72 | 16 | 0.663 | 0.653 | 0.783 | 0.778 | 0.542 |
+| our_test pooled (earlier version) | – | – | 0.710 | 0.701 | 0.847 | 0.843 | 0.613 |
 
 Conformal on our_test pooled: category coverage 0.971 (mean set size 3.02), priority coverage 0.843 (size
 1.00, below the 0.90 target), ASK proxy 0.211. Per member (OOF category macro-F1): M1 0.205, M2-LR 0.594,
@@ -966,7 +966,7 @@ include_unreviewed=True)`), normalized as at inference. It is compared with itse
 | cross-group pool pairs | encoder cosine ≥ `leakage.cosine_merge` (0.90) | listed for a manual merge |
 | holdout row vs **augmented** row | exact or char_wb 3–5-gram cosine ≥ `leakage.char_cosine` (0.8) | exit 1 (`leakage.holdout_fail_on: [exact, char]`) |
 | holdout row vs **augmented** row | encoder cosine ≥ 0.90 only | listed (`review_augmented_ids`); every augmented hit is listed |
-| holdout row vs **official** row | any | listed (closest only): set1 restates training scenarios by design |
+| holdout row vs **official** row | any | listed (closest only): a shared topic with an official row is context, not an error |
 
 Why encoder-only hits do not fail: with int8 e5, different official scenarios reach cosine 0.919 (median
 0.804) and true EN↔AR translations of one scenario have median 0.845, so 0.90 marks a shared topic, not a
@@ -1141,9 +1141,9 @@ Code: `composition/evaluation.py` (`run_evaluation(EvalOptions)`), CLI `framewor
 | `errors.json` | wrong our_test rows (gold, pred, sets, flags, top-3 neighbours) and wrong OOF groups |
 | `eda.json` | counts by split / language / label / cell / source / review status, wrapper stats |
 | `confusions/<model>_<target>_<dataset>.json`, `conformal_scores.npz` | matrices; OOF scores for notebook 03 |
-| `model_lab.json` | `MetricsResponse` offline part, DTO-validated; datasets `oof_official, oof_all, our_test, our_test_set1..3, probes` |
+| `model_lab.json` | `MetricsResponse` offline part, DTO-validated; datasets `oof_official, oof_all, our_test, our_test_set1..4, probes` |
 
-Datasets: `oof_official` / `oof_all` from `oof.npz`; `our_test` pooled and `our_test_set1..3` scored by the frozen
+Datasets: `oof_official` / `oof_all` from `oof.npz`; `our_test` pooled and `our_test_set1..4` scored by the frozen
 model; `probes` when `data/robustness/probes.csv` exists (else robustness is `skipped` with a note). Each arm
 runs `run_cv` (fixed C from config, no nested) and a temporary freeze scored on our_test; the unreviewed arm gets
 folds from `make_folds.py --include-augmented` into a temp file (data/clean is never rewritten). `mask_deadline`
@@ -1179,13 +1179,12 @@ Artifact v1 sha 9a379d97c0cd, official rows only (no reviewed augmentation yet).
 | slice | rows / groups | cat F1 rc1 → rc2 | pri F1 rc1 → rc2 | cat cov (size) rc2 | pri cov (size) rc2 |
 | --- | ---: | --- | --- | --- | --- |
 | OOF official | 432 / 30 | 0.490 → **0.806** (nested 0.806) | 0.904 → 0.904 | 0.975 (2.53) | 0.928 (1.03) |
-| our_test set1 | 60 / 6 | 0.592 → 1.000 | 1.000 → 1.000 | 1.000 (3.25) | 1.000 (1.00) |
-| our_test set2 | 72 / 16 | 0.746 → **0.674** | 0.782 → 0.782 | 0.806 (2.68) | 0.778 (1.00) |
-| our_test set3 | 72 / 16 | 0.663 → 0.719 | 0.783 → 0.783 | 0.875 (2.62) | 0.778 (1.00) |
-| our_test pooled | 204 / 38 | 0.710 → **0.789** | 0.847 → 0.847 | 0.887 (2.83) | 0.843 (1.00) |
+| our_test set1 | 72 / 16 | 0.746 → **0.674** | 0.782 → 0.782 | 0.806 (2.68) | 0.778 (1.00) |
+| our_test set2 | 72 / 16 | 0.663 → 0.719 | 0.783 → 0.783 | 0.875 (2.62) | 0.778 (1.00) |
+| our_test pooled (earlier version) | – | 0.710 → **0.789** | 0.847 → 0.847 | 0.887 (2.83) | 0.843 (1.00) |
 | + unreviewed drafts (arm) | OOF / our_test | 0.895 / 0.852 | 0.926 / 0.908 | – | – |
 
-**Known weaknesses (rc2):** set2 and Arabizi category fell below rc1 (0.674, 0.530); Arabic OOF category 0.333;
+**Known weaknesses (rc2):** set1 and Arabizi category fell below rc1 (0.674, 0.530); Arabic OOF category 0.333;
 priority unchanged and its sets never widen on our_test; Mondrian makes Arabic category sets ~6 labels (human
 review) and English slightly under-covered (0.856); the `today` shortcut costs 0.061 priority when masked; OOF
 priority is optimistic (lexicons written after reading the official rows). The full write-up, ablations,
@@ -1224,9 +1223,9 @@ Arabizi (option b) is not sane: opus-mt copies it through or loops (`♪ ♪ ♪
 | --- | ---: | ---: | ---: | ---: |
 | OOF official all (432 / 30 groups) | 0.806 | **0.935** | 0.862 | 0.806 |
 | OOF EN / AR | 0.966 / 0.333 | 0.966 / **0.833** | 0.894 / 0.726 | = A |
-| our_test pooled (204 / 38) | 0.789 | **0.864** | 0.795 | 0.809 |
+| our_test pooled (earlier version) | 0.789 | **0.864** | 0.795 | 0.809 |
 | our_test EN / AR / Arabizi | 0.814 / 0.758 / 0.530 | 0.926 / 0.886 / 0.523 | 0.823 / 0.846 / 0.474 | 0.814 / 0.861 / 0.498 |
-| set1 / set2 / set3 | 1.000 / 0.674 / 0.719 | 1.000 / 0.835 / 0.773 | 1.000 / 0.658 / 0.760 | 1.000 / 0.730 / 0.701 |
+| set1 / set2 | 0.674 / 0.719 | 0.835 / 0.773 | 0.658 / 0.760 | 0.730 / 0.701 |
 
 **Paired group bootstrap vs A (category, 90 % CI):** B OOF **+0.129 [+0.054, +0.221]**, OOF AR +0.500
 [+0.282, +0.686], OOF EN 0.000; B our_test +0.075 [−0.005, +0.166], EN +0.112, AR +0.129 [+0.007, +0.306],
@@ -1289,15 +1288,15 @@ the 111 equal the single-text runtime translation; the other 7 were decoded in b
 | --- | ---: | ---: | ---: |
 | OOF official category F1 (432 / 30 groups) | 0.806 | **0.935** (nested 0.935) | 0.935 |
 | OOF official priority F1 | 0.904 | 0.904 | 0.904 |
-| our_test pooled category F1 (204 / 38) | 0.789 | **0.864** | 0.864 |
+| our_test pooled category F1 (earlier version) | 0.789 | **0.864** | 0.864 |
 | our_test pooled priority F1 | 0.847 | 0.847 | 0.847 |
-| our_test set1 / set2 / set3 category | 1.000 / 0.674 / 0.719 | 1.000 / 0.835 / 0.770 | 1.000 / 0.835 / 0.773 |
+| our_test set1 / set2 category | 0.674 / 0.719 | 0.835 / 0.770 | 0.835 / 0.773 |
 | category coverage (mean set size), OOF | 0.975 (2.53) | 0.975 (1.50) | 0.975 (1.50) |
 | category coverage (mean set size), our_test | 0.887 (2.83) | 0.897 (1.59) | 0.902 (1.59) |
 | category set size OOF AR / our_test AR | 5.7 / 5.8 | 2.6 / 2.6 | 2.6 / 2.6 |
 | priority coverage OOF / our_test | 0.928 / 0.843 | 0.928 / 0.843 | same |
 
-rc3 reproduces arm B within noise (set3 −0.003, our_test coverage −0.005 from the conformal refit on the frozen
+rc3 reproduces arm B within noise (set2 −0.003, our_test coverage −0.005 from the conformal refit on the frozen
 quantiles). Weights stay D-016's fixed `m2lr 0.5 / m2proto 0.5`.
 
 **Cost** (Windows dev laptop, `build_offline` as the API loads it, ORT and CT2 at 1 thread): RSS 454 MB after load,
@@ -1477,8 +1476,8 @@ the Arabizi rows stay out of the default pool (`include_unreviewed` off). `diff_
 | slice (category unless noted) | rc3 | rc4 |
 | --- | ---: | ---: |
 | OOF official category F1 / priority F1 | 0.935 / 0.904 | 0.935 / 0.904 |
-| our_test pooled category F1 / priority F1 | 0.864 / 0.847 | **0.868** / 0.847 |
-| our_test set1 / set2 / set3 category F1 | 1.000 / 0.835 / 0.770 | 1.000 / 0.800 / 0.828 |
+| our_test pooled category F1 / priority F1 (earlier version) | 0.864 / 0.847 | **0.868** / 0.847 |
+| our_test set1 / set2 category F1 | 0.835 / 0.770 | 0.800 / 0.828 |
 | F1 en / ar / arabizi, our_test | 0.926 / 0.906 / 0.500 | 0.926 / 0.906 / **0.403** |
 | priority F1 en / ar / arabizi, our_test | 0.874 / 0.585 / 0.301 | unchanged |
 | coverage (set size) OOF all / en / ar | 0.975 (1.50) / 0.963 (1.0) / 1.000 (2.6) | identical |
@@ -1488,12 +1487,12 @@ the Arabizi rows stay out of the default pool (`include_unreviewed` off). `diff_
 | priority coverage our_test (all / en / ar / arabizi) | 0.843 / 0.876 / 0.853 / 0.719 | identical |
 
 **The Arabizi expectation was not met.** The brief expected rc2-like Arabizi (coverage ~0.84, set ~3.4, F1 ~0.52).
-Measured: coverage 0.97, set 3.5, F1 0.403. The rc3 weights were fitted on embeddings of translated Arabic rows, so an
+Measured: coverage 0.97, set 2.5, F1 0.403. The rc3 weights were fitted on embeddings of translated Arabic rows, so an
 untranslated `transliteration | Latin` text embedded by the same encoder does not land in rc2's space (rc2's head was
 fitted on untranslated Arabic); rc3's translated-joined route (which decoded badly, section 30) scored 0.50 by accident
 of what the head had seen. Arabizi requests now go almost entirely to human review (set size 3.5 of 6): the safety net
 works (coverage 0.97, wide interval, n = 32, 8 groups), the Arabizi quality is lower (-0.10 F1, within the noise of 8
-groups), and priority is unaffected. The pooled our_test F1 moves +0.004 and set2/set3 trade -0.035/+0.058 for the
+groups), and priority is unaffected. The pooled our_test F1 moves +0.004 and set1/set2 trade -0.035/+0.058 for the
 same reason (Arabizi rows are spread across sets). EN and AR slices, OOF and priority are identical to rc3.
 
 **Latency** (Windows dev laptop, `build_offline` as the API loads it, 1 thread; 60 Arabizi rows of

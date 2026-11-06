@@ -129,7 +129,7 @@
       "rows": 17
     }
   },
-  "generated_at": "2026-11-01T10:45:47+00:00",
+  "generated_at": "2026-11-06T18:06:47+00:00",
   "official": {
     "by_category": {
       "Academic Support": 73,
@@ -185,42 +185,43 @@
   },
   "our_test": {
     "by_cell": {
-      "Academic Support x high": 8,
-      "Academic Support x low": 17,
-      "Academic Support x medium": 8,
-      "Facilities x high": 8,
-      "Facilities x low": 8,
-      "Facilities x medium": 19,
-      "Finance x high": 8,
-      "Finance x low": 17,
-      "Finance x medium": 8,
-      "IT Support x high": 8,
-      "IT Support x low": 8,
-      "IT Support x medium": 17,
-      "Registration x high": 8,
-      "Registration x low": 8,
-      "Registration x medium": 19,
-      "Transportation x high": 19,
-      "Transportation x low": 8,
-      "Transportation x medium": 8
+      "Academic Support x high": 22,
+      "Academic Support x low": 22,
+      "Academic Support x medium": 22,
+      "Facilities x high": 22,
+      "Facilities x low": 22,
+      "Facilities x medium": 22,
+      "Finance x high": 22,
+      "Finance x low": 22,
+      "Finance x medium": 22,
+      "IT Support x high": 22,
+      "IT Support x low": 22,
+      "IT Support x medium": 22,
+      "Registration x high": 22,
+      "Registration x low": 22,
+      "Registration x medium": 22,
+      "Transportation x high": 22,
+      "Transportation x low": 22,
+      "Transportation x medium": 22
     },
     "by_lang": {
-      "ar": 75,
-      "arabizi": 32,
-      "en": 97
+      "ar": 132,
+      "arabizi": 91,
+      "en": 173
     },
     "by_set": {
-      "set1": 60,
+      "set1": 72,
       "set2": 72,
-      "set3": 72
+      "set3": 108,
+      "set4": 144
     },
-    "families": 38,
-    "rows": 204
+    "families": 268,
+    "rows": 396
   },
   "probes": {
     "note": "P2.5 probes not written yet",
     "rows": 0
   },
   "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
-  "sha": "05de06d266cf"
+  "sha": "a8e2f1e58da5"
 }

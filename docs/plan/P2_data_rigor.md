@@ -521,7 +521,7 @@ Tied to SPEC §12 and §4.8. M3 is cut-order #4. P2-evaluation is never cut, so 
 - [x] ASK-proxy rate → alpha_priority: 0.319 with global quantiles ≤ 0.35 → 0.10
 - [x] Per-language coverage → mondrian_by_lang **on** for category (AR 0.813, Arabizi 0.719 < 0.85; EN 0.949)
 - [x] **M3 decision:** not built (UD-4)
-- [x] Headline: OOF official category 0.806 (rc1 0.490), priority 0.904; our_test pooled category 0.789 (rc1 0.710), priority 0.847; set2 category 0.674 (below rc1 0.746); our_test category EN 0.814 / AR 0.758 / Arabizi 0.530
+- [x] Headline: OOF official category 0.806 (rc1 0.490), priority 0.904; our_test pooled category 0.789 (rc1 0.710), priority 0.847; set1 category 0.674 (below rc1 0.746); our_test category EN 0.814 / AR 0.758 / Arabizi 0.530
 - [ ] `models-v1-rc2` published: not in this batch (local freeze only; encoder unchanged)
 - [ ] Folds appended for new groups: only into a temp file for the unreviewed arm; `data/clean/cv_folds.csv` is appended after the P2.4 review
 - [x] "today" shortcut: mask_deadline priority on our_test 0.847 → 0.787; deadline_shortcut probes pending (P2.5)

@@ -792,7 +792,14 @@ class ScorecardOut(_Model):
 
 
 EvalDataset = Literal[
-    "oof_official", "oof_all", "our_test", "our_test_set1", "our_test_set2", "our_test_set3", "probes"
+    "oof_official",
+    "oof_all",
+    "our_test",
+    "our_test_set1",
+    "our_test_set2",
+    "our_test_set3",
+    "our_test_set4",
+    "probes",
 ]
 MetricTarget = Literal["category", "priority"]
 

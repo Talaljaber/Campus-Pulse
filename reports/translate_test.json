@@ -1,4 +1,5 @@
 {
+  "note": "our_test numbers in this report were measured on an earlier version of data/our_test/our_test.csv; reports/benchmark.md holds the current ones.",
   "experiment": "P2.14 translate-test",
   "mt_model": {
     "model_id": "Helsinki-NLP/opus-mt-ar-en",
@@ -54,20 +55,6 @@
         },
         "our_test_set1": {
           "category": {
-            "all": 1.0,
-            "en": 1.0,
-            "ar": 1.0,
-            "arabizi": null
-          },
-          "priority": {
-            "all": 1.0,
-            "en": 1.0,
-            "ar": 1.0,
-            "arabizi": null
-          }
-        },
-        "our_test_set2": {
-          "category": {
             "all": 0.6743,
             "en": 0.6889,
             "ar": 0.5556,
@@ -80,7 +67,7 @@
             "arabizi": 0.3333
           }
         },
-        "our_test_set3": {
+        "our_test_set2": {
           "category": {
             "all": 0.7193,
             "en": 0.7521,
@@ -241,66 +228,6 @@
           "target": "category",
           "dataset": "our_test_set1",
           "lang": "all",
-          "coverage": 1.0,
-          "mean_set_size": 3.25,
-          "singleton_rate": 0.55,
-          "n_rows": 60,
-          "n_groups": 6
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set1",
-          "lang": "en",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set1",
-          "lang": "ar",
-          "coverage": 1.0,
-          "mean_set_size": 6.0,
-          "singleton_rate": 0.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "all",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 60,
-          "n_groups": 6
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "en",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "ar",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set2",
-          "lang": "all",
           "coverage": 0.8056,
           "mean_set_size": 2.6806,
           "singleton_rate": 0.5972,
@@ -309,7 +236,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "en",
           "coverage": 0.75,
           "mean_set_size": 1.125,
@@ -319,7 +246,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "ar",
           "coverage": 1.0,
           "mean_set_size": 5.8333,
@@ -329,7 +256,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "arabizi",
           "coverage": 0.625,
           "mean_set_size": 1.0625,
@@ -339,7 +266,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "all",
           "coverage": 0.7778,
           "mean_set_size": 1.0,
@@ -349,7 +276,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "en",
           "coverage": 0.875,
           "mean_set_size": 1.0,
@@ -359,7 +286,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "ar",
           "coverage": 0.6667,
           "mean_set_size": 1.0,
@@ -369,7 +296,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "arabizi",
           "coverage": 0.75,
           "mean_set_size": 1.0,
@@ -379,7 +306,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "all",
           "coverage": 0.875,
           "mean_set_size": 2.625,
@@ -389,7 +316,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "en",
           "coverage": 0.8125,
           "mean_set_size": 1.0,
@@ -399,7 +326,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "ar",
           "coverage": 1.0,
           "mean_set_size": 5.5833,
@@ -409,7 +336,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "arabizi",
           "coverage": 0.8125,
           "mean_set_size": 1.4375,
@@ -419,7 +346,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "all",
           "coverage": 0.7778,
           "mean_set_size": 1.0,
@@ -429,7 +356,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "en",
           "coverage": 0.75,
           "mean_set_size": 1.0,
@@ -439,7 +366,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "ar",
           "coverage": 0.875,
           "mean_set_size": 1.0,
@@ -449,7 +376,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "arabizi",
           "coverage": 0.6875,
           "mean_set_size": 1.0,
@@ -575,38 +502,6 @@
           "slice": "en",
           "target": "category",
           "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "slice": "ar",
-          "target": "category",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "slice": "en",
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "slice": "ar",
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "slice": "en",
-          "target": "category",
-          "dataset": "our_test_set2",
           "macro_f1": 0.6889,
           "n_rows": 32,
           "n_groups": 6
@@ -614,7 +509,7 @@
         {
           "slice": "ar",
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.5556,
           "n_rows": 24,
           "n_groups": 6
@@ -622,7 +517,7 @@
         {
           "slice": "arabizi",
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.4564,
           "n_rows": 16,
           "n_groups": 4
@@ -630,7 +525,7 @@
         {
           "slice": "en",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.8857,
           "n_rows": 32,
           "n_groups": 6
@@ -638,7 +533,7 @@
         {
           "slice": "ar",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.4889,
           "n_rows": 24,
           "n_groups": 6
@@ -646,7 +541,7 @@
         {
           "slice": "arabizi",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.3333,
           "n_rows": 16,
           "n_groups": 4
@@ -654,7 +549,7 @@
         {
           "slice": "en",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.7521,
           "n_rows": 32,
           "n_groups": 6
@@ -662,7 +557,7 @@
         {
           "slice": "ar",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.6056,
           "n_rows": 24,
           "n_groups": 6
@@ -670,7 +565,7 @@
         {
           "slice": "arabizi",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.5683,
           "n_rows": 16,
           "n_groups": 4
@@ -678,7 +573,7 @@
         {
           "slice": "en",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.7701,
           "n_rows": 32,
           "n_groups": 6
@@ -686,7 +581,7 @@
         {
           "slice": "ar",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.8418,
           "n_rows": 24,
           "n_groups": 6
@@ -694,7 +589,7 @@
         {
           "slice": "arabizi",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.4074,
           "n_rows": 16,
           "n_groups": 4
@@ -733,20 +628,6 @@
         },
         "our_test_set1": {
           "category": {
-            "all": 1.0,
-            "en": 1.0,
-            "ar": 1.0,
-            "arabizi": null
-          },
-          "priority": {
-            "all": 1.0,
-            "en": 1.0,
-            "ar": 1.0,
-            "arabizi": null
-          }
-        },
-        "our_test_set2": {
-          "category": {
             "all": 0.8346,
             "en": 1.0,
             "ar": 0.7778,
@@ -759,7 +640,7 @@
             "arabizi": 0.3333
           }
         },
-        "our_test_set3": {
+        "our_test_set2": {
           "category": {
             "all": 0.7732,
             "en": 0.7822,
@@ -1023,66 +904,6 @@
           "target": "category",
           "dataset": "our_test_set1",
           "lang": "all",
-          "coverage": 1.0,
-          "mean_set_size": 1.6,
-          "singleton_rate": 0.55,
-          "n_rows": 60,
-          "n_groups": 6
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set1",
-          "lang": "en",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set1",
-          "lang": "ar",
-          "coverage": 1.0,
-          "mean_set_size": 2.3333,
-          "singleton_rate": 0.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "all",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 60,
-          "n_groups": 6
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "en",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "ar",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set2",
-          "lang": "all",
           "coverage": 0.8889,
           "mean_set_size": 1.5556,
           "singleton_rate": 0.7778,
@@ -1091,7 +912,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "en",
           "coverage": 1.0,
           "mean_set_size": 1.0,
@@ -1101,7 +922,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "ar",
           "coverage": 1.0,
           "mean_set_size": 2.6667,
@@ -1111,7 +932,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "arabizi",
           "coverage": 0.5,
           "mean_set_size": 1.0,
@@ -1121,7 +942,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "all",
           "coverage": 0.7778,
           "mean_set_size": 1.0,
@@ -1131,7 +952,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "en",
           "coverage": 0.875,
           "mean_set_size": 1.0,
@@ -1141,7 +962,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "ar",
           "coverage": 0.6667,
           "mean_set_size": 1.0,
@@ -1151,7 +972,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "arabizi",
           "coverage": 0.75,
           "mean_set_size": 1.0,
@@ -1161,7 +982,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "all",
           "coverage": 0.8333,
           "mean_set_size": 1.6111,
@@ -1171,7 +992,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "en",
           "coverage": 0.8125,
           "mean_set_size": 1.0,
@@ -1181,7 +1002,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "ar",
           "coverage": 1.0,
           "mean_set_size": 2.8333,
@@ -1191,7 +1012,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "arabizi",
           "coverage": 0.625,
           "mean_set_size": 1.0,
@@ -1201,7 +1022,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "all",
           "coverage": 0.7778,
           "mean_set_size": 1.0,
@@ -1211,7 +1032,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "en",
           "coverage": 0.75,
           "mean_set_size": 1.0,
@@ -1221,7 +1042,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "ar",
           "coverage": 0.875,
           "mean_set_size": 1.0,
@@ -1231,7 +1052,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "arabizi",
           "coverage": 0.6875,
           "mean_set_size": 1.0,
@@ -1358,45 +1179,13 @@
           "target": "category",
           "dataset": "our_test_set1",
           "macro_f1": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "slice": "ar",
-          "target": "category",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "slice": "en",
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "slice": "ar",
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "slice": "en",
-          "target": "category",
-          "dataset": "our_test_set2",
-          "macro_f1": 1.0,
           "n_rows": 32,
           "n_groups": 6
         },
         {
           "slice": "ar",
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.7778,
           "n_rows": 24,
           "n_groups": 6
@@ -1404,7 +1193,7 @@
         {
           "slice": "arabizi",
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.3571,
           "n_rows": 16,
           "n_groups": 4
@@ -1412,7 +1201,7 @@
         {
           "slice": "en",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.8857,
           "n_rows": 32,
           "n_groups": 6
@@ -1420,7 +1209,7 @@
         {
           "slice": "ar",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.4889,
           "n_rows": 24,
           "n_groups": 6
@@ -1428,7 +1217,7 @@
         {
           "slice": "arabizi",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.3333,
           "n_rows": 16,
           "n_groups": 4
@@ -1436,7 +1225,7 @@
         {
           "slice": "en",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.7822,
           "n_rows": 32,
           "n_groups": 6
@@ -1444,7 +1233,7 @@
         {
           "slice": "ar",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.8287,
           "n_rows": 24,
           "n_groups": 6
@@ -1452,7 +1241,7 @@
         {
           "slice": "arabizi",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.4722,
           "n_rows": 16,
           "n_groups": 4
@@ -1460,7 +1249,7 @@
         {
           "slice": "en",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.7701,
           "n_rows": 32,
           "n_groups": 6
@@ -1468,7 +1257,7 @@
         {
           "slice": "ar",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.8418,
           "n_rows": 24,
           "n_groups": 6
@@ -1476,7 +1265,7 @@
         {
           "slice": "arabizi",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.4074,
           "n_rows": 16,
           "n_groups": 4
@@ -1515,20 +1304,6 @@
         },
         "our_test_set1": {
           "category": {
-            "all": 1.0,
-            "en": 1.0,
-            "ar": 1.0,
-            "arabizi": null
-          },
-          "priority": {
-            "all": 1.0,
-            "en": 1.0,
-            "ar": 1.0,
-            "arabizi": null
-          }
-        },
-        "our_test_set2": {
-          "category": {
             "all": 0.6578,
             "en": 0.6889,
             "ar": 0.5556,
@@ -1541,7 +1316,7 @@
             "arabizi": 0.3333
           }
         },
-        "our_test_set3": {
+        "our_test_set2": {
           "category": {
             "all": 0.7601,
             "en": 0.7799,
@@ -1805,66 +1580,6 @@
           "target": "category",
           "dataset": "our_test_set1",
           "lang": "all",
-          "coverage": 1.0,
-          "mean_set_size": 2.65,
-          "singleton_rate": 0.55,
-          "n_rows": 60,
-          "n_groups": 6
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set1",
-          "lang": "en",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set1",
-          "lang": "ar",
-          "coverage": 1.0,
-          "mean_set_size": 4.6667,
-          "singleton_rate": 0.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "all",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 60,
-          "n_groups": 6
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "en",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "ar",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set2",
-          "lang": "all",
           "coverage": 0.8333,
           "mean_set_size": 2.3889,
           "singleton_rate": 0.5556,
@@ -1873,7 +1588,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "en",
           "coverage": 0.875,
           "mean_set_size": 1.25,
@@ -1883,7 +1598,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "ar",
           "coverage": 1.0,
           "mean_set_size": 4.8333,
@@ -1893,7 +1608,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "arabizi",
           "coverage": 0.5,
           "mean_set_size": 1.0,
@@ -1903,7 +1618,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "all",
           "coverage": 0.7778,
           "mean_set_size": 1.0,
@@ -1913,7 +1628,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "en",
           "coverage": 0.875,
           "mean_set_size": 1.0,
@@ -1923,7 +1638,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "ar",
           "coverage": 0.6667,
           "mean_set_size": 1.0,
@@ -1933,7 +1648,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "arabizi",
           "coverage": 0.75,
           "mean_set_size": 1.0,
@@ -1943,7 +1658,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "all",
           "coverage": 0.8333,
           "mean_set_size": 2.4167,
@@ -1953,7 +1668,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "en",
           "coverage": 0.8125,
           "mean_set_size": 1.0312,
@@ -1963,7 +1678,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "ar",
           "coverage": 1.0,
           "mean_set_size": 5.0417,
@@ -1973,7 +1688,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "arabizi",
           "coverage": 0.625,
           "mean_set_size": 1.25,
@@ -1983,7 +1698,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "all",
           "coverage": 0.7778,
           "mean_set_size": 1.0,
@@ -1993,7 +1708,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "en",
           "coverage": 0.75,
           "mean_set_size": 1.0,
@@ -2003,7 +1718,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "ar",
           "coverage": 0.875,
           "mean_set_size": 1.0,
@@ -2013,7 +1728,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "arabizi",
           "coverage": 0.6875,
           "mean_set_size": 1.0,
@@ -2139,38 +1854,6 @@
           "slice": "en",
           "target": "category",
           "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "slice": "ar",
-          "target": "category",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "slice": "en",
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "slice": "ar",
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "slice": "en",
-          "target": "category",
-          "dataset": "our_test_set2",
           "macro_f1": 0.6889,
           "n_rows": 32,
           "n_groups": 6
@@ -2178,7 +1861,7 @@
         {
           "slice": "ar",
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.5556,
           "n_rows": 24,
           "n_groups": 6
@@ -2186,7 +1869,7 @@
         {
           "slice": "arabizi",
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.36,
           "n_rows": 16,
           "n_groups": 4
@@ -2194,7 +1877,7 @@
         {
           "slice": "en",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.8857,
           "n_rows": 32,
           "n_groups": 6
@@ -2202,7 +1885,7 @@
         {
           "slice": "ar",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.4889,
           "n_rows": 24,
           "n_groups": 6
@@ -2210,7 +1893,7 @@
         {
           "slice": "arabizi",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.3333,
           "n_rows": 16,
           "n_groups": 4
@@ -2218,7 +1901,7 @@
         {
           "slice": "en",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.7799,
           "n_rows": 32,
           "n_groups": 6
@@ -2226,7 +1909,7 @@
         {
           "slice": "ar",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.8329,
           "n_rows": 24,
           "n_groups": 6
@@ -2234,7 +1917,7 @@
         {
           "slice": "arabizi",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.4206,
           "n_rows": 16,
           "n_groups": 4
@@ -2242,7 +1925,7 @@
         {
           "slice": "en",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.7701,
           "n_rows": 32,
           "n_groups": 6
@@ -2250,7 +1933,7 @@
         {
           "slice": "ar",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.8418,
           "n_rows": 24,
           "n_groups": 6
@@ -2258,7 +1941,7 @@
         {
           "slice": "arabizi",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.4074,
           "n_rows": 16,
           "n_groups": 4
@@ -2297,20 +1980,6 @@
         },
         "our_test_set1": {
           "category": {
-            "all": 1.0,
-            "en": 1.0,
-            "ar": 1.0,
-            "arabizi": null
-          },
-          "priority": {
-            "all": 1.0,
-            "en": 1.0,
-            "ar": 1.0,
-            "arabizi": null
-          }
-        },
-        "our_test_set2": {
-          "category": {
             "all": 0.7296,
             "en": 0.6889,
             "ar": 0.7778,
@@ -2323,7 +1992,7 @@
             "arabizi": 0.3333
           }
         },
-        "our_test_set3": {
+        "our_test_set2": {
           "category": {
             "all": 0.7014,
             "en": 0.7521,
@@ -2587,66 +2256,6 @@
           "target": "category",
           "dataset": "our_test_set1",
           "lang": "all",
-          "coverage": 1.0,
-          "mean_set_size": 2.65,
-          "singleton_rate": 0.55,
-          "n_rows": 60,
-          "n_groups": 6
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set1",
-          "lang": "en",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set1",
-          "lang": "ar",
-          "coverage": 1.0,
-          "mean_set_size": 4.6667,
-          "singleton_rate": 0.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "all",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 60,
-          "n_groups": 6
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "en",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "lang": "ar",
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "singleton_rate": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "target": "category",
-          "dataset": "our_test_set2",
-          "lang": "all",
           "coverage": 0.7917,
           "mean_set_size": 2.375,
           "singleton_rate": 0.5139,
@@ -2655,7 +2264,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "en",
           "coverage": 0.75,
           "mean_set_size": 1.125,
@@ -2665,7 +2274,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "ar",
           "coverage": 1.0,
           "mean_set_size": 4.6667,
@@ -2675,7 +2284,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "arabizi",
           "coverage": 0.5625,
           "mean_set_size": 1.4375,
@@ -2685,7 +2294,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "all",
           "coverage": 0.7778,
           "mean_set_size": 1.0,
@@ -2695,7 +2304,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "en",
           "coverage": 0.875,
           "mean_set_size": 1.0,
@@ -2705,7 +2314,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "ar",
           "coverage": 0.6667,
           "mean_set_size": 1.0,
@@ -2715,7 +2324,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "lang": "arabizi",
           "coverage": 0.75,
           "mean_set_size": 1.0,
@@ -2725,7 +2334,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "all",
           "coverage": 0.8472,
           "mean_set_size": 2.4028,
@@ -2735,7 +2344,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "en",
           "coverage": 0.8125,
           "mean_set_size": 1.0,
@@ -2745,7 +2354,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "ar",
           "coverage": 1.0,
           "mean_set_size": 5.0833,
@@ -2755,7 +2364,7 @@
         },
         {
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "arabizi",
           "coverage": 0.6875,
           "mean_set_size": 1.1875,
@@ -2765,7 +2374,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "all",
           "coverage": 0.7778,
           "mean_set_size": 1.0,
@@ -2775,7 +2384,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "en",
           "coverage": 0.75,
           "mean_set_size": 1.0,
@@ -2785,7 +2394,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "ar",
           "coverage": 0.875,
           "mean_set_size": 1.0,
@@ -2795,7 +2404,7 @@
         },
         {
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "lang": "arabizi",
           "coverage": 0.6875,
           "mean_set_size": 1.0,
@@ -2921,38 +2530,6 @@
           "slice": "en",
           "target": "category",
           "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "slice": "ar",
-          "target": "category",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "slice": "en",
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 33,
-          "n_groups": 3
-        },
-        {
-          "slice": "ar",
-          "target": "priority",
-          "dataset": "our_test_set1",
-          "macro_f1": 1.0,
-          "n_rows": 27,
-          "n_groups": 3
-        },
-        {
-          "slice": "en",
-          "target": "category",
-          "dataset": "our_test_set2",
           "macro_f1": 0.6889,
           "n_rows": 32,
           "n_groups": 6
@@ -2960,7 +2537,7 @@
         {
           "slice": "ar",
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.7778,
           "n_rows": 24,
           "n_groups": 6
@@ -2968,7 +2545,7 @@
         {
           "slice": "arabizi",
           "target": "category",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.3667,
           "n_rows": 16,
           "n_groups": 4
@@ -2976,7 +2553,7 @@
         {
           "slice": "en",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.8857,
           "n_rows": 32,
           "n_groups": 6
@@ -2984,7 +2561,7 @@
         {
           "slice": "ar",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.4889,
           "n_rows": 24,
           "n_groups": 6
@@ -2992,7 +2569,7 @@
         {
           "slice": "arabizi",
           "target": "priority",
-          "dataset": "our_test_set2",
+          "dataset": "our_test_set1",
           "macro_f1": 0.3333,
           "n_rows": 16,
           "n_groups": 4
@@ -3000,7 +2577,7 @@
         {
           "slice": "en",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.7521,
           "n_rows": 32,
           "n_groups": 6
@@ -3008,7 +2585,7 @@
         {
           "slice": "ar",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.6889,
           "n_rows": 24,
           "n_groups": 6
@@ -3016,7 +2593,7 @@
         {
           "slice": "arabizi",
           "target": "category",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.4028,
           "n_rows": 16,
           "n_groups": 4
@@ -3024,7 +2601,7 @@
         {
           "slice": "en",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.7701,
           "n_rows": 32,
           "n_groups": 6
@@ -3032,7 +2609,7 @@
         {
           "slice": "ar",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.8418,
           "n_rows": 24,
           "n_groups": 6
@@ -3040,7 +2617,7 @@
         {
           "slice": "arabizi",
           "target": "priority",
-          "dataset": "our_test_set3",
+          "dataset": "our_test_set2",
           "macro_f1": 0.4074,
           "n_rows": 16,
           "n_groups": 4

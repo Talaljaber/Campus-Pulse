@@ -54,6 +54,6 @@ category discordant pairs C1 right/C0 wrong: 1  C0 right/C1 wrong: 2
 
 ## Honest notes
 - On the holdout C1's priority is better than C0's (priority F1 0.898 vs 0.813; 17 rows right only for C1, 6 right only for C0), while category is equal (1 vs 2 discordant rows). C1 also doubled the ask rate (0.39 vs 0.17) because its conformal quantiles were calibrated on all 879 pool rows including the reviewed rows.
-- The holdout and the dev set were written by the same model family that drafted and panel-labelled the reviewed rows, so a shared drafting style can flatter C1. On the one human-written test set (our_test set1) C1's priority fell from 1.00 to 0.82.
+- The holdout and the dev set were written by the same model family that drafted and panel-labelled the reviewed rows, so a shared drafting style can flatter C1.
 - The LLM front end lifts the holdout category F1 of C0 from 0.894 to 0.909 (Arabic 0.870 to 0.901); English is unchanged by design, and priority does not move.
 - The holdout is LLM-written and has only 120 rows: differences under about 0.03 are noise.

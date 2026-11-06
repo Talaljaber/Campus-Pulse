@@ -516,16 +516,14 @@ CAVEATS = """## Caveats (read before quoting any number)
   roughly plus or minus 0.1, and treat no difference between models here as significant.
 - **Conformal coverage is approximate.** The quantiles are calibrated on the OOF scores of those same 30
   groups, so the 90 % guarantee holds only loosely, and OOF coverage is in-sample for the quantile.
-- **set1 is not unseen scenarios.** It restates 6 training scenarios in the other language, so it measures
-  cross-lingual transfer and is easier than the hidden test.
-- **Sets 2 and 3 were written by an LLM (D-010).** Their scenarios are unseen, but their phrasing and labels
+- **Our test sets were written by an LLM (D-010).** Their scenarios are unseen, but their phrasing and labels
   follow `docs/reference/label_decisions.md` as an LLM read it, not the organizers' labeller.
 - **The "today" shortcut (LD-34).** In the official data every row with "today"/"اليوم" is high and no other
   row is. The `deadline_today` feature and the head learn that, so priority scores on data with the same cue
   are optimistic. The P2.5 probes break the shortcut and P2.9 masks it.
 - **The priority lexicons were written after reading every official row.** The evidence patterns
   (`urgency.yaml`) and the danger lexicon (`safety.yaml`) were seeded from the official cores of all folds,
-  so OOF priority is not fully held out from the lexicons. our_test sets 2 and 3 are the cleaner check.
+  so OOF priority is not fully held out from the lexicons. The our_test sets are the cleaner check.
 - **Provisional configuration.** Equal ensemble weights and mid-grid C; P2.7 tunes both on OOF only. With
   equal weights the weak M1 member pulls the ensemble's category score below M2-LR alone.
 - **No augmentation yet.** The 30 Arabizi rule rows await the human check (P1.9), so no Arabizi was trained

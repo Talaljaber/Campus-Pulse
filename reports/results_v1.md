@@ -4,23 +4,25 @@ Artifact `v1` sha `8fb011621fb6`, generated 2026-10-31T16:32:40+00:00 by `python
 
 **Protocol.** Only two kinds of numbers appear here: scenario-held-out OOF over the frozen `cv_fold` folds (LD-31), and the frozen model on our own test set. No random split is used anywhere. Groups are `cv_group` for OOF and `scenario_family` for our_test.
 
+
+> Note: the our_test numbers in this report (pooled, per language and the error list) were measured on an
+> earlier version of `data/our_test/our_test.csv`; `reports/benchmark.md` holds the current ones.
+
 ## Headline
 
 | slice | rows | groups | cat macro-F1 | cat acc | pri macro-F1 | pri acc | joint acc |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | OOF, official rows | 432 | 30 | 0.490 | 0.512 | 0.904 | 0.903 | 0.440 |
-| our_test set1 | 60 | 6 | 0.592 | 0.700 | 1.000 | 1.000 | 0.700 |
-| our_test set2 | 72 | 16 | 0.746 | 0.750 | 0.782 | 0.778 | 0.611 |
-| our_test set3 | 72 | 16 | 0.663 | 0.653 | 0.783 | 0.778 | 0.542 |
-| our_test pooled | 204 | 38 | 0.710 | 0.701 | 0.847 | 0.843 | 0.613 |
+| our_test set1 | 72 | 16 | 0.746 | 0.750 | 0.782 | 0.778 | 0.611 |
+| our_test set2 | 72 | 16 | 0.663 | 0.653 | 0.783 | 0.778 | 0.542 |
+| our_test pooled (earlier version) | – | – | 0.710 | 0.701 | 0.847 | 0.843 | 0.613 |
 
 Conformal sets on our_test (target coverage 90 %, α = 0.10 per target):
 
 | set | cat coverage | cat mean size | pri coverage | pri mean size | ASK proxy (a set of size 2) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| set1 | 1.000 | 2.75 | 1.000 | 1.00 | 0.183 |
-| set2 | 0.931 | 3.22 | 0.778 | 1.00 | 0.278 |
-| set3 | 0.986 | 3.06 | 0.778 | 1.00 | 0.167 |
+| set1 | 0.931 | 3.22 | 0.778 | 1.00 | 0.278 |
+| set2 | 0.986 | 3.06 | 0.778 | 1.00 | 0.167 |
 | pooled | 0.971 | 3.02 | 0.843 | 1.00 | 0.211 |
 
 ## Findings
@@ -76,85 +78,67 @@ our_test pooled (member argmax; a member's priority is before the head and floor
 
 | id | set | lang | text | gold | pred | wrong | size S_cat | size S_pri |
 | --- | --- | --- | --- | --- | --- | --- | ---: | ---: |
-| HT-0002 | set1 | ar | بدي نسخة من وصل الدفع | Finance / low | Registration / low | category | 3 | 1 |
-| HT-0004 | set1 | ar | ارجو المساعدة، وين مكتب المرشد الاكاديمي؟ | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0008 | set1 | ar | عندي مشكلة: بدي نسخة من وصل الدفع | Finance / low | Registration / low | category | 3 | 1 |
-| HT-0009 | set1 | ar | مرحبا يا جماعة وين مكتب المرشد الاكاديمي؟ | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0019 | set1 | ar | وين مكتب المرشد الاكاديمي؟ وشكرا | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0021 | set1 | ar | وين مكتب المرشد الاكاديمي؟ | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0024 | set1 | ar | سؤال: وين مكتب المرشد الاكاديمي؟ | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0025 | set1 | ar | مرحبا، وين مكتب المرشد الاكاديمي؟ | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0026 | set1 | ar | سؤال: بدي نسخة من وصل الدفع | Finance / low | Registration / low | category | 3 | 1 |
-| HT-0028 | set1 | ar | لو سمحت بدي نسخة من وصل الدفع | Finance / low | Registration / low | category | 3 | 1 |
-| HT-0031 | set1 | ar | عندي مشكلة: وين مكتب المرشد الاكاديمي؟ | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0039 | set1 | ar | ممكن تساعدوني؟ بدي نسخة من وصل الدفع | Finance / low | Registration / low | category | 3 | 1 |
-| HT-0040 | set1 | ar | بدي نسخة من وصل الدفع وشكرا | Finance / low | Registration / low | category | 3 | 1 |
-| HT-0044 | set1 | ar | ممكن تساعدوني؟ وين مكتب المرشد الاكاديمي؟ | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0047 | set1 | ar | مرحبا يا جماعة بدي نسخة من وصل الدفع | Finance / low | Registration / low | category | 3 | 1 |
-| HT-0052 | set1 | ar | لو سمحت وين مكتب المرشد الاكاديمي؟ | Academic Support / low | Registration / low | category | 5 | 1 |
-| HT-0058 | set1 | ar | ارجو المساعدة، بدي نسخة من وصل الدفع | Finance / low | Registration / low | category | 3 | 1 |
-| HT-0060 | set1 | ar | مرحبا، بدي نسخة من وصل الدفع | Finance / low | Registration / low | category | 3 | 1 |
-| T2-0002 | set2 | en | The registration portal shows the wrong number of credit hours for me Please respond when possible. | Registration / medium | Finance / medium | category | 2 | 1 |
-| T2-0004 | set2 | en | I cannot log in to submit my project and the submission closes in one hour Please respond when possible. | IT Support / high | Registration / high | category | 3 | 1 |
-| T2-0007 | set2 | ar | ارجو المساعدة، السواق ما وقف بموقف الباص اليوم الصبح | Transportation / medium | Transportation / high | priority | 4 | 1 |
-| T2-0008 | set2 | ar | ممكن تساعدوني؟ الحنفية بحمام الطابق الثاني بتنقط | Facilities / low | Facilities / medium | priority | 5 | 1 |
-| T2-0012 | set2 | en | URGENT: The registration portal shows the wrong number of credit hours for me | Registration / medium | Finance / medium | category | 2 | 1 |
-| T2-0017 | set2 | ar | السواق ما وقف بموقف الباص اليوم الصبح | Transportation / medium | Transportation / high | priority | 4 | 1 |
-| T2-0018 | set2 | en | The shuttle broke down on the highway and students are stuck there Please respond when possible. | Transportation / high | Facilities / medium | category, priority | 2 | 1 |
-| T2-0027 | set2 | arabizi | fi bas lal jam3a yom el jum3a? w shukran | Transportation / low | IT Support / medium | category, priority | 4 | 1 |
-| T2-0028 | set2 | en | URGENT: The shuttle broke down on the highway and students are stuck there | Transportation / high | Facilities / medium | category, priority | 2 | 1 |
-| T2-0031 | set2 | ar | سؤال: علامة الميد ترم مش منزلة صح على النظام | Academic Support / medium | Registration / medium | category | 3 | 1 |
-| T2-0035 | set2 | en | Student request: I cannot log in to submit my project and the submission closes in one hour | IT Support / high | Registration / high | category | 3 | 1 |
-| T2-0037 | set2 | arabizi | fi bas lal jam3a yom el jum3a? | Transportation / low | Transportation / medium | priority | 4 | 1 |
-| T2-0038 | set2 | ar | مرحبا، السواق ما وقف بموقف الباص اليوم الصبح | Transportation / medium | Transportation / high | priority | 4 | 1 |
-| T2-0039 | set2 | ar | الحنفية بحمام الطابق الثاني بتنقط وشكرا | Facilities / low | Facilities / medium | priority | 5 | 1 |
-| T2-0041 | set2 | ar | علامة الميد ترم مش منزلة صح على النظام | Academic Support / medium | Registration / medium | category | 3 | 1 |
-| T2-0043 | set2 | en | Hi team, The registration portal shows the wrong number of credit hours for me | Registration / medium | Finance / medium | category | 2 | 1 |
-| T2-0045 | set2 | en | I cannot log in to submit my project and the submission closes in one hour | IT Support / high | Registration / high | category | 3 | 1 |
-| T2-0048 | set2 | ar | مرحبا يا جماعة السواق ما وقف بموقف الباص اليوم الصبح | Transportation / medium | Transportation / high | priority | 4 | 1 |
-| T2-0049 | set2 | ar | الحنفية بحمام الطابق الثاني بتنقط | Facilities / low | Facilities / medium | priority | 5 | 1 |
-| T2-0053 | set2 | en | The registration portal shows the wrong number of credit hours for me | Registration / medium | Finance / medium | category | 2 | 1 |
-| T2-0058 | set2 | arabizi | URGENT: fi bas lal jam3a yom el jum3a? | Transportation / low | Transportation / medium | priority | 4 | 1 |
-| T2-0059 | set2 | en | Hi team, The shuttle broke down on the highway and students are stuck there | Transportation / high | Facilities / medium | category, priority | 2 | 1 |
-| T2-0062 | set2 | ar | عندي مشكلة: علامة الميد ترم مش منزلة صح على النظام | Academic Support / medium | Registration / medium | category | 3 | 1 |
-| T2-0066 | set2 | en | This is my issue: I cannot log in to submit my project and the submission closes in one hour | IT Support / high | Registration / high | category | 3 | 1 |
-| T2-0068 | set2 | arabizi | 3indi moshkle: fi bas lal jam3a yom el jum3a? | Transportation / low | Academic Support / medium | category, priority | 3 | 1 |
-| T2-0069 | set2 | en | The shuttle broke down on the highway and students are stuck there | Transportation / high | Facilities / medium | category, priority | 2 | 1 |
-| T2-0070 | set2 | ar | مرحبا يا جماعة الحنفية بحمام الطابق الثاني بتنقط | Facilities / low | Facilities / medium | priority | 5 | 1 |
-| T2-0072 | set2 | ar | مرحبا، علامة الميد ترم مش منزلة صح على النظام | Academic Support / medium | Registration / medium | category | 3 | 1 |
-| T3-0001 | set3 | en | hey what's the max credit hours i can register this semester? | Registration / low | Finance / medium | category, priority | 4 | 1 |
-| T3-0005 | set3 | en | I got charged a lab fee but my course has no lab | Finance / medium | Registration / medium | category | 5 | 1 |
-| T3-0006 | set3 | arabizi | plz 7ello el hold el mali, dafa3t mbare7 w 3indi emti7an el yom | Finance / high | Registration / high | category | 4 | 1 |
-| T3-0007 | set3 | ar | التكييف بالباص مش شغال والطلاب تعبانين من الحر | Transportation / medium | Facilities / medium | category | 2 | 1 |
-| T3-0010 | set3 | ar | لو سمحت شو الخطوات لطلب توصية اكاديمية | Academic Support / low | Registration / low | category | 4 | 1 |
-| T3-0011 | set3 | arabizi | plz ana bel tawari2 w el final hala2, shu a3mel? | Academic Support / high | Registration / medium | category, priority | 4 | 1 |
-| T3-0014 | set3 | ar | الاوتلوك تبع الجامعة واقف، ما في ولا ايميل جديد من مبارح | IT Support / medium | Transportation / medium | category | 4 | 1 |
-| T3-0015 | set3 | ar | بدي اعرف سياسة استرجاع الرسوم للمواد المسحوبة | Finance / low | Registration / low | category | 4 | 1 |
-| T3-0016 | set3 | arabizi | ma khalooni adkhol el emti7an el yom 3shan el dafe3 mesh mbayyen, w ana dafe3!! | Finance / high | Registration / high | category | 4 | 1 |
-| T3-0017 | set3 | ar | المكيف بالباص خربان والجو حر كثير | Transportation / medium | Facilities / medium | category | 2 | 1 |
-| T3-0018 | set3 | arabizi | el bus da3am sayyara w e7na 3al autostrad, shu ne3mal? | Transportation / high | Transportation / medium | priority | 1 | 1 |
-| T3-0020 | set3 | ar | بدي رسالة توصية للماجستير، شو الطريقة؟ | Academic Support / low | Registration / medium | category, priority | 4 | 1 |
-| T3-0022 | set3 | en | I want to overload next semester, how many hours max? | Registration / low | IT Support / medium | category, priority | 3 | 1 |
-| T3-0025 | set3 | ar | اذا سحبت مادة بترجعلي مصاريها؟ | Finance / low | Registration / medium | category, priority | 3 | 1 |
-| T3-0028 | set3 | arabizi | sar 7adeth lal bas tabe3 el jam3a, ma 7ada mjarra7 bas e7na wa2fin 3al share3 | Transportation / high | Transportation / medium | priority | 4 | 1 |
-| T3-0029 | set3 | ar | نص الكراسي بالقاعة 112 مكسورة والطلاب واقفين | Facilities / medium | Registration / medium | category | 3 | 1 |
-| T3-0030 | set3 | en | please send someone now, a socket in the library is smoking | Facilities / high | Facilities / medium | priority | 1 | 1 |
-| T3-0032 | set3 | en | Can I take more than 18 credit hours if my GPA is high? Who approves that? | Registration / low | Academic Support / low | category | 2 | 1 |
-| T3-0034 | set3 | en | Hi, I'd like to install MATLAB on my laptop using the uni license, what are the steps? | IT Support / low | IT Support / medium | priority | 3 | 1 |
-| T3-0037 | set3 | en | does the uni bus go to Zarqa? | Transportation / low | Transportation / medium | priority | 1 | 1 |
-| T3-0039 | set3 | en | hey where can I pray on campus between lectures | Facilities / low | Academic Support / low | category | 3 | 1 |
-| T3-0043 | set3 | ar | الشعبة مليانة وزر الانتظار مش راضي يشتغل، شو اعمل؟ | Registration / medium | Facilities / medium | category | 3 | 1 |
-| T3-0046 | set3 | ar | لو سمحتو، بسترد فلوس المادة اذا سحبتها؟ | Finance / low | Registration / medium | category, priority | 5 | 1 |
-| T3-0051 | set3 | ar | مين بقدر اطلب منه رسالة توصية وكم بتاخذ وقت؟ | Academic Support / low | Registration / low | category | 3 | 1 |
-| T3-0056 | set3 | ar | شو نسبة الاسترداد اذا انسحبت من مادة بعد الاسبوع الاول؟ | Finance / low | Registration / low | category | 5 | 1 |
-| T3-0059 | set3 | arabizi | accident lal bus 3and el dawwar, plz ib3atolna bas tani | Transportation / high | Transportation / medium | priority | 2 | 1 |
-| T3-0060 | set3 | ar | الكراسي بقاعة المحاضرات مكسرة وما في مكان نقعد | Facilities / medium | Registration / medium | category | 4 | 1 |
-| T3-0061 | set3 | ar | كيف بطلب رسالة توصية من دكتور؟ | Academic Support / low | IT Support / low | category | 3 | 1 |
-| T3-0062 | set3 | en | Hi, is there another way to reach my advisor? no response since two weeks | Academic Support / medium | Academic Support / low | priority | 2 | 1 |
-| T3-0063 | set3 | en | quick question about the credit hour limit, is 21 hours allowed for seniors | Registration / low | Finance / medium | category, priority | 4 | 1 |
-| T3-0068 | set3 | en | Is there a GJU shuttle from Zarqa or only from Amman? | Transportation / low | Facilities / low | category | 3 | 1 |
-| T3-0069 | set3 | arabizi | el bas 3emel 7adeth 3al taree2 w fi tollab ma3na | Transportation / high | Registration / medium | category, priority | 4 | 1 |
-| T3-0070 | set3 | en | could someone tell me where the closest prayer room to the library is | Facilities / low | Facilities / medium | priority | 3 | 1 |
+| T1-0002 | set1 | en | The registration portal shows the wrong number of credit hours for me Please respond when possible. | Registration / medium | Finance / medium | category | 2 | 1 |
+| T1-0004 | set1 | en | I cannot log in to submit my project and the submission closes in one hour Please respond when possible. | IT Support / high | Registration / high | category | 3 | 1 |
+| T1-0007 | set1 | ar | ارجو المساعدة، السواق ما وقف بموقف الباص اليوم الصبح | Transportation / medium | Transportation / high | priority | 4 | 1 |
+| T1-0008 | set1 | ar | ممكن تساعدوني؟ الحنفية بحمام الطابق الثاني بتنقط | Facilities / low | Facilities / medium | priority | 5 | 1 |
+| T1-0012 | set1 | en | URGENT: The registration portal shows the wrong number of credit hours for me | Registration / medium | Finance / medium | category | 2 | 1 |
+| T1-0017 | set1 | ar | السواق ما وقف بموقف الباص اليوم الصبح | Transportation / medium | Transportation / high | priority | 4 | 1 |
+| T1-0018 | set1 | en | The shuttle broke down on the highway and students are stuck there Please respond when possible. | Transportation / high | Facilities / medium | category, priority | 2 | 1 |
+| T1-0027 | set1 | arabizi | fi bas lal jam3a yom el jum3a? w shukran | Transportation / low | IT Support / medium | category, priority | 4 | 1 |
+| T1-0028 | set1 | en | URGENT: The shuttle broke down on the highway and students are stuck there | Transportation / high | Facilities / medium | category, priority | 2 | 1 |
+| T1-0031 | set1 | ar | سؤال: علامة الميد ترم مش منزلة صح على النظام | Academic Support / medium | Registration / medium | category | 3 | 1 |
+| T1-0035 | set1 | en | Student request: I cannot log in to submit my project and the submission closes in one hour | IT Support / high | Registration / high | category | 3 | 1 |
+| T1-0037 | set1 | arabizi | fi bas lal jam3a yom el jum3a? | Transportation / low | Transportation / medium | priority | 4 | 1 |
+| T1-0038 | set1 | ar | مرحبا، السواق ما وقف بموقف الباص اليوم الصبح | Transportation / medium | Transportation / high | priority | 4 | 1 |
+| T1-0039 | set1 | ar | الحنفية بحمام الطابق الثاني بتنقط وشكرا | Facilities / low | Facilities / medium | priority | 5 | 1 |
+| T1-0041 | set1 | ar | علامة الميد ترم مش منزلة صح على النظام | Academic Support / medium | Registration / medium | category | 3 | 1 |
+| T1-0043 | set1 | en | Hi team, The registration portal shows the wrong number of credit hours for me | Registration / medium | Finance / medium | category | 2 | 1 |
+| T1-0045 | set1 | en | I cannot log in to submit my project and the submission closes in one hour | IT Support / high | Registration / high | category | 3 | 1 |
+| T1-0048 | set1 | ar | مرحبا يا جماعة السواق ما وقف بموقف الباص اليوم الصبح | Transportation / medium | Transportation / high | priority | 4 | 1 |
+| T1-0049 | set1 | ar | الحنفية بحمام الطابق الثاني بتنقط | Facilities / low | Facilities / medium | priority | 5 | 1 |
+| T1-0053 | set1 | en | The registration portal shows the wrong number of credit hours for me | Registration / medium | Finance / medium | category | 2 | 1 |
+| T1-0058 | set1 | arabizi | URGENT: fi bas lal jam3a yom el jum3a? | Transportation / low | Transportation / medium | priority | 4 | 1 |
+| T1-0059 | set1 | en | Hi team, The shuttle broke down on the highway and students are stuck there | Transportation / high | Facilities / medium | category, priority | 2 | 1 |
+| T1-0062 | set1 | ar | عندي مشكلة: علامة الميد ترم مش منزلة صح على النظام | Academic Support / medium | Registration / medium | category | 3 | 1 |
+| T1-0066 | set1 | en | This is my issue: I cannot log in to submit my project and the submission closes in one hour | IT Support / high | Registration / high | category | 3 | 1 |
+| T1-0068 | set1 | arabizi | 3indi moshkle: fi bas lal jam3a yom el jum3a? | Transportation / low | Academic Support / medium | category, priority | 3 | 1 |
+| T1-0069 | set1 | en | The shuttle broke down on the highway and students are stuck there | Transportation / high | Facilities / medium | category, priority | 2 | 1 |
+| T1-0070 | set1 | ar | مرحبا يا جماعة الحنفية بحمام الطابق الثاني بتنقط | Facilities / low | Facilities / medium | priority | 5 | 1 |
+| T1-0072 | set1 | ar | مرحبا، علامة الميد ترم مش منزلة صح على النظام | Academic Support / medium | Registration / medium | category | 3 | 1 |
+| T2-0001 | set2 | en | hey what's the max credit hours i can register this semester? | Registration / low | Finance / medium | category, priority | 4 | 1 |
+| T2-0005 | set2 | en | I got charged a lab fee but my course has no lab | Finance / medium | Registration / medium | category | 5 | 1 |
+| T2-0006 | set2 | arabizi | plz 7ello el hold el mali, dafa3t mbare7 w 3indi emti7an el yom | Finance / high | Registration / high | category | 4 | 1 |
+| T2-0007 | set2 | ar | التكييف بالباص مش شغال والطلاب تعبانين من الحر | Transportation / medium | Facilities / medium | category | 2 | 1 |
+| T2-0010 | set2 | ar | لو سمحت شو الخطوات لطلب توصية اكاديمية | Academic Support / low | Registration / low | category | 4 | 1 |
+| T2-0011 | set2 | arabizi | plz ana bel tawari2 w el final hala2, shu a3mel? | Academic Support / high | Registration / medium | category, priority | 4 | 1 |
+| T2-0014 | set2 | ar | الاوتلوك تبع الجامعة واقف، ما في ولا ايميل جديد من مبارح | IT Support / medium | Transportation / medium | category | 4 | 1 |
+| T2-0015 | set2 | ar | بدي اعرف سياسة استرجاع الرسوم للمواد المسحوبة | Finance / low | Registration / low | category | 4 | 1 |
+| T2-0016 | set2 | arabizi | ma khalooni adkhol el emti7an el yom 3shan el dafe3 mesh mbayyen, w ana dafe3!! | Finance / high | Registration / high | category | 4 | 1 |
+| T2-0017 | set2 | ar | المكيف بالباص خربان والجو حر كثير | Transportation / medium | Facilities / medium | category | 2 | 1 |
+| T2-0018 | set2 | arabizi | el bus da3am sayyara w e7na 3al autostrad, shu ne3mal? | Transportation / high | Transportation / medium | priority | 1 | 1 |
+| T2-0020 | set2 | ar | بدي رسالة توصية للماجستير، شو الطريقة؟ | Academic Support / low | Registration / medium | category, priority | 4 | 1 |
+| T2-0022 | set2 | en | I want to overload next semester, how many hours max? | Registration / low | IT Support / medium | category, priority | 3 | 1 |
+| T2-0025 | set2 | ar | اذا سحبت مادة بترجعلي مصاريها؟ | Finance / low | Registration / medium | category, priority | 3 | 1 |
+| T2-0028 | set2 | arabizi | sar 7adeth lal bas tabe3 el jam3a, ma 7ada mjarra7 bas e7na wa2fin 3al share3 | Transportation / high | Transportation / medium | priority | 4 | 1 |
+| T2-0029 | set2 | ar | نص الكراسي بالقاعة 112 مكسورة والطلاب واقفين | Facilities / medium | Registration / medium | category | 3 | 1 |
+| T2-0030 | set2 | en | please send someone now, a socket in the library is smoking | Facilities / high | Facilities / medium | priority | 1 | 1 |
+| T2-0032 | set2 | en | Can I take more than 18 credit hours if my GPA is high? Who approves that? | Registration / low | Academic Support / low | category | 2 | 1 |
+| T2-0034 | set2 | en | Hi, I'd like to install MATLAB on my laptop using the uni license, what are the steps? | IT Support / low | IT Support / medium | priority | 3 | 1 |
+| T2-0037 | set2 | en | does the uni bus go to Zarqa? | Transportation / low | Transportation / medium | priority | 1 | 1 |
+| T2-0039 | set2 | en | hey where can I pray on campus between lectures | Facilities / low | Academic Support / low | category | 3 | 1 |
+| T2-0043 | set2 | ar | الشعبة مليانة وزر الانتظار مش راضي يشتغل، شو اعمل؟ | Registration / medium | Facilities / medium | category | 3 | 1 |
+| T2-0046 | set2 | ar | لو سمحتو، بسترد فلوس المادة اذا سحبتها؟ | Finance / low | Registration / medium | category, priority | 5 | 1 |
+| T2-0051 | set2 | ar | مين بقدر اطلب منه رسالة توصية وكم بتاخذ وقت؟ | Academic Support / low | Registration / low | category | 3 | 1 |
+| T2-0056 | set2 | ar | شو نسبة الاسترداد اذا انسحبت من مادة بعد الاسبوع الاول؟ | Finance / low | Registration / low | category | 5 | 1 |
+| T2-0059 | set2 | arabizi | accident lal bus 3and el dawwar, plz ib3atolna bas tani | Transportation / high | Transportation / medium | priority | 2 | 1 |
+| T2-0060 | set2 | ar | الكراسي بقاعة المحاضرات مكسرة وما في مكان نقعد | Facilities / medium | Registration / medium | category | 4 | 1 |
+| T2-0061 | set2 | ar | كيف بطلب رسالة توصية من دكتور؟ | Academic Support / low | IT Support / low | category | 3 | 1 |
+| T2-0062 | set2 | en | Hi, is there another way to reach my advisor? no response since two weeks | Academic Support / medium | Academic Support / low | priority | 2 | 1 |
+| T2-0063 | set2 | en | quick question about the credit hour limit, is 21 hours allowed for seniors | Registration / low | Finance / medium | category, priority | 4 | 1 |
+| T2-0068 | set2 | en | Is there a GJU shuttle from Zarqa or only from Amman? | Transportation / low | Facilities / low | category | 3 | 1 |
+| T2-0069 | set2 | arabizi | el bas 3emel 7adeth 3al taree2 w fi tollab ma3na | Transportation / high | Registration / medium | category, priority | 4 | 1 |
+| T2-0070 | set2 | en | could someone tell me where the closest prayer room to the library is | Facilities / low | Facilities / medium | priority | 3 | 1 |
 
 ## Caveats (read before quoting any number)
 
@@ -164,16 +148,14 @@ our_test pooled (member argmax; a member's priority is before the head and floor
   roughly plus or minus 0.1, and treat no difference between models here as significant.
 - **Conformal coverage is approximate.** The quantiles are calibrated on the OOF scores of those same 30
   groups, so the 90 % guarantee holds only loosely, and OOF coverage is in-sample for the quantile.
-- **set1 is not unseen scenarios.** It restates 6 training scenarios in the other language, so it measures
-  cross-lingual transfer and is easier than the hidden test.
-- **Sets 2 and 3 were written by an LLM (D-010).** Their scenarios are unseen, but their phrasing and labels
+- **Our test sets were written by an LLM (D-010).** Their scenarios are unseen, but their phrasing and labels
   follow `docs/reference/label_decisions.md` as an LLM read it, not the organizers' labeller.
 - **The "today" shortcut (LD-34).** In the official data every row with "today"/"اليوم" is high and no other
   row is. The `deadline_today` feature and the head learn that, so priority scores on data with the same cue
   are optimistic. The P2.5 probes break the shortcut and P2.9 masks it.
 - **The priority lexicons were written after reading every official row.** The evidence patterns
   (`urgency.yaml`) and the danger lexicon (`safety.yaml`) were seeded from the official cores of all folds,
-  so OOF priority is not fully held out from the lexicons. our_test sets 2 and 3 are the cleaner check.
+  so OOF priority is not fully held out from the lexicons. our_test sets 1 and 2 are the cleaner check.
 - **Provisional configuration.** Equal ensemble weights and mid-grid C; P2.7 tunes both on OOF only. With
   equal weights the weak M1 member pulls the ensemble's category score below M2-LR alone.
 - **No augmentation yet.** The 30 Arabizi rule rows await the human check (P1.9), so no Arabizi was trained

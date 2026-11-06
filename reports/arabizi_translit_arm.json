@@ -1,4 +1,5 @@
 {
+  "note": "our_test numbers in this report were measured on an earlier version of data/our_test/our_test.csv; reports/benchmark.md holds the current ones.",
   "data": {
     "arabizi_csv": 30,
     "new_scenario_kept": 75,
@@ -199,216 +200,324 @@
     "a": {
       "arm": [
         [
-          "T2-0006",
-          "t2_arabizi_Finance_0",
+          "T1-0006",
+          "t1_arabizi_Finance_0",
           "Finance",
           "Transportation"
         ],
         [
-          "T2-0009",
-          "t2_arabizi_Facilities_0",
+          "T1-0009",
+          "t1_arabizi_Facilities_0",
           "Facilities",
           "Facilities"
+        ],
+        [
+          "T1-0016",
+          "t1_arabizi_Finance_0",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "T1-0023",
+          "t1_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T1-0027",
+          "t1_arabizi_Transportation_0",
+          "Transportation",
+          "IT Support"
+        ],
+        [
+          "T1-0030",
+          "t1_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T1-0033",
+          "t1_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T1-0037",
+          "t1_arabizi_Transportation_0",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "T1-0040",
+          "t1_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T1-0047",
+          "t1_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T1-0054",
+          "t1_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T1-0057",
+          "t1_arabizi_Finance_0",
+          "Finance",
+          "Transportation"
+        ],
+        [
+          "T1-0058",
+          "t1_arabizi_Transportation_0",
+          "Transportation",
+          "Facilities"
+        ],
+        [
+          "T1-0064",
+          "t1_arabizi_Registration_0",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "T1-0068",
+          "t1_arabizi_Transportation_0",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "T1-0071",
+          "t1_arabizi_Facilities_0",
+          "Facilities",
+          "IT Support"
+        ],
+        [
+          "T2-0006",
+          "t2_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T2-0011",
+          "t2_arabizi_Academic Support_0",
+          "Academic Support",
+          "Transportation"
         ],
         [
           "T2-0016",
           "t2_arabizi_Finance_0",
           "Finance",
+          "Academic Support"
+        ],
+        [
+          "T2-0018",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
           "Transportation"
+        ],
+        [
+          "T2-0021",
+          "t2_arabizi_Academic Support_0",
+          "Academic Support",
+          "IT Support"
         ],
         [
           "T2-0023",
           "t2_arabizi_Registration_0",
           "Registration",
-          "IT Support"
+          "Registration"
         ],
         [
-          "T2-0027",
+          "T2-0028",
           "t2_arabizi_Transportation_0",
           "Transportation",
           "IT Support"
-        ],
-        [
-          "T2-0030",
-          "t2_arabizi_Facilities_0",
-          "Facilities",
-          "Facilities"
         ],
         [
           "T2-0033",
           "t2_arabizi_Registration_0",
           "Registration",
+          "Registration"
+        ],
+        [
+          "T2-0042",
+          "t2_arabizi_Academic Support_0",
+          "Academic Support",
           "IT Support"
-        ],
-        [
-          "T2-0037",
-          "t2_arabizi_Transportation_0",
-          "Transportation",
-          "Facilities"
-        ],
-        [
-          "T2-0040",
-          "t2_arabizi_Facilities_0",
-          "Facilities",
-          "Facilities"
         ],
         [
           "T2-0047",
           "t2_arabizi_Finance_0",
           "Finance",
-          "Finance"
+          "Transportation"
+        ],
+        [
+          "T2-0052",
+          "t2_arabizi_Academic Support_0",
+          "Academic Support",
+          "Academic Support"
         ],
         [
           "T2-0054",
           "t2_arabizi_Registration_0",
           "Registration",
-          "IT Support"
+          "Registration"
         ],
         [
           "T2-0057",
           "t2_arabizi_Finance_0",
           "Finance",
-          "Transportation"
+          "Finance"
         ],
         [
-          "T2-0058",
+          "T2-0059",
           "t2_arabizi_Transportation_0",
           "Transportation",
-          "Facilities"
+          "Transportation"
         ],
         [
           "T2-0064",
           "t2_arabizi_Registration_0",
           "Registration",
-          "Academic Support"
+          "Registration"
         ],
         [
-          "T2-0068",
+          "T2-0069",
           "t2_arabizi_Transportation_0",
-          "Transportation",
-          "Academic Support"
-        ],
-        [
-          "T2-0071",
-          "t2_arabizi_Facilities_0",
-          "Facilities",
-          "IT Support"
-        ],
-        [
-          "T3-0006",
-          "t3_arabizi_Finance_0",
-          "Finance",
-          "Finance"
-        ],
-        [
-          "T3-0011",
-          "t3_arabizi_Academic Support_0",
-          "Academic Support",
-          "Transportation"
-        ],
-        [
-          "T3-0016",
-          "t3_arabizi_Finance_0",
-          "Finance",
-          "Academic Support"
-        ],
-        [
-          "T3-0018",
-          "t3_arabizi_Transportation_0",
-          "Transportation",
-          "Transportation"
-        ],
-        [
-          "T3-0021",
-          "t3_arabizi_Academic Support_0",
-          "Academic Support",
-          "IT Support"
-        ],
-        [
-          "T3-0023",
-          "t3_arabizi_Registration_0",
-          "Registration",
-          "Registration"
-        ],
-        [
-          "T3-0028",
-          "t3_arabizi_Transportation_0",
-          "Transportation",
-          "IT Support"
-        ],
-        [
-          "T3-0033",
-          "t3_arabizi_Registration_0",
-          "Registration",
-          "Registration"
-        ],
-        [
-          "T3-0042",
-          "t3_arabizi_Academic Support_0",
-          "Academic Support",
-          "IT Support"
-        ],
-        [
-          "T3-0047",
-          "t3_arabizi_Finance_0",
-          "Finance",
-          "Transportation"
-        ],
-        [
-          "T3-0052",
-          "t3_arabizi_Academic Support_0",
-          "Academic Support",
-          "Academic Support"
-        ],
-        [
-          "T3-0054",
-          "t3_arabizi_Registration_0",
-          "Registration",
-          "Registration"
-        ],
-        [
-          "T3-0057",
-          "t3_arabizi_Finance_0",
-          "Finance",
-          "Finance"
-        ],
-        [
-          "T3-0059",
-          "t3_arabizi_Transportation_0",
-          "Transportation",
-          "Transportation"
-        ],
-        [
-          "T3-0064",
-          "t3_arabizi_Registration_0",
-          "Registration",
-          "Registration"
-        ],
-        [
-          "T3-0069",
-          "t3_arabizi_Transportation_0",
           "Transportation",
           "Transportation"
         ]
       ],
       "base": [
         [
+          "T1-0006",
+          "t1_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T1-0009",
+          "t1_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T1-0016",
+          "t1_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T1-0023",
+          "t1_arabizi_Registration_0",
+          "Registration",
+          "Registration"
+        ],
+        [
+          "T1-0027",
+          "t1_arabizi_Transportation_0",
+          "Transportation",
+          "Registration"
+        ],
+        [
+          "T1-0030",
+          "t1_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T1-0033",
+          "t1_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T1-0037",
+          "t1_arabizi_Transportation_0",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "T1-0040",
+          "t1_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
+          "T1-0047",
+          "t1_arabizi_Finance_0",
+          "Finance",
+          "Registration"
+        ],
+        [
+          "T1-0054",
+          "t1_arabizi_Registration_0",
+          "Registration",
+          "IT Support"
+        ],
+        [
+          "T1-0057",
+          "t1_arabizi_Finance_0",
+          "Finance",
+          "Finance"
+        ],
+        [
+          "T1-0058",
+          "t1_arabizi_Transportation_0",
+          "Transportation",
+          "Academic Support"
+        ],
+        [
+          "T1-0064",
+          "t1_arabizi_Registration_0",
+          "Registration",
+          "Academic Support"
+        ],
+        [
+          "T1-0068",
+          "t1_arabizi_Transportation_0",
+          "Transportation",
+          "IT Support"
+        ],
+        [
+          "T1-0071",
+          "t1_arabizi_Facilities_0",
+          "Facilities",
+          "Facilities"
+        ],
+        [
           "T2-0006",
           "t2_arabizi_Finance_0",
           "Finance",
           "Finance"
         ],
         [
-          "T2-0009",
-          "t2_arabizi_Facilities_0",
-          "Facilities",
+          "T2-0011",
+          "t2_arabizi_Academic Support_0",
+          "Academic Support",
           "Facilities"
         ],
         [
           "T2-0016",
           "t2_arabizi_Finance_0",
           "Finance",
-          "Finance"
+          "Transportation"
+        ],
+        [
+          "T2-0018",
+          "t2_arabizi_Transportation_0",
+          "Transportation",
+          "Transportation"
+        ],
+        [
+          "T2-0021",
+          "t2_arabizi_Academic Support_0",
+          "Academic Support",
+          "IT Support"
         ],
         [
           "T2-0023",
@@ -417,16 +526,10 @@
           "Registration"
         ],
         [
-          "T2-0027",
+          "T2-0028",
           "t2_arabizi_Transportation_0",
           "Transportation",
-          "Registration"
-        ],
-        [
-          "T2-0030",
-          "t2_arabizi_Facilities_0",
-          "Facilities",
-          "Facilities"
+          "Transportation"
         ],
         [
           "T2-0033",
@@ -435,16 +538,10 @@
           "IT Support"
         ],
         [
-          "T2-0037",
-          "t2_arabizi_Transportation_0",
-          "Transportation",
+          "T2-0042",
+          "t2_arabizi_Academic Support_0",
+          "Academic Support",
           "Academic Support"
-        ],
-        [
-          "T2-0040",
-          "t2_arabizi_Facilities_0",
-          "Facilities",
-          "Facilities"
         ],
         [
           "T2-0047",
@@ -453,134 +550,38 @@
           "Registration"
         ],
         [
+          "T2-0052",
+          "t2_arabizi_Academic Support_0",
+          "Academic Support",
+          "Academic Support"
+        ],
+        [
           "T2-0054",
           "t2_arabizi_Registration_0",
           "Registration",
-          "IT Support"
+          "Registration"
         ],
         [
           "T2-0057",
           "t2_arabizi_Finance_0",
           "Finance",
-          "Finance"
+          "Registration"
         ],
         [
-          "T2-0058",
+          "T2-0059",
           "t2_arabizi_Transportation_0",
           "Transportation",
-          "Academic Support"
+          "Transportation"
         ],
         [
           "T2-0064",
           "t2_arabizi_Registration_0",
           "Registration",
-          "Academic Support"
+          "Registration"
         ],
         [
-          "T2-0068",
+          "T2-0069",
           "t2_arabizi_Transportation_0",
-          "Transportation",
-          "IT Support"
-        ],
-        [
-          "T2-0071",
-          "t2_arabizi_Facilities_0",
-          "Facilities",
-          "Facilities"
-        ],
-        [
-          "T3-0006",
-          "t3_arabizi_Finance_0",
-          "Finance",
-          "Finance"
-        ],
-        [
-          "T3-0011",
-          "t3_arabizi_Academic Support_0",
-          "Academic Support",
-          "Facilities"
-        ],
-        [
-          "T3-0016",
-          "t3_arabizi_Finance_0",
-          "Finance",
-          "Transportation"
-        ],
-        [
-          "T3-0018",
-          "t3_arabizi_Transportation_0",
-          "Transportation",
-          "Transportation"
-        ],
-        [
-          "T3-0021",
-          "t3_arabizi_Academic Support_0",
-          "Academic Support",
-          "IT Support"
-        ],
-        [
-          "T3-0023",
-          "t3_arabizi_Registration_0",
-          "Registration",
-          "Registration"
-        ],
-        [
-          "T3-0028",
-          "t3_arabizi_Transportation_0",
-          "Transportation",
-          "Transportation"
-        ],
-        [
-          "T3-0033",
-          "t3_arabizi_Registration_0",
-          "Registration",
-          "IT Support"
-        ],
-        [
-          "T3-0042",
-          "t3_arabizi_Academic Support_0",
-          "Academic Support",
-          "Academic Support"
-        ],
-        [
-          "T3-0047",
-          "t3_arabizi_Finance_0",
-          "Finance",
-          "Registration"
-        ],
-        [
-          "T3-0052",
-          "t3_arabizi_Academic Support_0",
-          "Academic Support",
-          "Academic Support"
-        ],
-        [
-          "T3-0054",
-          "t3_arabizi_Registration_0",
-          "Registration",
-          "Registration"
-        ],
-        [
-          "T3-0057",
-          "t3_arabizi_Finance_0",
-          "Finance",
-          "Registration"
-        ],
-        [
-          "T3-0059",
-          "t3_arabizi_Transportation_0",
-          "Transportation",
-          "Transportation"
-        ],
-        [
-          "T3-0064",
-          "t3_arabizi_Registration_0",
-          "Registration",
-          "Registration"
-        ],
-        [
-          "T3-0069",
-          "t3_arabizi_Transportation_0",
           "Transportation",
           "IT Support"
         ]

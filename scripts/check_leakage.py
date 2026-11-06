@@ -23,8 +23,8 @@ exactly as at inference. It also reads the holdouts (`data/our_test/our_test.csv
        - against an **augmented** row, by a measure in `leakage.holdout_fail_on` (exact, char) -> exit 1
          (fix or drop the augmented row; the holdout never moves into training). An encoder-only neighbour
          is listed for review: an e5 cosine of 0.90 marks a shared topic, not a copy (config/datasets.yaml)
-       - against an **official** row                                                   -> listed only: set1
-         restates training scenarios by design (D-010), so cross-lingual neighbours are expected
+       - against an **official** row                                                   -> listed only: a
+         shared topic with an official row is context, not an error
 Output line:
   exact cross-group duplicates: 0; near pairs >=0.90: <n> (listed); holdout near-duplicates: <m> (listed;
   augmented <a>, official <o>)
@@ -243,7 +243,7 @@ def holdout_near(
                                          ("encoder", enc_sims, encoder_threshold)):
             above = np.nonzero(sims[h] >= threshold)[0]
             # every augmented hit is listed (each one must be fixed or dropped); for official rows only the
-            # closest one (set1 restates training scenarios by design, so they are context, not errors)
+            # closest one (a shared topic with an official row is context, not an error)
             augmented = [int(p) for p in above if not bool(frame.iloc[int(p)]["is_official"])]
             out.extend(pair(h, p, float(sims[h, p]), measure) for p in augmented)
             official = [int(p) for p in above if bool(frame.iloc[int(p)]["is_official"])]

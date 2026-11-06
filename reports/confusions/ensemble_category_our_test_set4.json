@@ -1,0 +1,67 @@
+{
+  "artifact_version": "v1",
+  "dataset": "our_test_set4",
+  "generated_at": "2026-11-06T18:06:47+00:00",
+  "labels": [
+    "Registration",
+    "IT Support",
+    "Finance",
+    "Transportation",
+    "Facilities",
+    "Academic Support"
+  ],
+  "matrix": [
+    [
+      21,
+      1,
+      0,
+      0,
+      0,
+      2
+    ],
+    [
+      2,
+      19,
+      0,
+      0,
+      2,
+      1
+    ],
+    [
+      2,
+      2,
+      16,
+      0,
+      0,
+      4
+    ],
+    [
+      0,
+      2,
+      0,
+      21,
+      1,
+      0
+    ],
+    [
+      4,
+      5,
+      1,
+      0,
+      13,
+      1
+    ],
+    [
+      4,
+      1,
+      0,
+      0,
+      1,
+      18
+    ]
+  ],
+  "model": "Ensemble (tier 0)",
+  "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
+  "sha": "a8e2f1e58da5",
+  "target": "category"
+}

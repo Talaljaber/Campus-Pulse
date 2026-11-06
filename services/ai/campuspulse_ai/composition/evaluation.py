@@ -4,7 +4,7 @@ One protocol for every number (CLAUDE.md, LD-31):
   1. **OOF**: the frozen model dir's `oof.npz` (stage A + B of `train.py`, scenario-held-out over the frozen
      `cv_fold` folds), on the official rows (`oof_official`) and on every pool row (`oof_all`);
   2. **our own test set** `data/our_test/our_test.csv`, scored by the frozen model (`build_offline`), pooled
-     (`our_test`) and per set (`our_test_set1..3`);
+     (`our_test`) and per set (`our_test_set1..4`);
   3. **probes** `data/robustness/probes.csv` when it exists (P2.5), else skipped with a note.
 Nothing is tuned here, and no random split exists anywhere. This module (with the validators and
 `scripts/check_leakage.py`) is the only reader of `data/our_test` and `data/robustness`.
@@ -97,7 +97,7 @@ class Row:
 
     request_id: str
     dataset: str  # oof | our_test | probes
-    subset: str  # official/augmented for oof, set1..3 for our_test, style for probes
+    subset: str  # official/augmented for oof, set1..4 for our_test, style for probes
     lang: str  # en | ar | arabizi (slice key)
     group: str
     text: str
@@ -761,7 +761,7 @@ def run_ablations(
                 }
             )
             views: list[tuple[str, Callable[[Row], bool]]] = [("our_test", _any_row)]
-            views += [(f"our_test_{s}", _subset_is(s)) for s in ("set1", "set2", "set3")]
+            views += [(f"our_test_{s}", _subset_is(s)) for s in ("set1", "set2", "set3", "set4")]
             for dataset, keep in views:
                 trows = [r for r in p["test"] if keep(r)]
                 frows = [r for r in full["test"] if keep(r)]
@@ -1036,7 +1036,15 @@ def model_lab(
         "ablations": [
             r
             for r in abl_rows
-            if r["dataset"] in ("oof_official", "our_test", "our_test_set1", "our_test_set2", "our_test_set3")
+            if r["dataset"]
+            in (
+                "oof_official",
+                "our_test",
+                "our_test_set1",
+                "our_test_set2",
+                "our_test_set3",
+                "our_test_set4",
+            )
         ],
         "confusions": [c for c in conf if c["model"] == ENSEMBLE],
     }

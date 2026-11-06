@@ -48,7 +48,7 @@ describe("BenchmarkTable", () => {
     // Cut and not-available cells say so in words.
     expect(within(category).getByText("Cut")).toBeInTheDocument();
     expect(within(category).getByText("Not available")).toBeInTheDocument();
-    expect(screen.getByText(/no separate rows for set 1, set 2 and set 3/)).toBeInTheDocument();
+    expect(screen.getByText(/no separate rows for sets 1 to 4/)).toBeInTheDocument();
     // Priority is its own table.
     expect(screen.getByRole("table", { name: /Priority benchmark/ })).toBeInTheDocument();
   });
@@ -58,7 +58,7 @@ describe("BenchmarkTable", () => {
       <BenchmarkTable
         rows={[
           row({ dataset: "oof_official", n_rows: 432, n_groups: 30, macro_f1: 0.86 }),
-          row({ dataset: "our_test:set1", n_rows: 60, n_groups: 18, macro_f1: 0.8 }),
+          row({ dataset: "our_test:set1", n_rows: 72, n_groups: 18, macro_f1: 0.8 }),
           row({ dataset: "our_test:set2", n_rows: 72, n_groups: 40, macro_f1: 0.9 }),
           row({ dataset: "our_test:set3", n_rows: 72, n_groups: 40, macro_f1: 0.91 }),
           row({ dataset: "our_test", macro_f1: 0.88 }),
@@ -69,11 +69,11 @@ describe("BenchmarkTable", () => {
     const headers = within(table).getAllByRole("columnheader").map((h) => h.textContent);
     expect(headers).toEqual(["Model", "CV official", "Set 1", "Set 2", "Set 3", "Pooled"]);
     const r = within(table).getByRole("row", { name: /Ensemble/ });
-    expect(within(r).getByText("60 rows, 18 groups")).toBeInTheDocument();
+    expect(within(r).getByText("72 rows, 18 groups")).toBeInTheDocument();
     // Only set 1 rests on fewer than 30 groups.
     expect(within(r).getAllByText("Small sample")).toHaveLength(1);
     expect(screen.queryByText(/no separate rows/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Compare the three test sets/)).toBeInTheDocument();
+    expect(screen.getByText(/Compare the test sets/)).toBeInTheDocument();
   });
 
   it("shows an empty state, not a crash, when there are no rows", () => {

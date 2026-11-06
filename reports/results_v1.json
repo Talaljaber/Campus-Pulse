@@ -1,4 +1,5 @@
 {
+  "note": "our_test numbers in this report were measured on an earlier version of data/our_test/our_test.csv; reports/benchmark.md holds the current ones.",
   "artifact_version": "v1",
   "generated_at": "2026-10-31T16:32:40+00:00",
   "oof": {
@@ -130,388 +131,10 @@
     "errors": [
       {
         "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0002",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "بدي نسخة من وصل الدفع",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0004",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "ارجو المساعدة، وين مكتب المرشد الاكاديمي؟",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0008",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "عندي مشكلة: بدي نسخة من وصل الدفع",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0009",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "مرحبا يا جماعة وين مكتب المرشد الاكاديمي؟",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0019",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "وين مكتب المرشد الاكاديمي؟ وشكرا",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0021",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "وين مكتب المرشد الاكاديمي؟",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0024",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "سؤال: وين مكتب المرشد الاكاديمي؟",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0025",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "مرحبا، وين مكتب المرشد الاكاديمي؟",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0026",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "سؤال: بدي نسخة من وصل الدفع",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0028",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "لو سمحت بدي نسخة من وصل الدفع",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0031",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "عندي مشكلة: وين مكتب المرشد الاكاديمي؟",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0039",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "ممكن تساعدوني؟ بدي نسخة من وصل الدفع",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0040",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "بدي نسخة من وصل الدفع وشكرا",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0044",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "ممكن تساعدوني؟ وين مكتب المرشد الاكاديمي؟",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0047",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "مرحبا يا جماعة بدي نسخة من وصل الدفع",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Academic Support / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0052",
-        "set_category": [
-          "Academic Support",
-          "Facilities",
-          "IT Support",
-          "Registration",
-          "Transportation"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "لو سمحت وين مكتب المرشد الاكاديمي؟",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0058",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "ارجو المساعدة، بدي نسخة من وصل الدفع",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
-        "gold": "Finance / low",
-        "lang": "ar",
-        "pred": "Registration / low",
-        "request_id": "HT-0060",
-        "set_category": [
-          "Facilities",
-          "Finance",
-          "Registration"
-        ],
-        "set_priority": [
-          "low"
-        ],
-        "test_set": "set1",
-        "text": "مرحبا، بدي نسخة من وصل الدفع",
-        "wrong": [
-          "category"
-        ]
-      },
-      {
-        "flags": [],
         "gold": "Registration / medium",
         "lang": "en",
         "pred": "Finance / medium",
-        "request_id": "T2-0002",
+        "request_id": "T1-0002",
         "set_category": [
           "Finance",
           "Registration"
@@ -519,7 +142,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "The registration portal shows the wrong number of credit hours for me Please respond when possible.",
         "wrong": [
           "category"
@@ -530,7 +153,7 @@
         "gold": "IT Support / high",
         "lang": "en",
         "pred": "Registration / high",
-        "request_id": "T2-0004",
+        "request_id": "T1-0004",
         "set_category": [
           "Finance",
           "IT Support",
@@ -539,7 +162,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "I cannot log in to submit my project and the submission closes in one hour Please respond when possible.",
         "wrong": [
           "category"
@@ -550,7 +173,7 @@
         "gold": "Transportation / medium",
         "lang": "ar",
         "pred": "Transportation / high",
-        "request_id": "T2-0007",
+        "request_id": "T1-0007",
         "set_category": [
           "Academic Support",
           "Finance",
@@ -560,7 +183,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "ارجو المساعدة، السواق ما وقف بموقف الباص اليوم الصبح",
         "wrong": [
           "priority"
@@ -571,7 +194,7 @@
         "gold": "Facilities / low",
         "lang": "ar",
         "pred": "Facilities / medium",
-        "request_id": "T2-0008",
+        "request_id": "T1-0008",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -582,7 +205,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "ممكن تساعدوني؟ الحنفية بحمام الطابق الثاني بتنقط",
         "wrong": [
           "priority"
@@ -593,7 +216,7 @@
         "gold": "Registration / medium",
         "lang": "en",
         "pred": "Finance / medium",
-        "request_id": "T2-0012",
+        "request_id": "T1-0012",
         "set_category": [
           "Finance",
           "Registration"
@@ -601,7 +224,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "URGENT: The registration portal shows the wrong number of credit hours for me",
         "wrong": [
           "category"
@@ -612,7 +235,7 @@
         "gold": "Transportation / medium",
         "lang": "ar",
         "pred": "Transportation / high",
-        "request_id": "T2-0017",
+        "request_id": "T1-0017",
         "set_category": [
           "Academic Support",
           "Finance",
@@ -622,7 +245,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "السواق ما وقف بموقف الباص اليوم الصبح",
         "wrong": [
           "priority"
@@ -633,7 +256,7 @@
         "gold": "Transportation / high",
         "lang": "en",
         "pred": "Facilities / medium",
-        "request_id": "T2-0018",
+        "request_id": "T1-0018",
         "set_category": [
           "Facilities",
           "Transportation"
@@ -641,7 +264,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "The shuttle broke down on the highway and students are stuck there Please respond when possible.",
         "wrong": [
           "category",
@@ -653,7 +276,7 @@
         "gold": "Transportation / low",
         "lang": "arabizi",
         "pred": "IT Support / medium",
-        "request_id": "T2-0027",
+        "request_id": "T1-0027",
         "set_category": [
           "Academic Support",
           "IT Support",
@@ -663,7 +286,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "fi bas lal jam3a yom el jum3a? w shukran",
         "wrong": [
           "category",
@@ -675,7 +298,7 @@
         "gold": "Transportation / high",
         "lang": "en",
         "pred": "Facilities / medium",
-        "request_id": "T2-0028",
+        "request_id": "T1-0028",
         "set_category": [
           "Facilities",
           "Transportation"
@@ -683,7 +306,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "URGENT: The shuttle broke down on the highway and students are stuck there",
         "wrong": [
           "category",
@@ -695,7 +318,7 @@
         "gold": "Academic Support / medium",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T2-0031",
+        "request_id": "T1-0031",
         "set_category": [
           "Facilities",
           "Finance",
@@ -704,7 +327,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "سؤال: علامة الميد ترم مش منزلة صح على النظام",
         "wrong": [
           "category"
@@ -715,7 +338,7 @@
         "gold": "IT Support / high",
         "lang": "en",
         "pred": "Registration / high",
-        "request_id": "T2-0035",
+        "request_id": "T1-0035",
         "set_category": [
           "Finance",
           "IT Support",
@@ -724,7 +347,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "Student request: I cannot log in to submit my project and the submission closes in one hour",
         "wrong": [
           "category"
@@ -735,7 +358,7 @@
         "gold": "Transportation / low",
         "lang": "arabizi",
         "pred": "Transportation / medium",
-        "request_id": "T2-0037",
+        "request_id": "T1-0037",
         "set_category": [
           "Academic Support",
           "IT Support",
@@ -745,7 +368,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "fi bas lal jam3a yom el jum3a?",
         "wrong": [
           "priority"
@@ -756,7 +379,7 @@
         "gold": "Transportation / medium",
         "lang": "ar",
         "pred": "Transportation / high",
-        "request_id": "T2-0038",
+        "request_id": "T1-0038",
         "set_category": [
           "Academic Support",
           "Finance",
@@ -766,7 +389,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "مرحبا، السواق ما وقف بموقف الباص اليوم الصبح",
         "wrong": [
           "priority"
@@ -777,7 +400,7 @@
         "gold": "Facilities / low",
         "lang": "ar",
         "pred": "Facilities / medium",
-        "request_id": "T2-0039",
+        "request_id": "T1-0039",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -788,7 +411,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "الحنفية بحمام الطابق الثاني بتنقط وشكرا",
         "wrong": [
           "priority"
@@ -799,7 +422,7 @@
         "gold": "Academic Support / medium",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T2-0041",
+        "request_id": "T1-0041",
         "set_category": [
           "Facilities",
           "Finance",
@@ -808,7 +431,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "علامة الميد ترم مش منزلة صح على النظام",
         "wrong": [
           "category"
@@ -819,7 +442,7 @@
         "gold": "Registration / medium",
         "lang": "en",
         "pred": "Finance / medium",
-        "request_id": "T2-0043",
+        "request_id": "T1-0043",
         "set_category": [
           "Finance",
           "Registration"
@@ -827,7 +450,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "Hi team, The registration portal shows the wrong number of credit hours for me",
         "wrong": [
           "category"
@@ -838,7 +461,7 @@
         "gold": "IT Support / high",
         "lang": "en",
         "pred": "Registration / high",
-        "request_id": "T2-0045",
+        "request_id": "T1-0045",
         "set_category": [
           "Finance",
           "IT Support",
@@ -847,7 +470,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "I cannot log in to submit my project and the submission closes in one hour",
         "wrong": [
           "category"
@@ -858,7 +481,7 @@
         "gold": "Transportation / medium",
         "lang": "ar",
         "pred": "Transportation / high",
-        "request_id": "T2-0048",
+        "request_id": "T1-0048",
         "set_category": [
           "Academic Support",
           "Finance",
@@ -868,7 +491,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "مرحبا يا جماعة السواق ما وقف بموقف الباص اليوم الصبح",
         "wrong": [
           "priority"
@@ -879,7 +502,7 @@
         "gold": "Facilities / low",
         "lang": "ar",
         "pred": "Facilities / medium",
-        "request_id": "T2-0049",
+        "request_id": "T1-0049",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -890,7 +513,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "الحنفية بحمام الطابق الثاني بتنقط",
         "wrong": [
           "priority"
@@ -901,7 +524,7 @@
         "gold": "Registration / medium",
         "lang": "en",
         "pred": "Finance / medium",
-        "request_id": "T2-0053",
+        "request_id": "T1-0053",
         "set_category": [
           "Finance",
           "Registration"
@@ -909,7 +532,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "The registration portal shows the wrong number of credit hours for me",
         "wrong": [
           "category"
@@ -920,7 +543,7 @@
         "gold": "Transportation / low",
         "lang": "arabizi",
         "pred": "Transportation / medium",
-        "request_id": "T2-0058",
+        "request_id": "T1-0058",
         "set_category": [
           "Academic Support",
           "IT Support",
@@ -930,7 +553,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "URGENT: fi bas lal jam3a yom el jum3a?",
         "wrong": [
           "priority"
@@ -941,7 +564,7 @@
         "gold": "Transportation / high",
         "lang": "en",
         "pred": "Facilities / medium",
-        "request_id": "T2-0059",
+        "request_id": "T1-0059",
         "set_category": [
           "Facilities",
           "Transportation"
@@ -949,7 +572,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "Hi team, The shuttle broke down on the highway and students are stuck there",
         "wrong": [
           "category",
@@ -961,7 +584,7 @@
         "gold": "Academic Support / medium",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T2-0062",
+        "request_id": "T1-0062",
         "set_category": [
           "Facilities",
           "Finance",
@@ -970,7 +593,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "عندي مشكلة: علامة الميد ترم مش منزلة صح على النظام",
         "wrong": [
           "category"
@@ -981,7 +604,7 @@
         "gold": "IT Support / high",
         "lang": "en",
         "pred": "Registration / high",
-        "request_id": "T2-0066",
+        "request_id": "T1-0066",
         "set_category": [
           "Finance",
           "IT Support",
@@ -990,7 +613,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "This is my issue: I cannot log in to submit my project and the submission closes in one hour",
         "wrong": [
           "category"
@@ -1001,7 +624,7 @@
         "gold": "Transportation / low",
         "lang": "arabizi",
         "pred": "Academic Support / medium",
-        "request_id": "T2-0068",
+        "request_id": "T1-0068",
         "set_category": [
           "Academic Support",
           "IT Support",
@@ -1010,7 +633,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "3indi moshkle: fi bas lal jam3a yom el jum3a?",
         "wrong": [
           "category",
@@ -1022,7 +645,7 @@
         "gold": "Transportation / high",
         "lang": "en",
         "pred": "Facilities / medium",
-        "request_id": "T2-0069",
+        "request_id": "T1-0069",
         "set_category": [
           "Facilities",
           "Transportation"
@@ -1030,7 +653,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "The shuttle broke down on the highway and students are stuck there",
         "wrong": [
           "category",
@@ -1042,7 +665,7 @@
         "gold": "Facilities / low",
         "lang": "ar",
         "pred": "Facilities / medium",
-        "request_id": "T2-0070",
+        "request_id": "T1-0070",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1053,7 +676,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "مرحبا يا جماعة الحنفية بحمام الطابق الثاني بتنقط",
         "wrong": [
           "priority"
@@ -1064,7 +687,7 @@
         "gold": "Academic Support / medium",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T2-0072",
+        "request_id": "T1-0072",
         "set_category": [
           "Facilities",
           "Finance",
@@ -1073,7 +696,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set2",
+        "test_set": "set1",
         "text": "مرحبا، علامة الميد ترم مش منزلة صح على النظام",
         "wrong": [
           "category"
@@ -1086,7 +709,7 @@
         "gold": "Registration / low",
         "lang": "en",
         "pred": "Finance / medium",
-        "request_id": "T3-0001",
+        "request_id": "T2-0001",
         "set_category": [
           "Academic Support",
           "Finance",
@@ -1096,7 +719,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "hey what's the max credit hours i can register this semester?",
         "wrong": [
           "category",
@@ -1108,7 +731,7 @@
         "gold": "Finance / medium",
         "lang": "en",
         "pred": "Registration / medium",
-        "request_id": "T3-0005",
+        "request_id": "T2-0005",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1119,7 +742,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "I got charged a lab fee but my course has no lab",
         "wrong": [
           "category"
@@ -1130,7 +753,7 @@
         "gold": "Finance / high",
         "lang": "arabizi",
         "pred": "Registration / high",
-        "request_id": "T3-0006",
+        "request_id": "T2-0006",
         "set_category": [
           "Academic Support",
           "Finance",
@@ -1140,7 +763,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "plz 7ello el hold el mali, dafa3t mbare7 w 3indi emti7an el yom",
         "wrong": [
           "category"
@@ -1151,7 +774,7 @@
         "gold": "Transportation / medium",
         "lang": "ar",
         "pred": "Facilities / medium",
-        "request_id": "T3-0007",
+        "request_id": "T2-0007",
         "set_category": [
           "Facilities",
           "Transportation"
@@ -1159,7 +782,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "التكييف بالباص مش شغال والطلاب تعبانين من الحر",
         "wrong": [
           "category"
@@ -1170,7 +793,7 @@
         "gold": "Academic Support / low",
         "lang": "ar",
         "pred": "Registration / low",
-        "request_id": "T3-0010",
+        "request_id": "T2-0010",
         "set_category": [
           "Academic Support",
           "IT Support",
@@ -1180,7 +803,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "لو سمحت شو الخطوات لطلب توصية اكاديمية",
         "wrong": [
           "category"
@@ -1193,7 +816,7 @@
         "gold": "Academic Support / high",
         "lang": "arabizi",
         "pred": "Registration / medium",
-        "request_id": "T3-0011",
+        "request_id": "T2-0011",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1203,7 +826,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "plz ana bel tawari2 w el final hala2, shu a3mel?",
         "wrong": [
           "category",
@@ -1215,7 +838,7 @@
         "gold": "IT Support / medium",
         "lang": "ar",
         "pred": "Transportation / medium",
-        "request_id": "T3-0014",
+        "request_id": "T2-0014",
         "set_category": [
           "Facilities",
           "Finance",
@@ -1225,7 +848,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "الاوتلوك تبع الجامعة واقف، ما في ولا ايميل جديد من مبارح",
         "wrong": [
           "category"
@@ -1236,7 +859,7 @@
         "gold": "Finance / low",
         "lang": "ar",
         "pred": "Registration / low",
-        "request_id": "T3-0015",
+        "request_id": "T2-0015",
         "set_category": [
           "Academic Support",
           "Finance",
@@ -1246,7 +869,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "بدي اعرف سياسة استرجاع الرسوم للمواد المسحوبة",
         "wrong": [
           "category"
@@ -1257,7 +880,7 @@
         "gold": "Finance / high",
         "lang": "arabizi",
         "pred": "Registration / high",
-        "request_id": "T3-0016",
+        "request_id": "T2-0016",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1267,7 +890,7 @@
         "set_priority": [
           "high"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "ma khalooni adkhol el emti7an el yom 3shan el dafe3 mesh mbayyen, w ana dafe3!!",
         "wrong": [
           "category"
@@ -1278,7 +901,7 @@
         "gold": "Transportation / medium",
         "lang": "ar",
         "pred": "Facilities / medium",
-        "request_id": "T3-0017",
+        "request_id": "T2-0017",
         "set_category": [
           "Facilities",
           "Transportation"
@@ -1286,7 +909,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "المكيف بالباص خربان والجو حر كثير",
         "wrong": [
           "category"
@@ -1299,14 +922,14 @@
         "gold": "Transportation / high",
         "lang": "arabizi",
         "pred": "Transportation / medium",
-        "request_id": "T3-0018",
+        "request_id": "T2-0018",
         "set_category": [
           "Transportation"
         ],
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "el bus da3am sayyara w e7na 3al autostrad, shu ne3mal?",
         "wrong": [
           "priority"
@@ -1319,7 +942,7 @@
         "gold": "Academic Support / low",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T3-0020",
+        "request_id": "T2-0020",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1329,7 +952,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "بدي رسالة توصية للماجستير، شو الطريقة؟",
         "wrong": [
           "category",
@@ -1343,7 +966,7 @@
         "gold": "Registration / low",
         "lang": "en",
         "pred": "IT Support / medium",
-        "request_id": "T3-0022",
+        "request_id": "T2-0022",
         "set_category": [
           "Academic Support",
           "IT Support",
@@ -1352,7 +975,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "I want to overload next semester, how many hours max?",
         "wrong": [
           "category",
@@ -1364,7 +987,7 @@
         "gold": "Finance / low",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T3-0025",
+        "request_id": "T2-0025",
         "set_category": [
           "Facilities",
           "Finance",
@@ -1373,7 +996,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "اذا سحبت مادة بترجعلي مصاريها؟",
         "wrong": [
           "category",
@@ -1385,7 +1008,7 @@
         "gold": "Transportation / high",
         "lang": "arabizi",
         "pred": "Transportation / medium",
-        "request_id": "T3-0028",
+        "request_id": "T2-0028",
         "set_category": [
           "Facilities",
           "IT Support",
@@ -1395,7 +1018,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "sar 7adeth lal bas tabe3 el jam3a, ma 7ada mjarra7 bas e7na wa2fin 3al share3",
         "wrong": [
           "priority"
@@ -1406,7 +1029,7 @@
         "gold": "Facilities / medium",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T3-0029",
+        "request_id": "T2-0029",
         "set_category": [
           "Facilities",
           "IT Support",
@@ -1415,7 +1038,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "نص الكراسي بالقاعة 112 مكسورة والطلاب واقفين",
         "wrong": [
           "category"
@@ -1426,14 +1049,14 @@
         "gold": "Facilities / high",
         "lang": "en",
         "pred": "Facilities / medium",
-        "request_id": "T3-0030",
+        "request_id": "T2-0030",
         "set_category": [
           "Facilities"
         ],
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "please send someone now, a socket in the library is smoking",
         "wrong": [
           "priority"
@@ -1444,7 +1067,7 @@
         "gold": "Registration / low",
         "lang": "en",
         "pred": "Academic Support / low",
-        "request_id": "T3-0032",
+        "request_id": "T2-0032",
         "set_category": [
           "Academic Support",
           "Registration"
@@ -1452,7 +1075,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "Can I take more than 18 credit hours if my GPA is high? Who approves that?",
         "wrong": [
           "category"
@@ -1465,7 +1088,7 @@
         "gold": "IT Support / low",
         "lang": "en",
         "pred": "IT Support / medium",
-        "request_id": "T3-0034",
+        "request_id": "T2-0034",
         "set_category": [
           "Academic Support",
           "IT Support",
@@ -1474,7 +1097,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "Hi, I'd like to install MATLAB on my laptop using the uni license, what are the steps?",
         "wrong": [
           "priority"
@@ -1485,14 +1108,14 @@
         "gold": "Transportation / low",
         "lang": "en",
         "pred": "Transportation / medium",
-        "request_id": "T3-0037",
+        "request_id": "T2-0037",
         "set_category": [
           "Transportation"
         ],
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "does the uni bus go to Zarqa?",
         "wrong": [
           "priority"
@@ -1503,7 +1126,7 @@
         "gold": "Facilities / low",
         "lang": "en",
         "pred": "Academic Support / low",
-        "request_id": "T3-0039",
+        "request_id": "T2-0039",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1512,7 +1135,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "hey where can I pray on campus between lectures",
         "wrong": [
           "category"
@@ -1523,7 +1146,7 @@
         "gold": "Registration / medium",
         "lang": "ar",
         "pred": "Facilities / medium",
-        "request_id": "T3-0043",
+        "request_id": "T2-0043",
         "set_category": [
           "Facilities",
           "Finance",
@@ -1532,7 +1155,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "الشعبة مليانة وزر الانتظار مش راضي يشتغل، شو اعمل؟",
         "wrong": [
           "category"
@@ -1545,7 +1168,7 @@
         "gold": "Finance / low",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T3-0046",
+        "request_id": "T2-0046",
         "set_category": [
           "Facilities",
           "Finance",
@@ -1556,7 +1179,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "لو سمحتو، بسترد فلوس المادة اذا سحبتها؟",
         "wrong": [
           "category",
@@ -1568,7 +1191,7 @@
         "gold": "Academic Support / low",
         "lang": "ar",
         "pred": "Registration / low",
-        "request_id": "T3-0051",
+        "request_id": "T2-0051",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1577,7 +1200,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "مين بقدر اطلب منه رسالة توصية وكم بتاخذ وقت؟",
         "wrong": [
           "category"
@@ -1588,7 +1211,7 @@
         "gold": "Finance / low",
         "lang": "ar",
         "pred": "Registration / low",
-        "request_id": "T3-0056",
+        "request_id": "T2-0056",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1599,7 +1222,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "شو نسبة الاسترداد اذا انسحبت من مادة بعد الاسبوع الاول؟",
         "wrong": [
           "category"
@@ -1610,7 +1233,7 @@
         "gold": "Transportation / high",
         "lang": "arabizi",
         "pred": "Transportation / medium",
-        "request_id": "T3-0059",
+        "request_id": "T2-0059",
         "set_category": [
           "Registration",
           "Transportation"
@@ -1618,7 +1241,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "accident lal bus 3and el dawwar, plz ib3atolna bas tani",
         "wrong": [
           "priority"
@@ -1629,7 +1252,7 @@
         "gold": "Facilities / medium",
         "lang": "ar",
         "pred": "Registration / medium",
-        "request_id": "T3-0060",
+        "request_id": "T2-0060",
         "set_category": [
           "Facilities",
           "IT Support",
@@ -1639,7 +1262,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "الكراسي بقاعة المحاضرات مكسرة وما في مكان نقعد",
         "wrong": [
           "category"
@@ -1650,7 +1273,7 @@
         "gold": "Academic Support / low",
         "lang": "ar",
         "pred": "IT Support / low",
-        "request_id": "T3-0061",
+        "request_id": "T2-0061",
         "set_category": [
           "Academic Support",
           "IT Support",
@@ -1659,7 +1282,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "كيف بطلب رسالة توصية من دكتور؟",
         "wrong": [
           "category"
@@ -1670,7 +1293,7 @@
         "gold": "Academic Support / medium",
         "lang": "en",
         "pred": "Academic Support / low",
-        "request_id": "T3-0062",
+        "request_id": "T2-0062",
         "set_category": [
           "Academic Support",
           "Registration"
@@ -1678,7 +1301,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "Hi, is there another way to reach my advisor? no response since two weeks",
         "wrong": [
           "priority"
@@ -1691,7 +1314,7 @@
         "gold": "Registration / low",
         "lang": "en",
         "pred": "Finance / medium",
-        "request_id": "T3-0063",
+        "request_id": "T2-0063",
         "set_category": [
           "Academic Support",
           "Finance",
@@ -1701,7 +1324,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "quick question about the credit hour limit, is 21 hours allowed for seniors",
         "wrong": [
           "category",
@@ -1713,7 +1336,7 @@
         "gold": "Transportation / low",
         "lang": "en",
         "pred": "Facilities / low",
-        "request_id": "T3-0068",
+        "request_id": "T2-0068",
         "set_category": [
           "Facilities",
           "Finance",
@@ -1722,7 +1345,7 @@
         "set_priority": [
           "low"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "Is there a GJU shuttle from Zarqa or only from Amman?",
         "wrong": [
           "category"
@@ -1735,7 +1358,7 @@
         "gold": "Transportation / high",
         "lang": "arabizi",
         "pred": "Registration / medium",
-        "request_id": "T3-0069",
+        "request_id": "T2-0069",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1745,7 +1368,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "el bas 3emel 7adeth 3al taree2 w fi tollab ma3na",
         "wrong": [
           "category",
@@ -1759,7 +1382,7 @@
         "gold": "Facilities / low",
         "lang": "en",
         "pred": "Facilities / medium",
-        "request_id": "T3-0070",
+        "request_id": "T2-0070",
         "set_category": [
           "Academic Support",
           "Facilities",
@@ -1768,7 +1391,7 @@
         "set_priority": [
           "medium"
         ],
-        "test_set": "set3",
+        "test_set": "set2",
         "text": "could someone tell me where the closest prayer room to the library is",
         "wrong": [
           "priority"
@@ -1779,19 +1402,6 @@
     "per_model_by_set": {
       "ensemble": {
         "set1": {
-          "category": {
-            "accuracy": 0.7,
-            "macro_f1": 0.5917
-          },
-          "groups": 6,
-          "joint_accuracy": 0.7,
-          "priority": {
-            "accuracy": 1.0,
-            "macro_f1": 1.0
-          },
-          "rows": 60
-        },
-        "set2": {
           "category": {
             "accuracy": 0.75,
             "macro_f1": 0.746
@@ -1804,7 +1414,7 @@
           },
           "rows": 72
         },
-        "set3": {
+        "set2": {
           "category": {
             "accuracy": 0.6528,
             "macro_f1": 0.6632
@@ -1821,19 +1431,6 @@
       "m1": {
         "set1": {
           "category": {
-            "accuracy": 0.5167,
-            "macro_f1": 0.4444
-          },
-          "groups": 6,
-          "joint_accuracy": 0.1833,
-          "priority": {
-            "accuracy": 0.6667,
-            "macro_f1": 0.6583
-          },
-          "rows": 60
-        },
-        "set2": {
-          "category": {
             "accuracy": 0.6111,
             "macro_f1": 0.5864
           },
@@ -1845,7 +1442,7 @@
           },
           "rows": 72
         },
-        "set3": {
+        "set2": {
           "category": {
             "accuracy": 0.5833,
             "macro_f1": 0.5741
@@ -1862,19 +1459,6 @@
       "m2knn": {
         "set1": {
           "category": {
-            "accuracy": 0.55,
-            "macro_f1": 0.3766
-          },
-          "groups": 6,
-          "joint_accuracy": 0.0,
-          "priority": {
-            "accuracy": 0.15,
-            "macro_f1": 0.1
-          },
-          "rows": 60
-        },
-        "set2": {
-          "category": {
             "accuracy": 0.5,
             "macro_f1": 0.5057
           },
@@ -1886,7 +1470,7 @@
           },
           "rows": 72
         },
-        "set3": {
+        "set2": {
           "category": {
             "accuracy": 0.5,
             "macro_f1": 0.5145
@@ -1903,19 +1487,6 @@
       "m2lr": {
         "set1": {
           "category": {
-            "accuracy": 0.85,
-            "macro_f1": 0.7849
-          },
-          "groups": 6,
-          "joint_accuracy": 0.5167,
-          "priority": {
-            "accuracy": 0.6667,
-            "macro_f1": 0.6667
-          },
-          "rows": 60
-        },
-        "set2": {
-          "category": {
             "accuracy": 0.5833,
             "macro_f1": 0.5682
           },
@@ -1927,7 +1498,7 @@
           },
           "rows": 72
         },
-        "set3": {
+        "set2": {
           "category": {
             "accuracy": 0.6806,
             "macro_f1": 0.6832
@@ -2115,92 +1686,6 @@
       "by_lang": {
         "ar": {
           "category": {
-            "accuracy": 0.3333,
-            "macro_f1": 0.25
-          },
-          "conformal": {
-            "ask_proxy_rate": 0.0,
-            "category": {
-              "coverage": 1.0,
-              "mean_set_size": 3.6667,
-              "n": 27,
-              "singleton_rate": 0.0
-            },
-            "priority": {
-              "coverage": 1.0,
-              "mean_set_size": 1.0,
-              "n": 27,
-              "singleton_rate": 1.0
-            }
-          },
-          "groups": 3,
-          "joint_accuracy": 0.3333,
-          "priority": {
-            "accuracy": 1.0,
-            "macro_f1": 1.0
-          },
-          "rows": 27
-        },
-        "en": {
-          "category": {
-            "accuracy": 1.0,
-            "macro_f1": 1.0
-          },
-          "conformal": {
-            "ask_proxy_rate": 0.3333,
-            "category": {
-              "coverage": 1.0,
-              "mean_set_size": 2.0,
-              "n": 33,
-              "singleton_rate": 0.3333
-            },
-            "priority": {
-              "coverage": 1.0,
-              "mean_set_size": 1.0,
-              "n": 33,
-              "singleton_rate": 1.0
-            }
-          },
-          "groups": 3,
-          "joint_accuracy": 1.0,
-          "priority": {
-            "accuracy": 1.0,
-            "macro_f1": 1.0
-          },
-          "rows": 33
-        }
-      },
-      "category": {
-        "accuracy": 0.7,
-        "macro_f1": 0.5917
-      },
-      "conformal": {
-        "ask_proxy_rate": 0.1833,
-        "category": {
-          "coverage": 1.0,
-          "mean_set_size": 2.75,
-          "n": 60,
-          "singleton_rate": 0.1833
-        },
-        "priority": {
-          "coverage": 1.0,
-          "mean_set_size": 1.0,
-          "n": 60,
-          "singleton_rate": 1.0
-        }
-      },
-      "groups": 6,
-      "joint_accuracy": 0.7,
-      "priority": {
-        "accuracy": 1.0,
-        "macro_f1": 1.0
-      },
-      "rows": 60
-    },
-    "set2": {
-      "by_lang": {
-        "ar": {
-          "category": {
             "accuracy": 0.8333,
             "macro_f1": 0.7778
           },
@@ -2311,7 +1796,7 @@
       },
       "rows": 72
     },
-    "set3": {
+    "set2": {
       "by_lang": {
         "ar": {
           "category": {

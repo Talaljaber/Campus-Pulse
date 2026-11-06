@@ -11,28 +11,35 @@
       "arm": "full",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8683,
+      "macro_f1": 0.7691,
       "target": "category"
     },
     {
       "arm": "full",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7999,
       "target": "category"
     },
     {
       "arm": "full",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7999,
+      "macro_f1": 0.8283,
       "target": "category"
     },
     {
       "arm": "full",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.8283,
+      "macro_f1": 0.7314,
+      "target": "category"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.7514,
       "target": "category"
     },
     {
@@ -46,28 +53,35 @@
       "arm": "full",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "full",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "full",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "full",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "full",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -80,29 +94,36 @@
     {
       "arm": "mask_deadline",
       "dataset": "our_test",
-      "delta": 0.0044,
-      "macro_f1": 0.8727,
+      "delta": -0.0073,
+      "macro_f1": 0.7618,
       "target": "category"
     },
     {
       "arm": "mask_deadline",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "mask_deadline",
-      "dataset": "our_test_set2",
       "delta": 0.0099,
       "macro_f1": 0.8098,
       "target": "category"
     },
     {
       "arm": "mask_deadline",
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "delta": 0.0002,
       "macro_f1": 0.8284,
+      "target": "category"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set3",
+      "delta": -0.0179,
+      "macro_f1": 0.7135,
+      "target": "category"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set4",
+      "delta": -0.0126,
+      "macro_f1": 0.7388,
       "target": "category"
     },
     {
@@ -115,29 +136,36 @@
     {
       "arm": "mask_deadline",
       "dataset": "our_test",
-      "delta": -0.0607,
-      "macro_f1": 0.7866,
+      "delta": -0.1236,
+      "macro_f1": 0.6285,
       "target": "priority"
     },
     {
       "arm": "mask_deadline",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "priority"
-    },
-    {
-      "arm": "mask_deadline",
-      "dataset": "our_test_set2",
       "delta": 0.0008,
       "macro_f1": 0.7833,
       "target": "priority"
     },
     {
       "arm": "mask_deadline",
+      "dataset": "our_test_set2",
+      "delta": -0.1608,
+      "macro_f1": 0.6478,
+      "target": "priority"
+    },
+    {
+      "arm": "mask_deadline",
       "dataset": "our_test_set3",
-      "delta": -0.1724,
-      "macro_f1": 0.6106,
+      "delta": -0.202,
+      "macro_f1": 0.5909,
+      "target": "priority"
+    },
+    {
+      "arm": "mask_deadline",
+      "dataset": "our_test_set4",
+      "delta": -0.1253,
+      "macro_f1": 0.5506,
       "target": "priority"
     },
     {
@@ -150,33 +178,40 @@
     {
       "arm": "-wrapper_stripping",
       "dataset": "our_test",
-      "delta": -0.002,
-      "macro_f1": 0.8663,
+      "delta": 0.0181,
+      "macro_f1": 0.7872,
       "target": "category"
     },
     {
       "arm": "-wrapper_stripping",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "-wrapper_stripping",
-      "dataset": "our_test_set2",
       "delta": 0.0224,
       "macro_f1": 0.8223,
       "target": "category"
     },
     {
       "arm": "-wrapper_stripping",
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "delta": -0.0337,
       "macro_f1": 0.7946,
       "target": "category"
     },
     {
       "arm": "-wrapper_stripping",
+      "dataset": "our_test_set3",
+      "delta": 0.0412,
+      "macro_f1": 0.7726,
+      "target": "category"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test_set4",
+      "delta": 0.0218,
+      "macro_f1": 0.7733,
+      "target": "category"
+    },
+    {
+      "arm": "-wrapper_stripping",
       "dataset": "oof_official",
       "delta": 0.0,
       "macro_f1": 0.9036,
@@ -185,29 +220,36 @@
     {
       "arm": "-wrapper_stripping",
       "dataset": "our_test",
-      "delta": -0.0667,
-      "macro_f1": 0.7806,
+      "delta": -0.116,
+      "macro_f1": 0.6361,
       "target": "priority"
     },
     {
       "arm": "-wrapper_stripping",
       "dataset": "our_test_set1",
-      "delta": -0.1499,
-      "macro_f1": 0.8501,
-      "target": "priority"
-    },
-    {
-      "arm": "-wrapper_stripping",
-      "dataset": "our_test_set2",
       "delta": 0.0547,
       "macro_f1": 0.8372,
       "target": "priority"
     },
     {
       "arm": "-wrapper_stripping",
+      "dataset": "our_test_set2",
+      "delta": -0.1231,
+      "macro_f1": 0.6855,
+      "target": "priority"
+    },
+    {
+      "arm": "-wrapper_stripping",
       "dataset": "our_test_set3",
-      "delta": -0.1214,
-      "macro_f1": 0.6616,
+      "delta": -0.1909,
+      "macro_f1": 0.602,
+      "target": "priority"
+    },
+    {
+      "arm": "-wrapper_stripping",
+      "dataset": "our_test_set4",
+      "delta": -0.1707,
+      "macro_f1": 0.5052,
       "target": "priority"
     },
     {
@@ -221,28 +263,35 @@
       "arm": "-augmentation",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8683,
+      "macro_f1": 0.7691,
       "target": "category"
     },
     {
       "arm": "-augmentation",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7999,
       "target": "category"
     },
     {
       "arm": "-augmentation",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7999,
+      "macro_f1": 0.8283,
       "target": "category"
     },
     {
       "arm": "-augmentation",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.8283,
+      "macro_f1": 0.7314,
+      "target": "category"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.7514,
       "target": "category"
     },
     {
@@ -256,28 +305,35 @@
       "arm": "-augmentation",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "-augmentation",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "-augmentation",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "-augmentation",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "-augmentation",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -291,28 +347,35 @@
       "arm": "-urgency_features",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8683,
+      "macro_f1": 0.7691,
       "target": "category"
     },
     {
       "arm": "-urgency_features",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7999,
       "target": "category"
     },
     {
       "arm": "-urgency_features",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7999,
+      "macro_f1": 0.8283,
       "target": "category"
     },
     {
       "arm": "-urgency_features",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.8283,
+      "macro_f1": 0.7314,
+      "target": "category"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.7514,
       "target": "category"
     },
     {
@@ -325,29 +388,36 @@
     {
       "arm": "-urgency_features",
       "dataset": "our_test",
-      "delta": -0.1137,
-      "macro_f1": 0.7336,
+      "delta": -0.1277,
+      "macro_f1": 0.6243,
       "target": "priority"
     },
     {
       "arm": "-urgency_features",
       "dataset": "our_test_set1",
-      "delta": -0.183,
-      "macro_f1": 0.817,
-      "target": "priority"
-    },
-    {
-      "arm": "-urgency_features",
-      "dataset": "our_test_set2",
       "delta": -0.0031,
       "macro_f1": 0.7795,
       "target": "priority"
     },
     {
       "arm": "-urgency_features",
+      "dataset": "our_test_set2",
+      "delta": -0.2161,
+      "macro_f1": 0.5925,
+      "target": "priority"
+    },
+    {
+      "arm": "-urgency_features",
       "dataset": "our_test_set3",
-      "delta": -0.201,
-      "macro_f1": 0.582,
+      "delta": -0.1998,
+      "macro_f1": 0.5931,
+      "target": "priority"
+    },
+    {
+      "arm": "-urgency_features",
+      "dataset": "our_test_set4",
+      "delta": -0.1137,
+      "macro_f1": 0.5622,
       "target": "priority"
     },
     {
@@ -361,28 +431,35 @@
       "arm": "-m1",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8683,
+      "macro_f1": 0.7691,
       "target": "category"
     },
     {
       "arm": "-m1",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7999,
       "target": "category"
     },
     {
       "arm": "-m1",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7999,
+      "macro_f1": 0.8283,
       "target": "category"
     },
     {
       "arm": "-m1",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.8283,
+      "macro_f1": 0.7314,
+      "target": "category"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.7514,
       "target": "category"
     },
     {
@@ -396,28 +473,35 @@
       "arm": "-m1",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "-m1",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "-m1",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "-m1",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "-m1",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -430,33 +514,40 @@
     {
       "arm": "-m2lr",
       "dataset": "our_test",
-      "delta": -0.0043,
-      "macro_f1": 0.864,
+      "delta": -0.0021,
+      "macro_f1": 0.7669,
       "target": "category"
     },
     {
       "arm": "-m2lr",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "-m2lr",
-      "dataset": "our_test_set2",
-      "delta": 0.0,
       "macro_f1": 0.7999,
       "target": "category"
     },
     {
       "arm": "-m2lr",
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "delta": -0.0133,
       "macro_f1": 0.815,
       "target": "category"
     },
     {
       "arm": "-m2lr",
+      "dataset": "our_test_set3",
+      "delta": 0.0,
+      "macro_f1": 0.7314,
+      "target": "category"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.7514,
+      "target": "category"
+    },
+    {
+      "arm": "-m2lr",
       "dataset": "oof_official",
       "delta": 0.0,
       "macro_f1": 0.9036,
@@ -466,28 +557,35 @@
       "arm": "-m2lr",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "-m2lr",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "-m2lr",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "-m2lr",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2lr",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -501,28 +599,35 @@
       "arm": "-m2knn",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8683,
+      "macro_f1": 0.7691,
       "target": "category"
     },
     {
       "arm": "-m2knn",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7999,
       "target": "category"
     },
     {
       "arm": "-m2knn",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7999,
+      "macro_f1": 0.8283,
       "target": "category"
     },
     {
       "arm": "-m2knn",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.8283,
+      "macro_f1": 0.7314,
+      "target": "category"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.7514,
       "target": "category"
     },
     {
@@ -536,28 +641,35 @@
       "arm": "-m2knn",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "-m2knn",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "-m2knn",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "-m2knn",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2knn",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -570,29 +682,36 @@
     {
       "arm": "-m2proto",
       "dataset": "our_test",
-      "delta": -0.0552,
-      "macro_f1": 0.8131,
+      "delta": -0.0033,
+      "macro_f1": 0.7658,
       "target": "category"
     },
     {
       "arm": "-m2proto",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "-m2proto",
-      "dataset": "our_test_set2",
       "delta": -0.1318,
       "macro_f1": 0.6681,
       "target": "category"
     },
     {
       "arm": "-m2proto",
+      "dataset": "our_test_set2",
+      "delta": -0.0541,
+      "macro_f1": 0.7742,
+      "target": "category"
+    },
+    {
+      "arm": "-m2proto",
       "dataset": "our_test_set3",
-      "delta": -0.043,
-      "macro_f1": 0.7853,
+      "delta": 0.0467,
+      "macro_f1": 0.7781,
+      "target": "category"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test_set4",
+      "delta": 0.0365,
+      "macro_f1": 0.7879,
       "target": "category"
     },
     {
@@ -606,28 +725,35 @@
       "arm": "-m2proto",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "-m2proto",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "-m2proto",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "-m2proto",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "-m2proto",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -641,28 +767,35 @@
       "arm": "hard_targets",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8683,
+      "macro_f1": 0.7691,
       "target": "category"
     },
     {
       "arm": "hard_targets",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7999,
       "target": "category"
     },
     {
       "arm": "hard_targets",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7999,
+      "macro_f1": 0.8283,
       "target": "category"
     },
     {
       "arm": "hard_targets",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.8283,
+      "macro_f1": 0.7314,
+      "target": "category"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.7514,
       "target": "category"
     },
     {
@@ -676,28 +809,35 @@
       "arm": "hard_targets",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "hard_targets",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "hard_targets",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "hard_targets",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "hard_targets",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -710,29 +850,36 @@
     {
       "arm": "proto_learned_only",
       "dataset": "our_test",
-      "delta": -0.0643,
-      "macro_f1": 0.8039,
+      "delta": -0.0337,
+      "macro_f1": 0.7354,
       "target": "category"
     },
     {
       "arm": "proto_learned_only",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "proto_learned_only",
-      "dataset": "our_test_set2",
       "delta": -0.1115,
       "macro_f1": 0.6883,
       "target": "category"
     },
     {
       "arm": "proto_learned_only",
+      "dataset": "our_test_set2",
+      "delta": -0.0904,
+      "macro_f1": 0.7379,
+      "target": "category"
+    },
+    {
+      "arm": "proto_learned_only",
       "dataset": "our_test_set3",
-      "delta": -0.0794,
-      "macro_f1": 0.7488,
+      "delta": -0.0055,
+      "macro_f1": 0.7259,
+      "target": "category"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test_set4",
+      "delta": 0.0014,
+      "macro_f1": 0.7528,
       "target": "category"
     },
     {
@@ -746,28 +893,35 @@
       "arm": "proto_learned_only",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "proto_learned_only",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "proto_learned_only",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "proto_learned_only",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_learned_only",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -780,29 +934,36 @@
     {
       "arm": "proto_office_only",
       "dataset": "our_test",
-      "delta": -0.0857,
-      "macro_f1": 0.7826,
+      "delta": -0.0826,
+      "macro_f1": 0.6864,
       "target": "category"
     },
     {
       "arm": "proto_office_only",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "proto_office_only",
-      "dataset": "our_test_set2",
       "delta": -0.1748,
       "macro_f1": 0.6251,
       "target": "category"
     },
     {
       "arm": "proto_office_only",
+      "dataset": "our_test_set2",
+      "delta": -0.0706,
+      "macro_f1": 0.7576,
+      "target": "category"
+    },
+    {
+      "arm": "proto_office_only",
       "dataset": "our_test_set3",
-      "delta": -0.0815,
-      "macro_f1": 0.7468,
+      "delta": -0.0251,
+      "macro_f1": 0.7063,
+      "target": "category"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test_set4",
+      "delta": -0.0964,
+      "macro_f1": 0.655,
       "target": "category"
     },
     {
@@ -816,28 +977,35 @@
       "arm": "proto_office_only",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "proto_office_only",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "proto_office_only",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "proto_office_only",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "proto_office_only",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -850,29 +1018,36 @@
     {
       "arm": "+knn_in_category",
       "dataset": "our_test",
-      "delta": -0.0106,
-      "macro_f1": 0.8577,
+      "delta": 0.0007,
+      "macro_f1": 0.7697,
       "target": "category"
     },
     {
       "arm": "+knn_in_category",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "+knn_in_category",
-      "dataset": "our_test_set2",
       "delta": -0.0402,
       "macro_f1": 0.7596,
       "target": "category"
     },
     {
       "arm": "+knn_in_category",
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "delta": 0.0,
       "macro_f1": 0.8283,
+      "target": "category"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set3",
+      "delta": 0.0177,
+      "macro_f1": 0.7491,
+      "target": "category"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set4",
+      "delta": 0.002,
+      "macro_f1": 0.7534,
       "target": "category"
     },
     {
@@ -886,28 +1061,35 @@
       "arm": "+knn_in_category",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "+knn_in_category",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "+knn_in_category",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "+knn_in_category",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "+knn_in_category",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -920,29 +1102,36 @@
     {
       "arm": "+m1_in_category",
       "dataset": "our_test",
-      "delta": 0.0042,
-      "macro_f1": 0.8725,
+      "delta": 0.0172,
+      "macro_f1": 0.7862,
       "target": "category"
     },
     {
       "arm": "+m1_in_category",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "+m1_in_category",
-      "dataset": "our_test_set2",
       "delta": 0.0255,
       "macro_f1": 0.8254,
       "target": "category"
     },
     {
       "arm": "+m1_in_category",
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "delta": -0.0149,
       "macro_f1": 0.8133,
+      "target": "category"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set3",
+      "delta": 0.0337,
+      "macro_f1": 0.7651,
+      "target": "category"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set4",
+      "delta": 0.0132,
+      "macro_f1": 0.7646,
       "target": "category"
     },
     {
@@ -956,28 +1145,35 @@
       "arm": "+m1_in_category",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "+m1_in_category",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "+m1_in_category",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "+m1_in_category",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "+m1_in_category",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -990,29 +1186,36 @@
     {
       "arm": "tuned_stage_b",
       "dataset": "our_test",
-      "delta": -0.0143,
-      "macro_f1": 0.854,
+      "delta": 0.0035,
+      "macro_f1": 0.7726,
       "target": "category"
     },
     {
       "arm": "tuned_stage_b",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "tuned_stage_b",
-      "dataset": "our_test_set2",
       "delta": -0.0639,
       "macro_f1": 0.736,
       "target": "category"
     },
     {
       "arm": "tuned_stage_b",
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "delta": 0.0166,
       "macro_f1": 0.8449,
+      "target": "category"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set3",
+      "delta": 0.025,
+      "macro_f1": 0.7564,
+      "target": "category"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set4",
+      "delta": 0.0099,
+      "macro_f1": 0.7614,
       "target": "category"
     },
     {
@@ -1026,28 +1229,35 @@
       "arm": "tuned_stage_b",
       "dataset": "our_test",
       "delta": 0.0,
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "target": "priority"
     },
     {
       "arm": "tuned_stage_b",
       "dataset": "our_test_set1",
       "delta": 0.0,
-      "macro_f1": 1.0,
+      "macro_f1": 0.7825,
       "target": "priority"
     },
     {
       "arm": "tuned_stage_b",
       "dataset": "our_test_set2",
       "delta": 0.0,
-      "macro_f1": 0.7825,
+      "macro_f1": 0.8086,
       "target": "priority"
     },
     {
       "arm": "tuned_stage_b",
       "dataset": "our_test_set3",
       "delta": 0.0,
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
+      "target": "priority"
+    },
+    {
+      "arm": "tuned_stage_b",
+      "dataset": "our_test_set4",
+      "delta": 0.0,
+      "macro_f1": 0.6759,
       "target": "priority"
     },
     {
@@ -1060,29 +1270,36 @@
     {
       "arm": "+unreviewed_augmentation",
       "dataset": "our_test",
-      "delta": 0.0268,
-      "macro_f1": 0.8951,
+      "delta": 0.0393,
+      "macro_f1": 0.8084,
       "target": "category"
     },
     {
       "arm": "+unreviewed_augmentation",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "category"
-    },
-    {
-      "arm": "+unreviewed_augmentation",
-      "dataset": "our_test_set2",
       "delta": 0.0609,
       "macro_f1": 0.8608,
       "target": "category"
     },
     {
       "arm": "+unreviewed_augmentation",
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "delta": 0.0111,
       "macro_f1": 0.8393,
+      "target": "category"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set3",
+      "delta": 0.0596,
+      "macro_f1": 0.791,
+      "target": "category"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set4",
+      "delta": 0.0229,
+      "macro_f1": 0.7744,
       "target": "category"
     },
     {
@@ -1095,33 +1312,40 @@
     {
       "arm": "+unreviewed_augmentation",
       "dataset": "our_test",
-      "delta": 0.0421,
-      "macro_f1": 0.8894,
+      "delta": 0.0845,
+      "macro_f1": 0.8365,
       "target": "priority"
     },
     {
       "arm": "+unreviewed_augmentation",
       "dataset": "our_test_set1",
-      "delta": 0.0,
-      "macro_f1": 1.0,
-      "target": "priority"
-    },
-    {
-      "arm": "+unreviewed_augmentation",
-      "dataset": "our_test_set2",
       "delta": 0.0141,
       "macro_f1": 0.7966,
       "target": "priority"
     },
     {
       "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set2",
+      "delta": 0.1075,
+      "macro_f1": 0.9161,
+      "target": "priority"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
       "dataset": "our_test_set3",
-      "delta": 0.105,
-      "macro_f1": 0.888,
+      "delta": 0.0877,
+      "macro_f1": 0.8805,
+      "target": "priority"
+    },
+    {
+      "arm": "+unreviewed_augmentation",
+      "dataset": "our_test_set4",
+      "delta": 0.1064,
+      "macro_f1": 0.7823,
       "target": "priority"
     }
   ],
-  "ask_rate": 0.1324,
+  "ask_rate": 0.096,
   "ask_rate_is_proxy": true,
   "benchmark": [
     {
@@ -1445,52 +1669,52 @@
       "target": "priority"
     },
     {
-      "accuracy": 0.8676,
+      "accuracy": 0.7652,
       "dataset": "our_test",
-      "macro_f1": 0.8683,
+      "macro_f1": 0.7691,
       "model": "Ensemble (tier 0)",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "category"
     },
     {
-      "accuracy": 0.5735,
+      "accuracy": 0.5631,
       "dataset": "our_test",
-      "macro_f1": 0.5588,
+      "macro_f1": 0.5616,
       "model": "M1",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "category"
     },
     {
-      "accuracy": 0.8137,
+      "accuracy": 0.7626,
       "dataset": "our_test",
-      "macro_f1": 0.8131,
+      "macro_f1": 0.7658,
       "model": "M2-LR",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "category"
     },
     {
-      "accuracy": 0.7108,
+      "accuracy": 0.6364,
       "dataset": "our_test",
-      "macro_f1": 0.6989,
+      "macro_f1": 0.6337,
       "model": "M2-kNN",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "category"
     },
     {
-      "accuracy": 0.8627,
+      "accuracy": 0.7626,
       "dataset": "our_test",
-      "macro_f1": 0.864,
+      "macro_f1": 0.7669,
       "model": "M2-proto",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "category"
     },
@@ -1525,42 +1749,42 @@
       "target": "category"
     },
     {
-      "accuracy": 0.8431,
+      "accuracy": 0.7475,
       "dataset": "our_test",
-      "macro_f1": 0.8473,
+      "macro_f1": 0.7521,
       "model": "Ensemble (tier 0)",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "priority"
     },
     {
-      "accuracy": 0.5882,
+      "accuracy": 0.4975,
       "dataset": "our_test",
-      "macro_f1": 0.5763,
+      "macro_f1": 0.4807,
       "model": "M1",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "priority"
     },
     {
-      "accuracy": 0.6961,
+      "accuracy": 0.6136,
       "dataset": "our_test",
-      "macro_f1": 0.6946,
+      "macro_f1": 0.5918,
       "model": "M2-LR",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "priority"
     },
     {
-      "accuracy": 0.5686,
+      "accuracy": 0.447,
       "dataset": "our_test",
-      "macro_f1": 0.5769,
+      "macro_f1": 0.3962,
       "model": "M2-kNN",
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "status": "ok",
       "target": "priority"
     },
@@ -1597,166 +1821,6 @@
     {
       "accuracy": null,
       "dataset": "our_test",
-      "macro_f1": null,
-      "model": "LLM zero-shot (M4)",
-      "n_groups": null,
-      "n_rows": 0,
-      "status": "n/a",
-      "target": "priority"
-    },
-    {
-      "accuracy": 1.0,
-      "dataset": "our_test_set1",
-      "macro_f1": 1.0,
-      "model": "Ensemble (tier 0)",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "category"
-    },
-    {
-      "accuracy": 0.5167,
-      "dataset": "our_test_set1",
-      "macro_f1": 0.4444,
-      "model": "M1",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "category"
-    },
-    {
-      "accuracy": 1.0,
-      "dataset": "our_test_set1",
-      "macro_f1": 1.0,
-      "model": "M2-LR",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "category"
-    },
-    {
-      "accuracy": 0.85,
-      "dataset": "our_test_set1",
-      "macro_f1": 0.7849,
-      "model": "M2-kNN",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "category"
-    },
-    {
-      "accuracy": 1.0,
-      "dataset": "our_test_set1",
-      "macro_f1": 1.0,
-      "model": "M2-proto",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "category"
-    },
-    {
-      "accuracy": null,
-      "dataset": "our_test_set1",
-      "macro_f1": null,
-      "model": "M3",
-      "n_groups": null,
-      "n_rows": 0,
-      "status": "cut",
-      "target": "category"
-    },
-    {
-      "accuracy": null,
-      "dataset": "our_test_set1",
-      "macro_f1": null,
-      "model": "Ensemble + router",
-      "n_groups": null,
-      "n_rows": 0,
-      "status": "n/a",
-      "target": "category"
-    },
-    {
-      "accuracy": null,
-      "dataset": "our_test_set1",
-      "macro_f1": null,
-      "model": "LLM zero-shot (M4)",
-      "n_groups": null,
-      "n_rows": 0,
-      "status": "n/a",
-      "target": "category"
-    },
-    {
-      "accuracy": 1.0,
-      "dataset": "our_test_set1",
-      "macro_f1": 1.0,
-      "model": "Ensemble (tier 0)",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "priority"
-    },
-    {
-      "accuracy": 0.6667,
-      "dataset": "our_test_set1",
-      "macro_f1": 0.6583,
-      "model": "M1",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "priority"
-    },
-    {
-      "accuracy": 0.8167,
-      "dataset": "our_test_set1",
-      "macro_f1": 0.817,
-      "model": "M2-LR",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "priority"
-    },
-    {
-      "accuracy": 0.6333,
-      "dataset": "our_test_set1",
-      "macro_f1": 0.5484,
-      "model": "M2-kNN",
-      "n_groups": 6,
-      "n_rows": 60,
-      "status": "ok",
-      "target": "priority"
-    },
-    {
-      "accuracy": null,
-      "dataset": "our_test_set1",
-      "macro_f1": null,
-      "model": "M2-proto",
-      "n_groups": null,
-      "n_rows": 0,
-      "status": "n/a",
-      "target": "priority"
-    },
-    {
-      "accuracy": null,
-      "dataset": "our_test_set1",
-      "macro_f1": null,
-      "model": "M3",
-      "n_groups": null,
-      "n_rows": 0,
-      "status": "cut",
-      "target": "priority"
-    },
-    {
-      "accuracy": null,
-      "dataset": "our_test_set1",
-      "macro_f1": null,
-      "model": "Ensemble + router",
-      "n_groups": null,
-      "n_rows": 0,
-      "status": "n/a",
-      "target": "priority"
-    },
-    {
-      "accuracy": null,
-      "dataset": "our_test_set1",
       "macro_f1": null,
       "model": "LLM zero-shot (M4)",
       "n_groups": null,
@@ -1766,7 +1830,7 @@
     },
     {
       "accuracy": 0.7917,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.7999,
       "model": "Ensemble (tier 0)",
       "n_groups": 16,
@@ -1776,7 +1840,7 @@
     },
     {
       "accuracy": 0.6111,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.5864,
       "model": "M1",
       "n_groups": 16,
@@ -1786,7 +1850,7 @@
     },
     {
       "accuracy": 0.6806,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.6681,
       "model": "M2-LR",
       "n_groups": 16,
@@ -1796,7 +1860,7 @@
     },
     {
       "accuracy": 0.6806,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.663,
       "model": "M2-kNN",
       "n_groups": 16,
@@ -1806,7 +1870,7 @@
     },
     {
       "accuracy": 0.7917,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.7999,
       "model": "M2-proto",
       "n_groups": 16,
@@ -1816,7 +1880,7 @@
     },
     {
       "accuracy": null,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": null,
       "model": "M3",
       "n_groups": null,
@@ -1826,7 +1890,7 @@
     },
     {
       "accuracy": null,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": null,
       "model": "Ensemble + router",
       "n_groups": null,
@@ -1836,7 +1900,7 @@
     },
     {
       "accuracy": null,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": null,
       "model": "LLM zero-shot (M4)",
       "n_groups": null,
@@ -1846,7 +1910,7 @@
     },
     {
       "accuracy": 0.7778,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.7825,
       "model": "Ensemble (tier 0)",
       "n_groups": 16,
@@ -1856,7 +1920,7 @@
     },
     {
       "accuracy": 0.6667,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.6383,
       "model": "M1",
       "n_groups": 16,
@@ -1866,7 +1930,7 @@
     },
     {
       "accuracy": 0.6667,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.6647,
       "model": "M2-LR",
       "n_groups": 16,
@@ -1876,7 +1940,7 @@
     },
     {
       "accuracy": 0.6111,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.6052,
       "model": "M2-kNN",
       "n_groups": 16,
@@ -1886,7 +1950,7 @@
     },
     {
       "accuracy": null,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": null,
       "model": "M2-proto",
       "n_groups": null,
@@ -1896,7 +1960,7 @@
     },
     {
       "accuracy": null,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": null,
       "model": "M3",
       "n_groups": null,
@@ -1906,7 +1970,7 @@
     },
     {
       "accuracy": null,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": null,
       "model": "Ensemble + router",
       "n_groups": null,
@@ -1916,7 +1980,7 @@
     },
     {
       "accuracy": null,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": null,
       "model": "LLM zero-shot (M4)",
       "n_groups": null,
@@ -1926,7 +1990,7 @@
     },
     {
       "accuracy": 0.8333,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "macro_f1": 0.8283,
       "model": "Ensemble (tier 0)",
       "n_groups": 16,
@@ -1935,9 +1999,9 @@
       "target": "category"
     },
     {
-      "accuracy": 0.5833,
-      "dataset": "our_test_set3",
-      "macro_f1": 0.5741,
+      "accuracy": 0.5694,
+      "dataset": "our_test_set2",
+      "macro_f1": 0.5605,
       "model": "M1",
       "n_groups": 16,
       "n_rows": 72,
@@ -1945,9 +2009,9 @@
       "target": "category"
     },
     {
-      "accuracy": 0.7917,
-      "dataset": "our_test_set3",
-      "macro_f1": 0.7853,
+      "accuracy": 0.7778,
+      "dataset": "our_test_set2",
+      "macro_f1": 0.7742,
       "model": "M2-LR",
       "n_groups": 16,
       "n_rows": 72,
@@ -1955,9 +2019,9 @@
       "target": "category"
     },
     {
-      "accuracy": 0.625,
-      "dataset": "our_test_set3",
-      "macro_f1": 0.6096,
+      "accuracy": 0.6111,
+      "dataset": "our_test_set2",
+      "macro_f1": 0.597,
       "model": "M2-kNN",
       "n_groups": 16,
       "n_rows": 72,
@@ -1966,11 +2030,171 @@
     },
     {
       "accuracy": 0.8194,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "macro_f1": 0.815,
       "model": "M2-proto",
       "n_groups": 16,
       "n_rows": 72,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set2",
+      "macro_f1": null,
+      "model": "M3",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "cut",
+      "target": "category"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set2",
+      "macro_f1": null,
+      "model": "Ensemble + router",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "category"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set2",
+      "macro_f1": null,
+      "model": "LLM zero-shot (M4)",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.8056,
+      "dataset": "our_test_set2",
+      "macro_f1": 0.8086,
+      "model": "Ensemble (tier 0)",
+      "n_groups": 16,
+      "n_rows": 72,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.4444,
+      "dataset": "our_test_set2",
+      "macro_f1": 0.4299,
+      "model": "M1",
+      "n_groups": 16,
+      "n_rows": 72,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.625,
+      "dataset": "our_test_set2",
+      "macro_f1": 0.6063,
+      "model": "M2-LR",
+      "n_groups": 16,
+      "n_rows": 72,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.4722,
+      "dataset": "our_test_set2",
+      "macro_f1": 0.4139,
+      "model": "M2-kNN",
+      "n_groups": 16,
+      "n_rows": 72,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set2",
+      "macro_f1": null,
+      "model": "M2-proto",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "priority"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set2",
+      "macro_f1": null,
+      "model": "M3",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "cut",
+      "target": "priority"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set2",
+      "macro_f1": null,
+      "model": "Ensemble + router",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "priority"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set2",
+      "macro_f1": null,
+      "model": "LLM zero-shot (M4)",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.7222,
+      "dataset": "our_test_set3",
+      "macro_f1": 0.7314,
+      "model": "Ensemble (tier 0)",
+      "n_groups": 102,
+      "n_rows": 108,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.5463,
+      "dataset": "our_test_set3",
+      "macro_f1": 0.5403,
+      "model": "M1",
+      "n_groups": 102,
+      "n_rows": 108,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.7778,
+      "dataset": "our_test_set3",
+      "macro_f1": 0.7781,
+      "model": "M2-LR",
+      "n_groups": 102,
+      "n_rows": 108,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.6019,
+      "dataset": "our_test_set3",
+      "macro_f1": 0.5985,
+      "model": "M2-kNN",
+      "n_groups": 102,
+      "n_rows": 108,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.7222,
+      "dataset": "our_test_set3",
+      "macro_f1": 0.7314,
+      "model": "M2-proto",
+      "n_groups": 102,
+      "n_rows": 108,
       "status": "ok",
       "target": "category"
     },
@@ -2005,42 +2229,42 @@
       "target": "category"
     },
     {
-      "accuracy": 0.7778,
+      "accuracy": 0.787,
       "dataset": "our_test_set3",
-      "macro_f1": 0.783,
+      "macro_f1": 0.7929,
       "model": "Ensemble (tier 0)",
-      "n_groups": 16,
-      "n_rows": 72,
-      "status": "ok",
-      "target": "priority"
-    },
-    {
-      "accuracy": 0.4444,
-      "dataset": "our_test_set3",
-      "macro_f1": 0.4299,
-      "model": "M1",
-      "n_groups": 16,
-      "n_rows": 72,
-      "status": "ok",
-      "target": "priority"
-    },
-    {
-      "accuracy": 0.625,
-      "dataset": "our_test_set3",
-      "macro_f1": 0.6063,
-      "model": "M2-LR",
-      "n_groups": 16,
-      "n_rows": 72,
+      "n_groups": 102,
+      "n_rows": 108,
       "status": "ok",
       "target": "priority"
     },
     {
       "accuracy": 0.4722,
       "dataset": "our_test_set3",
-      "macro_f1": 0.4139,
+      "macro_f1": 0.465,
+      "model": "M1",
+      "n_groups": 102,
+      "n_rows": 108,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.6296,
+      "dataset": "our_test_set3",
+      "macro_f1": 0.5811,
+      "model": "M2-LR",
+      "n_groups": 102,
+      "n_rows": 108,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.4167,
+      "dataset": "our_test_set3",
+      "macro_f1": 0.3631,
       "model": "M2-kNN",
-      "n_groups": 16,
-      "n_rows": 72,
+      "n_groups": 102,
+      "n_rows": 108,
       "status": "ok",
       "target": "priority"
     },
@@ -2077,6 +2301,166 @@
     {
       "accuracy": null,
       "dataset": "our_test_set3",
+      "macro_f1": null,
+      "model": "LLM zero-shot (M4)",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.75,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.7514,
+      "model": "Ensemble (tier 0)",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.5486,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.5471,
+      "model": "M1",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.7847,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.7879,
+      "model": "M2-LR",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.6528,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.6513,
+      "model": "M2-kNN",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.75,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.7514,
+      "model": "M2-proto",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "category"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set4",
+      "macro_f1": null,
+      "model": "M3",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "cut",
+      "target": "category"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set4",
+      "macro_f1": null,
+      "model": "Ensemble + router",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "category"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set4",
+      "macro_f1": null,
+      "model": "LLM zero-shot (M4)",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "category"
+    },
+    {
+      "accuracy": 0.6736,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.6759,
+      "model": "Ensemble (tier 0)",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.4583,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.4366,
+      "model": "M1",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.5694,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.5113,
+      "model": "M2-LR",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": 0.375,
+      "dataset": "our_test_set4",
+      "macro_f1": 0.2707,
+      "model": "M2-kNN",
+      "n_groups": 134,
+      "n_rows": 144,
+      "status": "ok",
+      "target": "priority"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set4",
+      "macro_f1": null,
+      "model": "M2-proto",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "priority"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set4",
+      "macro_f1": null,
+      "model": "M3",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "cut",
+      "target": "priority"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set4",
+      "macro_f1": null,
+      "model": "Ensemble + router",
+      "n_groups": null,
+      "n_rows": 0,
+      "status": "n/a",
+      "target": "priority"
+    },
+    {
+      "accuracy": null,
+      "dataset": "our_test_set4",
       "macro_f1": null,
       "model": "LLM zero-shot (M4)",
       "n_groups": null,
@@ -2103,44 +2487,44 @@
           "upper": 0.2
         },
         {
-          "accuracy": 0.6,
-          "confidence": 0.2686,
-          "count": 5,
+          "accuracy": 0.3333,
+          "confidence": 0.2709,
+          "count": 9,
           "lower": 0.2,
           "upper": 0.3
         },
         {
-          "accuracy": 0.4444,
-          "confidence": 0.3686,
-          "count": 18,
+          "accuracy": 0.4524,
+          "confidence": 0.366,
+          "count": 42,
           "lower": 0.3,
           "upper": 0.4
         },
         {
           "accuracy": 0.5333,
-          "confidence": 0.4337,
-          "count": 15,
+          "confidence": 0.4482,
+          "count": 60,
           "lower": 0.4,
           "upper": 0.5
         },
         {
-          "accuracy": 0.8696,
-          "confidence": 0.5644,
-          "count": 46,
+          "accuracy": 0.7273,
+          "confidence": 0.558,
+          "count": 99,
           "lower": 0.5,
           "upper": 0.6
         },
         {
-          "accuracy": 0.9808,
-          "confidence": 0.6577,
-          "count": 104,
+          "accuracy": 0.9474,
+          "confidence": 0.6422,
+          "count": 171,
           "lower": 0.6,
           "upper": 0.7
         },
         {
           "accuracy": 1.0,
-          "confidence": 0.732,
-          "count": 16,
+          "confidence": 0.7297,
+          "count": 15,
           "lower": 0.7,
           "upper": 0.8
         },
@@ -2159,7 +2543,7 @@
           "upper": 1.0
         }
       ],
-      "ece": 0.2767,
+      "ece": 0.2078,
       "target": "category"
     },
     {
@@ -2200,42 +2584,42 @@
           "upper": 0.5
         },
         {
-          "accuracy": 0.3077,
-          "confidence": 0.59,
-          "count": 26,
+          "accuracy": 0.54,
+          "confidence": 0.5873,
+          "count": 100,
           "lower": 0.5,
           "upper": 0.6
         },
         {
-          "accuracy": 0.875,
-          "confidence": 0.6291,
-          "count": 8,
+          "accuracy": 0.5641,
+          "confidence": 0.6281,
+          "count": 39,
           "lower": 0.6,
           "upper": 0.7
         },
         {
-          "accuracy": 1.0,
-          "confidence": 0.7654,
-          "count": 19,
+          "accuracy": 0.8,
+          "confidence": 0.7699,
+          "count": 35,
           "lower": 0.7,
           "upper": 0.8
         },
         {
-          "accuracy": 0.7714,
-          "confidence": 0.876,
-          "count": 35,
+          "accuracy": 0.6591,
+          "confidence": 0.8767,
+          "count": 44,
           "lower": 0.8,
           "upper": 0.9
         },
         {
-          "accuracy": 0.9569,
-          "confidence": 0.9738,
-          "count": 116,
+          "accuracy": 0.9157,
+          "confidence": 0.9746,
+          "count": 178,
           "lower": 0.9,
           "upper": 1.0
         }
       ],
-      "ece": 0.095,
+      "ece": 0.0716,
       "target": "priority"
     }
   ],
@@ -2432,52 +2816,52 @@
       ],
       "matrix": [
         [
-          32,
-          0,
-          0,
-          0,
-          0,
-          3
-        ],
-        [
-          0,
-          33,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          5,
+          57,
           1,
-          23,
           0,
+          1,
           0,
-          4
-        ],
-        [
-          0,
-          3,
-          0,
-          31,
-          0,
-          1
-        ],
-        [
-          0,
-          2,
-          0,
-          0,
-          29,
-          4
+          7
         ],
         [
           4,
+          55,
+          0,
+          1,
+          2,
+          4
+        ],
+        [
+          11,
+          3,
+          42,
+          1,
+          0,
+          9
+        ],
+        [
+          0,
+          6,
+          0,
+          56,
+          1,
+          3
+        ],
+        [
+          6,
+          8,
+          1,
+          0,
+          44,
+          7
+        ],
+        [
+          12,
+          4,
           0,
           0,
-          0,
-          0,
-          29
+          1,
+          49
         ]
       ],
       "model": "Ensemble (tier 0)",
@@ -2492,116 +2876,26 @@
       ],
       "matrix": [
         [
-          49,
-          17,
+          84,
+          48,
           0
         ],
         [
-          1,
-          74,
-          4
+          3,
+          116,
+          13
         ],
         [
-          0,
-          10,
-          49
-        ]
-      ],
-      "model": "Ensemble (tier 0)",
-      "target": "priority"
-    },
-    {
-      "dataset": "our_test_set1",
-      "labels": [
-        "Registration",
-        "IT Support",
-        "Finance",
-        "Transportation",
-        "Facilities",
-        "Academic Support"
-      ],
-      "matrix": [
-        [
-          11,
-          0,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          0,
-          9,
-          0,
-          0,
-          0,
-          0
-        ],
-        [
-          0,
-          0,
-          9,
-          0,
-          0,
-          0
-        ],
-        [
-          0,
-          0,
-          0,
-          11,
-          0,
-          0
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          11,
-          0
-        ],
-        [
-          0,
-          0,
-          0,
-          0,
-          0,
-          9
-        ]
-      ],
-      "model": "Ensemble (tier 0)",
-      "target": "category"
-    },
-    {
-      "dataset": "our_test_set1",
-      "labels": [
-        "low",
-        "medium",
-        "high"
-      ],
-      "matrix": [
-        [
-          18,
-          0,
-          0
-        ],
-        [
-          0,
+          5,
           31,
-          0
-        ],
-        [
-          0,
-          0,
-          11
+          96
         ]
       ],
       "model": "Ensemble (tier 0)",
       "target": "priority"
     },
     {
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "labels": [
         "Registration",
         "IT Support",
@@ -2664,7 +2958,7 @@
       "target": "category"
     },
     {
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "labels": [
         "low",
         "medium",
@@ -2691,7 +2985,7 @@
       "target": "priority"
     },
     {
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "labels": [
         "Registration",
         "IT Support",
@@ -2754,7 +3048,7 @@
       "target": "category"
     },
     {
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "labels": [
         "low",
         "medium",
@@ -2773,8 +3067,188 @@
         ],
         [
           0,
-          6,
+          4,
+          20
+        ]
+      ],
+      "model": "Ensemble (tier 0)",
+      "target": "priority"
+    },
+    {
+      "dataset": "our_test_set3",
+      "labels": [
+        "Registration",
+        "IT Support",
+        "Finance",
+        "Transportation",
+        "Facilities",
+        "Academic Support"
+      ],
+      "matrix": [
+        [
+          15,
+          0,
+          0,
+          1,
+          0,
+          2
+        ],
+        [
+          2,
+          12,
+          0,
+          1,
+          0,
+          3
+        ],
+        [
+          4,
+          0,
+          12,
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          15,
+          0,
+          2
+        ],
+        [
+          2,
+          1,
+          0,
+          0,
+          13,
+          2
+        ],
+        [
+          4,
+          3,
+          0,
+          0,
+          0,
+          11
+        ]
+      ],
+      "model": "Ensemble (tier 0)",
+      "target": "category"
+    },
+    {
+      "dataset": "our_test_set3",
+      "labels": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "matrix": [
+        [
+          27,
+          9,
+          0
+        ],
+        [
+          0,
+          34,
+          2
+        ],
+        [
+          0,
+          12,
+          24
+        ]
+      ],
+      "model": "Ensemble (tier 0)",
+      "target": "priority"
+    },
+    {
+      "dataset": "our_test_set4",
+      "labels": [
+        "Registration",
+        "IT Support",
+        "Finance",
+        "Transportation",
+        "Facilities",
+        "Academic Support"
+      ],
+      "matrix": [
+        [
+          21,
+          1,
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          2,
+          19,
+          0,
+          0,
+          2,
+          1
+        ],
+        [
+          2,
+          2,
+          16,
+          0,
+          0,
+          4
+        ],
+        [
+          0,
+          2,
+          0,
+          21,
+          1,
+          0
+        ],
+        [
+          4,
+          5,
+          1,
+          0,
+          13,
+          1
+        ],
+        [
+          4,
+          1,
+          0,
+          0,
+          1,
           18
+        ]
+      ],
+      "model": "Ensemble (tier 0)",
+      "target": "category"
+    },
+    {
+      "dataset": "our_test_set4",
+      "labels": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "matrix": [
+        [
+          26,
+          22,
+          0
+        ],
+        [
+          2,
+          39,
+          7
+        ],
+        [
+          5,
+          11,
+          32
         ]
       ],
       "model": "Ensemble (tier 0)",
@@ -2903,148 +3377,88 @@
       "target": "priority"
     },
     {
-      "coverage": 0.9657,
+      "coverage": 0.904,
       "dataset": "our_test",
       "lang": "all",
-      "mean_set_size": 1.9804,
-      "n_groups": 38,
-      "n_rows": 204,
-      "singleton_rate": 0.5441,
+      "mean_set_size": 2.1439,
+      "n_groups": 268,
+      "n_rows": 396,
+      "singleton_rate": 0.5051,
       "target": "category"
     },
     {
-      "coverage": 0.9381,
+      "coverage": 0.8613,
       "dataset": "our_test",
       "lang": "en",
       "mean_set_size": 1.0,
-      "n_groups": 15,
-      "n_rows": 97,
+      "n_groups": 105,
+      "n_rows": 173,
       "singleton_rate": 1.0,
       "target": "category"
     },
     {
-      "coverage": 1.0,
+      "coverage": 0.9773,
       "dataset": "our_test",
       "lang": "ar",
-      "mean_set_size": 2.6,
-      "n_groups": 15,
-      "n_rows": 75,
-      "singleton_rate": 0.1467,
+      "mean_set_size": 2.6742,
+      "n_groups": 96,
+      "n_rows": 132,
+      "singleton_rate": 0.1894,
       "target": "category"
     },
     {
-      "coverage": 0.9688,
+      "coverage": 0.8791,
       "dataset": "our_test",
       "lang": "arabizi",
-      "mean_set_size": 3.5,
-      "n_groups": 8,
-      "n_rows": 32,
-      "singleton_rate": 0.0938,
+      "mean_set_size": 3.5495,
+      "n_groups": 67,
+      "n_rows": 91,
+      "singleton_rate": 0.022,
       "target": "category"
     },
     {
-      "coverage": 0.8431,
+      "coverage": 0.7475,
       "dataset": "our_test",
       "lang": "all",
       "mean_set_size": 1.0,
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "singleton_rate": 1.0,
       "target": "priority"
     },
     {
-      "coverage": 0.8763,
+      "coverage": 0.763,
       "dataset": "our_test",
       "lang": "en",
       "mean_set_size": 1.0,
-      "n_groups": 15,
-      "n_rows": 97,
+      "n_groups": 105,
+      "n_rows": 173,
       "singleton_rate": 1.0,
       "target": "priority"
     },
     {
-      "coverage": 0.8533,
+      "coverage": 0.7273,
       "dataset": "our_test",
       "lang": "ar",
       "mean_set_size": 1.0,
-      "n_groups": 15,
-      "n_rows": 75,
+      "n_groups": 96,
+      "n_rows": 132,
       "singleton_rate": 1.0,
       "target": "priority"
     },
     {
-      "coverage": 0.7188,
+      "coverage": 0.7473,
       "dataset": "our_test",
       "lang": "arabizi",
       "mean_set_size": 1.0,
-      "n_groups": 8,
-      "n_rows": 32,
+      "n_groups": 67,
+      "n_rows": 91,
       "singleton_rate": 1.0,
       "target": "priority"
     },
     {
       "coverage": 1.0,
       "dataset": "our_test_set1",
-      "lang": "all",
-      "mean_set_size": 1.6,
-      "n_groups": 6,
-      "n_rows": 60,
-      "singleton_rate": 0.55,
-      "target": "category"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "en",
-      "mean_set_size": 1.0,
-      "n_groups": 3,
-      "n_rows": 33,
-      "singleton_rate": 1.0,
-      "target": "category"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "ar",
-      "mean_set_size": 2.3333,
-      "n_groups": 3,
-      "n_rows": 27,
-      "singleton_rate": 0.0,
-      "target": "category"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "all",
-      "mean_set_size": 1.0,
-      "n_groups": 6,
-      "n_rows": 60,
-      "singleton_rate": 1.0,
-      "target": "priority"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "en",
-      "mean_set_size": 1.0,
-      "n_groups": 3,
-      "n_rows": 33,
-      "singleton_rate": 1.0,
-      "target": "priority"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "ar",
-      "mean_set_size": 1.0,
-      "n_groups": 3,
-      "n_rows": 27,
-      "singleton_rate": 1.0,
-      "target": "priority"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set2",
       "lang": "all",
       "mean_set_size": 2.1944,
       "n_groups": 16,
@@ -3054,7 +3468,7 @@
     },
     {
       "coverage": 1.0,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "en",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -3064,7 +3478,7 @@
     },
     {
       "coverage": 1.0,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "ar",
       "mean_set_size": 2.6667,
       "n_groups": 6,
@@ -3074,7 +3488,7 @@
     },
     {
       "coverage": 1.0,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "arabizi",
       "mean_set_size": 3.875,
       "n_groups": 4,
@@ -3084,7 +3498,7 @@
     },
     {
       "coverage": 0.7778,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "all",
       "mean_set_size": 1.0,
       "n_groups": 16,
@@ -3094,7 +3508,7 @@
     },
     {
       "coverage": 0.875,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "en",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -3104,7 +3518,7 @@
     },
     {
       "coverage": 0.6667,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "ar",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -3114,7 +3528,7 @@
     },
     {
       "coverage": 0.75,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "arabizi",
       "mean_set_size": 1.0,
       "n_groups": 4,
@@ -3124,17 +3538,17 @@
     },
     {
       "coverage": 0.9028,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "all",
-      "mean_set_size": 2.0833,
+      "mean_set_size": 2.1111,
       "n_groups": 16,
       "n_rows": 72,
-      "singleton_rate": 0.5278,
+      "singleton_rate": 0.5139,
       "target": "category"
     },
     {
       "coverage": 0.8125,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "en",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -3144,7 +3558,7 @@
     },
     {
       "coverage": 1.0,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "ar",
       "mean_set_size": 2.8333,
       "n_groups": 6,
@@ -3154,17 +3568,17 @@
     },
     {
       "coverage": 0.9375,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "arabizi",
-      "mean_set_size": 3.125,
+      "mean_set_size": 3.25,
       "n_groups": 4,
       "n_rows": 16,
-      "singleton_rate": 0.1875,
+      "singleton_rate": 0.125,
       "target": "category"
     },
     {
-      "coverage": 0.7778,
-      "dataset": "our_test_set3",
+      "coverage": 0.8056,
+      "dataset": "our_test_set2",
       "lang": "all",
       "mean_set_size": 1.0,
       "n_groups": 16,
@@ -3174,7 +3588,7 @@
     },
     {
       "coverage": 0.75,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "en",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -3184,7 +3598,7 @@
     },
     {
       "coverage": 0.875,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "ar",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -3193,12 +3607,172 @@
       "target": "priority"
     },
     {
-      "coverage": 0.6875,
-      "dataset": "our_test_set3",
+      "coverage": 0.8125,
+      "dataset": "our_test_set2",
       "lang": "arabizi",
       "mean_set_size": 1.0,
       "n_groups": 4,
       "n_rows": 16,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.8704,
+      "dataset": "our_test_set3",
+      "lang": "all",
+      "mean_set_size": 2.1019,
+      "n_groups": 102,
+      "n_rows": 108,
+      "singleton_rate": 0.5093,
+      "target": "category"
+    },
+    {
+      "coverage": 0.8222,
+      "dataset": "our_test_set3",
+      "lang": "en",
+      "mean_set_size": 1.0,
+      "n_groups": 39,
+      "n_rows": 45,
+      "singleton_rate": 1.0,
+      "target": "category"
+    },
+    {
+      "coverage": 0.9444,
+      "dataset": "our_test_set3",
+      "lang": "ar",
+      "mean_set_size": 2.3611,
+      "n_groups": 36,
+      "n_rows": 36,
+      "singleton_rate": 0.2778,
+      "target": "category"
+    },
+    {
+      "coverage": 0.8519,
+      "dataset": "our_test_set3",
+      "lang": "arabizi",
+      "mean_set_size": 3.5926,
+      "n_groups": 27,
+      "n_rows": 27,
+      "singleton_rate": 0.0,
+      "target": "category"
+    },
+    {
+      "coverage": 0.787,
+      "dataset": "our_test_set3",
+      "lang": "all",
+      "mean_set_size": 1.0,
+      "n_groups": 102,
+      "n_rows": 108,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.8,
+      "dataset": "our_test_set3",
+      "lang": "en",
+      "mean_set_size": 1.0,
+      "n_groups": 39,
+      "n_rows": 45,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.6944,
+      "dataset": "our_test_set3",
+      "lang": "ar",
+      "mean_set_size": 1.0,
+      "n_groups": 36,
+      "n_rows": 36,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.8889,
+      "dataset": "our_test_set3",
+      "lang": "arabizi",
+      "mean_set_size": 1.0,
+      "n_groups": 27,
+      "n_rows": 27,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.8819,
+      "dataset": "our_test_set4",
+      "lang": "all",
+      "mean_set_size": 2.1667,
+      "n_groups": 134,
+      "n_rows": 144,
+      "singleton_rate": 0.4722,
+      "target": "category"
+    },
+    {
+      "coverage": 0.8438,
+      "dataset": "our_test_set4",
+      "lang": "en",
+      "mean_set_size": 1.0,
+      "n_groups": 54,
+      "n_rows": 64,
+      "singleton_rate": 1.0,
+      "target": "category"
+    },
+    {
+      "coverage": 0.9792,
+      "dataset": "our_test_set4",
+      "lang": "ar",
+      "mean_set_size": 2.8333,
+      "n_groups": 48,
+      "n_rows": 48,
+      "singleton_rate": 0.0833,
+      "target": "category"
+    },
+    {
+      "coverage": 0.8125,
+      "dataset": "our_test_set4",
+      "lang": "arabizi",
+      "mean_set_size": 3.5,
+      "n_groups": 32,
+      "n_rows": 32,
+      "singleton_rate": 0.0,
+      "target": "category"
+    },
+    {
+      "coverage": 0.6736,
+      "dataset": "our_test_set4",
+      "lang": "all",
+      "mean_set_size": 1.0,
+      "n_groups": 134,
+      "n_rows": 144,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.6875,
+      "dataset": "our_test_set4",
+      "lang": "en",
+      "mean_set_size": 1.0,
+      "n_groups": 54,
+      "n_rows": 64,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.7083,
+      "dataset": "our_test_set4",
+      "lang": "ar",
+      "mean_set_size": 1.0,
+      "n_groups": 48,
+      "n_rows": 48,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.5938,
+      "dataset": "our_test_set4",
+      "lang": "arabizi",
+      "mean_set_size": 1.0,
+      "n_groups": 32,
+      "n_rows": 32,
       "singleton_rate": 1.0,
       "target": "priority"
     }
@@ -3270,86 +3844,54 @@
     },
     {
       "dataset": "our_test",
-      "macro_f1": 0.9259,
-      "n_groups": 15,
-      "n_rows": 97,
+      "macro_f1": 0.8647,
+      "n_groups": 105,
+      "n_rows": 173,
       "slice": "en",
       "target": "category"
     },
     {
       "dataset": "our_test",
-      "macro_f1": 0.906,
-      "n_groups": 15,
-      "n_rows": 75,
+      "macro_f1": 0.8167,
+      "n_groups": 96,
+      "n_rows": 132,
       "slice": "ar",
       "target": "category"
     },
     {
       "dataset": "our_test",
-      "macro_f1": 0.4029,
-      "n_groups": 8,
-      "n_rows": 32,
+      "macro_f1": 0.4802,
+      "n_groups": 67,
+      "n_rows": 91,
       "slice": "arabizi",
       "target": "category"
     },
     {
       "dataset": "our_test",
-      "macro_f1": 0.8739,
-      "n_groups": 15,
-      "n_rows": 97,
+      "macro_f1": 0.7695,
+      "n_groups": 105,
+      "n_rows": 173,
       "slice": "en",
       "target": "priority"
     },
     {
       "dataset": "our_test",
-      "macro_f1": 0.5852,
-      "n_groups": 15,
-      "n_rows": 75,
+      "macro_f1": 0.7215,
+      "n_groups": 96,
+      "n_rows": 132,
       "slice": "ar",
       "target": "priority"
     },
     {
       "dataset": "our_test",
-      "macro_f1": 0.3007,
-      "n_groups": 8,
-      "n_rows": 32,
+      "macro_f1": 0.7278,
+      "n_groups": 67,
+      "n_rows": 91,
       "slice": "arabizi",
       "target": "priority"
     },
     {
       "dataset": "our_test_set1",
-      "macro_f1": 1.0,
-      "n_groups": 3,
-      "n_rows": 33,
-      "slice": "en",
-      "target": "category"
-    },
-    {
-      "dataset": "our_test_set1",
-      "macro_f1": 1.0,
-      "n_groups": 3,
-      "n_rows": 27,
-      "slice": "ar",
-      "target": "category"
-    },
-    {
-      "dataset": "our_test_set1",
-      "macro_f1": 1.0,
-      "n_groups": 3,
-      "n_rows": 33,
-      "slice": "en",
-      "target": "priority"
-    },
-    {
-      "dataset": "our_test_set1",
-      "macro_f1": 1.0,
-      "n_groups": 3,
-      "n_rows": 27,
-      "slice": "ar",
-      "target": "priority"
-    },
-    {
-      "dataset": "our_test_set2",
       "macro_f1": 1.0,
       "n_groups": 6,
       "n_rows": 32,
@@ -3357,7 +3899,7 @@
       "target": "category"
     },
     {
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.7778,
       "n_groups": 6,
       "n_rows": 24,
@@ -3365,7 +3907,7 @@
       "target": "category"
     },
     {
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.2222,
       "n_groups": 4,
       "n_rows": 16,
@@ -3373,7 +3915,7 @@
       "target": "category"
     },
     {
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.8857,
       "n_groups": 6,
       "n_rows": 32,
@@ -3381,7 +3923,7 @@
       "target": "priority"
     },
     {
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.4889,
       "n_groups": 6,
       "n_rows": 24,
@@ -3389,7 +3931,7 @@
       "target": "priority"
     },
     {
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "macro_f1": 0.3333,
       "n_groups": 4,
       "n_rows": 16,
@@ -3397,7 +3939,7 @@
       "target": "priority"
     },
     {
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "macro_f1": 0.7822,
       "n_groups": 6,
       "n_rows": 32,
@@ -3405,7 +3947,7 @@
       "target": "category"
     },
     {
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "macro_f1": 0.8688,
       "n_groups": 6,
       "n_rows": 24,
@@ -3413,7 +3955,7 @@
       "target": "category"
     },
     {
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "macro_f1": 0.6603,
       "n_groups": 4,
       "n_rows": 16,
@@ -3421,7 +3963,7 @@
       "target": "category"
     },
     {
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "macro_f1": 0.7701,
       "n_groups": 6,
       "n_rows": 32,
@@ -3429,7 +3971,7 @@
       "target": "priority"
     },
     {
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "macro_f1": 0.8418,
       "n_groups": 6,
       "n_rows": 24,
@@ -3437,13 +3979,109 @@
       "target": "priority"
     },
     {
-      "dataset": "our_test_set3",
-      "macro_f1": 0.4074,
+      "dataset": "our_test_set2",
+      "macro_f1": 0.4483,
       "n_groups": 4,
       "n_rows": 16,
       "slice": "arabizi",
       "target": "priority"
+    },
+    {
+      "dataset": "our_test_set3",
+      "macro_f1": 0.8262,
+      "n_groups": 39,
+      "n_rows": 45,
+      "slice": "en",
+      "target": "category"
+    },
+    {
+      "dataset": "our_test_set3",
+      "macro_f1": 0.7761,
+      "n_groups": 36,
+      "n_rows": 36,
+      "slice": "ar",
+      "target": "category"
+    },
+    {
+      "dataset": "our_test_set3",
+      "macro_f1": 0.5012,
+      "n_groups": 27,
+      "n_rows": 27,
+      "slice": "arabizi",
+      "target": "category"
+    },
+    {
+      "dataset": "our_test_set3",
+      "macro_f1": 0.8046,
+      "n_groups": 39,
+      "n_rows": 45,
+      "slice": "en",
+      "target": "priority"
+    },
+    {
+      "dataset": "our_test_set3",
+      "macro_f1": 0.7031,
+      "n_groups": 36,
+      "n_rows": 36,
+      "slice": "ar",
+      "target": "priority"
+    },
+    {
+      "dataset": "our_test_set3",
+      "macro_f1": 0.8899,
+      "n_groups": 27,
+      "n_rows": 27,
+      "slice": "arabizi",
+      "target": "priority"
+    },
+    {
+      "dataset": "our_test_set4",
+      "macro_f1": 0.8398,
+      "n_groups": 54,
+      "n_rows": 64,
+      "slice": "en",
+      "target": "category"
+    },
+    {
+      "dataset": "our_test_set4",
+      "macro_f1": 0.8037,
+      "n_groups": 48,
+      "n_rows": 48,
+      "slice": "ar",
+      "target": "category"
+    },
+    {
+      "dataset": "our_test_set4",
+      "macro_f1": 0.4563,
+      "n_groups": 32,
+      "n_rows": 32,
+      "slice": "arabizi",
+      "target": "category"
+    },
+    {
+      "dataset": "our_test_set4",
+      "macro_f1": 0.6962,
+      "n_groups": 54,
+      "n_rows": 64,
+      "slice": "en",
+      "target": "priority"
+    },
+    {
+      "dataset": "our_test_set4",
+      "macro_f1": 0.693,
+      "n_groups": 48,
+      "n_rows": 48,
+      "slice": "ar",
+      "target": "priority"
+    },
+    {
+      "dataset": "our_test_set4",
+      "macro_f1": 0.6,
+      "n_groups": 32,
+      "n_rows": 32,
+      "slice": "arabizi",
+      "target": "priority"
     }
   ],
-  "generated_at": "2026-11-01T17:04:08+00:00"
+  "generated_at": "2026-11-06T18:06:47+00:00"
 }

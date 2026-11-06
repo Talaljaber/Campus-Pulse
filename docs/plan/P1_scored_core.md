@@ -37,7 +37,7 @@
 
 - [x] Done
 - **Goal:** an honest holdout of new scenarios, hand-written by the developer (no LLM, which is a different method from the LLM-drafted augmentation) and committed before `train.py` exists (§6.1 #2, SPEC §6.1).
-- **Changed by [D-010](../PLAN.md#decision-log) (user decision):** the holdout is three sets in the official two-file layout (`data/our_test/set{1,2,3}_{text,labels}.csv`): set 1 hand-written by the developer, sets 2–3 written by Claude (`author_method=claude`, disclosed). `scripts/build_our_test.py` builds `our_test.csv` with the extra columns `test_set` and `scenario_family` and keeps the original ids (`HT-`, `T2-`, `T3-`), so the validator accepts `^[A-Z0-9]+-\d{4}$` ids and `author_method ∈ {hand, claude}`. See `data/our_test/README.md`.
+- **Changed by [D-010](../PLAN.md#decision-log) (user decision):** the holdout is a group of sets in the official two-file layout (`data/our_test/set<n>_{text,labels}.csv`), written by Claude (`author_method=claude`, disclosed). `scripts/build_our_test.py` builds `our_test.csv` with the extra columns `test_set` and `scenario_family` and keeps the original ids (`T1-`, `T2-`, ...), so the validator accepts `^[A-Z0-9]+-\d{4}$` ids. See `data/our_test/README.md`.
 - **Depends on:** [P0.12](P0_foundations.md#p0-12)
 - **Est / Cut:** 3 h (human writing; can start while [P0.11](P0_foundations.md#p0-11) deploys run) · Cut: no
 - **Files:**

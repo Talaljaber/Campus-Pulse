@@ -26,9 +26,14 @@ OUT = DIR / "our_test.csv"
 
 # set name -> (author_method, what the set measures). Report scores per set, never only pooled.
 SETS: dict[str, tuple[str, str]] = {
-    "set1": ("hand", "cross-lingual: training scenarios restated in the other language, official wrappers"),
-    "set2": ("claude", "unseen scenarios, official style (one core + official wrappers)"),
-    "set3": ("claude", "unseen scenarios, free student style (paraphrases, dialect, typos, code-switching)"),
+    "set1": ("claude", "unseen scenarios, official style (one core + official wrappers)"),
+    "set2": ("claude", "unseen scenarios, free student style (paraphrases, dialect, typos, code-switching)"),
+    "set3": (
+        "claude",
+        "hard realistic: near-miss priority pairs, tone traps, topic-vs-channel, code-switching,"
+        " campus vocabulary",
+    ),
+    "set4": ("claude", "final blind set: realistic mix, 144 rows, written without any model access"),
 }
 LANGS = ("en", "ar", "arabizi")
 COLUMNS = [
@@ -50,7 +55,7 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 
 def lang_of(family: str) -> str:
-    """The language token of a scenario_family such as `en_Facilities_1` or `t2_arabizi_Finance_0`."""
+    """The language token of a scenario_family such as `t1_en_Facilities_1` or `t1_arabizi_Finance_0`."""
     for token in family.split("_"):
         if token in LANGS:
             return token

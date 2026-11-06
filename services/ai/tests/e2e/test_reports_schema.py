@@ -49,7 +49,7 @@ def _load(name: str) -> dict[str, Any]:
 def test_metrics() -> None:
     m = _load("metrics.json")
     assert m["counts"]["oof_official"] == 432 and m["counts"]["our_test"] >= 60
-    assert {"our_test_set1", "our_test_set2", "our_test_set3"} <= set(m["counts"])
+    assert {"our_test_set1", "our_test_set2", "our_test_set3", "our_test_set4"} <= set(m["counts"])
     assert 0.0 <= m["ask_proxy_rate"] <= 1.0
 
 
@@ -125,6 +125,7 @@ def test_model_lab_matches_the_dto() -> None:
         pytest.skip("no model_lab.json")
     lab = json.loads(path.read_text(encoding="utf-8"))
     datasets = {r["dataset"] for r in lab["benchmark"]}
-    assert {"our_test_set1", "our_test_set2", "our_test_set3", "our_test", "oof_official"} <= datasets
+    sets = {"our_test_set1", "our_test_set2", "our_test_set3", "our_test_set4"}
+    assert sets | {"our_test", "oof_official"} <= datasets
     for row in lab["benchmark"]:
         dto.BenchmarkRowOut.model_validate(row)

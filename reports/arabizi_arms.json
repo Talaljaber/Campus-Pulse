@@ -1,4 +1,5 @@
 {
+  "note": "our_test numbers in this report were measured on an earlier version of data/our_test/our_test.csv; reports/benchmark.md holds the current ones.",
   "n_arabizi_rows": 258,
   "n_near_our_test": 69,
   "n_kept": 189,

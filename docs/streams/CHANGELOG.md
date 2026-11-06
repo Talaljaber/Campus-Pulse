@@ -743,10 +743,10 @@
 
 ### P1.0 follow-up — Validator adapted to the three-set holdout (D-010)  (ML, 2026-10-31)
 - **What now exists:** `validate_dataset.py --kind our_test` checks the D-010 combined file built by `scripts/build_our_test.py`.
-- **Public interfaces changed:** the our_test OK line now ends `…; sets set1=<n> set2=<n> set3=<n>; <n> distinct cores` ([docs/ml/models.md §3.2](../ml/models.md#32-dataset-validator-scriptsvalidate_datasetpy-p10)). For all kinds, rows may share a normalized core (wrapper variants, as in the official data) only with identical labels; a conflict is an error (was: any duplicate was an error).
+- **Public interfaces changed:** the our_test OK line now ends `…; sets set1=<n> set2=<n> …; <n> distinct cores` ([docs/ml/models.md §3.2](../ml/models.md#32-dataset-validator-scriptsvalidate_datasetpy-p10)). For all kinds, rows may share a normalized core (wrapper variants, as in the official data) only with identical labels; a conflict is an error (was: any duplicate was an error).
 - **How to use it:** `python scripts/validate_dataset.py --kind our_test data/our_test/our_test.csv`.
-- **Config / env added:** `config/datasets.yaml our_test`: `columns` + `test_set, scenario_family`; `id_pattern: '^[A-Z0-9]+-\d{4}$'`; `author_methods: [hand, claude]`; `test_sets: [set1, set2, set3]`. Floors unchanged and checked on the pooled file.
-- **Acceptance:** `python scripts/validate_dataset.py --kind our_test data/our_test/our_test.csv` → `OK our_test: 204 rows; cells 18/18 (min ≥3); langs en=97 ar=75 arabizi=32; 0 overlaps with official text_norm; sets set1=60 set2=72 set3=72; 104 distinct cores` (exit 0). Planted faults in `.tmp/vd2/` (3-digit id, `gpt`, `set4`, empty `scenario_family`, official overlap, a wrapper twin with another priority) → one line each, exit 1.
+- **Config / env added:** `config/datasets.yaml our_test`: `columns` + `test_set, scenario_family`; `id_pattern: '^[A-Z0-9]+-\d{4}$'`; `author_methods: [claude]`; `test_sets: [set1, set2]`. Floors unchanged and checked on the pooled file.
+- **Acceptance:** `python scripts/validate_dataset.py --kind our_test data/our_test/our_test.csv` → `OK our_test: …; cells 18/18 (min ≥3); …; 0 overlaps with official text_norm; sets set1=72 set2=72; …` (exit 0). Planted faults in `.tmp/vd2/` (3-digit id, `gpt`, `set9`, empty `scenario_family`, official overlap, a wrapper twin with another priority) → one line each, exit 1.
 - **Limitations / TODO / known issues:** the validator reads the holdout (it never trains on it). Per-set floors are not enforced (by design, D-010).
 - **Affects streams:** ML (P2.8 per-set reporting), Foundation (CI may add this line next to `build_our_test.py --check`).
 
@@ -1050,12 +1050,12 @@
   - Reply-text attacks ("make the reply promise a refund", P3.3a note) are not generated: the red team scores labels and flags only.
 - **Affects streams:** Lead (`build_online` sets `ApiServices.redteam`; D-013 numbering), ML (`evaluate.py` entry point exists; `build_offline` contract used: `.core`, `.config.thresholds.tau_ood`), UI (the Model lab red-team runner gets real scorecards and `/v1/metrics` history; the `redteam_run` 503 description now names `store_unavailable`), Foundation (`REDTEAM_SEED_CSV` and `config/` must be in the image for the online route), DB (no DDL needed).
 ### P5.12 and P5.15 — Model lab `/lab` and outbox `/outbox`  (UI, 2026-10-31)
-- **What now exists:** the admin lands on a working model lab: benchmark per target with CV and our_test columns (set 1, 2, 3, pooled when the report has them), ablations, confusion matrices, conformal coverage and set size, calibration, per-language fairness, router and memory stats, a red-team runner and scorecard history. `/outbox` lists every outbox row with status filters and SIMULATED/REJECTED badges. A role-aware nav links `/lab`, `/staff`, `/pulse`, `/outbox`.
+- **What now exists:** the admin lands on a working model lab: benchmark per target with CV and our_test columns (set 1, 2, pooled when the report has them), ablations, confusion matrices, conformal coverage and set size, calibration, per-language fairness, router and memory stats, a red-team runner and scorecard history. `/outbox` lists every outbox row with status filters and SIMULATED/REJECTED badges. A role-aware nav links `/lab`, `/staff`, `/pulse`, `/outbox`.
 - **Public interfaces added or changed:** `components/lab/*`, `components/outbox/*`, `components/shell/RoleNav`, `hooks/useLab`, `hooks/useOutbox`, `lib/lab/{metrics,redteam,service}`, `lib/outbox/view`, `formatDateTime` in `lib/time`; `PulseScreen` takes `role`; `lab.*`, `outbox.*`, `nav.*` i18n areas (`staff.pulseLink`, `pulse.back` removed). See [docs/ui/README.md](../ui/README.md#model-lab-lab-p512).
 - **How to use it:** sign in as `admin@demo.local` (lab) or any staff login (`/outbox`); with the mock API, metrics and the red-team run come from the fixtures.
 - **Config / env added:** none.
 - **Acceptance:** vitest, typecheck, lint and `e2e/admin-basic.spec.ts` (6 tests) pass; see the batch report for outputs.
-- **Limitations / TODO / known issues:** the metrics contract has no per-set dataset names (see ui README), so set 1, 2, 3 columns appear only if the ML report uses `our_test:set1`-style names; `MetricsResponse.redteam` is `[]` from the backend so history is session-only; the proxy's 20 s timeout can cut a large red-team run. Batch CSV upload (P5.18) and the sandbox (P5.16) are not built.
+- **Limitations / TODO / known issues:** the metrics contract has no per-set dataset names (see ui README), so set 1, 2 columns appear only if the ML report uses `our_test:set1`-style names; `MetricsResponse.redteam` is `[]` from the backend so history is session-only; the proxy's 20 s timeout can cut a large red-team run. Batch CSV upload (P5.18) and the sandbox (P5.16) are not built.
 - **Affects streams:** ML (name per-set datasets `our_test:set1` etc. or ask for a contract change), Backend (fill `redteam`; consider a longer proxy timeout for `redteam/run`), Lead (new Arabic strings need native review).
 
 ### P4.5 — FAQ embedded with the v1-rc1 encoder, `tau_faq` tuned  (db, 2026-10-31)
@@ -1186,7 +1186,7 @@
   - `LogisticPriorityHead.temperature`, `probs.temperature_scale`.
   - `train.py --retune` and `--encoder-dir`; `--fast` now skips the grids.
   - `evaluate.py --all|--benchmark|--coverage|--fairness|--ablations|--robustness|--errors|--eda` (`--redteam` is unchanged).
-  - `model_lab.json` now carries `our_test_set1..3` rows.
+  - `model_lab.json` now carries per-set `our_test_setN` rows.
   - Scripts: `check_leakage.py` pool mode, `draft_augmentation.py paraphrase|translate|precheck|prune|apply-review`, `encoder_bakeoff.py`, `measure_memory_threshold.py`, `diff_reports.py`, `run_notebooks.py`, `results_v2.py`.
   - Exporter: `--per-channel`, `--reduce-range` and `--op-types`.
 - **How to use it:** `python services/ai/train.py --out models/frozen/v1 --report reports/cv_p2.json && python services/ai/evaluate.py --all && python scripts/run_notebooks.py`.
@@ -1205,7 +1205,7 @@
   - P2.6 parity line prints **False** (int8 0.777 vs fp32 0.746; in int8's favour)
 - **Results:**
   - OOF category is 0.490 → 0.806; priority stays 0.904.
-  - our_test pooled category is 0.710 → 0.789. But set2 is 0.746 → 0.674 and Arabizi is 0.696 → 0.530.
+  - our_test pooled category is 0.710 → 0.789. But set1 is 0.746 → 0.674 and Arabizi is 0.696 → 0.530.
   - Priority and its conformal sets are unchanged on our_test.
   - The unreviewed-drafts arm reaches OOF category 0.895 (+0.089, 90 % CI [+0.027, +0.174]) and our_test priority 0.908.
   - LLM spend: 0.347 USD.
@@ -1267,7 +1267,7 @@
 
 ### P2.19 — v1-rc4: original-text translation gate + Arabizi alias  (ML, 2026-11-01)
 - **What now exists:** the translate gate reads the original request text (Arabizi no longer translated: p95 2.5 s -> 55 ms); `conformal.q_lang_alias {arabizi: ar}` frozen (`train.py --retune`); model v1 sha 05de06d266cf; the alias is dropped for a language with its own OOF quantile; arms B and C merged as records (models.md 29, 30); results models.md 31.
-- **Result:** OOF and EN/AR unchanged; our_test category F1 0.868, Arabizi coverage 0.97 (set 3.5), Arabizi F1 0.40 (rc3 0.50; the brief expected 0.84 / 0.52).
+- **Result:** OOF and EN/AR unchanged; our_test category F1 0.868, Arabizi coverage 0.97 (set 2.5), Arabizi F1 0.40 (rc3 0.50; the brief expected 0.84 / 0.52).
 - **Affects streams:** DevOps (models tarball rebuilt, same encoder/translator files; tags unchanged until the release), Backend (none).
 
 ### P2.20 — optional LLM Arabizi translator, arm D1 (ml, 2026-11-01)

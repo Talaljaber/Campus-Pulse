@@ -11,8 +11,8 @@ Checks per kind:
 - all kinds: columns exactly as configured, UTF-8 (a BOM is accepted, read with `utf-8-sig`), unique
   `request_id` matching the configured pattern, non-empty text, `lang` in the configured set, labels spelled
   exactly as the official labels.
-- our_test (D-010: built from set1..set3 by `scripts/build_our_test.py`): `author_method` in
-  {hand, claude}, `test_set` in {set1, set2, set3}, non-empty `scenario_family` and `notes`; on the POOLED
+- our_test (D-010: built from the set files by `scripts/build_our_test.py`): `author_method` and
+  `test_set` in the lists of `config/datasets.yaml`, non-empty `scenario_family` and `notes`; on the POOLED
   file: at least `min_rows` rows,
   `min_per_cell` rows in each of the 18 category x priority cells, `min_per_lang` rows per language,
   `min_wrapped_rows` rows carrying an official-style wrapper, no duplicate normalized text, and no row whose
@@ -211,7 +211,7 @@ def _validate_our_test(df: pd.DataFrame, rules: Mapping[str, Any], official: Off
             errors.append(f"{row.request_id}: scenario_family is required")
         if not row.notes.strip():
             errors.append(f"{row.request_id}: notes must say how the row was written")
-    # floors are checked on the pooled file (D-010: set1 alone covers 6/18 cells and no Arabizi)
+    # floors are checked on the pooled file (D-010)
     if len(df) < rules["min_rows"]:
         errors.append(f"{len(df)} rows; need >= {rules['min_rows']}")
     cells = Counter(zip(df.category, df.priority, strict=True))

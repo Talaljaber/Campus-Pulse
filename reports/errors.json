@@ -1,6 +1,6 @@
 {
   "artifact_version": "v1",
-  "generated_at": "2026-11-01T10:45:47+00:00",
+  "generated_at": "2026-11-06T18:06:47+00:00",
   "note": "OOF neighbours are not stored (each fold has its own index); our_test rows show the top-3 neighbours of the frozen index",
   "oof_official_groups": [
     {
@@ -141,7 +141,7 @@
       ],
       "ood_score": 0.8324,
       "pred": "Registration / high",
-      "request_id": "T2-0006",
+      "request_id": "T1-0006",
       "set_category": [
         "Academic Support",
         "Finance",
@@ -151,7 +151,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "URGENT: el min7a ma nazlat w iza ma dafa3t el yom byensa7ab tasjeeli",
       "wrong": [
         "category"
@@ -184,14 +184,14 @@
       ],
       "ood_score": 0.9076,
       "pred": "Transportation / high",
-      "request_id": "T2-0007",
+      "request_id": "T1-0007",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "ارجو المساعدة، السواق ما وقف بموقف الباص اليوم الصبح",
       "wrong": [
         "priority"
@@ -224,14 +224,14 @@
       ],
       "ood_score": 0.8116,
       "pred": "Facilities / medium",
-      "request_id": "T2-0008",
+      "request_id": "T1-0008",
       "set_category": [
         "Facilities"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "ممكن تساعدوني؟ الحنفية بحمام الطابق الثاني بتنقط",
       "wrong": [
         "priority"
@@ -266,7 +266,7 @@
       ],
       "ood_score": 0.8178,
       "pred": "Academic Support / high",
-      "request_id": "T2-0009",
+      "request_id": "T1-0009",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -276,7 +276,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "fi ri7et ghaz 2awiye bil mokhtabar",
       "wrong": [
         "category"
@@ -309,7 +309,7 @@
       ],
       "ood_score": 0.8359,
       "pred": "Academic Support / high",
-      "request_id": "T2-0016",
+      "request_id": "T1-0016",
       "set_category": [
         "Academic Support",
         "Finance",
@@ -319,7 +319,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "marhaba, el min7a ma nazlat w iza ma dafa3t el yom byensa7ab tasjeeli",
       "wrong": [
         "category"
@@ -352,14 +352,14 @@
       ],
       "ood_score": 0.9076,
       "pred": "Transportation / high",
-      "request_id": "T2-0017",
+      "request_id": "T1-0017",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "السواق ما وقف بموقف الباص اليوم الصبح",
       "wrong": [
         "priority"
@@ -392,14 +392,14 @@
       ],
       "ood_score": 0.8856,
       "pred": "Transportation / medium",
-      "request_id": "T2-0018",
+      "request_id": "T1-0018",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "The shuttle broke down on the highway and students are stuck there Please respond when possible.",
       "wrong": [
         "priority"
@@ -432,7 +432,7 @@
       ],
       "ood_score": 0.8359,
       "pred": "Academic Support / high",
-      "request_id": "T2-0023",
+      "request_id": "T1-0023",
       "set_category": [
         "Academic Support",
         "Finance",
@@ -441,7 +441,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "law sama7t sakkaro el shu3ba w shalooni mn mada ijbariye w el idafe btskker el yom",
       "wrong": [
         "category"
@@ -474,7 +474,7 @@
       ],
       "ood_score": 0.8321,
       "pred": "Academic Support / medium",
-      "request_id": "T2-0027",
+      "request_id": "T1-0027",
       "set_category": [
         "Academic Support",
         "IT Support",
@@ -484,7 +484,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "fi bas lal jam3a yom el jum3a? w shukran",
       "wrong": [
         "category",
@@ -518,14 +518,14 @@
       ],
       "ood_score": 0.8856,
       "pred": "Transportation / medium",
-      "request_id": "T2-0028",
+      "request_id": "T1-0028",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "URGENT: The shuttle broke down on the highway and students are stuck there",
       "wrong": [
         "priority"
@@ -560,7 +560,7 @@
       ],
       "ood_score": 0.8178,
       "pred": "Academic Support / high",
-      "request_id": "T2-0030",
+      "request_id": "T1-0030",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -570,7 +570,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "URGENT: fi ri7et ghaz 2awiye bil mokhtabar",
       "wrong": [
         "category"
@@ -603,7 +603,7 @@
       ],
       "ood_score": 0.8806,
       "pred": "Registration / medium",
-      "request_id": "T2-0031",
+      "request_id": "T1-0031",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -613,7 +613,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "سؤال: علامة الميد ترم مش منزلة صح على النظام",
       "wrong": [
         "category"
@@ -646,7 +646,7 @@
       ],
       "ood_score": 0.8301,
       "pred": "Transportation / medium",
-      "request_id": "T2-0037",
+      "request_id": "T1-0037",
       "set_category": [
         "Academic Support",
         "IT Support",
@@ -655,7 +655,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "fi bas lal jam3a yom el jum3a?",
       "wrong": [
         "priority"
@@ -688,14 +688,14 @@
       ],
       "ood_score": 0.9076,
       "pred": "Transportation / high",
-      "request_id": "T2-0038",
+      "request_id": "T1-0038",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "مرحبا، السواق ما وقف بموقف الباص اليوم الصبح",
       "wrong": [
         "priority"
@@ -728,14 +728,14 @@
       ],
       "ood_score": 0.8116,
       "pred": "Facilities / medium",
-      "request_id": "T2-0039",
+      "request_id": "T1-0039",
       "set_category": [
         "Facilities"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "الحنفية بحمام الطابق الثاني بتنقط وشكرا",
       "wrong": [
         "priority"
@@ -770,7 +770,7 @@
       ],
       "ood_score": 0.827,
       "pred": "Academic Support / high",
-      "request_id": "T2-0040",
+      "request_id": "T1-0040",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -780,7 +780,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "marhaba, fi ri7et ghaz 2awiye bil mokhtabar",
       "wrong": [
         "category"
@@ -813,7 +813,7 @@
       ],
       "ood_score": 0.8806,
       "pred": "Registration / medium",
-      "request_id": "T2-0041",
+      "request_id": "T1-0041",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -823,7 +823,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "علامة الميد ترم مش منزلة صح على النظام",
       "wrong": [
         "category"
@@ -856,7 +856,7 @@
       ],
       "ood_score": 0.8306,
       "pred": "Academic Support / high",
-      "request_id": "T2-0047",
+      "request_id": "T1-0047",
       "set_category": [
         "Academic Support",
         "Finance",
@@ -866,7 +866,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "law sama7t el min7a ma nazlat w iza ma dafa3t el yom byensa7ab tasjeeli",
       "wrong": [
         "category"
@@ -899,14 +899,14 @@
       ],
       "ood_score": 0.9076,
       "pred": "Transportation / high",
-      "request_id": "T2-0048",
+      "request_id": "T1-0048",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "مرحبا يا جماعة السواق ما وقف بموقف الباص اليوم الصبح",
       "wrong": [
         "priority"
@@ -939,14 +939,14 @@
       ],
       "ood_score": 0.8116,
       "pred": "Facilities / medium",
-      "request_id": "T2-0049",
+      "request_id": "T1-0049",
       "set_category": [
         "Facilities"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "الحنفية بحمام الطابق الثاني بتنقط",
       "wrong": [
         "priority"
@@ -979,7 +979,7 @@
       ],
       "ood_score": 0.8324,
       "pred": "Registration / high",
-      "request_id": "T2-0057",
+      "request_id": "T1-0057",
       "set_category": [
         "Academic Support",
         "Finance",
@@ -989,7 +989,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "el min7a ma nazlat w iza ma dafa3t el yom byensa7ab tasjeeli",
       "wrong": [
         "category"
@@ -1022,7 +1022,7 @@
       ],
       "ood_score": 0.8301,
       "pred": "Transportation / medium",
-      "request_id": "T2-0058",
+      "request_id": "T1-0058",
       "set_category": [
         "Academic Support",
         "IT Support",
@@ -1031,7 +1031,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "URGENT: fi bas lal jam3a yom el jum3a?",
       "wrong": [
         "priority"
@@ -1064,14 +1064,14 @@
       ],
       "ood_score": 0.8856,
       "pred": "Transportation / medium",
-      "request_id": "T2-0059",
+      "request_id": "T1-0059",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "Hi team, The shuttle broke down on the highway and students are stuck there",
       "wrong": [
         "priority"
@@ -1104,7 +1104,7 @@
       ],
       "ood_score": 0.8806,
       "pred": "Registration / medium",
-      "request_id": "T2-0062",
+      "request_id": "T1-0062",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -1114,7 +1114,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "عندي مشكلة: علامة الميد ترم مش منزلة صح على النظام",
       "wrong": [
         "category"
@@ -1147,7 +1147,7 @@
       ],
       "ood_score": 0.8544,
       "pred": "IT Support / medium",
-      "request_id": "T2-0068",
+      "request_id": "T1-0068",
       "set_category": [
         "Academic Support",
         "IT Support",
@@ -1157,7 +1157,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "3indi moshkle: fi bas lal jam3a yom el jum3a?",
       "wrong": [
         "category",
@@ -1191,14 +1191,14 @@
       ],
       "ood_score": 0.8856,
       "pred": "Transportation / medium",
-      "request_id": "T2-0069",
+      "request_id": "T1-0069",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "The shuttle broke down on the highway and students are stuck there",
       "wrong": [
         "priority"
@@ -1231,14 +1231,14 @@
       ],
       "ood_score": 0.8116,
       "pred": "Facilities / medium",
-      "request_id": "T2-0070",
+      "request_id": "T1-0070",
       "set_category": [
         "Facilities"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "مرحبا يا جماعة الحنفية بحمام الطابق الثاني بتنقط",
       "wrong": [
         "priority"
@@ -1273,7 +1273,7 @@
       ],
       "ood_score": 0.8174,
       "pred": "Academic Support / high",
-      "request_id": "T2-0071",
+      "request_id": "T1-0071",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -1282,7 +1282,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "law sama7t fi ri7et ghaz 2awiye bil mokhtabar",
       "wrong": [
         "category"
@@ -1315,7 +1315,7 @@
       ],
       "ood_score": 0.8806,
       "pred": "Registration / medium",
-      "request_id": "T2-0072",
+      "request_id": "T1-0072",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -1325,7 +1325,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set2",
+      "test_set": "set1",
       "text": "مرحبا، علامة الميد ترم مش منزلة صح على النظام",
       "wrong": [
         "category"
@@ -1358,14 +1358,14 @@
       ],
       "ood_score": 0.8615,
       "pred": "Registration / medium",
-      "request_id": "T3-0001",
+      "request_id": "T2-0001",
       "set_category": [
         "Registration"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "hey what's the max credit hours i can register this semester?",
       "wrong": [
         "priority"
@@ -1398,14 +1398,14 @@
       ],
       "ood_score": 0.895,
       "pred": "IT Support / medium",
-      "request_id": "T3-0005",
+      "request_id": "T2-0005",
       "set_category": [
         "IT Support"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "I got charged a lab fee but my course has no lab",
       "wrong": [
         "category"
@@ -1438,7 +1438,7 @@
       ],
       "ood_score": 0.8365,
       "pred": "Academic Support / medium",
-      "request_id": "T3-0011",
+      "request_id": "T2-0011",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -1448,7 +1448,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "plz ana bel tawari2 w el final hala2, shu a3mel?",
       "wrong": [
         "priority"
@@ -1481,7 +1481,7 @@
       ],
       "ood_score": 0.858,
       "pred": "Registration / low",
-      "request_id": "T3-0015",
+      "request_id": "T2-0015",
       "set_category": [
         "Academic Support",
         "Finance",
@@ -1490,7 +1490,7 @@
       "set_priority": [
         "low"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "بدي اعرف سياسة استرجاع الرسوم للمواد المسحوبة",
       "wrong": [
         "category"
@@ -1523,7 +1523,7 @@
       ],
       "ood_score": 0.8453,
       "pred": "Registration / high",
-      "request_id": "T3-0016",
+      "request_id": "T2-0016",
       "set_category": [
         "Academic Support",
         "Registration"
@@ -1531,7 +1531,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "ma khalooni adkhol el emti7an el yom 3shan el dafe3 mesh mbayyen, w ana dafe3!!",
       "wrong": [
         "category"
@@ -1564,14 +1564,14 @@
       ],
       "ood_score": 0.8239,
       "pred": "Transportation / medium",
-      "request_id": "T3-0018",
+      "request_id": "T2-0018",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "el bus da3am sayyara w e7na 3al autostrad, shu ne3mal?",
       "wrong": [
         "priority"
@@ -1604,7 +1604,7 @@
       ],
       "ood_score": 0.8338,
       "pred": "Academic Support / medium",
-      "request_id": "T3-0020",
+      "request_id": "T2-0020",
       "set_category": [
         "Academic Support",
         "IT Support",
@@ -1613,7 +1613,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "بدي رسالة توصية للماجستير، شو الطريقة؟",
       "wrong": [
         "priority"
@@ -1646,14 +1646,14 @@
       ],
       "ood_score": 0.8626,
       "pred": "Academic Support / medium",
-      "request_id": "T3-0022",
+      "request_id": "T2-0022",
       "set_category": [
         "Academic Support"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "I want to overload next semester, how many hours max?",
       "wrong": [
         "category",
@@ -1687,7 +1687,7 @@
       ],
       "ood_score": 0.8442,
       "pred": "Registration / medium",
-      "request_id": "T3-0025",
+      "request_id": "T2-0025",
       "set_category": [
         "Academic Support",
         "Finance",
@@ -1697,7 +1697,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "اذا سحبت مادة بترجعلي مصاريها؟",
       "wrong": [
         "category",
@@ -1706,7 +1706,9 @@
     },
     {
       "detected_lang": "arabizi",
-      "flags": [],
+      "flags": [
+        "safety"
+      ],
       "gold": "Transportation / high",
       "lang": "arabizi",
       "neighbors": [
@@ -1730,8 +1732,8 @@
         }
       ],
       "ood_score": 0.8525,
-      "pred": "IT Support / medium",
-      "request_id": "T3-0028",
+      "pred": "IT Support / high",
+      "request_id": "T2-0028",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -1740,13 +1742,12 @@
         "Transportation"
       ],
       "set_priority": [
-        "medium"
+        "high"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "sar 7adeth lal bas tabe3 el jam3a, ma 7ada mjarra7 bas e7na wa2fin 3al share3",
       "wrong": [
-        "category",
-        "priority"
+        "category"
       ]
     },
     {
@@ -1776,7 +1777,7 @@
       ],
       "ood_score": 0.8501,
       "pred": "IT Support / medium",
-      "request_id": "T3-0029",
+      "request_id": "T2-0029",
       "set_category": [
         "Academic Support",
         "Facilities",
@@ -1785,7 +1786,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "نص الكراسي بالقاعة 112 مكسورة والطلاب واقفين",
       "wrong": [
         "category"
@@ -1818,14 +1819,14 @@
       ],
       "ood_score": 0.855,
       "pred": "Facilities / medium",
-      "request_id": "T3-0030",
+      "request_id": "T2-0030",
       "set_category": [
         "Facilities"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "please send someone now, a socket in the library is smoking",
       "wrong": [
         "priority"
@@ -1858,14 +1859,14 @@
       ],
       "ood_score": 0.8376,
       "pred": "Academic Support / low",
-      "request_id": "T3-0032",
+      "request_id": "T2-0032",
       "set_category": [
         "Academic Support"
       ],
       "set_priority": [
         "low"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "Can I take more than 18 credit hours if my GPA is high? Who approves that?",
       "wrong": [
         "category"
@@ -1898,14 +1899,14 @@
       ],
       "ood_score": 0.8656,
       "pred": "IT Support / medium",
-      "request_id": "T3-0034",
+      "request_id": "T2-0034",
       "set_category": [
         "IT Support"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "Hi, I'd like to install MATLAB on my laptop using the uni license, what are the steps?",
       "wrong": [
         "priority"
@@ -1938,14 +1939,14 @@
       ],
       "ood_score": 0.8699,
       "pred": "Academic Support / medium",
-      "request_id": "T3-0036",
+      "request_id": "T2-0036",
       "set_category": [
         "Academic Support"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "there's a lab fee on my statement for a course that doesn't even have a lab session",
       "wrong": [
         "category"
@@ -1978,14 +1979,14 @@
       ],
       "ood_score": 0.8322,
       "pred": "Transportation / medium",
-      "request_id": "T3-0037",
+      "request_id": "T2-0037",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "does the uni bus go to Zarqa?",
       "wrong": [
         "priority"
@@ -1994,7 +1995,8 @@
     {
       "detected_lang": "en",
       "flags": [
-        "empty_set"
+        "empty_set",
+        "empty_set_cat"
       ],
       "gold": "Facilities / low",
       "lang": "en",
@@ -2020,14 +2022,14 @@
       ],
       "ood_score": 0.8312,
       "pred": "IT Support / low",
-      "request_id": "T3-0039",
+      "request_id": "T2-0039",
       "set_category": [
         "IT Support"
       ],
       "set_priority": [
         "low"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "hey where can I pray on campus between lectures",
       "wrong": [
         "category"
@@ -2060,7 +2062,7 @@
       ],
       "ood_score": 0.8041,
       "pred": "Finance / medium",
-      "request_id": "T3-0046",
+      "request_id": "T2-0046",
       "set_category": [
         "Finance",
         "Transportation"
@@ -2068,7 +2070,7 @@
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "لو سمحتو، بسترد فلوس المادة اذا سحبتها؟",
       "wrong": [
         "priority"
@@ -2076,7 +2078,9 @@
     },
     {
       "detected_lang": "arabizi",
-      "flags": [],
+      "flags": [
+        "urgency_floor:deadline_24h"
+      ],
       "gold": "Finance / high",
       "lang": "arabizi",
       "neighbors": [
@@ -2101,7 +2105,7 @@
       ],
       "ood_score": 0.844,
       "pred": "Academic Support / high",
-      "request_id": "T3-0057",
+      "request_id": "T2-0057",
       "set_category": [
         "Academic Support",
         "Finance",
@@ -2110,7 +2114,7 @@
       "set_priority": [
         "high"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "dafa3t el 2est bas lissa 3amlin 3alay hold w mamnoo3 a2addem el final el yom",
       "wrong": [
         "category"
@@ -2143,14 +2147,14 @@
       ],
       "ood_score": 0.8443,
       "pred": "Transportation / medium",
-      "request_id": "T3-0059",
+      "request_id": "T2-0059",
       "set_category": [
         "Transportation"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "accident lal bus 3and el dawwar, plz ib3atolna bas tani",
       "wrong": [
         "priority"
@@ -2183,14 +2187,14 @@
       ],
       "ood_score": 0.8685,
       "pred": "Academic Support / low",
-      "request_id": "T3-0062",
+      "request_id": "T2-0062",
       "set_category": [
         "Academic Support"
       ],
       "set_priority": [
         "low"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "Hi, is there another way to reach my advisor? no response since two weeks",
       "wrong": [
         "priority"
@@ -2223,14 +2227,14 @@
       ],
       "ood_score": 0.8564,
       "pred": "Registration / medium",
-      "request_id": "T3-0063",
+      "request_id": "T2-0063",
       "set_category": [
         "Registration"
       ],
       "set_priority": [
         "medium"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "quick question about the credit hour limit, is 21 hours allowed for seniors",
       "wrong": [
         "priority"
@@ -2263,66 +2267,24 @@
       ],
       "ood_score": 0.793,
       "pred": "IT Support / low",
-      "request_id": "T3-0068",
+      "request_id": "T2-0068",
       "set_category": [
         "IT Support"
       ],
       "set_priority": [
         "low"
       ],
-      "test_set": "set3",
+      "test_set": "set2",
       "text": "Is there a GJU shuttle from Zarqa or only from Amman?",
       "wrong": [
         "category"
       ]
     },
     {
-      "detected_lang": "arabizi",
-      "flags": [],
-      "gold": "Transportation / high",
-      "lang": "arabizi",
-      "neighbors": [
-        {
-          "category": "Registration",
-          "priority": "high",
-          "sim": 0.8405,
-          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
-        },
-        {
-          "category": "Transportation",
-          "priority": "medium",
-          "sim": 0.8384,
-          "text": "my bus pass stopped working this morning"
-        },
-        {
-          "category": "IT Support",
-          "priority": "high",
-          "sim": 0.8274,
-          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
-        }
-      ],
-      "ood_score": 0.8405,
-      "pred": "Transportation / medium",
-      "request_id": "T3-0069",
-      "set_category": [
-        "Facilities",
-        "IT Support",
-        "Registration",
-        "Transportation"
-      ],
-      "set_priority": [
-        "medium"
-      ],
-      "test_set": "set3",
-      "text": "el bas 3emel 7adeth 3al taree2 w fi tollab ma3na",
-      "wrong": [
-        "priority"
-      ]
-    },
-    {
       "detected_lang": "en",
       "flags": [
-        "empty_set"
+        "empty_set",
+        "empty_set_cat"
       ],
       "gold": "Facilities / low",
       "lang": "en",
@@ -2348,7 +2310,1093 @@
       ],
       "ood_score": 0.8018,
       "pred": "Facilities / medium",
-      "request_id": "T3-0070",
+      "request_id": "T2-0070",
+      "set_category": [
+        "Facilities"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set2",
+      "text": "could someone tell me where the closest prayer room to the library is",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Academic Support / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.7824,
+          "text": "i need advice choosing an elective course"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.7745,
+          "text": "i need help understanding the prerequisite rule"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.7685,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.7824,
+      "pred": "Academic Support / medium",
+      "request_id": "T3-0001",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "في دروس تقوية لمادة التفاضل والتكامل؟ حدا بعرف وين بتصير",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Transportation / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8441,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8433,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8395,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8441,
+      "pred": "Transportation / medium",
+      "request_id": "T3-0002",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "it's 9pm, the evening shuttle never came to pick me up after the late lab and I'm alone at the stop. no taxis around here",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Finance / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8394,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8367,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8355,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8394,
+      "pred": "Registration / high",
+      "request_id": "T3-0003",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set3",
+      "text": "el yom akher yom la tajdeed el min7a w maktab el maliye msakker",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Academic Support / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8528,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "medium",
+          "sim": 0.8447,
+          "text": "the exam schedule has two tests at the same time"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8411,
+          "text": "the learning platform is unavailable during an online quiz"
+        }
+      ],
+      "ood_score": 0.8528,
+      "pred": "IT Support / low",
+      "request_id": "T3-0005",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "where do they post the final exam schedule? is it on MyGJU or e-learning",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "IT Support / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8752,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8674,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8604,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        }
+      ],
+      "ood_score": 0.8752,
+      "pred": "Academic Support / medium",
+      "request_id": "T3-0009",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "عندي امتحان شفوي على تيمز هلأ ومش قادر ادخل الاجتماع، بطلعلي انه الحساب مش مصرح",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Transportation / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8572,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8439,
+          "text": "the university bus is running twenty minutes late"
+        },
+        {
+          "category": "Transportation",
+          "priority": "low",
+          "sim": 0.8338,
+          "text": "وين جدول الباصات"
+        }
+      ],
+      "ood_score": 0.8572,
+      "pred": "Transportation / high",
+      "request_id": "T3-0012",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set3",
+      "text": "الباص طلع قبل موعده بربع ساعة اليوم الصبح وراح علي، اجيت بتكسي",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Academic Support / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8604,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8539,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8495,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8604,
+      "pred": "Registration / high",
+      "request_id": "T3-0014",
+      "set_category": [
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set3",
+      "text": "My final is right now in H-101 and my name isn't on the hall list, the proctor won't let me in without approval.",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Transportation / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8677,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        },
+        {
+          "category": "Transportation",
+          "priority": "low",
+          "sim": 0.8554,
+          "text": "وين جدول الباصات"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8384,
+          "text": "my bus pass stopped working this morning"
+        }
+      ],
+      "ood_score": 0.8677,
+      "pred": "Transportation / high",
+      "request_id": "T3-0019",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set3",
+      "text": "الباص كل يوم مليان والطلاب بضلوا واقفين، بدنا باص زيادة",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "low",
+          "sim": 0.8856,
+          "text": "وين جدول الباصات"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8819,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8747,
+          "text": "باص الجامعه اتاخر عن موعده"
+        }
+      ],
+      "ood_score": 0.8856,
+      "pred": "Transportation / medium",
+      "request_id": "T3-0021",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "الباص اللي رايح على إربد من وين بوقف بالجامعة؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [
+        "empty_set",
+        "empty_set_cat"
+      ],
+      "gold": "Academic Support / medium",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8376,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "medium",
+          "sim": 0.8255,
+          "text": "i cannot access the feedback on my assignment"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.823,
+          "text": "my university account is locked and i have an online exam today"
+        }
+      ],
+      "ood_score": 0.8376,
+      "pred": "IT Support / medium",
+      "request_id": "T3-0022",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "My study plan on MyGJU still lists Programming 1 as remaining even though I passed it last year with a B",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Academic Support / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8787,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8602,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8592,
+          "text": "my university account is locked and i have an online exam today"
+        }
+      ],
+      "ood_score": 0.8787,
+      "pred": "Academic Support / medium",
+      "request_id": "T3-0024",
+      "set_category": [
+        "Academic Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "امتحاني النهائي هلأ واسمي مش موجود بكشف القاعة والمراقب مش راضي يدخلني",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Facilities / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8423,
+          "text": "a laboratory door is stuck and students cannot leave"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8326,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "medium",
+          "sim": 0.8289,
+          "text": "the student portal shows an error when i upload a file"
+        }
+      ],
+      "ood_score": 0.8423,
+      "pred": "IT Support / low",
+      "request_id": "T3-0027",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "كيف بحجز غرفة دراسة بالمكتبة لمجموعة؟",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [
+        "empty_set",
+        "empty_set_cat"
+      ],
+      "gold": "Facilities / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8402,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.8334,
+          "text": "i need advice choosing an elective course"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8308,
+          "text": "a laboratory door is stuck and students cannot leave"
+        }
+      ],
+      "ood_score": 0.8402,
+      "pred": "Registration / low",
+      "request_id": "T3-0028",
+      "set_category": [
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "URGENT!! how do I book one of the group study rooms in the library (building L)? our project meeting is next week",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Registration / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8485,
+          "text": "i cannot add my courses because the registration portal rejects my request"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8408,
+          "text": "the system removed my registered course without warning"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8332,
+          "text": "my tuition payment is not reflected and registration closes today"
+        }
+      ],
+      "ood_score": 0.8485,
+      "pred": "Registration / medium",
+      "request_id": "T3-0029",
+      "set_category": [
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "is the internship course registered like a normal course on MyGJU or do I fill a paper form somewhere",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8213,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8167,
+          "text": "i need help understanding the prerequisite rule"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.809,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8213,
+      "pred": "Registration / low",
+      "request_id": "T3-0031",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "kam si3r el sa3a el m3tamade la t5asos el IT? sa2alt 3al e-learning w ma 7ada rad",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "IT Support / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.862,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8596,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8439,
+          "text": "في مي بتسرب جنب كهربا المختبر"
+        }
+      ],
+      "ood_score": 0.862,
+      "pred": "IT Support / medium",
+      "request_id": "T3-0033",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "مرحبا، الدكتور حكى المحاضرات رح تكون على تيمز، كيف بنزل البرنامج وبدخل بحساب الجامعة؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "IT Support / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8546,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8508,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.842,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        }
+      ],
+      "ood_score": 0.8546,
+      "pred": "Registration / medium",
+      "request_id": "T3-0035",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "تيمز بطلعلي انه ما عندي صلاحية ادخل على تيم المادة مع انه باقي الطلاب داخلين",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "IT Support / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8523,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8361,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8273,
+          "text": "my university account is locked and i have an online exam today"
+        }
+      ],
+      "ood_score": 0.8523,
+      "pred": "Academic Support / medium",
+      "request_id": "T3-0040",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "ana b emti7an online 3al teams hala2 w tala3ni mn el meeting w msh 3am yrja3ni",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8241,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.8231,
+          "text": "i need advice choosing an elective course"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8203,
+          "text": "i need help understanding the prerequisite rule"
+        }
+      ],
+      "ood_score": 0.8241,
+      "pred": "Academic Support / low",
+      "request_id": "T3-0041",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "URGENT: shu el wara2 elli bad7tajha la5asm el i5wa? a5ooy bidros bel jam3a kaman",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Registration / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8244,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8154,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8114,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8244,
+      "pred": "Academic Support / medium",
+      "request_id": "T3-0042",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "ba3d ma 8ayyart el shu3ba el system 7attni b shu3ba 8eer elli 5atarta",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Finance / medium",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8715,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8583,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8556,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        }
+      ],
+      "ood_score": 0.8715,
+      "pred": "Transportation / medium",
+      "request_id": "T3-0043",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "Last month my car broke down so I took the bus for a week, which was a nightmare, but that's not why I'm writing. I was charged a late payment fine even though I paid on time.",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "IT Support / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8656,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8358,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8315,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8656,
+      "pred": "Transportation / high",
+      "request_id": "T3-0046",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set3",
+      "text": "الاي ليرنينج مش راضي يرفع الواجب والتسليم بسكر الساعة ١٢ الليلة",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [
+        "empty_set",
+        "empty_set_cat",
+        "urgency_floor:deadline_24h"
+      ],
+      "gold": "IT Support / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8593,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8466,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8461,
+          "text": "my university account is locked and i have an online exam today"
+        }
+      ],
+      "ood_score": 0.8593,
+      "pred": "Registration / high",
+      "request_id": "T3-0048",
+      "set_category": [
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set3",
+      "text": "I've been working on this report all week from the cafe near building D, anyway, e-learning won't let me upload it and the submission closes in two hours.",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Finance / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8412,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8335,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8249,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        }
+      ],
+      "ood_score": 0.8412,
+      "pred": "Registration / high",
+      "request_id": "T3-0051",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set3",
+      "text": "el bank bi2ool el system 3indhom ta3ban w ma bi2daro yakhdo el 2est, w el yom akher yom dafe3",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Transportation / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8104,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8091,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8075,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        }
+      ],
+      "ood_score": 0.8104,
+      "pred": "Academic Support / medium",
+      "request_id": "T3-0053",
+      "set_category": [
+        "Academic Support",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "el bas ta7arrak abel el wa2t w rah 3alay, ijit ma3 sa7bi bel sayyara",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8453,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8422,
+          "text": "a laboratory door is stuck and students cannot leave"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8365,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8453,
+      "pred": "Facilities / medium",
+      "request_id": "T3-0054",
       "set_category": [
         "Facilities"
       ],
@@ -2356,12 +3404,3724 @@
         "medium"
       ],
       "test_set": "set3",
-      "text": "could someone tell me where the closest prayer room to the library is",
+      "text": "A window in classroom F-204 just shattered, there's glass all over the floor where students sit",
       "wrong": [
         "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Registration / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8243,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Transportation",
+          "priority": "low",
+          "sim": 0.8228,
+          "text": "وين جدول الباصات"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8168,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        }
+      ],
+      "ood_score": 0.8243,
+      "pred": "Transportation / medium",
+      "request_id": "T3-0055",
+      "set_category": [
+        "Facilities",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "زر السحب مش شغال عندي لمادة وحدة، بس لسا في اسبوع على نهاية فترة السحب",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "IT Support / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8737,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8631,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8606,
+          "text": "the learning platform is unavailable during an online quiz"
+        }
+      ],
+      "ood_score": 0.8737,
+      "pred": "Academic Support / medium",
+      "request_id": "T3-0056",
+      "set_category": [
+        "Academic Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "my oral exam on teams started 5 min ago and the join button just says the meeting is unavailable. the doctor is waiting",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.846,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8337,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8322,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.846,
+      "pred": "IT Support / low",
+      "request_id": "T3-0059",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "how do i get a bus pass for this semester? do i apply on MyGJU or at some office",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Academic Support / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8518,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8295,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8291,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8518,
+      "pred": "Registration / medium",
+      "request_id": "T3-0060",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "URGENT!!! el attendance 3al e-learning m7attelni 8aib b mo7adartein w ana kont 7ader",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8794,
+          "text": "the university bus is running twenty minutes late"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8704,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8579,
+          "text": "my bus pass stopped working this morning"
+        }
+      ],
+      "ood_score": 0.8794,
+      "pred": "Transportation / medium",
+      "request_id": "T3-0061",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "بالامتحانات النهائية بصير في باصات متأخرة بعد الساعة ستة؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "medium",
+          "sim": 0.8361,
+          "text": "the finance portal shows the wrong outstanding balance"
+        },
+        {
+          "category": "Finance",
+          "priority": "low",
+          "sim": 0.8359,
+          "text": "where do i check the tuition installment dates"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8203,
+          "text": "my tuition payment is not reflected and registration closes today"
+        }
+      ],
+      "ood_score": 0.8361,
+      "pred": "Finance / medium",
+      "request_id": "T3-0063",
+      "set_category": [
+        "Finance"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "is the finance office the one above the bank building? what time do they close on thursdays",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Facilities / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8282,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8174,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8109,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8282,
+      "pred": "Academic Support / low",
+      "request_id": "T3-0064",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "wen fi mai ashrab bi mabna D? ma la2eet ay bared mai",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Academic Support / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8539,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8322,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8288,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        }
+      ],
+      "ood_score": 0.8539,
+      "pred": "Registration / medium",
+      "request_id": "T3-0066",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "el final hala2 w esmi msh mawjood bel kashf, el mora2eb msh radi yda55elni",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [
+        "safety"
+      ],
+      "gold": "Facilities / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8192,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8168,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8126,
+          "text": "i need help understanding the prerequisite rule"
+        }
+      ],
+      "ood_score": 0.8192,
+      "pred": "Academic Support / high",
+      "request_id": "T3-0068",
+      "set_category": [
+        "Academic Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set3",
+      "text": "e7na 3al2een bel asanseir b mabna A, wa2ef bein el taba2at",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Transportation / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8388,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.832,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8265,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        }
+      ],
+      "ood_score": 0.8388,
+      "pred": "Academic Support / medium",
+      "request_id": "T3-0070",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "el bas taba3 el masa ma ija w ana la7ali 3al maw2af, el sa3a 9 bel leil",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8278,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8263,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8261,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        }
+      ],
+      "ood_score": 0.8278,
+      "pred": "Facilities / medium",
+      "request_id": "T3-0071",
+      "set_category": [
+        "Facilities"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "شباك بقاعة بمبنى F انكسر والقزاز مكب على الأرض والطلاب قاعدين",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Academic Support / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8166,
+          "text": "في مي بتسرب جنب كهربا المختبر"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8063,
+          "text": "the learning platform is unavailable during an online quiz"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8062,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8166,
+      "pred": "IT Support / medium",
+      "request_id": "T3-0076",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "الخطة الدراسية على MyGJU مبينة مادة نجحت فيها انها لسا ما انأخذت",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Academic Support / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8297,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8207,
+          "text": "i need help understanding the prerequisite rule"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8156,
+          "text": "كيف بغير كلمه السر"
+        }
+      ],
+      "ood_score": 0.8297,
+      "pred": "Registration / low",
+      "request_id": "T3-0078",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Finance",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "kif byotla3 el mo3addal el tarakomi iza a3adt mada?",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Registration / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8224,
+          "text": "صفحه التسجيل معلقه عندي"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "medium",
+          "sim": 0.8145,
+          "text": "عندي امتحانين بنفس الوقت"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8122,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8224,
+      "pred": "Registration / medium",
+      "request_id": "T3-0080",
+      "set_category": [
+        "Academic Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "بدي انقل من شعبة لشعبة بنفس المادة، كيف بعملها؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8742,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.857,
+          "text": "a laboratory door is stuck and students cannot leave"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8351,
+          "text": "the university bus is running twenty minutes late"
+        }
+      ],
+      "ood_score": 0.8742,
+      "pred": "Facilities / medium",
+      "request_id": "T3-0083",
+      "set_category": [
+        "Facilities"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "the elevator in building A stopped with a student inside, she has been pressing the alarm for 10 minutes",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Facilities / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.814,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8117,
+          "text": "في مي بتسرب جنب كهربا المختبر"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8096,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.814,
+      "pred": "Registration / medium",
+      "request_id": "T3-0084",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "URGENT!!!! ma fi mayy bel 7ammamat b mabna B mn el sob7",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Registration / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8463,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.8333,
+          "text": "i need advice choosing an elective course"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8261,
+          "text": "كيف بغير كلمه السر"
+        }
+      ],
+      "ood_score": 0.8463,
+      "pred": "Academic Support / low",
+      "request_id": "T3-0089",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "كيف بسجل مادة التدريب الميداني؟ وهل لازم اكون مخلص عدد ساعات معين؟",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Transportation / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8565,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8362,
+          "text": "the university bus is running twenty minutes late"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8331,
+          "text": "باص الجامعه اتاخر عن موعده"
+        }
+      ],
+      "ood_score": 0.8565,
+      "pred": "Transportation / medium",
+      "request_id": "T3-0092",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "hi so the last bus already went, left before 5:30 even though the schedule says 5:45, we're a group of girls stuck on campus",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8485,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8456,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.841,
+          "text": "i need help understanding the prerequisite rule"
+        }
+      ],
+      "ood_score": 0.8485,
+      "pred": "Finance / medium",
+      "request_id": "T3-0096",
+      "set_category": [
+        "Finance"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "Sorry for posting this on the e-learning help page, but how much is the fee per credit hour for engineering this year?",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Transportation / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8288,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.822,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8199,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8288,
+      "pred": "Transportation / medium",
+      "request_id": "T3-0097",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "الساعة تسعة بالليل وباص المسائي ما اجا، انا لحالي بالموقف وما في تكاسي",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "IT Support / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8607,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8543,
+          "text": "كيف بغير كلمه السر"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8524,
+          "text": "how can i reset my university password"
+        }
+      ],
+      "ood_score": 0.8607,
+      "pred": "IT Support / medium",
+      "request_id": "T3-0099",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set3",
+      "text": "Hi, I just got a new laptop and I'm not sure what username and password to use for the campus wifi. Do I use my MyGJU login or something else?",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "low",
+          "sim": 0.8271,
+          "text": "i need a copy of my payment receipt"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8087,
+          "text": "i need help understanding the prerequisite rule"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8056,
+          "text": "صفحه التسجيل معلقه عندي"
+        }
+      ],
+      "ood_score": 0.8271,
+      "pred": "Registration / low",
+      "request_id": "T3-0107",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set3",
+      "text": "شو الأوراق المطلوبة عشان اقدم على خصم الأخوة؟ اخوي كمان بدرس بالجامعة",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [
+        "empty_set",
+        "empty_set_cat"
+      ],
+      "gold": "Facilities / medium",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8559,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8556,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8545,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8559,
+      "pred": "IT Support / low",
+      "request_id": "T4-0004",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "The elevator in building M has been out of service for three days. My classes are on the fourth floor, so it's a lot of stairs, but mostly just annoying.",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Transportation / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8515,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.845,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8192,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8515,
+      "pred": "Transportation / high",
+      "request_id": "T4-0007",
+      "set_category": [
+        "Finance",
+        "Transportation"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "اليوم الصبح السواق ما قبل اشتراك الباص تبعي مع انه ساري، وخلاني ادفع كاش",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "IT Support / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8439,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.837,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8276,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        }
+      ],
+      "ood_score": 0.8439,
+      "pred": "Registration / medium",
+      "request_id": "T4-0009",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "el recorded lectures 3al e-learning msh 3am tesht8el 3indi mn el sob7, bas btlef w btlef",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8763,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8619,
+          "text": "a laboratory door is stuck and students cannot leave"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8568,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8763,
+      "pred": "Facilities / medium",
+      "request_id": "T4-0010",
+      "set_category": [
+        "Facilities"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Part of the ceiling in lecture room D-115 is hanging loose right above the second row and pieces keep falling. The lecture is still going on.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / medium",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8548,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8526,
+          "text": "البروجكتور بالغرفه مش شغال"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8442,
+          "text": "a laboratory door is stuck and students cannot leave"
+        }
+      ],
+      "ood_score": 0.8548,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0011",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "The smart board in G-210 doesn't respond to touch anymore, the doctor has been writing on a printed sheet under the camera instead.",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8064,
+          "text": "a laboratory door is stuck and students cannot leave"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.7992,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.7961,
+          "text": "في مي بتسرب جنب كهربا المختبر"
+        }
+      ],
+      "ood_score": 0.8064,
+      "pred": "Facilities / low",
+      "request_id": "T4-0013",
+      "set_category": [
+        "Academic Support",
+        "Facilities"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "درابزين البلكونة بالطابق الثاني بمبنى E مفكوك وبتحرك، والطلاب بيتكوا عليه والوقعة عالية على الساحة",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "IT Support / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8671,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8587,
+          "text": "في مي بتسرب جنب كهربا المختبر"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8537,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8671,
+      "pred": "Facilities / medium",
+      "request_id": "T4-0014",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "احنا بمختبر بمبنى C بنقدم امتحان الميد على الاي ليرننج والنت فصل عن كل الأجهزة هلأ، والمراقب حكالي ابلغكم",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Finance / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8357,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8242,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8165,
+          "text": "كيف بغير كلمه السر"
+        }
+      ],
+      "ood_score": 0.8357,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0015",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "el fatoora 7asbe 3alay 18 sa3a w ana msajjel 15 bas, plz sal7oha",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Facilities / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8227,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.814,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8044,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8227,
+      "pred": "Registration / medium",
+      "request_id": "T4-0018",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "el asanseir b mabna M 5arban mn 3 ayyam, kol yom batla3 4 tawabe2 dara",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8284,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.827,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8244,
+          "text": "i need help understanding the prerequisite rule"
+        }
+      ],
+      "ood_score": 0.8284,
+      "pred": "Registration / medium",
+      "request_id": "T4-0019",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "fi min7a lal tollab elli mo3addalhom fo2 3.5? kif ba2addem?",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Academic Support / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8393,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8384,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.822,
+          "text": "i need help understanding the prerequisite rule"
+        }
+      ],
+      "ood_score": 0.8393,
+      "pred": "Academic Support / medium",
+      "request_id": "T4-0021",
+      "set_category": [
+        "Academic Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "بقدر آخذ تخصص فرعي مع تخصصي؟ مين بحكي معه بالموضوع؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Academic Support / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8238,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.82,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8162,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8238,
+      "pred": "Academic Support / medium",
+      "request_id": "T4-0027",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "wara2et el emti7an elli wazza3oha hala2 msh la shu3betna w el emti7an ballash mn 10 da2aye2",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Academic Support / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8595,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8575,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8391,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        }
+      ],
+      "ood_score": 0.8595,
+      "pred": "Registration / high",
+      "request_id": "T4-0029",
+      "set_category": [
+        "Academic Support",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "اليوم الصبح شفت علامة الكويز على الاي ليرننج صفر، مع انه تسليمي موجود وقبل الموعد",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Registration / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8359,
+          "text": "كيف بغير كلمه السر"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8197,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8162,
+          "text": "i need help understanding the prerequisite rule"
+        }
+      ],
+      "ood_score": 0.8359,
+      "pred": "IT Support / low",
+      "request_id": "T4-0032",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "kif b2ajjel el fasel el jay? bdi awa22ef tasjeeli fasel wa7ed bas",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "IT Support / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8419,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8411,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.8349,
+          "text": "i need advice choosing an elective course"
+        }
+      ],
+      "ood_score": 0.8419,
+      "pred": "Academic Support / medium",
+      "request_id": "T4-0033",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "e7na bel lab b mabna C bnaddem el midterm w el net fasal 3an kol el ajhize hala2",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8327,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8293,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8212,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        }
+      ],
+      "ood_score": 0.8327,
+      "pred": "Transportation / medium",
+      "request_id": "T4-0036",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Am I allowed to bring a folding bike on the university bus? I'd like to ride from the stop to my house.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Facilities / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8337,
+          "text": "في مي بتسرب جنب كهربا المختبر"
+        },
+        {
+          "category": "Transportation",
+          "priority": "low",
+          "sim": 0.8236,
+          "text": "وين جدول الباصات"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8214,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8337,
+      "pred": "Facilities / medium",
+      "request_id": "T4-0039",
+      "set_category": [
+        "Facilities",
+        "IT Support",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "بدنا نعمل فعالية للنادي بمدرج مبنى M الشهر الجاي، مين المسؤول عن حجزه؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Transportation / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8415,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8378,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8366,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8415,
+      "pred": "Transportation / high",
+      "request_id": "T4-0044",
+      "set_category": [
+        "IT Support",
+        "Transportation"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "el yom el sob7 el sawwa2 ma 2ebel el bus pass ma3 eno sare, w 5allani adfa3 cash",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Registration / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8157,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.7971,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.7968,
+          "text": "كيف بغير كلمه السر"
+        }
+      ],
+      "ood_score": 0.8157,
+      "pred": "Academic Support / low",
+      "request_id": "T4-0045",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "momken asajjel mada mostame3 bas, ya3ni bdoon 3alame? kif?",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Transportation / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8783,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8672,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8483,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        }
+      ],
+      "ood_score": 0.8783,
+      "pred": "Transportation / medium",
+      "request_id": "T4-0047",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Hi, the evening bus driver said his shift was over and dropped the five of us at a closed petrol station on the airport road instead of our stop. It's 9:30 pm and there's no way to get home from here.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Finance / medium",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "medium",
+          "sim": 0.8792,
+          "text": "المبلغ الظاهر علي حسابي مش صحيح"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8786,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8754,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        }
+      ],
+      "ood_score": 0.8792,
+      "pred": "Finance / high",
+      "request_id": "T4-0053",
+      "set_category": [
+        "Finance"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "I dropped a course three weeks ago and was told the money would go back to my account, but my balance still shows the full amount.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Registration / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.837,
+          "text": "my tuition payment is not reflected and registration closes today"
+        },
+        {
+          "category": "Finance",
+          "priority": "low",
+          "sim": 0.8316,
+          "text": "where do i check the tuition installment dates"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8301,
+          "text": "i cannot add my courses because the registration portal rejects my request"
+        }
+      ],
+      "ood_score": 0.837,
+      "pred": "Registration / medium",
+      "request_id": "T4-0058",
+      "set_category": [
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Before registration opens, is there a way to see which sections still have open seats?",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Finance / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.852,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8445,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8333,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.852,
+      "pred": "Finance / high",
+      "request_id": "T4-0063",
+      "set_category": [
+        "Finance",
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "اليوم الصبح وصلني اشعار انه علي غرامة مكتبة مش مدفوعة، مع اني دفعتها بالبنك الشهر الماضي ومعي الوصل",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8377,
+          "text": "a laboratory door is stuck and students cannot leave"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8161,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8156,
+          "text": "my university account is locked and i have an online exam today"
+        }
+      ],
+      "ood_score": 0.8377,
+      "pred": "Registration / medium",
+      "request_id": "T4-0068",
+      "set_category": [
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Does the university have lockers for students? I carry my drawing tools around all day and would love somewhere to leave them.",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Registration / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8367,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8356,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8279,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8367,
+      "pred": "Registration / high",
+      "request_id": "T4-0069",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "3amalt drop la mada embare7 w ejani ta2keed, bas el yom el sob7 lessa btoh6har bel mawad el msajjale",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8281,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8227,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8147,
+          "text": "a laboratory door is stuck and students cannot leave"
+        }
+      ],
+      "ood_score": 0.8281,
+      "pred": "Facilities / medium",
+      "request_id": "T4-0070",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "جزء من السقف بقاعة بمبنى D مرخي فوق الطلاب وعم يوقع منه قطع واحنا قاعدين",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "IT Support / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.851,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8444,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8443,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.851,
+      "pred": "Registration / medium",
+      "request_id": "T4-0074",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "تسجيلات المحاضرات على الاي ليرننج ما بتشتغل، الفيديو بضل يحمل وما بفتح",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Facilities / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8277,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8124,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.812,
+          "text": "an air conditioner stopped working in the lecture room"
+        }
+      ],
+      "ood_score": 0.8277,
+      "pred": "IT Support / low",
+      "request_id": "T4-0075",
+      "set_category": [
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "wen fi ma7al ash7an el laptop bel maktabe? kol el plugs b3eedeh 3an el tawlat",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "low",
+          "sim": 0.8507,
+          "text": "where do i check the tuition installment dates"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8494,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.8386,
+          "text": "i need advice choosing an elective course"
+        }
+      ],
+      "ood_score": 0.8507,
+      "pred": "Academic Support / medium",
+      "request_id": "T4-0077",
+      "set_category": [
+        "Academic Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Is it possible to postpone this semester's second installment by a month? What's the procedure and where do I apply?",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Academic Support / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8664,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8633,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8444,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8664,
+      "pred": "Registration / medium",
+      "request_id": "T4-0079",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "صار الفصل ماشي ثلاث اسابيع ولسا مشروع التخرج تبعي ما انعينله مشرف",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Registration / medium",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8782,
+          "text": "i cannot add my courses because the registration portal rejects my request"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8742,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8697,
+          "text": "the system removed my registered course without warning"
+        }
+      ],
+      "ood_score": 0.8782,
+      "pred": "Registration / high",
+      "request_id": "T4-0080",
+      "set_category": [
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "I dropped Physics 2 yesterday and got the confirmation, but it still appears in my registered courses today.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8092,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8061,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8041,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8092,
+      "pred": "Facilities / medium",
+      "request_id": "T4-0081",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Finance",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "el darabzeen taba3 el balcona bel taba2 el tani b mabna E mafkook w byt7arrak, w el tollab byetkao 3aleh",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8645,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8582,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8546,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        }
+      ],
+      "ood_score": 0.8645,
+      "pred": "Finance / medium",
+      "request_id": "T4-0084",
+      "set_category": [
+        "Finance"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Posting this in the e-learning course forum because I don't know where else to ask: how much is the graduation fee and where do we pay it, at the bank or online?",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "IT Support / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8345,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8338,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8323,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8345,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0085",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "ra7 a8ayyer el mobile, kif ba2ol el authenticator app la 7sabi el jam3i 3al jdeed?",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [
+        "empty_set",
+        "empty_set_cat"
+      ],
+      "gold": "Finance / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8897,
+          "text": "my tuition payment is not reflected and registration closes today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.881,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8743,
+          "text": "my exam grade was recorded incorrectly and the appeal deadline is today"
+        }
+      ],
+      "ood_score": 0.8897,
+      "pred": "IT Support / high",
+      "request_id": "T4-0086",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "My scholarship offer says I must pay the confirmation deposit before 4 pm today or I lose it, and the online payment keeps failing at the last step.",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / medium",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8719,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8697,
+          "text": "البروجكتور بالغرفه مش شغال"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8532,
+          "text": "an air conditioner stopped working in the lecture room"
+        }
+      ],
+      "ood_score": 0.8719,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0088",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "URGENT!!!! smart board in room G-210 not working AGAIN, please send someone",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [
+        "empty_set",
+        "empty_set_cat"
+      ],
+      "gold": "Finance / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "low",
+          "sim": 0.8256,
+          "text": "where do i check the tuition installment dates"
+        },
+        {
+          "category": "Finance",
+          "priority": "medium",
+          "sim": 0.8194,
+          "text": "my scholarship discount is missing from the invoice"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.819,
+          "text": "my tuition payment is not reflected and registration closes today"
+        }
+      ],
+      "ood_score": 0.8256,
+      "pred": "Academic Support / low",
+      "request_id": "T4-0089",
+      "set_category": [
+        "Academic Support"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "URGENT: does the university give any merit scholarship for high GPA students?? when is the application",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8556,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Transportation",
+          "priority": "low",
+          "sim": 0.851,
+          "text": "وين جدول الباصات"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8425,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        }
+      ],
+      "ood_score": 0.8556,
+      "pred": "Transportation / medium",
+      "request_id": "T4-0090",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "مسموح أطلع بسكليت قابل للطي معي على باص الجامعة؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.835,
+          "text": "i need advice choosing an elective course"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8274,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.822,
+          "text": "i cannot add my courses because the registration portal rejects my request"
+        }
+      ],
+      "ood_score": 0.835,
+      "pred": "Academic Support / medium",
+      "request_id": "T4-0091",
+      "set_category": [
+        "Academic Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Our student club wants to hold an event in the auditorium in building M next month. Who do we ask to book it, and is there a form?",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "IT Support / medium",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8955,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8734,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8705,
+          "text": "i cannot add my courses because the registration portal rejects my request"
+        }
+      ],
+      "ood_score": 0.8955,
+      "pred": "IT Support / low",
+      "request_id": "T4-0096",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "When I try to open the library's online databases from home, it asks for my university login and says invalid credentials, even though the same password works on MyGJU.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8183,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8136,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.81,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8183,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0097",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "fi shuttle dakhel el jam3a byn2el bein el mabani? wen byo2af?",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Transportation / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.871,
+          "text": "a laboratory door is stuck and students cannot leave"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.8656,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8601,
+          "text": "my bus pass stopped working this morning"
+        }
+      ],
+      "ood_score": 0.871,
+      "pred": "Transportation / medium",
+      "request_id": "T4-0100",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "The doors of our university bus are jammed shut at the Sweileh stop and about 30 of us are stuck inside. It's really hot and the driver can't open them.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Facilities / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "medium",
+          "sim": 0.7868,
+          "text": "المبلغ الظاهر علي حسابي مش صحيح"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.776,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.7756,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.7868,
+      "pred": "Finance / medium",
+      "request_id": "T4-0103",
+      "set_category": [
+        "Finance",
+        "IT Support",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "في خزائن للطلاب بالجامعة؟ كيف بقدر آخذ وحدة؟",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Registration / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8633,
+          "text": "the system removed my registered course without warning"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8536,
+          "text": "i cannot add my courses because the registration portal rejects my request"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8462,
+          "text": "my tuition payment is not reflected and registration closes today"
+        }
+      ],
+      "ood_score": 0.8633,
+      "pred": "Academic Support / medium",
+      "request_id": "T4-0104",
+      "set_category": [
+        "Academic Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Is it possible to audit a course, just attend without a grade? How would I register it?",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Finance / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.83,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.824,
+          "text": "i need help understanding the prerequisite rule"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.82,
+          "text": "كيف بغير كلمه السر"
+        }
+      ],
+      "ood_score": 0.83,
+      "pred": "Registration / high",
+      "request_id": "T4-0105",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "high"
+      ],
+      "test_set": "set4",
+      "text": "lazem adfa3 3arboon el min7a 2abel el sa3a 4 el yom w el daf3 online kol mara byfshal",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "medium",
+          "sim": 0.8392,
+          "text": "my scholarship discount is missing from the invoice"
+        },
+        {
+          "category": "Finance",
+          "priority": "low",
+          "sim": 0.8361,
+          "text": "where do i check the tuition installment dates"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.8356,
+          "text": "where can i meet my academic advisor"
+        }
+      ],
+      "ood_score": 0.8392,
+      "pred": "Academic Support / low",
+      "request_id": "T4-0107",
+      "set_category": [
+        "Academic Support"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "Are there scholarships for students with a GPA above 3.5? How and when do I apply for one?",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Transportation / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8208,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8164,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8098,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8208,
+      "pred": "Facilities / medium",
+      "request_id": "T4-0108",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "el sawwa2 nazzalna 3ind ma7attet banzeen msakkra 3ala taree2 el mataar badal el maw2af, el sa3a 9 w nos bel leil w ma fi mowasalat",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8337,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8312,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Transportation",
+          "priority": "high",
+          "sim": 0.831,
+          "text": "الباص الاخير انلغي وضلوا طلاب بدون مواصلات"
+        }
+      ],
+      "ood_score": 0.8337,
+      "pred": "Facilities / low",
+      "request_id": "T4-0110",
+      "set_category": [
+        "Facilities"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "Just letting you know that a pipe seems to have burst in building C, water is running down the main stairs and two students have already slipped.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8778,
+          "text": "the university bus is running twenty minutes late"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8581,
+          "text": "باص الجامعه اتاخر عن موعده"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8371,
+          "text": "a laboratory door is stuck and students cannot leave"
+        }
+      ],
+      "ood_score": 0.8778,
+      "pred": "Transportation / medium",
+      "request_id": "T4-0111",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "في باص داخلي بتنقل بين مباني الجامعة بين المحاضرات؟ وين بوقف؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Transportation / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8169,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.811,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8081,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8169,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0115",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "abwab el bas 3al2a w msh radye tenfete7, e7na 30 taleb ma7booseen jowwa w el jaw 7ar ktir",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8492,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8466,
+          "text": "a laboratory door is stuck and students cannot leave"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8281,
+          "text": "في مي بتسرب جنب كهربا المختبر"
+        }
+      ],
+      "ood_score": 0.8492,
+      "pred": "Facilities / low",
+      "request_id": "T4-0119",
+      "set_category": [
+        "Facilities"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "The metal railing on the second-floor balcony of building E has come loose, it moves when you touch it and students keep leaning on it between lectures. It's a long drop to the courtyard.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8538,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "IT Support",
+          "priority": "medium",
+          "sim": 0.8428,
+          "text": "the student portal shows an error when i upload a file"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8395,
+          "text": "i cannot add my courses because the registration portal rejects my request"
+        }
+      ],
+      "ood_score": 0.8538,
+      "pred": "Transportation / medium",
+      "request_id": "T4-0121",
+      "set_category": [
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "URGENT!!! is the student card enough to ride the bus or do i need the pass too",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Academic Support / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8531,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.806,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8017,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8531,
+      "pred": "Facilities / medium",
+      "request_id": "T4-0122",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "امتحان الفاينل لازم يبلش بعد ربع ساعة بقاعة B-201 والقاعة مسكرة وما في حدا، واحنا خمسين طالب برا",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.8191,
+          "text": "i need advice choosing an elective course"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.819,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8138,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8191,
+      "pred": "Academic Support / low",
+      "request_id": "T4-0123",
+      "set_category": [
+        "Academic Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "momken a2ajjel el 2est el tani shahr? shu el ejra2at?",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "IT Support / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8416,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8366,
+          "text": "how can i reset my university password"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "medium",
+          "sim": 0.8331,
+          "text": "i cannot access the feedback on my assignment"
+        }
+      ],
+      "ood_score": 0.8416,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0124",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "How do I forward emails from my university Outlook to my personal Gmail? I keep missing announcements because I never open Outlook.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Academic Support / medium",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.8334,
+          "text": "i need help understanding the prerequisite rule"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8324,
+          "text": "my tuition payment is not reflected and registration closes today"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8303,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8334,
+      "pred": "Registration / medium",
+      "request_id": "T4-0125",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "el e-learning m7attelli 0 bel quiz bas el submission tab3i mawjood 2abel el deadline",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Academic Support / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8333,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8251,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "low",
+          "sim": 0.8189,
+          "text": "i need advice choosing an elective course"
+        }
+      ],
+      "ood_score": 0.8333,
+      "pred": "Registration / low",
+      "request_id": "T4-0129",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "wen bala2i el office hours taba3 el doctors? msh mawjoodeh 3al e-learning",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8169,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8161,
+          "text": "an air conditioner stopped working in the lecture room"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8096,
+          "text": "a laboratory door is stuck and students cannot leave"
+        }
+      ],
+      "ood_score": 0.8169,
+      "pred": "Facilities / low",
+      "request_id": "T4-0132",
+      "set_category": [
+        "Facilities"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "في ماسورة انفجرت بمبنى C والمي نازلة على الدرج الرئيسي، وطالبين وقعوا",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Facilities / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Registration",
+          "priority": "medium",
+          "sim": 0.805,
+          "text": "i need help understanding the prerequisite rule"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.804,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8021,
+          "text": "كيف بغير كلمه السر"
+        }
+      ],
+      "ood_score": 0.805,
+      "pred": "Registration / medium",
+      "request_id": "T4-0133",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "fi lockers lal tollab? kif ba5od wa7ad?",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Finance / low",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "medium",
+          "sim": 0.8495,
+          "text": "المبلغ الظاهر علي حسابي مش صحيح"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8341,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Academic Support",
+          "priority": "medium",
+          "sim": 0.8311,
+          "text": "عندي امتحانين بنفس الوقت"
+        }
+      ],
+      "ood_score": 0.8495,
+      "pred": "Finance / medium",
+      "request_id": "T4-0134",
+      "set_category": [
+        "Academic Support",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "بقدر أأجل دفع القسط الثاني لشهر الجاي؟ شو الإجراءات؟",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "IT Support / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8884,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8662,
+          "text": "كيف بغير كلمه السر"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8651,
+          "text": "how can i reset my university password"
+        }
+      ],
+      "ood_score": 0.8884,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0136",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "I'm getting a new phone next week. How do I move the authenticator app for my university account so I don't get locked out?",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Facilities / high",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8077,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8074,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8073,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8077,
+      "pred": "Registration / low",
+      "request_id": "T4-0137",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "Finance",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "low"
+      ],
+      "test_set": "set4",
+      "text": "fi masoora infajarat b mabna C w el mayy nazle 3al daraj, wa2a3o tnein tollab",
+      "wrong": [
+        "category",
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "arabizi",
+      "flags": [],
+      "gold": "Transportation / low",
+      "lang": "arabizi",
+      "neighbors": [
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8285,
+          "text": "my bus pass stopped working this morning"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8254,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "low",
+          "sim": 0.8221,
+          "text": "كيف بغير كلمه السر"
+        }
+      ],
+      "ood_score": 0.8285,
+      "pred": "Transportation / medium",
+      "request_id": "T4-0138",
+      "set_category": [
+        "Academic Support",
+        "IT Support",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "lazem awarji el bus pass kol mara walla el student card bekaffi?",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Academic Support / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Academic Support",
+          "priority": "high",
+          "sim": 0.8479,
+          "text": "علامتي غلط واخر يوم اعتراض اليوم"
+        },
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.8463,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8381,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8479,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0139",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support",
+        "Registration"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "صار اسبوعين من الفاينل وعلامة المادة لسا مش نازلة على MyGJU، وباقي الشعبة علاماتهم نازلة",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "en",
+      "flags": [],
+      "gold": "IT Support / low",
+      "lang": "en",
+      "neighbors": [
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8506,
+          "text": "my university account is locked and i have an online exam today"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8317,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8297,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        }
+      ],
+      "ood_score": 0.8506,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0140",
+      "set_category": [
+        "IT Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "Hi, my sister told me students get Microsoft Office for free with the university account. Is that true, and on how many devices can I install it? I'm on a Mac if that matters.",
+      "wrong": [
+        "priority"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "Facilities / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Facilities",
+          "priority": "medium",
+          "sim": 0.8298,
+          "text": "البروجكتور بالغرفه مش شغال"
+        },
+        {
+          "category": "Facilities",
+          "priority": "high",
+          "sim": 0.8254,
+          "text": "في مي بتسرب جنب كهربا المختبر"
+        },
+        {
+          "category": "IT Support",
+          "priority": "high",
+          "sim": 0.8252,
+          "text": "حسابي الجامعي تسكر وعندي امتحان اونلاين اليوم"
+        }
+      ],
+      "ood_score": 0.8298,
+      "pred": "IT Support / medium",
+      "request_id": "T4-0141",
+      "set_category": [
+        "Academic Support",
+        "Facilities",
+        "IT Support"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "اللوح الذكي بقاعة G-210 من الصبح مش راضي يستجيب للمس، والدكتور كمل المحاضرة عالورق",
+      "wrong": [
+        "category"
+      ]
+    },
+    {
+      "detected_lang": "ar",
+      "flags": [],
+      "gold": "IT Support / medium",
+      "lang": "ar",
+      "neighbors": [
+        {
+          "category": "Finance",
+          "priority": "high",
+          "sim": 0.851,
+          "text": "دفعت القسط ولسه مش ظاهر بالدفع والتسجيل بسكر اليوم"
+        },
+        {
+          "category": "Registration",
+          "priority": "high",
+          "sim": 0.8406,
+          "text": "مش قادر اسجل مواد والنظام بعطيني خطا"
+        },
+        {
+          "category": "Transportation",
+          "priority": "medium",
+          "sim": 0.8342,
+          "text": "my bus pass stopped working this morning"
+        }
+      ],
+      "ood_score": 0.851,
+      "pred": "Facilities / medium",
+      "request_id": "T4-0144",
+      "set_category": [
+        "Facilities",
+        "IT Support",
+        "Registration",
+        "Transportation"
+      ],
+      "set_priority": [
+        "medium"
+      ],
+      "test_set": "set4",
+      "text": "الاوتلوك من الصبح بقلي صندوق البريد ممتلئ وما بستقبل ولا رسالة، مع اني مسحت كل اشي",
+      "wrong": [
+        "category"
       ]
     }
   ],
   "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
-  "sha": "05de06d266cf"
+  "sha": "a8e2f1e58da5"
 }

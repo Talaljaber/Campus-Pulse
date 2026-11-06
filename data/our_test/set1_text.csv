@@ -1,61 +1,73 @@
-request_id,text
-HT-0001,Could you assist? The classroom projector is not working
-HT-0002,بدي نسخة من وصل الدفع
-HT-0003,This is my issue: The last bus was cancelled and students are stranded
-HT-0004,ارجو المساعدة، وين مكتب المرشد الاكاديمي؟
-HT-0005,URGENT: The last bus was cancelled and students are stranded
-HT-0006,"Hello, The classroom projector is not working"
-HT-0007,Please help: My course registration page keeps loading without showing courses
-HT-0008,عندي مشكلة: بدي نسخة من وصل الدفع
-HT-0009,مرحبا يا جماعة وين مكتب المرشد الاكاديمي؟
-HT-0010,I need assistance. My course registration page keeps loading without showing courses
-HT-0011,"Hi team, My course registration page keeps loading without showing courses"
-HT-0012,My course registration page keeps loading without showing courses
-HT-0013,URGENT: My course registration page keeps loading without showing courses
-HT-0014,"Hello, The last bus was cancelled and students are stranded"
-HT-0015,"Hello, My course registration page keeps loading without showing courses"
-HT-0016,Could you assist? The last bus was cancelled and students are stranded
-HT-0017,I need assistance. The classroom projector is not working
-HT-0018,The last bus was cancelled and students are stranded
-HT-0019,وين مكتب المرشد الاكاديمي؟ وشكرا
-HT-0020,I need assistance. The last bus was cancelled and students are stranded
-HT-0021,وين مكتب المرشد الاكاديمي؟
-HT-0022,ممكن تساعدوني؟ الواي فاي بالجامعة بفصل كثير
-HT-0023,Student request: My course registration page keeps loading without showing courses
-HT-0024,سؤال: وين مكتب المرشد الاكاديمي؟
-HT-0025,مرحبا، وين مكتب المرشد الاكاديمي؟
-HT-0026,سؤال: بدي نسخة من وصل الدفع
-HT-0027,مرحبا يا جماعة الواي فاي بالجامعة بفصل كثير
-HT-0028,لو سمحت بدي نسخة من وصل الدفع
-HT-0029,Student request: The last bus was cancelled and students are stranded
-HT-0030,This is my issue: My course registration page keeps loading without showing courses
-HT-0031,عندي مشكلة: وين مكتب المرشد الاكاديمي؟
-HT-0032,The last bus was cancelled and students are stranded Please respond when possible.
-HT-0033,The classroom projector is not working Please respond when possible.
-HT-0034,University helpdesk: The last bus was cancelled and students are stranded
-HT-0035,"Hi team, The last bus was cancelled and students are stranded"
-HT-0036,Please help: The last bus was cancelled and students are stranded
-HT-0037,"Hi team, The classroom projector is not working"
-HT-0038,لو سمحت الواي فاي بالجامعة بفصل كثير
-HT-0039,ممكن تساعدوني؟ بدي نسخة من وصل الدفع
-HT-0040,بدي نسخة من وصل الدفع وشكرا
-HT-0041,ارجو المساعدة، الواي فاي بالجامعة بفصل كثير
-HT-0042,عندي مشكلة: الواي فاي بالجامعة بفصل كثير
-HT-0043,University helpdesk: The classroom projector is not working
-HT-0044,ممكن تساعدوني؟ وين مكتب المرشد الاكاديمي؟
-HT-0045,Could you assist? My course registration page keeps loading without showing courses
-HT-0046,مرحبا، الواي فاي بالجامعة بفصل كثير
-HT-0047,مرحبا يا جماعة بدي نسخة من وصل الدفع
-HT-0048,My course registration page keeps loading without showing courses Please respond when possible.
-HT-0049,Please help: The classroom projector is not working
-HT-0050,الواي فاي بالجامعة بفصل كثير
-HT-0051,URGENT: The classroom projector is not working
-HT-0052,لو سمحت وين مكتب المرشد الاكاديمي؟
-HT-0053,This is my issue: The classroom projector is not working
-HT-0054,The classroom projector is not working
-HT-0055,University helpdesk: My course registration page keeps loading without showing courses
-HT-0056,الواي فاي بالجامعة بفصل كثير وشكرا
-HT-0057,سؤال: الواي فاي بالجامعة بفصل كثير
-HT-0058,ارجو المساعدة، بدي نسخة من وصل الدفع
-HT-0059,Student request: The classroom projector is not working
-HT-0060,مرحبا، بدي نسخة من وصل الدفع
+﻿request_id,text
+T1-0001,متى بفتح التسجيل للفصل الصيفي؟
+T1-0002,The registration portal shows the wrong number of credit hours for me Please respond when possible.
+T1-0003,عندي مشكلة: كيف بربط الايميل الجامعي على موبايلي؟
+T1-0004,I cannot log in to submit my project and the submission closes in one hour Please respond when possible.
+T1-0005,انخصم مني القسط مرتين
+T1-0006,URGENT: el min7a ma nazlat w iza ma dafa3t el yom byensa7ab tasjeeli
+T1-0007,ارجو المساعدة، السواق ما وقف بموقف الباص اليوم الصبح
+T1-0008,ممكن تساعدوني؟ الحنفية بحمام الطابق الثاني بتنقط
+T1-0009,fi ri7et ghaz 2awiye bil mokhtabar
+T1-0010,URGENT: Can I change my academic advisor?
+T1-0011,Could you assist? I was marked absent by mistake and will be banned from the final exam today
+T1-0012,URGENT: The registration portal shows the wrong number of credit hours for me
+T1-0013,كيف بربط الايميل الجامعي على موبايلي؟
+T1-0014,"Hi team, Microsoft Office says my student license has expired"
+T1-0015,I need assistance. How can I pay my tuition by bank transfer?
+T1-0016,"marhaba, el min7a ma nazlat w iza ma dafa3t el yom byensa7ab tasjeeli"
+T1-0017,السواق ما وقف بموقف الباص اليوم الصبح
+T1-0018,The shuttle broke down on the highway and students are stuck there Please respond when possible.
+T1-0019,"Hello, The microphone in the main auditorium does not work"
+T1-0020,Can I change my academic advisor? Please respond when possible.
+T1-0021,I was marked absent by mistake and will be banned from the final exam today
+T1-0022,عندي مشكلة: متى بفتح التسجيل للفصل الصيفي؟
+T1-0023,law sama7t sakkaro el shu3ba w shalooni mn mada ijbariye w el idafe btskker el yom
+T1-0024,Could you assist? Microsoft Office says my student license has expired
+T1-0025,How can I pay my tuition by bank transfer?
+T1-0026,ارجو المساعدة، انخصم مني القسط مرتين
+T1-0027,fi bas lal jam3a yom el jum3a? w shukran
+T1-0028,URGENT: The shuttle broke down on the highway and students are stuck there
+T1-0029,The microphone in the main auditorium does not work
+T1-0030,URGENT: fi ri7et ghaz 2awiye bil mokhtabar
+T1-0031,سؤال: علامة الميد ترم مش منزلة صح على النظام
+T1-0032,مرحبا، متى بفتح التسجيل للفصل الصيفي؟
+T1-0033,sakkaro el shu3ba w shalooni mn mada ijbariye w el idafe btskker el yom
+T1-0034,لو سمحت كيف بربط الايميل الجامعي على موبايلي؟
+T1-0035,Student request: I cannot log in to submit my project and the submission closes in one hour
+T1-0036,انخصم مني القسط مرتين وشكرا
+T1-0037,fi bas lal jam3a yom el jum3a?
+T1-0038,مرحبا، السواق ما وقف بموقف الباص اليوم الصبح
+T1-0039,الحنفية بحمام الطابق الثاني بتنقط وشكرا
+T1-0040,"marhaba, fi ri7et ghaz 2awiye bil mokhtabar"
+T1-0041,علامة الميد ترم مش منزلة صح على النظام
+T1-0042,URGENT: I was marked absent by mistake and will be banned from the final exam today
+T1-0043,"Hi team, The registration portal shows the wrong number of credit hours for me"
+T1-0044,سؤال: كيف بربط الايميل الجامعي على موبايلي؟
+T1-0045,I cannot log in to submit my project and the submission closes in one hour
+T1-0046,URGENT: How can I pay my tuition by bank transfer?
+T1-0047,law sama7t el min7a ma nazlat w iza ma dafa3t el yom byensa7ab tasjeeli
+T1-0048,مرحبا يا جماعة السواق ما وقف بموقف الباص اليوم الصبح
+T1-0049,الحنفية بحمام الطابق الثاني بتنقط
+T1-0050,Please help: The microphone in the main auditorium does not work
+T1-0051,Student request: Can I change my academic advisor?
+T1-0052,Please help: I was marked absent by mistake and will be banned from the final exam today
+T1-0053,The registration portal shows the wrong number of credit hours for me
+T1-0054,URGENT: sakkaro el shu3ba w shalooni mn mada ijbariye w el idafe btskker el yom
+T1-0055,URGENT: Microsoft Office says my student license has expired
+T1-0056,University helpdesk: How can I pay my tuition by bank transfer?
+T1-0057,el min7a ma nazlat w iza ma dafa3t el yom byensa7ab tasjeeli
+T1-0058,URGENT: fi bas lal jam3a yom el jum3a?
+T1-0059,"Hi team, The shuttle broke down on the highway and students are stuck there"
+T1-0060,I need assistance. The microphone in the main auditorium does not work
+T1-0061,Can I change my academic advisor?
+T1-0062,عندي مشكلة: علامة الميد ترم مش منزلة صح على النظام
+T1-0063,سؤال: متى بفتح التسجيل للفصل الصيفي؟
+T1-0064,"marhaba, sakkaro el shu3ba w shalooni mn mada ijbariye w el idafe btskker el yom"
+T1-0065,Microsoft Office says my student license has expired
+T1-0066,This is my issue: I cannot log in to submit my project and the submission closes in one hour
+T1-0067,مرحبا يا جماعة انخصم مني القسط مرتين
+T1-0068,3indi moshkle: fi bas lal jam3a yom el jum3a?
+T1-0069,The shuttle broke down on the highway and students are stuck there
+T1-0070,مرحبا يا جماعة الحنفية بحمام الطابق الثاني بتنقط
+T1-0071,law sama7t fi ri7et ghaz 2awiye bil mokhtabar
+T1-0072,مرحبا، علامة الميد ترم مش منزلة صح على النظام

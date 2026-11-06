@@ -17,7 +17,7 @@ This file lists every result we have, where it came from, and what it does not p
 | Source | Rows | Who wrote it | How it was used | Trust |
 |---|---|---|---|---|
 | Official cross-validation (OOF) | 432 official rows, 30 scenario groups | Organisers | Scenario-held-out folds; the model never sees a scenario's group in training | Our own estimate on templated data. Likely closer to the hidden test than the others, but not the same thing |
-| `our_test` (3 sets) | 204 rows, 38 groups | Us (set 1 human-written; sets 2 and 3 not) | Never used for training; regression check after each change | Fair, but we have looked at it many times |
+| `our_test` (4 sets) | 396 rows | LLM-written (Claude), kept apart from training | Never used for training; regression check after each change | Fair, but we have looked at it many times |
 | Dev set | 216 rows (108 tune, 108 check) | LLM-assisted | Tune split used to design rules; check split read once per agent | The check split has now been read by **two** separate agents, so it is no longer untouched |
 | Locked holdout | 120 rows, English and Arabic | LLM authors, LLM labellers | Scored **once**, on candidates C0, C1, C3, before P7.8 to P7.12 | LLM-written, so friendlier than real student text. Cannot be reused |
 | QA set 1 | independent QA agent's rows | QA agent | Regression check (we saw it) | Not blind |
@@ -32,16 +32,18 @@ This file lists every result we have, where it came from, and what it does not p
 - 432 rows, 30 groups. Category comes almost entirely from the prototype member (0.935 alone); the other members are much weaker on their own.
 - Identical to rc5 and rc6: the later changes (P7.8 to P7.12) changed only lexicon rules, and the benchmark was re-run after each refreeze with only the sha changing.
 
-## 4. Our own test sets (rc7)
+## 4. Our own test sets (offline model, `reports/benchmark.md`)
 
 | Set | Rows | Category | Priority |
 |---|---|---|---|
-| `our_test` pooled | 204 | 0.868 | 0.847 |
-| Set 1 (human-written) | 60 | 1.000 | 1.000 |
-| Set 2 | 72 | 0.800 | 0.782 |
-| Set 3 | 72 | 0.828 | 0.783 |
+| `our_test` pooled | 396 | 0.769 | 0.752 |
+| Set 1 (unseen scenarios, official style) | 72 | 0.800 | 0.782 |
+| Set 2 (unseen scenarios, free student style) | 72 | 0.828 | 0.809 |
+| Set 3 (hard realistic) | 108 | 0.731 | 0.793 |
+| Set 4 (final blind set) | 144 | 0.751 | 0.676 |
 
-Set 1 at 1.000 is on only 60 rows and should not be read as "perfect"; sets 2 and 3 are the more telling ones.
+These are the offline model alone. With the LLM front end and tie-breaker (the default when a key is set), set 4
+reaches 0.925 category and 0.958 priority (README, "Prediction").
 
 ## 5. Locked holdout (120 rows: 60 English, 60 Arabic), scored once
 
@@ -57,7 +59,7 @@ Candidates were scored in one run; the rule for choosing was written before scor
 
 - By language, C0 offline: English 0.918 category / 0.866 priority; Arabic 0.870 / 0.753.
 - **C1 scored higher than C0 on priority.** The difference in the weighted score (+0.019, 90% interval [-0.007, +0.044]) includes zero, so the rule we set beforehand picked the simpler C0. This is a judgment call, not a clear win for C0.
-- Caveats on C1: it asked clarifying questions about twice as often (0.39 against 0.17), its extra training rows were labelled by AI models, not humans, and its priority fell from 1.00 to 0.82 on the human-written set 1. The holdout's writers belong to the same model family as the labellers of those extra rows, which may flatter C1.
+- Caveats on C1: it asked clarifying questions about twice as often (0.39 against 0.17), its extra training rows were labelled by AI models, not humans. The holdout's writers belong to the same model family as the labellers of those extra rows, which may flatter C1.
 - C0 does not use the 447 AI-reviewed rows.
 
 ## 6. Dev set (LLM-assisted, 216 rows) and QA set 1

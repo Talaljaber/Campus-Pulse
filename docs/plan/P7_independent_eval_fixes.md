@@ -609,7 +609,7 @@ A "standard laptop" today has 8–16 GB RAM, so every row fits. predict.py on ab
 - our_test EN coverage ≥ 0.93 with mean set ≤ 1.5. AR and Arabizi coverage and set sizes are unchanged unless intended.
 - Dev `tune` EN:
   - coverage ≥ 0.90 (rc4: equal to accuracy, about 0.87 expected);
-  - ask (set 2) plus review (≥ 3) rate between 10 % and 30 %;
+  - ask (set 1) plus review (≥ 3) rate between 10 % and 30 %;
   - accuracy in the auto bucket ≥ 0.93.
 - Dev `check`: report once.
 - Unit tests for the key (absent → unchanged; forbidden paths rejected; group counting) and a retune round-trip.

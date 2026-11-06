@@ -126,20 +126,20 @@ def by_lang(v1: dict[str, Any], fair: dict[str, Any]) -> list[str]:
 def ablations(abl: dict[str, Any]) -> list[str]:
     lines = [
         "| arm | OOF cat F1 (Δ, 90 % CI) | OOF pri F1 (Δ, 90 % CI) | our_test cat F1 (Δ) | our_test pri F1 (Δ) "
-        "| set2+3 note |",
+        "| set1+2 note |",
         "| --- | --- | --- | --- | --- | --- |",
     ]
     for name, a in abl["arms"].items():
         oc, op = a["oof_official"]["category"], a["oof_official"]["priority"]
         tc, tp = a["our_test"]["category"], a["our_test"]["priority"]
+        s1 = a.get("our_test_set1", {}).get("category", {})
         s2 = a.get("our_test_set2", {}).get("category", {})
-        s3 = a.get("our_test_set3", {}).get("category", {})
         flag = " **unreviewed**" if a.get("unreviewed_training_rows") else ""
         lines.append(
             f"| `{name}`{flag} | {f(oc['macro_f1'])} ({oc['delta']:+.3f}, [{oc['ci90'][0]:+.3f}, {oc['ci90'][1]:+.3f}]) "
             f"| {f(op['macro_f1'])} ({op['delta']:+.3f}, [{op['ci90'][0]:+.3f}, {op['ci90'][1]:+.3f}]) "
             f"| {f(tc['macro_f1'])} ({tc['delta']:+.3f}) | {f(tp['macro_f1'])} ({tp['delta']:+.3f}) "
-            f"| cat set2 {f(s2.get('macro_f1'))}, set3 {f(s3.get('macro_f1'))} |"
+            f"| cat set1 {f(s1.get('macro_f1'))}, set2 {f(s2.get('macro_f1'))} |"
         )
     return lines
 

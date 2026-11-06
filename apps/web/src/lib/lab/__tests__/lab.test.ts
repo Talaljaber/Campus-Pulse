@@ -64,7 +64,7 @@ describe("benchmarkView", () => {
       bench({ model: "M1", dataset: "our_test", macro_f1: 0.7, n_rows: 204, n_groups: 104 }),
       bench({ model: "M1" }),
       bench({ model: "M2-LR", dataset: "our_test:set2", macro_f1: 0.9, n_rows: 72, n_groups: 40 }),
-      bench({ model: "M2-LR", dataset: "our_test:set1", macro_f1: 0.85, n_rows: 60, n_groups: 30 }),
+      bench({ model: "M2-LR", dataset: "our_test:set1", macro_f1: 0.85, n_rows: 72, n_groups: 30 }),
       bench({ model: "M2-LR", target: "priority", macro_f1: 0.5 }),
     ];
     const v = benchmarkView(rows, "category");

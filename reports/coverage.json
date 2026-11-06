@@ -1,7 +1,7 @@
 {
   "artifact_version": "v1",
   "ask_proxy_is_proxy": true,
-  "ask_proxy_rate": 0.1324,
+  "ask_proxy_rate": 0.096,
   "calibration_oof_official": [
     {
       "bins": [
@@ -174,44 +174,44 @@
           "upper": 0.2
         },
         {
-          "accuracy": 0.6,
-          "confidence": 0.2686,
-          "count": 5,
+          "accuracy": 0.3333,
+          "confidence": 0.2709,
+          "count": 9,
           "lower": 0.2,
           "upper": 0.3
         },
         {
-          "accuracy": 0.4444,
-          "confidence": 0.3686,
-          "count": 18,
+          "accuracy": 0.4524,
+          "confidence": 0.366,
+          "count": 42,
           "lower": 0.3,
           "upper": 0.4
         },
         {
           "accuracy": 0.5333,
-          "confidence": 0.4337,
-          "count": 15,
+          "confidence": 0.4482,
+          "count": 60,
           "lower": 0.4,
           "upper": 0.5
         },
         {
-          "accuracy": 0.8696,
-          "confidence": 0.5644,
-          "count": 46,
+          "accuracy": 0.7273,
+          "confidence": 0.558,
+          "count": 99,
           "lower": 0.5,
           "upper": 0.6
         },
         {
-          "accuracy": 0.9808,
-          "confidence": 0.6577,
-          "count": 104,
+          "accuracy": 0.9474,
+          "confidence": 0.6422,
+          "count": 171,
           "lower": 0.6,
           "upper": 0.7
         },
         {
           "accuracy": 1.0,
-          "confidence": 0.732,
-          "count": 16,
+          "confidence": 0.7297,
+          "count": 15,
           "lower": 0.7,
           "upper": 0.8
         },
@@ -230,7 +230,7 @@
           "upper": 1.0
         }
       ],
-      "ece": 0.2767,
+      "ece": 0.2078,
       "target": "category"
     },
     {
@@ -271,42 +271,42 @@
           "upper": 0.5
         },
         {
-          "accuracy": 0.3077,
-          "confidence": 0.59,
-          "count": 26,
+          "accuracy": 0.54,
+          "confidence": 0.5873,
+          "count": 100,
           "lower": 0.5,
           "upper": 0.6
         },
         {
-          "accuracy": 0.875,
-          "confidence": 0.6291,
-          "count": 8,
+          "accuracy": 0.5641,
+          "confidence": 0.6281,
+          "count": 39,
           "lower": 0.6,
           "upper": 0.7
         },
         {
-          "accuracy": 1.0,
-          "confidence": 0.7664,
-          "count": 20,
+          "accuracy": 0.8,
+          "confidence": 0.7699,
+          "count": 35,
           "lower": 0.7,
           "upper": 0.8
         },
         {
-          "accuracy": 0.7714,
-          "confidence": 0.876,
-          "count": 35,
+          "accuracy": 0.6591,
+          "confidence": 0.8767,
+          "count": 44,
           "lower": 0.8,
           "upper": 0.9
         },
         {
-          "accuracy": 0.9565,
-          "confidence": 0.9696,
-          "count": 115,
+          "accuracy": 0.9157,
+          "confidence": 0.9746,
+          "count": 178,
           "lower": 0.9,
           "upper": 1.0
         }
       ],
-      "ece": 0.0939,
+      "ece": 0.0716,
       "target": "priority"
     }
   ],
@@ -318,7 +318,7 @@
     "q_category": 0.5433181498815092,
     "q_priority": 0.5860262237476455
   },
-  "generated_at": "2026-11-01T10:45:47+00:00",
+  "generated_at": "2026-11-06T18:06:47+00:00",
   "note": "coverage is approximate: effective n ~ groups (LD-32); counts beside every number",
   "protocol": "scenario-held-out OOF over the frozen cv_fold folds (oof.npz from train.py; LD-31) + the frozen model on our own test set (pooled and per set) and the probes; nothing tuned on the test data",
   "rows": [
@@ -443,148 +443,88 @@
       "target": "priority"
     },
     {
-      "coverage": 0.9657,
+      "coverage": 0.904,
       "dataset": "our_test",
       "lang": "all",
-      "mean_set_size": 1.9804,
-      "n_groups": 38,
-      "n_rows": 204,
-      "singleton_rate": 0.5441,
+      "mean_set_size": 2.1439,
+      "n_groups": 268,
+      "n_rows": 396,
+      "singleton_rate": 0.5051,
       "target": "category"
     },
     {
-      "coverage": 0.9381,
+      "coverage": 0.8613,
       "dataset": "our_test",
       "lang": "en",
       "mean_set_size": 1.0,
-      "n_groups": 15,
-      "n_rows": 97,
+      "n_groups": 105,
+      "n_rows": 173,
       "singleton_rate": 1.0,
       "target": "category"
     },
     {
-      "coverage": 1.0,
+      "coverage": 0.9773,
       "dataset": "our_test",
       "lang": "ar",
-      "mean_set_size": 2.6,
-      "n_groups": 15,
-      "n_rows": 75,
-      "singleton_rate": 0.1467,
+      "mean_set_size": 2.6742,
+      "n_groups": 96,
+      "n_rows": 132,
+      "singleton_rate": 0.1894,
       "target": "category"
     },
     {
-      "coverage": 0.9688,
+      "coverage": 0.8791,
       "dataset": "our_test",
       "lang": "arabizi",
-      "mean_set_size": 3.5,
-      "n_groups": 8,
-      "n_rows": 32,
-      "singleton_rate": 0.0938,
+      "mean_set_size": 3.5495,
+      "n_groups": 67,
+      "n_rows": 91,
+      "singleton_rate": 0.022,
       "target": "category"
     },
     {
-      "coverage": 0.8431,
+      "coverage": 0.7475,
       "dataset": "our_test",
       "lang": "all",
       "mean_set_size": 1.0,
-      "n_groups": 38,
-      "n_rows": 204,
+      "n_groups": 268,
+      "n_rows": 396,
       "singleton_rate": 1.0,
       "target": "priority"
     },
     {
-      "coverage": 0.8763,
+      "coverage": 0.763,
       "dataset": "our_test",
       "lang": "en",
       "mean_set_size": 1.0,
-      "n_groups": 15,
-      "n_rows": 97,
+      "n_groups": 105,
+      "n_rows": 173,
       "singleton_rate": 1.0,
       "target": "priority"
     },
     {
-      "coverage": 0.8533,
+      "coverage": 0.7273,
       "dataset": "our_test",
       "lang": "ar",
       "mean_set_size": 1.0,
-      "n_groups": 15,
-      "n_rows": 75,
+      "n_groups": 96,
+      "n_rows": 132,
       "singleton_rate": 1.0,
       "target": "priority"
     },
     {
-      "coverage": 0.7188,
+      "coverage": 0.7473,
       "dataset": "our_test",
       "lang": "arabizi",
       "mean_set_size": 1.0,
-      "n_groups": 8,
-      "n_rows": 32,
+      "n_groups": 67,
+      "n_rows": 91,
       "singleton_rate": 1.0,
       "target": "priority"
     },
     {
       "coverage": 1.0,
       "dataset": "our_test_set1",
-      "lang": "all",
-      "mean_set_size": 1.6,
-      "n_groups": 6,
-      "n_rows": 60,
-      "singleton_rate": 0.55,
-      "target": "category"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "en",
-      "mean_set_size": 1.0,
-      "n_groups": 3,
-      "n_rows": 33,
-      "singleton_rate": 1.0,
-      "target": "category"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "ar",
-      "mean_set_size": 2.3333,
-      "n_groups": 3,
-      "n_rows": 27,
-      "singleton_rate": 0.0,
-      "target": "category"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "all",
-      "mean_set_size": 1.0,
-      "n_groups": 6,
-      "n_rows": 60,
-      "singleton_rate": 1.0,
-      "target": "priority"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "en",
-      "mean_set_size": 1.0,
-      "n_groups": 3,
-      "n_rows": 33,
-      "singleton_rate": 1.0,
-      "target": "priority"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set1",
-      "lang": "ar",
-      "mean_set_size": 1.0,
-      "n_groups": 3,
-      "n_rows": 27,
-      "singleton_rate": 1.0,
-      "target": "priority"
-    },
-    {
-      "coverage": 1.0,
-      "dataset": "our_test_set2",
       "lang": "all",
       "mean_set_size": 2.1944,
       "n_groups": 16,
@@ -594,7 +534,7 @@
     },
     {
       "coverage": 1.0,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "en",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -604,7 +544,7 @@
     },
     {
       "coverage": 1.0,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "ar",
       "mean_set_size": 2.6667,
       "n_groups": 6,
@@ -614,7 +554,7 @@
     },
     {
       "coverage": 1.0,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "arabizi",
       "mean_set_size": 3.875,
       "n_groups": 4,
@@ -624,7 +564,7 @@
     },
     {
       "coverage": 0.7778,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "all",
       "mean_set_size": 1.0,
       "n_groups": 16,
@@ -634,7 +574,7 @@
     },
     {
       "coverage": 0.875,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "en",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -644,7 +584,7 @@
     },
     {
       "coverage": 0.6667,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "ar",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -654,7 +594,7 @@
     },
     {
       "coverage": 0.75,
-      "dataset": "our_test_set2",
+      "dataset": "our_test_set1",
       "lang": "arabizi",
       "mean_set_size": 1.0,
       "n_groups": 4,
@@ -664,17 +604,17 @@
     },
     {
       "coverage": 0.9028,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "all",
-      "mean_set_size": 2.0833,
+      "mean_set_size": 2.1111,
       "n_groups": 16,
       "n_rows": 72,
-      "singleton_rate": 0.5278,
+      "singleton_rate": 0.5139,
       "target": "category"
     },
     {
       "coverage": 0.8125,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "en",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -684,7 +624,7 @@
     },
     {
       "coverage": 1.0,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "ar",
       "mean_set_size": 2.8333,
       "n_groups": 6,
@@ -694,17 +634,17 @@
     },
     {
       "coverage": 0.9375,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "arabizi",
-      "mean_set_size": 3.125,
+      "mean_set_size": 3.25,
       "n_groups": 4,
       "n_rows": 16,
-      "singleton_rate": 0.1875,
+      "singleton_rate": 0.125,
       "target": "category"
     },
     {
-      "coverage": 0.7778,
-      "dataset": "our_test_set3",
+      "coverage": 0.8056,
+      "dataset": "our_test_set2",
       "lang": "all",
       "mean_set_size": 1.0,
       "n_groups": 16,
@@ -714,7 +654,7 @@
     },
     {
       "coverage": 0.75,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "en",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -724,7 +664,7 @@
     },
     {
       "coverage": 0.875,
-      "dataset": "our_test_set3",
+      "dataset": "our_test_set2",
       "lang": "ar",
       "mean_set_size": 1.0,
       "n_groups": 6,
@@ -733,15 +673,175 @@
       "target": "priority"
     },
     {
-      "coverage": 0.6875,
-      "dataset": "our_test_set3",
+      "coverage": 0.8125,
+      "dataset": "our_test_set2",
       "lang": "arabizi",
       "mean_set_size": 1.0,
       "n_groups": 4,
       "n_rows": 16,
       "singleton_rate": 1.0,
       "target": "priority"
+    },
+    {
+      "coverage": 0.8704,
+      "dataset": "our_test_set3",
+      "lang": "all",
+      "mean_set_size": 2.1019,
+      "n_groups": 102,
+      "n_rows": 108,
+      "singleton_rate": 0.5093,
+      "target": "category"
+    },
+    {
+      "coverage": 0.8222,
+      "dataset": "our_test_set3",
+      "lang": "en",
+      "mean_set_size": 1.0,
+      "n_groups": 39,
+      "n_rows": 45,
+      "singleton_rate": 1.0,
+      "target": "category"
+    },
+    {
+      "coverage": 0.9444,
+      "dataset": "our_test_set3",
+      "lang": "ar",
+      "mean_set_size": 2.3611,
+      "n_groups": 36,
+      "n_rows": 36,
+      "singleton_rate": 0.2778,
+      "target": "category"
+    },
+    {
+      "coverage": 0.8519,
+      "dataset": "our_test_set3",
+      "lang": "arabizi",
+      "mean_set_size": 3.5926,
+      "n_groups": 27,
+      "n_rows": 27,
+      "singleton_rate": 0.0,
+      "target": "category"
+    },
+    {
+      "coverage": 0.787,
+      "dataset": "our_test_set3",
+      "lang": "all",
+      "mean_set_size": 1.0,
+      "n_groups": 102,
+      "n_rows": 108,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.8,
+      "dataset": "our_test_set3",
+      "lang": "en",
+      "mean_set_size": 1.0,
+      "n_groups": 39,
+      "n_rows": 45,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.6944,
+      "dataset": "our_test_set3",
+      "lang": "ar",
+      "mean_set_size": 1.0,
+      "n_groups": 36,
+      "n_rows": 36,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.8889,
+      "dataset": "our_test_set3",
+      "lang": "arabizi",
+      "mean_set_size": 1.0,
+      "n_groups": 27,
+      "n_rows": 27,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.8819,
+      "dataset": "our_test_set4",
+      "lang": "all",
+      "mean_set_size": 2.1667,
+      "n_groups": 134,
+      "n_rows": 144,
+      "singleton_rate": 0.4722,
+      "target": "category"
+    },
+    {
+      "coverage": 0.8438,
+      "dataset": "our_test_set4",
+      "lang": "en",
+      "mean_set_size": 1.0,
+      "n_groups": 54,
+      "n_rows": 64,
+      "singleton_rate": 1.0,
+      "target": "category"
+    },
+    {
+      "coverage": 0.9792,
+      "dataset": "our_test_set4",
+      "lang": "ar",
+      "mean_set_size": 2.8333,
+      "n_groups": 48,
+      "n_rows": 48,
+      "singleton_rate": 0.0833,
+      "target": "category"
+    },
+    {
+      "coverage": 0.8125,
+      "dataset": "our_test_set4",
+      "lang": "arabizi",
+      "mean_set_size": 3.5,
+      "n_groups": 32,
+      "n_rows": 32,
+      "singleton_rate": 0.0,
+      "target": "category"
+    },
+    {
+      "coverage": 0.6736,
+      "dataset": "our_test_set4",
+      "lang": "all",
+      "mean_set_size": 1.0,
+      "n_groups": 134,
+      "n_rows": 144,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.6875,
+      "dataset": "our_test_set4",
+      "lang": "en",
+      "mean_set_size": 1.0,
+      "n_groups": 54,
+      "n_rows": 64,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.7083,
+      "dataset": "our_test_set4",
+      "lang": "ar",
+      "mean_set_size": 1.0,
+      "n_groups": 48,
+      "n_rows": 48,
+      "singleton_rate": 1.0,
+      "target": "priority"
+    },
+    {
+      "coverage": 0.5938,
+      "dataset": "our_test_set4",
+      "lang": "arabizi",
+      "mean_set_size": 1.0,
+      "n_groups": 32,
+      "n_rows": 32,
+      "singleton_rate": 1.0,
+      "target": "priority"
     }
   ],
-  "sha": "05de06d266cf"
+  "sha": "a8e2f1e58da5"
 }

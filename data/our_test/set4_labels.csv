@@ -1,0 +1,145 @@
+﻿request_id,category,priority,scenario_family
+T4-0001,Academic Support,low,t4_en_AcademicSupport_2
+T4-0002,Finance,high,t4_en_Finance_9
+T4-0003,Registration,high,t4_en_Registration_8
+T4-0004,Facilities,medium,t4_en_Facilities_6
+T4-0005,Registration,high,t4_en_Registration_9
+T4-0006,Facilities,low,t4_en_Facilities_1
+T4-0007,Transportation,medium,t4_ar_Transportation_6
+T4-0008,Finance,high,t4_en_Finance_8
+T4-0009,IT Support,medium,t4_arabizi_ITSupport_5
+T4-0010,Facilities,high,t4_en_Facilities_8
+T4-0011,Facilities,medium,t4_en_Facilities_4
+T4-0012,IT Support,medium,t4_en_ITSupport_4
+T4-0013,Facilities,high,t4_ar_Facilities_7
+T4-0014,IT Support,high,t4_ar_ITSupport_9
+T4-0015,Finance,medium,t4_arabizi_Finance_5
+T4-0016,Academic Support,medium,t4_en_AcademicSupport_4
+T4-0017,Transportation,low,t4_en_Transportation_3
+T4-0018,Facilities,medium,t4_arabizi_Facilities_6
+T4-0019,Finance,low,t4_arabizi_Finance_2
+T4-0020,Transportation,medium,t4_arabizi_Transportation_5
+T4-0021,Academic Support,low,t4_ar_AcademicSupport_1
+T4-0022,Academic Support,low,t4_arabizi_AcademicSupport_1
+T4-0023,Transportation,medium,t4_ar_Transportation_4
+T4-0024,Transportation,low,t4_en_Transportation_2
+T4-0025,Finance,high,t4_ar_Finance_8
+T4-0026,IT Support,low,t4_en_ITSupport_3
+T4-0027,Academic Support,high,t4_arabizi_AcademicSupport_9
+T4-0028,Finance,medium,t4_en_Finance_4
+T4-0029,Academic Support,medium,t4_ar_AcademicSupport_6
+T4-0030,IT Support,medium,t4_ar_ITSupport_6
+T4-0031,Finance,medium,t4_ar_Finance_5
+T4-0032,Registration,low,t4_arabizi_Registration_1
+T4-0033,IT Support,high,t4_arabizi_ITSupport_9
+T4-0034,Registration,medium,t4_en_Registration_6
+T4-0035,Academic Support,high,t4_en_AcademicSupport_9
+T4-0036,Transportation,low,t4_en_Transportation_1
+T4-0037,Finance,high,t4_ar_Finance_9
+T4-0038,IT Support,high,t4_en_ITSupport_7
+T4-0039,Facilities,low,t4_ar_Facilities_2
+T4-0040,Registration,medium,t4_ar_Registration_6
+T4-0041,Registration,high,t4_arabizi_Registration_8
+T4-0042,Registration,medium,t4_ar_Registration_5
+T4-0043,Registration,low,t4_ar_Registration_3
+T4-0044,Transportation,medium,t4_arabizi_Transportation_6
+T4-0045,Registration,low,t4_arabizi_Registration_2
+T4-0046,IT Support,high,t4_en_ITSupport_9
+T4-0047,Transportation,high,t4_en_Transportation_9
+T4-0048,Facilities,low,t4_en_Facilities_1
+T4-0049,Registration,high,t4_en_Registration_7
+T4-0050,Academic Support,high,t4_ar_AcademicSupport_8
+T4-0051,Academic Support,low,t4_en_AcademicSupport_3
+T4-0052,Academic Support,low,t4_ar_AcademicSupport_2
+T4-0053,Finance,medium,t4_en_Finance_4
+T4-0054,Academic Support,medium,t4_en_AcademicSupport_5
+T4-0055,Transportation,high,t4_ar_Transportation_9
+T4-0056,IT Support,high,t4_ar_ITSupport_7
+T4-0057,Academic Support,high,t4_arabizi_AcademicSupport_8
+T4-0058,Registration,low,t4_en_Registration_3
+T4-0059,Facilities,medium,t4_ar_Facilities_6
+T4-0060,Academic Support,medium,t4_en_AcademicSupport_6
+T4-0061,Transportation,high,t4_ar_Transportation_7
+T4-0062,Registration,high,t4_ar_Registration_7
+T4-0063,Finance,medium,t4_ar_Finance_6
+T4-0064,Facilities,medium,t4_en_Facilities_5
+T4-0065,Finance,high,t4_arabizi_Finance_8
+T4-0066,IT Support,medium,t4_en_ITSupport_5
+T4-0067,IT Support,low,t4_ar_ITSupport_2
+T4-0068,Facilities,low,t4_en_Facilities_3
+T4-0069,Registration,medium,t4_arabizi_Registration_4
+T4-0070,Facilities,high,t4_ar_Facilities_8
+T4-0071,Academic Support,medium,t4_arabizi_AcademicSupport_4
+T4-0072,Registration,low,t4_en_Registration_1
+T4-0073,Registration,high,t4_ar_Registration_8
+T4-0074,IT Support,medium,t4_ar_ITSupport_5
+T4-0075,Facilities,low,t4_arabizi_Facilities_1
+T4-0076,Transportation,medium,t4_en_Transportation_4
+T4-0077,Finance,low,t4_en_Finance_1
+T4-0078,IT Support,high,t4_en_ITSupport_8
+T4-0079,Academic Support,medium,t4_ar_AcademicSupport_5
+T4-0080,Registration,medium,t4_en_Registration_4
+T4-0081,Facilities,high,t4_arabizi_Facilities_7
+T4-0082,Registration,low,t4_ar_Registration_1
+T4-0083,IT Support,low,t4_ar_ITSupport_1
+T4-0084,Finance,low,t4_en_Finance_3
+T4-0085,IT Support,low,t4_arabizi_ITSupport_3
+T4-0086,Finance,high,t4_en_Finance_7
+T4-0087,Transportation,medium,t4_ar_Transportation_5
+T4-0088,Facilities,medium,t4_en_Facilities_4
+T4-0089,Finance,low,t4_en_Finance_2
+T4-0090,Transportation,low,t4_ar_Transportation_1
+T4-0091,Facilities,low,t4_en_Facilities_2
+T4-0092,Academic Support,high,t4_en_AcademicSupport_8
+T4-0093,Registration,high,t4_arabizi_Registration_7
+T4-0094,Finance,medium,t4_ar_Finance_4
+T4-0095,Academic Support,low,t4_en_AcademicSupport_1
+T4-0096,IT Support,medium,t4_en_ITSupport_6
+T4-0097,Transportation,low,t4_arabizi_Transportation_2
+T4-0098,IT Support,high,t4_ar_ITSupport_8
+T4-0099,Transportation,medium,t4_en_Transportation_5
+T4-0100,Transportation,high,t4_en_Transportation_7
+T4-0101,Registration,medium,t4_ar_Registration_4
+T4-0102,Registration,medium,t4_en_Registration_6
+T4-0103,Facilities,low,t4_ar_Facilities_3
+T4-0104,Registration,low,t4_en_Registration_2
+T4-0105,Finance,high,t4_arabizi_Finance_7
+T4-0106,Transportation,high,t4_ar_Transportation_8
+T4-0107,Finance,low,t4_en_Finance_2
+T4-0108,Transportation,high,t4_arabizi_Transportation_9
+T4-0109,Finance,low,t4_ar_Finance_3
+T4-0110,Facilities,high,t4_en_Facilities_9
+T4-0111,Transportation,low,t4_ar_Transportation_2
+T4-0112,Facilities,medium,t4_ar_Facilities_5
+T4-0113,Academic Support,high,t4_ar_AcademicSupport_9
+T4-0114,Transportation,medium,t4_en_Transportation_6
+T4-0115,Transportation,high,t4_arabizi_Transportation_7
+T4-0116,Academic Support,low,t4_en_AcademicSupport_2
+T4-0117,IT Support,medium,t4_en_ITSupport_4
+T4-0118,Registration,low,t4_en_Registration_3
+T4-0119,Facilities,high,t4_en_Facilities_7
+T4-0120,Academic Support,high,t4_en_AcademicSupport_7
+T4-0121,Transportation,low,t4_en_Transportation_3
+T4-0122,Academic Support,high,t4_ar_AcademicSupport_7
+T4-0123,Finance,low,t4_arabizi_Finance_1
+T4-0124,IT Support,low,t4_en_ITSupport_1
+T4-0125,Academic Support,medium,t4_arabizi_AcademicSupport_6
+T4-0126,Transportation,high,t4_en_Transportation_8
+T4-0127,Registration,medium,t4_en_Registration_5
+T4-0128,Registration,high,t4_ar_Registration_9
+T4-0129,Academic Support,low,t4_arabizi_AcademicSupport_3
+T4-0130,Finance,high,t4_ar_Finance_7
+T4-0131,Finance,medium,t4_en_Finance_6
+T4-0132,Facilities,high,t4_ar_Facilities_9
+T4-0133,Facilities,low,t4_arabizi_Facilities_3
+T4-0134,Finance,low,t4_ar_Finance_1
+T4-0135,IT Support,low,t4_arabizi_ITSupport_2
+T4-0136,IT Support,low,t4_en_ITSupport_3
+T4-0137,Facilities,high,t4_arabizi_Facilities_9
+T4-0138,Transportation,low,t4_arabizi_Transportation_3
+T4-0139,Academic Support,medium,t4_ar_AcademicSupport_4
+T4-0140,IT Support,low,t4_en_ITSupport_2
+T4-0141,Facilities,medium,t4_ar_Facilities_4
+T4-0142,Finance,medium,t4_en_Finance_5
+T4-0143,IT Support,high,t4_arabizi_ITSupport_7
+T4-0144,IT Support,medium,t4_ar_ITSupport_4

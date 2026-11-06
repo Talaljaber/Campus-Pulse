@@ -12,6 +12,10 @@ informed exactly two config switches, as P2.10 prescribes (`alpha_priority`, `mo
 number trains on **official rows only**: the 501 augmented drafts are unreviewed (`needs_human_check=True`) and
 appear only in the arm labelled **unreviewed**.
 
+
+> Note: the our_test numbers in this report (pooled, per language and the error list) were measured on an
+> earlier version of `data/our_test/our_test.csv`; `reports/benchmark.md` holds the current ones.
+
 ## What changed from rc1
 
 - **Category vote (D-016):** M2-LR (C 0.5, pre-declared) + the new **department-prototype member `m2proto`**
@@ -37,10 +41,9 @@ appear only in the arm labelled **unreviewed**.
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | OOF official | 432 / 30 | 0.490 | 0.806 | 0.904 | 0.904 | – → 0.975 (2.53) | – → 0.928 (1.03) |
 | OOF official, nested (honest tuned estimate) | 432 / 30 | – | 0.806 | – | 0.904 | – → 0.917 (1.82) | – → 0.903 (1.07) |
-| our_test set1 | 60 / 6 | 0.592 | 1.000 | 1.000 | 1.000 | 1.000 (2.75) → 1.000 (3.25) | 1.000 (1.00) → 1.000 (1.00) |
-| our_test set2 | 72 / 16 | 0.746 | 0.674 | 0.782 | 0.782 | 0.931 (3.22) → 0.806 (2.68) | 0.778 (1.00) → 0.778 (1.00) |
-| our_test set3 | 72 / 16 | 0.663 | 0.719 | 0.783 | 0.783 | 0.986 (3.06) → 0.875 (2.62) | 0.778 (1.00) → 0.778 (1.00) |
-| our_test pooled | 204 / 38 | 0.710 | 0.789 | 0.847 | 0.847 | 0.971 (3.02) → 0.887 (2.83) | 0.843 (1.00) → 0.843 (1.00) |
+| our_test set1 | 72 / 16 | 0.746 | 0.674 | 0.782 | 0.782 | 0.931 (3.22) → 0.806 (2.68) | 0.778 (1.00) → 0.778 (1.00) |
+| our_test set2 | 72 / 16 | 0.663 | 0.719 | 0.783 | 0.783 | 0.986 (3.06) → 0.875 (2.62) | 0.778 (1.00) → 0.778 (1.00) |
+| our_test pooled (earlier version) | – | 0.710 | 0.789 | 0.847 | 0.847 | 0.971 (3.02) → 0.887 (2.83) | 0.843 (1.00) → 0.843 (1.00) |
 
 "cat cov (size)" is conformal coverage of the gold label with the mean set size (target 0.90). The nested row
 repeats every stage-B choice on 4 folds and scores the 5th; with the fixed D-016 structure it equals the
@@ -48,12 +51,12 @@ in-sample OOF number (0.806), so there is no selection optimism left in it.
 
 **Office-description variants** (category macro-F1, same everything else):
 
-| office descriptions | OOF official | our_test set1 | set2 | set3 | pooled |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| first version (author had seen official texts and the rc1 error table) | 0.777 | 1.000 | 0.803 | 0.774 | 0.856 |
-| **clean rewrite (rc2)** | **0.806** | **1.000** | **0.674** | **0.719** | **0.789** |
+| office descriptions | OOF official | our_test set1 | set2 | pooled |
+| --- | ---: | ---: | ---: | ---: |
+| first version (author had seen official texts and the rc1 error table) | 0.777 | 0.803 | 0.774 | 0.856 |
+| **clean rewrite (rc2)** | **0.806** | **0.674** | **0.719** | **0.789** |
 
-The first version's our_test lead (+0.067 pooled, +0.129 on set2) is what exposure to the test rows can buy. It is
+The first version's our_test lead (+0.067 pooled, +0.129 on set1) is what exposure to the test rows can buy. It is
 not used.
 
 ### By language
@@ -71,10 +74,9 @@ not used.
 - **Category generalisation improved on OOF (0.490 → 0.806), and the gain comes from `m2proto`.** Without it the
   ensemble falls to 0.561 (Δ −0.245, 90 % CI [−0.365, −0.145]). Neither prototype part works alone on our test
   set (learned only 0.614, office only 0.599 pooled); together they reach 0.789.
-- **our_test is mixed.** Pooled category 0.710 → 0.789 and set3 (free student style) 0.663 → 0.719 improve, but
-  **set2 (official style, unseen scenarios) drops 0.746 → 0.674** and **Arabizi drops 0.696 → 0.530** (32 rows,
-  8 groups). Set1 (training scenarios restated in the other language) reaches 1.000: the prototypes make
-  cross-lingual restatements easy, so set1 says little about unseen scenarios.
+- **our_test is mixed.** Pooled category 0.710 → 0.789 and set2 (free student style) 0.663 → 0.719 improve, but
+  **set1 (official style, unseen scenarios) drops 0.746 → 0.674** and **Arabizi drops 0.696 → 0.530** (32 rows,
+  8 groups).
 - **Arabic is still the weak slice.** OOF Arabic category 0.270 → 0.333 against English 0.573 → 0.966. The office
   descriptions are written in standard Arabic; the requests are Jordanian dialect. our_test Arabic improved more
   (0.522 → 0.758).
@@ -98,7 +100,7 @@ Training on every draft (64 paraphrases, 17 translations, 30 rule Arabizi, 390 n
 `needs_human_check=True`), with folds for the 78 new groups from `make_folds.py --include-augmented` (official
 groups unchanged):
 
-| | OOF official cat | OOF official pri | our_test cat | our_test pri | set2 cat | set3 cat |
+| | OOF official cat | OOF official pri | our_test cat | our_test pri | set1 cat | set2 cat |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | rc2 (official only) | 0.806 | 0.904 | 0.789 | 0.847 | 0.674 | 0.719 |
 | rc2 + unreviewed drafts | 0.895 | 0.926 | 0.852 | 0.908 | 0.818 | 0.760 |
@@ -117,24 +119,24 @@ because both have category weight 0 and priority barely depends on them; `hard_t
 three soft-target scenarios keep their argmax. `mask_deadline` changes only our_test inputs (OOF is the full
 model's).
 
-| arm | OOF cat F1 (Δ, 90 % CI) | OOF pri F1 (Δ, 90 % CI) | our_test cat F1 (Δ) | our_test pri F1 (Δ) | set2+3 note |
+| arm | OOF cat F1 (Δ, 90 % CI) | OOF pri F1 (Δ, 90 % CI) | our_test cat F1 (Δ) | our_test pri F1 (Δ) | set1+2 note |
 | --- | --- | --- | --- | --- | --- |
-| `+knn_in_category` | 0.758 (-0.049, [-0.120, +0.007]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.698 (-0.091) | 0.847 (+0.000) | cat set2 0.632, set3 0.660 |
-| `+m1_in_category` | 0.754 (-0.053, [-0.133, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.785 (-0.004) | 0.847 (+0.000) | cat set2 0.685, set3 0.706 |
-| `+unreviewed_augmentation` **unreviewed** | 0.895 (+0.089, [+0.027, +0.174]) | 0.926 (+0.023, [+0.000, +0.072]) | 0.852 (+0.064) | 0.908 (+0.061) | cat set2 0.818, set3 0.760 |
-| `-augmentation` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set2 0.674, set3 0.719 |
-| `-m1` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set2 0.674, set3 0.719 |
-| `-m2knn` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set2 0.674, set3 0.719 |
-| `-m2lr` | 0.828 (+0.021, [+0.000, +0.060]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.785 (-0.004) | 0.847 (+0.000) | cat set2 0.687, set3 0.703 |
-| `-m2proto` | 0.561 (-0.245, [-0.365, -0.145]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.674 (-0.114) | 0.847 (+0.000) | cat set2 0.569, set3 0.638 |
-| `-urgency_features` | 0.806 (+0.000, [+0.000, +0.000]) | 0.588 (-0.316, [-0.465, -0.178]) | 0.789 (+0.000) | 0.599 (-0.249) | cat set2 0.674, set3 0.719 |
-| `-wrapper_stripping` | 0.752 (-0.054, [-0.108, +0.004]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.722 (-0.066) | 0.781 (-0.067) | cat set2 0.685, set3 0.700 |
-| `full` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set2 0.674, set3 0.719 |
-| `hard_targets` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set2 0.674, set3 0.719 |
-| `mask_deadline` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.767 (-0.021) | 0.787 (-0.061) | cat set2 0.632, set3 0.701 |
-| `proto_learned_only` | 0.597 (-0.210, [-0.335, -0.099]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.614 (-0.175) | 0.847 (+0.000) | cat set2 0.585, set3 0.607 |
-| `proto_office_only` | 0.761 (-0.045, [-0.164, +0.067]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.599 (-0.189) | 0.847 (+0.000) | cat set2 0.551, set3 0.531 |
-| `tuned_stage_b` | 0.828 (+0.021, [+0.000, +0.060]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set2 0.674, set3 0.719 |
+| `+knn_in_category` | 0.758 (-0.049, [-0.120, +0.007]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.698 (-0.091) | 0.847 (+0.000) | cat set1 0.632, set2 0.660 |
+| `+m1_in_category` | 0.754 (-0.053, [-0.133, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.785 (-0.004) | 0.847 (+0.000) | cat set1 0.685, set2 0.706 |
+| `+unreviewed_augmentation` **unreviewed** | 0.895 (+0.089, [+0.027, +0.174]) | 0.926 (+0.023, [+0.000, +0.072]) | 0.852 (+0.064) | 0.908 (+0.061) | cat set1 0.818, set2 0.760 |
+| `-augmentation` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set1 0.674, set2 0.719 |
+| `-m1` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set1 0.674, set2 0.719 |
+| `-m2knn` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set1 0.674, set2 0.719 |
+| `-m2lr` | 0.828 (+0.021, [+0.000, +0.060]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.785 (-0.004) | 0.847 (+0.000) | cat set1 0.687, set2 0.703 |
+| `-m2proto` | 0.561 (-0.245, [-0.365, -0.145]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.674 (-0.114) | 0.847 (+0.000) | cat set1 0.569, set2 0.638 |
+| `-urgency_features` | 0.806 (+0.000, [+0.000, +0.000]) | 0.588 (-0.316, [-0.465, -0.178]) | 0.789 (+0.000) | 0.599 (-0.249) | cat set1 0.674, set2 0.719 |
+| `-wrapper_stripping` | 0.752 (-0.054, [-0.108, +0.004]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.722 (-0.066) | 0.781 (-0.067) | cat set1 0.685, set2 0.700 |
+| `full` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set1 0.674, set2 0.719 |
+| `hard_targets` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set1 0.674, set2 0.719 |
+| `mask_deadline` | 0.806 (+0.000, [+0.000, +0.000]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.767 (-0.021) | 0.787 (-0.061) | cat set1 0.632, set2 0.701 |
+| `proto_learned_only` | 0.597 (-0.210, [-0.335, -0.099]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.614 (-0.175) | 0.847 (+0.000) | cat set1 0.585, set2 0.607 |
+| `proto_office_only` | 0.761 (-0.045, [-0.164, +0.067]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.599 (-0.189) | 0.847 (+0.000) | cat set1 0.551, set2 0.531 |
+| `tuned_stage_b` | 0.828 (+0.021, [+0.000, +0.060]) | 0.904 (+0.000, [+0.000, +0.000]) | 0.789 (+0.000) | 0.847 (+0.000) | cat set1 0.674, set2 0.719 |
 
 ## Encoder and head bake-off (P2.6, D-016)
 
@@ -231,14 +233,13 @@ learned prototypes), paired group bootstrap. Official-row and translate-train co
 - **Thin data (LD-32):** 432 official rows are 42 texts in 30 groups; read OOF numbers as ±0.1. Bootstrap
   intervals over 30 groups are wide, and several "no change" arms are exact ties because the change does not
   touch the category vote.
-- **Our test set is partly LLM-written (D-010)** and, like the new-scenario drafts and the office descriptions,
-  by the same model family. Shared priors between test and helper text cannot be ruled out; set1 is
-  cross-lingual restatement, not unseen scenarios.
+- **Our test set is LLM-written (D-010)** and, like the new-scenario drafts and the office descriptions,
+  by the same model family. Shared priors between test and helper text cannot be ruled out.
 - **The office descriptions are not fully independent of the training data's domain:** the clean rewrite read
   only the challenge definitions and public pages, but those definitions were written with the official
   examples in view. OOF of the office part is less held out than the learned part (learned-only OOF 0.597).
 - **The priority lexicons and the danger lexicon were written after reading every official row**, so OOF
-  priority is optimistic; set2/set3 are the cleaner check (0.78 both).
+  priority is optimistic; set1/set2 are the cleaner check (0.78 both).
 - **Conformal coverage is approximate** (effective n about the number of groups; 15 for Arabic).
 - **Unreviewed rows:** every augmented number above trains on unchecked drafts; treat them as an upper-bound
   preview of P2.4.

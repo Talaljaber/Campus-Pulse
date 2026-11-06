@@ -2,10 +2,10 @@
  * Pure helpers that turn the `GET /v1/metrics` response into what the model lab renders.
  * No fetching and no React: the components only lay these shapes out.
  *
- * About the `dataset` field. The API contract names seven datasets (`oof_official`, `oof_all`,
- * `our_test`, `our_test_set1`, `our_test_set2`, `our_test_set3`, `probes`), where `our_test` is the
- * pooled own test set. The own test set has three parts (`set1` written by hand by the team, `set2`
- * and `set3` by a language model) and each is shown next to the pooled numbers, so any row whose
+ * About the `dataset` field. The API contract names eight datasets (`oof_official`, `oof_all`,
+ * `our_test`, `our_test_set1` to `our_test_set4`, `probes`), where `our_test` is the
+ * pooled own test set. The per-set parts (`set1` to `set4`, all written by a language model) are
+ * each shown next to the pooled numbers, so any row whose
  * dataset reads `our_test_set1`, `our_test:set1`, `our_test/set1` or just `set1` is placed in that
  * set's column. If a report carries no such rows the page shows the pooled column and says so. A
  * dataset name we do not know is shown as written, never dropped.
@@ -19,10 +19,19 @@ import type { BenchmarkRow, CoverageRow, FairnessSlice, MetricsResponse, RouterS
 export type DatasetKey = string;
 
 /** The columns in reading order. Anything not listed comes after, alphabetically. */
-export const DATASET_ORDER: readonly string[] = ["oof_official", "oof_all", "set1", "set2", "set3", "pooled", "probes"];
+export const DATASET_ORDER: readonly string[] = [
+  "oof_official",
+  "oof_all",
+  "set1",
+  "set2",
+  "set3",
+  "set4",
+  "pooled",
+  "probes",
+];
 
-/** The three parts of the own test set. */
-export const TEST_SETS: readonly string[] = ["set1", "set2", "set3"];
+/** The four parts of the own test set. */
+export const TEST_SETS: readonly string[] = ["set1", "set2", "set3", "set4"];
 
 /** Below this many independent groups (or rows when groups are unknown) a number is only indicative. */
 export const SMALL_N = 30;
@@ -104,7 +113,7 @@ export function benchmarkView(rows: readonly BenchmarkRow[], target: Target): Be
   };
 }
 
-/** True when the rows carry numbers for at least one of set1, set2, set3. */
+/** True when the rows carry numbers for at least one of set1 to set4. */
 export function hasPerSetRows(rows: readonly { dataset: string }[]): boolean {
   return rows.some((r) => TEST_SETS.includes(datasetKeyOf(r.dataset)));
 }
