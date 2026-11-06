@@ -1,6 +1,9 @@
 [build]
   base = "apps/web"
   command = "pnpm run build"
+  # Relative to base. Next.js output; the Netlify Next.js runtime serves the app from here.
+  # (A UI value of apps/web made / return 404: it served the source folder as static files.)
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
