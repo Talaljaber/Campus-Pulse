@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import dataclasses
 import html
+import logging
 import smtplib
+import socket
 import ssl
 import time
 from collections.abc import Callable
@@ -28,6 +30,8 @@ from campuspulse_ai.domain.entities import OutboxMessage
 from campuspulse_ai.domain.errors import NotificationError
 from campuspulse_ai.domain.policy import RecipientPolicy
 from campuspulse_ai.domain.ports import Clock
+
+log = logging.getLogger(__name__)
 
 SSL_PORT = 465  # implicit TLS; any other port uses STARTTLS
 DEFAULT_SENDER_NAME = "CampusPulse (demo)"
@@ -153,6 +157,7 @@ class GmailSmtpNotifier:
                 self._deliver(email)
             except OSError as exc:  # smtplib.SMTPException is an OSError subclass
                 last = classify(exc)
+                self._log_failure(exc, attempt, last.retryable)
                 if not last.retryable:
                     raise last from exc
                 continue
@@ -160,6 +165,24 @@ class GmailSmtpNotifier:
             return dataclasses.replace(msg, status="sent", provider_id=message_id)
         assert last is not None
         raise NotificationError(f"{last} (gave up after {self._max_retries} retries)", retryable=True)
+
+    def _log_failure(self, exc: OSError, attempt: int, retryable: bool) -> None:
+        """Diagnostics for a failed attempt (never the password or the recipient)."""
+        log.warning(
+            "smtp send failed: host=%s port=%s ssl=%s attempt=%d/%d retryable=%s "
+            "exc=%s errno=%s detail=%r",
+            self._host, self._port, self._use_ssl, attempt + 1, self._max_retries + 1, retryable,
+            type(exc).__name__, getattr(exc, "errno", None), str(exc)[:200],
+        )
+        if attempt == 0 and not isinstance(exc, smtplib.SMTPException):
+            # Network-level failure: show what the host resolves to (an IPv6-only route or a blocked
+            # egress port both end as a plain OSError).
+            try:
+                found = sorted({(ai[0].name, ai[4][0]) for ai in socket.getaddrinfo(
+                    self._host, self._port, type=socket.SOCK_STREAM)})
+                log.warning("smtp dns: %s resolves to %s", self._host, found)
+            except OSError as dns_exc:
+                log.warning("smtp dns: %s did not resolve (%s)", self._host, dns_exc)
 
     def _deliver(self, email: EmailMessage) -> None:
         context = ssl.create_default_context()
@@ -216,4 +239,6 @@ def classify(exc: OSError) -> NotificationError:
         return NotificationError(f"SMTP server replied {exc.smtp_code} ({name})", retryable=transient)
     if isinstance(exc, smtplib.SMTPException):
         return NotificationError(f"SMTP protocol error ({name})", retryable=False)
-    return NotificationError(f"SMTP network error ({name})", retryable=True)  # timeout, blocked port
+    # timeout, blocked port. The reason (e.g. "Network is unreachable", "timed out") holds no secret.
+    reason = (exc.strerror or str(exc) or "no detail")[:80]
+    return NotificationError(f"SMTP network error ({name}: {reason})", retryable=True)
