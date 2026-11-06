@@ -38,7 +38,7 @@ services:
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
-        value: "587"
+        value: "465"
       - key: DEMO_EMAIL_ALLOWLIST
         sync: false
       - key: DEMO_OFFICE_INBOXES
@@ -46,7 +46,7 @@ services:
       - key: DEMO_ADMIN_INBOX
         sync: false
       - key: PUBLIC_WEB_URL
-        sync: false
+        value: https://gjupulse.netlify.app
       - key: LINEAR_API_KEY
         sync: false
       - key: LINEAR_WEBHOOK_SECRET
