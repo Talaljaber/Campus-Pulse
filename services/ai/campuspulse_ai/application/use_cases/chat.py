@@ -67,7 +67,7 @@ from campuspulse_ai.application.use_cases.issue_context import (
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.ports import Actor, Clarifier, TriageClassifier
 from campuspulse_ai.application.use_cases.proposals import ProposalClaims, sign, verify
-from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
+from campuspulse_ai.application.use_cases.ticket_lifecycle import LifecycleChange, TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import DISTRESS, TriageUseCase
 from campuspulse_ai.domain.entities import CoreResult, Prediction, Ticket
 from campuspulse_ai.domain.errors import CampusPulseError, InvalidInput, StoreError
@@ -339,7 +339,7 @@ class ChatUseCase:
             if issue.text is not None and not issue.text:
                 return self._plain(text["more_detail"], clear=False)
             request_text = issue.text if issue.text is not None else _request_text(messages)
-            repeat = self._repeat_turn(request_text, caller, lang, issue, later)
+            repeat = self._repeat_turn(request_text, caller, lang, issue, later, _last_user(messages))
             if repeat is not None:
                 return repeat
             return self._proposal_turn(request_text, caller, lang, ctx, issue.advice)
@@ -365,7 +365,13 @@ class ChatUseCase:
         return self._plain(self._safe(reply.reply, text["generic"]), clear=False)
 
     def _repeat_turn(
-        self, request_text: str, caller: Actor, lang: ReplyLang, issue: _Issue, later: Later | None
+        self,
+        request_text: str,
+        caller: Actor,
+        lang: ReplyLang,
+        issue: _Issue,
+        later: Later | None,
+        said: str = "",
     ) -> dto.ChatTurnResponse | None:
         """The requester already has an open ticket for this issue: no new ticket. When the message adds
         urgency (an exam, a deadline) the existing ticket is raised to the new priority, otherwise the
@@ -379,6 +385,7 @@ class ChatUseCase:
         wanted = Priority(proposal.priority)
         text = self._text(lang)
         lifecycle = self._lifecycle
+        raised = False
         if lifecycle is not None and wanted.rank > match.ticket.priority.rank:
             try:
                 change = lifecycle.raise_priority(match.ticket.id, wanted)
@@ -386,20 +393,37 @@ class ChatUseCase:
                 log.warning("priority not raised on ticket %s", match.ticket.id, exc_info=True)
                 change = None
             if change is not None and change.activity is not None:
-                applied = change
-
-                def deliver() -> None:
-                    lifecycle.deliver(applied)
-
-                if later is None:
-                    deliver()
-                else:
-                    later.append(deliver)
-                reply = text["priority_raised"].format(
-                    number=match.number, priority=self._priority_word(wanted, lang)
-                )
-                return self._plain(reply, clear=True)
+                raised = True
+                self._later(lifecycle, change, later)
+        if lifecycle is not None and said.strip() and _norm(said) != _norm(match.text):
+            self._comment_follow_up(lifecycle, match.ticket.id, caller, said, later)
+        if raised:
+            word = self._priority_word(wanted, lang)
+            reply = text["priority_raised"].format(number=match.number, priority=word)
+            return self._plain(reply, clear=True)
         return self._plain(self._already_open(match.ticket, lang), clear=True)
+
+    @staticmethod
+    def _later(lifecycle: TicketLifecycleUseCase, change: LifecycleChange, later: Later | None) -> None:
+        def deliver() -> None:
+            lifecycle.deliver(change)
+
+        if later is None:
+            deliver()
+        else:
+            later.append(deliver)
+
+    def _comment_follow_up(
+        self, lifecycle: TicketLifecycleUseCase, ticket_id: str, caller: Actor, said: str, later: Later | None
+    ) -> None:
+        """The student's own follow-up words go on the open ticket as a public comment, which also emails
+        the office the way any requester reply does. Best effort: a failure never breaks the chat."""
+        try:
+            change = lifecycle.comment(ticket_id, caller, said.strip())
+        except (CampusPulseError, ValueError):
+            log.warning("follow-up not added to ticket %s", ticket_id, exc_info=True)
+            return
+        self._later(lifecycle, change, later)
 
     @staticmethod
     def _match_open(request_text: str, issue: _Issue) -> _Open | None:
@@ -823,6 +847,11 @@ def _request_text(messages: Sequence[dto.ChatMessage]) -> str:
             start = i + 1
     joined = "\n".join(m.content.strip() for m in messages[start:] if m.role == "user")
     return joined[-REQUEST_TEXT_MAX:]
+
+
+def _last_user(messages: Sequence[dto.ChatMessage]) -> str:
+    """The student's latest message, in their own words."""
+    return next((m.content for m in reversed(messages) if m.role == "user"), "")
 
 
 def _lang_of(req: NormalizedRequest) -> ReplyLang:

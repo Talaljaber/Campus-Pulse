@@ -67,6 +67,8 @@ def test_a_follow_up_with_urgency_raises_the_existing_ticket_instead_of_opening_
     [ticket] = t.tickets()
     assert str(ticket["priority"]) == "high"
     assert any(a.kind == "priority" and a.to_priority == "high" for a in t.h.journey.activity_for(ticket_id))
+    # the student's own words are on the ticket as a comment (which is what emails the office)
+    assert any(x.kind == "comment" and x.body == FOLLOW_UP for x in t.h.journey.activity_for(ticket_id))
 
 
 def test_the_same_issue_at_the_same_priority_only_tells_the_student_it_is_open() -> None:
@@ -77,6 +79,8 @@ def test_the_same_issue_at_the_same_priority_only_tells_the_student_it_is_open()
     r = follow_up(t, "still not working")
     assert r.proposal is None and "already have an open request" in r.reply
     assert ticket_number(ticket_id) in r.reply and "I did not open another one" in r.reply
+    thread = t.h.journey.activity_for(ticket_id)
+    assert any(x.kind == "comment" and x.body == "still not working" for x in thread)
     [ticket] = t.tickets()
     assert str(ticket["priority"]) == "medium"
 
