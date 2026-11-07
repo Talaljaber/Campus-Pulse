@@ -13,7 +13,7 @@ export type TabId =
   | "incidents"
   | "corrections"
   | "accounts"
-  | "reports";
+  | "overview";
 
 /** A page the shell can mark as current: a tab, or the Outbox tile that admins have instead of a tab. */
 export type PageId = TabId | "outbox";
@@ -42,14 +42,14 @@ const TAB: Record<TabId, TabSpec> = {
   incidents: { id: "incidents", href: "/pulse", labelKey: "nav.incidents", icon: "map" },
   corrections: { id: "corrections", href: "/staff/reviews", labelKey: "nav.corrections", icon: "check" },
   accounts: { id: "accounts", href: "/admin/accounts", labelKey: "nav.accounts", icon: "user" },
-  reports: { id: "reports", href: "/lab", labelKey: "nav.reports", icon: "flask" },
+  overview: { id: "overview", href: "/admin", labelKey: "nav.overview", icon: "chart" },
 };
 
 const STUDENT_TABS: readonly TabId[] = ["home", "ask", "requests", "profile"];
 const STAFF_TABS: readonly TabId[] = ["queue", "ask", "announcements", "incidents", "corrections"];
-// Reports (the model lab, /lab) is hidden from the tab bar for now (user decision 2026-11-06); the page still
-// works at /lab. To bring it back, restore "reports" in the list below.
-const ADMIN_TABS: readonly TabId[] = [...STAFF_TABS, "accounts" /* , "reports" */];
+// P10.17: the admin's first tab is the operational Overview (/admin). The model lab and red team were
+// removed from the product (user decision 2026-11-07); the evaluation lives in reports/ and notebooks/.
+const ADMIN_TABS: readonly TabId[] = ["overview", ...STAFF_TABS, "accounts"];
 
 /** The tabs a role sees, in display order. Only what the role may open, so no link ever bounces. */
 export function tabsFor(role: Role): TabSpec[] {

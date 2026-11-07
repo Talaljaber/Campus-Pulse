@@ -11,14 +11,14 @@ export function isRole(v: unknown): v is Role {
   return v === "student" || v === "staff" || v === "admin";
 }
 
-/** Where each role lands after signing in: students on Home, staff and admins on the queue. */
+/** Where each role lands after signing in: students on Home, staff on the queue, admins on the Overview. */
 export function homeFor(role: Role): string {
-  return role === "student" ? "/" : "/staff";
+  return role === "student" ? "/" : role === "admin" ? "/admin" : "/staff";
 }
 
 /** Paths that need at least staff, and the one that needs admin. */
 const STAFF_PATHS = ["/staff", "/pulse", "/outbox"] as const;
-const ADMIN_PATHS = ["/lab", "/admin"] as const;
+const ADMIN_PATHS = ["/admin"] as const;
 /** Reachable without a session. `/dev` 404s itself in production. */
 const PUBLIC_PATHS = ["/login", "/dev"] as const;
 
@@ -31,7 +31,7 @@ export type RouteDecision = { action: "next" } | { action: "redirect"; to: strin
  * Decides what to do with a page request.
  * - No session: only the public paths pass; the rest go to `/login?next=...`.
  * - Signed in on `/login`: sent to the role's home.
- * - `/staff`, `/pulse`, `/outbox` need staff or admin; `/lab` and `/admin` need admin. Anyone else goes to their own home.
+ * - `/staff`, `/pulse`, `/outbox` need staff or admin; `/admin` needs admin. Anyone else goes to their own home.
  * - Everything else (`/`, `/ask`, `/requests`, `/profile` for every signed-in role) passes.
  */
 export function decideRoute(pathname: string, role: Role | null): RouteDecision {

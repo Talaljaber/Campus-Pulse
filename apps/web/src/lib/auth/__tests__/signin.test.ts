@@ -28,7 +28,7 @@ describe("signIn", () => {
   it.each([
     ["student", "/"],
     ["staff", "/staff"],
-    ["admin", "/staff"],
+    ["admin", "/admin"],
   ])("routes a %s to %s", async (role, dest) => {
     const { sb } = fakeSb({ auth: ok, profile: { id: "u1", role, office: null, alias: "a" } });
     expect(await signIn(sb, " a@demo.local ", "pw")).toEqual({ ok: true, role, destination: dest });

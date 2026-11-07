@@ -44,22 +44,22 @@ describe("proxy redirect matrix (session mocked)", () => {
   it("signed out: /login passes", async () => {
     expect((await run("/login")).to).toBeNull();
   });
-  it("student visiting /lab is redirected to /", async () => {
+  it("student visiting /admin is redirected to /", async () => {
     setUser("student");
-    expect(await run("/lab")).toEqual({ status: 307, to: "/" });
+    expect(await run("/admin")).toEqual({ status: 307, to: "/" });
   });
   it("student visiting /staff is redirected to /", async () => {
     setUser("student");
     expect(await run("/staff")).toEqual({ status: 307, to: "/" });
   });
-  it("staff on /login goes to /staff, and /lab goes to /staff", async () => {
+  it("staff on /login goes to /staff, and /admin goes to /staff", async () => {
     setUser("staff");
     expect(await run("/login")).toEqual({ status: 307, to: "/staff" });
-    expect(await run("/lab")).toEqual({ status: 307, to: "/staff" });
+    expect(await run("/admin")).toEqual({ status: 307, to: "/staff" });
   });
-  it("admin on /login goes to /staff and may open /pulse", async () => {
+  it("admin on /login goes to /admin and may open /pulse", async () => {
     setUser("admin");
-    expect(await run("/login")).toEqual({ status: 307, to: "/staff" });
+    expect(await run("/login")).toEqual({ status: 307, to: "/admin" });
     expect((await run("/pulse")).to).toBeNull();
   });
   it("a user without a profile is treated as signed out", async () => {

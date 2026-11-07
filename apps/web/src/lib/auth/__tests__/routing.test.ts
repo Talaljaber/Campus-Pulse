@@ -8,7 +8,7 @@ describe("homeFor", () => {
   it("maps each role to its landing page", () => {
     expect(homeFor("student")).toBe("/");
     expect(homeFor("staff")).toBe("/staff");
-    expect(homeFor("admin")).toBe("/staff");
+    expect(homeFor("admin")).toBe("/admin");
   });
 });
 
@@ -18,7 +18,7 @@ describe("decideRoute matrix", () => {
     ["/", null, to("/login")],
     ["/staff", null, to("/login?next=%2Fstaff")],
     ["/pulse", null, to("/login?next=%2Fpulse")],
-    ["/lab", null, to("/login?next=%2Flab")],
+    ["/admin", null, to("/login?next=%2Fadmin")],
     ["/ask", null, to("/login?next=%2Fask")],
     ["/requests", null, to("/login?next=%2Frequests")],
     ["/profile", null, to("/login?next=%2Fprofile")],
@@ -31,7 +31,7 @@ describe("decideRoute matrix", () => {
     ["/staff", "student", to("/")],
     ["/pulse", "student", to("/")],
     ["/outbox", "student", to("/")],
-    ["/lab", "student", to("/")],
+    ["/admin", "student", to("/")],
     ["/ask", "student", NEXT],
     ["/requests", "student", NEXT],
     ["/profile", "student", NEXT],
@@ -46,7 +46,6 @@ describe("decideRoute matrix", () => {
     ["/staff/reviews", null, to("/login?next=%2Fstaff%2Freviews")],
     ["/pulse", "staff", NEXT],
     ["/outbox", "staff", NEXT],
-    ["/lab", "staff", to("/staff")],
     ["/ask", "staff", NEXT],
     ["/requests", "staff", NEXT],
     ["/profile", "staff", NEXT],
@@ -55,7 +54,7 @@ describe("decideRoute matrix", () => {
     ["/admin", "staff", to("/staff")],
     // admin
     ["/", "admin", NEXT],
-    ["/login", "admin", to("/staff")],
+    ["/login", "admin", to("/admin")],
     ["/ask", "admin", NEXT],
     ["/requests", "admin", NEXT],
     ["/profile", "admin", NEXT],
@@ -64,8 +63,8 @@ describe("decideRoute matrix", () => {
     ["/staff", "admin", NEXT],
     ["/pulse", "admin", NEXT],
     ["/outbox", "admin", NEXT],
+    ["/admin", "admin", NEXT],
     ["/lab", "admin", NEXT],
-    ["/lab/anything", "admin", NEXT],
   ];
   it.each(cases)("%s as %s", (path, role, expected) => {
     expect(decideRoute(path, role)).toEqual(expected);

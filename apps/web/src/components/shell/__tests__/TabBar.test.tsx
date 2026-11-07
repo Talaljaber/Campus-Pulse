@@ -29,10 +29,12 @@ describe("TabBar", () => {
     ]);
   });
 
-  it("gives an admin the staff tabs plus Accounts (Reports is hidden for now)", () => {
+  it("gives an admin the Overview first, then the staff tabs and Accounts (no model lab)", () => {
     render(<TabBar role="admin" current="accounts" />);
-    expect(pairs().slice(5)).toEqual([["Accounts", "/admin/accounts"]]);
-    expect(links()).toHaveLength(6);
+    expect(pairs()[0]).toEqual(["Overview", "/admin"]);
+    expect(pairs().slice(6)).toEqual([["Accounts", "/admin/accounts"]]);
+    expect(links()).toHaveLength(7);
+    expect(pairs().some(([, href]) => href === "/lab")).toBe(false);
   });
 
   it("marks exactly the current tab with aria-current", () => {

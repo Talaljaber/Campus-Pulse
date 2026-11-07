@@ -712,6 +712,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * LLM spend
+         * @description What the service's LLM key has spent today, this week, this month and in total, its spending limit and expiry, as OpenRouter reports them (cached 60 s). `available` is false without a key or when OpenRouter does not answer. No key or secret is returned.
+         */
+        get: operations["admin_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1614,6 +1634,72 @@ export interface components {
          * @enum {string}
          */
         Lang: "en" | "ar" | "arabizi";
+        /**
+         * LlmUsageResponse
+         * @description `GET /v1/admin/usage`: what the service's LLM key has spent, as the provider reports it (P10.17).
+         *
+         *     Every amount is null when `available` is false (no key configured, or the provider did not answer).
+         */
+        LlmUsageResponse: {
+            /**
+             * Available
+             * @description False when no key is set or the provider did not answer.
+             */
+            available: boolean;
+            /**
+             * Provider
+             * @default openrouter
+             * @constant
+             */
+            provider: "openrouter";
+            /**
+             * Spent Today Usd
+             * @description Spend since 00:00 UTC.
+             */
+            spent_today_usd: number | null;
+            /**
+             * Spent Week Usd
+             * @description Spend in the current UTC week.
+             */
+            spent_week_usd: number | null;
+            /**
+             * Spent Month Usd
+             * @description Spend in the current UTC month.
+             */
+            spent_month_usd: number | null;
+            /**
+             * Spent Total Usd
+             * @description Spend since the key was created.
+             */
+            spent_total_usd: number | null;
+            /**
+             * Limit Usd
+             * @description The key's spending limit; null means no limit.
+             */
+            limit_usd: number | null;
+            /** Limit Remaining Usd */
+            limit_remaining_usd: number | null;
+            /**
+             * Limit Reset
+             * @description How often the limit resets (`daily`); null means never.
+             */
+            limit_reset: string | null;
+            /**
+             * Key Expires At
+             * @description When the key stops working; null means never.
+             */
+            key_expires_at: string | null;
+            /**
+             * Models
+             * @description The pinned model ids the service calls.
+             */
+            models: string[];
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+        };
         /**
          * LocationIn
          * @description A building (and optional room) the student picked on the map.
@@ -5172,6 +5258,80 @@ export interface operations {
             };
             /** @description `store_unavailable`: Supabase or the vector store is unreachable. */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    admin_usage: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Supabase access token of the end user. */
+                "x-cp-user-jwt"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-role"?: ("student" | "staff" | "admin" | "service") | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-alias"?: string | null;
+                /** @description trusted_headers mode only. */
+                "x-cp-office"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LlmUsageResponse"];
+                };
+            };
+            /** @description `unauthenticated`: Missing or wrong service token (or a bad webhook signature). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `forbidden`: The caller's role may not use this endpoint (or this office's resource). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `internal_error`: Unexpected failure; no stack trace is returned. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `not_implemented`: Optional extra that is not built in this deployment. */
+            501: {
                 headers: {
                     [name: string]: unknown;
                 };

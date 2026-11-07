@@ -39,10 +39,10 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   rule("GET", "incidents"),
   rule("POST", "incidents/{id}/resolve"),
   rule("GET", "insights/recurring"),
-  rule("POST", "redteam/run"),
-  rule("GET", "metrics"),
-  rule("POST", "batch"),
   rule("GET", "health", { public: true }),
+  // P10.17: the admin Overview's LLM spend. The model lab routes (metrics, batch, red team) are no
+  // longer reachable from the browser.
+  rule("GET", "admin/usage"),
   // Optional extras (B-list); a deployment without them answers 501 not_implemented.
   rule("POST", "admin/simulate"),
   rule("POST", "admin/reindex"),

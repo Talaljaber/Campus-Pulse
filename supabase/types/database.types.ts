@@ -1276,6 +1276,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cp_admin_overview: {
+        Args: { p_days?: number }
+        Returns: Json
+      }
       match_ticket_hints: {
         Args: { p_k: number; p_min_sim: number; p_query: string }
         Returns: {

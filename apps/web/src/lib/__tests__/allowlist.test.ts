@@ -19,9 +19,7 @@ describe("matchAllowed", () => {
     ["GET", ["incidents"]],
     ["POST", ["incidents", ID, "resolve"]],
     ["GET", ["insights", "recurring"]],
-    ["POST", ["redteam", "run"]],
-    ["GET", ["metrics"]],
-    ["POST", ["batch"]],
+    ["GET", ["admin", "usage"]],
     ["GET", ["health"]],
     ["POST", ["admin", "simulate"]],
     ["POST", ["admin", "reindex"]],
@@ -38,7 +36,11 @@ describe("matchAllowed", () => {
 
   it("marks only health as public", () => {
     expect(matchAllowed("GET", ["health"])?.public).toBe(true);
-    expect(matchAllowed("GET", ["metrics"])?.public).toBe(false);
+    expect(matchAllowed("GET", ["admin", "usage"])?.public).toBe(false);
+    // The model lab routes are gone from the browser (P10.17).
+    expect(matchAllowed("GET", ["metrics"])).toBeNull();
+    expect(matchAllowed("POST", ["redteam", "run"])).toBeNull();
+    expect(matchAllowed("POST", ["batch"])).toBeNull();
   });
 
   it.each([

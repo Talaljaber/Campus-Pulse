@@ -143,6 +143,35 @@ const readBody = (req) =>
     req.on("end", () => resolve(data ? JSON.parse(data) : {}));
   });
 
+/** A fixed admin overview (the shape `cp_admin_overview` returns). */
+const adminOverview = (days) => {
+  const office = (code, o = {}) => ({
+    office: code, open: 0, overdue: 0, high_open: 0, received: 0, resolved: 0, median_hours: null, sla_met_pct: null, ...o,
+  });
+  return {
+    days,
+    generated_at: "2026-11-07T12:00:00Z",
+    requests: { total: 21, by_lang: { en: 10, ar: 9, arabizi: 2 }, voice: 1, distress: 1, out_of_scope: 0, students: 3 },
+    tickets: { open: 13, overdue: 10, high_open: 1, received: 20, resolved: 7, median_hours: 0.2, sla_met_pct: 100 },
+    offices: [
+      office("academic"),
+      office("facilities", { open: 4, overdue: 3, received: 4 }),
+      office("finance", { open: 2, overdue: 2, received: 2 }),
+      office("it", { open: 2, overdue: 2, high_open: 1, received: 9, resolved: 7, median_hours: 0.2, sla_met_pct: 100 }),
+      office("registrar", { open: 2, overdue: 1, received: 2 }),
+      office("transport", { open: 3, overdue: 2, received: 3 }),
+    ],
+    daily: Array.from({ length: days + 1 }, (_, i) => {
+      const d = new Date(Date.UTC(2026, 10, 7) - (days - i) * 86_400_000);
+      return { day: d.toISOString().slice(0, 10), requests: i % 3, high: i % 7 === 0 ? 1 : 0 };
+    }),
+    ai: { classified: 21, automatic: 16, to_human: 5, asked_question: 1, reviews: 11, reviews_open: 7, corrected: 2, confirmed: 2 },
+    incidents: { open: 0, opened: 0 },
+    delivery: { sent: 41, failed: 6, rejected: 40, queued: 0, sync_errors: 0, synced: 20 },
+    people: { students: 3, staff: 7, admins: 1 },
+  };
+};
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://localhost:${PORT}`);
   if (req.method === "OPTIONS") return send(res, 204);
@@ -196,6 +225,14 @@ const server = createServer(async (req, res) => {
     return send(res, 200, rows);
   }
   if (url.pathname === "/rest/v1/buildings") return send(res, 200, BUILDINGS);
+  if (url.pathname === "/rest/v1/rpc/cp_admin_overview") {
+    // Stand-in for supabase/migrations/0019_admin_overview.sql: admins get the numbers, anyone else an error.
+    const caller = verify((req.headers.authorization ?? "").replace(/^Bearer /, ""));
+    const me = caller ? byId(caller.sub)?.[1] : null;
+    if (me?.role !== "admin") return send(res, 400, { code: "42501", message: "admin only" });
+    const { p_days: days = 30 } = await readBody(req);
+    return send(res, 200, adminOverview(Number(days)));
+  }
   if (url.pathname.startsWith("/rest/v1/")) {
     const table = url.pathname.slice("/rest/v1/".length);
     let rows = TABLES[table] ?? [];

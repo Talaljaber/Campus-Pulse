@@ -59,7 +59,7 @@ test("a student signs in, asks about the bus timetable and gets a Transportation
   await expect(page.getByRole("link", { name: "View this request" })).toHaveAttribute("href", `/requests/${TICKET_ID}`);
 
   // A student cannot open the staff pages: the proxy sends them back to "/".
-  await page.goto("/lab");
+  await page.goto("/admin");
   await expect(page).toHaveURL(/localhost:\d+\/$/);
 });
 
