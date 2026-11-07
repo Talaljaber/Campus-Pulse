@@ -439,6 +439,11 @@ def build_router(store: FixtureStore) -> APIRouter:
         """Signed link to a file (fixture-backed)."""
         return _respond(store.pick("file_link", request, None))
 
+    @router.api_route(**route_kwargs("admin_usage"), dependencies=[Depends(_guard("admin_usage"))])
+    def admin_usage(request: Request) -> Any:
+        """LLM spend (fixture-backed)."""
+        return _respond(store.pick("admin_usage", request, None))
+
     return router
 
 

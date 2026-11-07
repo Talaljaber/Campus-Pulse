@@ -1,0 +1,27 @@
+{
+  "name": "admin_usage",
+  "description": "LLM spend for the admin overview (illustrative numbers).",
+  "method": "GET",
+  "path": "/v1/admin/usage",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "admin"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "available": true,
+    "provider": "openrouter",
+    "spent_today_usd": 0.045717,
+    "spent_week_usd": 0.220013,
+    "spent_month_usd": 3.330793,
+    "spent_total_usd": 3.677453,
+    "limit_usd": 7.0,
+    "limit_remaining_usd": 6.954283,
+    "limit_reset": "daily",
+    "key_expires_at": "2026-11-30T12:20:01.314000Z",
+    "models": ["deepseek/deepseek-v4.1-flash"],
+    "checked_at": "2026-11-07T19:30:00+02:00"
+  }
+}

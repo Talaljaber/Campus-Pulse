@@ -32,6 +32,7 @@ from campuspulse_ai.application.dto import (
     FileOut,
     HealthResponse,
     IncidentOut,
+    LlmUsageResponse,
     MetricsResponse,
     ProblemClusterOut,
     ProfileEmailOut,
@@ -774,6 +775,22 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_FOUND, ErrorCode.STORE_UNAVAILABLE),
         side_effects=("none (the link is signed, nothing is written)",),
         tag="staff",
+    ),
+    EndpointDoc(
+        op_id="admin_usage",
+        method="GET",
+        path="/v1/admin/usage",
+        summary="LLM spend",
+        purpose=(
+            "What the service's LLM key has spent today, this week, this month and in total, its spending "
+            "limit and expiry, as OpenRouter reports them (cached 60 s). `available` is false without a key "
+            "or when OpenRouter does not answer. No key or secret is returned."
+        ),
+        roles=("admin",),
+        response_model=LlmUsageResponse,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_IMPLEMENTED),
+        side_effects=("none (read-only)",),
+        tag="admin",
     ),
 )
 

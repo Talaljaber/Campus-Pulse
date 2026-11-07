@@ -71,6 +71,7 @@ REQUEST_MODELS: dict[str, type[BaseModel] | None] = {
     "chat_confirm": dto.ChatConfirmRequest,
     "ticket_file_upload": None,  # multipart, checked separately
     "file_link": None,
+    "admin_usage": None,
 }
 QUERY_MODELS: dict[str, type[BaseModel]] = {
     "triage": dto.TriageQuery,

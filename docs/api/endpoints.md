@@ -56,6 +56,7 @@ Every non-2xx response has this shape:
 - [`POST /v1/chat/confirm`](#chat_confirm) Confirm a proposal
 - [`POST /v1/tickets/{ticket_id}/files`](#ticket_file_upload) Attach a file to a ticket
 - [`GET /v1/files/{file_id}/link`](#file_link) Get a signed link to a file
+- [`GET /v1/admin/usage`](#admin_usage) LLM spend
 - [Schemas](#schemas)
 
 <a id="announcement_drafts_list"></a>
@@ -3840,6 +3841,65 @@ Error example (`file_link_error_internal`, 403):
 
 - none (the link is signed, nothing is written)
 
+<a id="admin_usage"></a>
+## `GET /v1/admin/usage`
+
+**LLM spend.** What the service's LLM key has spent today, this week, this month and in total, its spending limit and expiry, as OpenRouter reports them (cached 60 s). `available` is false without a key or when OpenRouter does not answer. No key or secret is returned.
+
+- **Roles:** `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [LlmUsageResponse](#schema-llmusageresponse)
+
+**Example** (fixture `admin_usage`): LLM spend for the admin overview (illustrative numbers).
+
+```powershell
+curl.exe -s -X GET "$env:AI_URL/v1/admin/usage" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "available": true,
+  "provider": "openrouter",
+  "spent_today_usd": 0.045717,
+  "spent_week_usd": 0.220013,
+  "spent_month_usd": 3.330793,
+  "spent_total_usd": 3.677453,
+  "limit_usd": 7.0,
+  "limit_remaining_usd": 6.954283,
+  "limit_reset": "daily",
+  "key_expires_at": "2026-11-30T12:20:01.314000Z",
+  "models": [
+    "deepseek/deepseek-v4.1-flash"
+  ],
+  "checked_at": "2026-11-07T19:30:00+02:00"
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 501 | `not_implemented`: Optional extra that is not built in this deployment. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- none (read-only)
+
 <a id="schemas"></a>
 ## Schemas
 
@@ -4444,6 +4504,26 @@ A Pulse incident: several reports of the same problem in one building.
 ### Lang
 
 Values: `en`, `ar`, `arabizi`
+
+<a id="schema-llmusageresponse"></a>
+### LlmUsageResponse
+
+`GET /v1/admin/usage`: what the service's LLM key has spent, as the provider reports it (P10.17).  Every amount is null when `available` is false (no key configured, or the provider did not answer).
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `available` | boolean | yes | False when no key is set or the provider did not answer |
+| `provider` | `"openrouter"` | no | default `"openrouter"` |
+| `spent_today_usd` | number \| null | yes | Spend since 00:00 UTC |
+| `spent_week_usd` | number \| null | yes | Spend in the current UTC week |
+| `spent_month_usd` | number \| null | yes | Spend in the current UTC month |
+| `spent_total_usd` | number \| null | yes | Spend since the key was created |
+| `limit_usd` | number \| null | yes | The key's spending limit; null means no limit |
+| `limit_remaining_usd` | number \| null | yes |  |
+| `limit_reset` | string \| null | yes | How often the limit resets (`daily`); null means never |
+| `key_expires_at` | string (date-time) \| null | yes | When the key stops working; null means never |
+| `models` | array of string | yes | The pinned model ids the service calls |
+| `checked_at` | string (date-time) | yes |  |
 
 <a id="schema-locationin"></a>
 ### LocationIn

@@ -976,6 +976,26 @@ class ReindexResponse(_Model):
     duration_ms: int = Field(ge=0)
 
 
+class LlmUsageResponse(_Model):
+    """`GET /v1/admin/usage`: what the service's LLM key has spent, as the provider reports it (P10.17).
+
+    Every amount is null when `available` is false (no key configured, or the provider did not answer).
+    """
+
+    available: bool = Field(description="False when no key is set or the provider did not answer.")
+    provider: Literal["openrouter"] = "openrouter"
+    spent_today_usd: float | None = Field(description="Spend since 00:00 UTC.")
+    spent_week_usd: float | None = Field(description="Spend in the current UTC week.")
+    spent_month_usd: float | None = Field(description="Spend in the current UTC month.")
+    spent_total_usd: float | None = Field(description="Spend since the key was created.")
+    limit_usd: float | None = Field(description="The key's spending limit; null means no limit.")
+    limit_remaining_usd: float | None
+    limit_reset: str | None = Field(description="How often the limit resets (`daily`); null means never.")
+    key_expires_at: datetime | None = Field(description="When the key stops working; null means never.")
+    models: list[str] = Field(description="The pinned model ids the service calls.")
+    checked_at: datetime
+
+
 # --- announcements (P9.5) ---------------------------------------------------------------------------
 
 AnnouncementKindName = Literal["info", "outage", "maintenance"]

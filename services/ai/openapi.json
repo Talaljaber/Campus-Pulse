@@ -6442,6 +6442,171 @@
         ],
         "x-optional": false
       }
+    },
+    "/v1/admin/usage": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "LLM spend",
+        "description": "What the service's LLM key has spent today, this week, this month and in total, its spending limit and expiry, as OpenRouter reports them (cached 60 s). `available` is false without a key or when OpenRouter does not answer. No key or secret is returned.",
+        "operationId": "admin_usage",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmUsageResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_implemented`: Optional extra that is not built in this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (read-only)"
+        ],
+        "x-optional": false
+      }
     }
   },
   "components": {
@@ -8753,6 +8918,147 @@
           "arabizi"
         ],
         "title": "Lang"
+      },
+      "LlmUsageResponse": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "description": "False when no key is set or the provider did not answer."
+          },
+          "provider": {
+            "type": "string",
+            "const": "openrouter",
+            "title": "Provider",
+            "default": "openrouter"
+          },
+          "spent_today_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spent Today Usd",
+            "description": "Spend since 00:00 UTC."
+          },
+          "spent_week_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spent Week Usd",
+            "description": "Spend in the current UTC week."
+          },
+          "spent_month_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spent Month Usd",
+            "description": "Spend in the current UTC month."
+          },
+          "spent_total_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spent Total Usd",
+            "description": "Spend since the key was created."
+          },
+          "limit_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Usd",
+            "description": "The key's spending limit; null means no limit."
+          },
+          "limit_remaining_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Remaining Usd"
+          },
+          "limit_reset": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Reset",
+            "description": "How often the limit resets (`daily`); null means never."
+          },
+          "key_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Expires At",
+            "description": "When the key stops working; null means never."
+          },
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Models",
+            "description": "The pinned model ids the service calls."
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "available",
+          "spent_today_usd",
+          "spent_week_usd",
+          "spent_month_usd",
+          "spent_total_usd",
+          "limit_usd",
+          "limit_remaining_usd",
+          "limit_reset",
+          "key_expires_at",
+          "models",
+          "checked_at"
+        ],
+        "title": "LlmUsageResponse",
+        "description": "`GET /v1/admin/usage`: what the service's LLM key has spent, as the provider reports it (P10.17).\n\nEvery amount is null when `available` is false (no key configured, or the provider did not answer)."
       },
       "LocationIn": {
         "properties": {

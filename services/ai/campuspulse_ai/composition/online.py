@@ -71,6 +71,7 @@ from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
 from campuspulse_ai.application.use_cases.file_ports import BlobStore, FileStore
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
+from campuspulse_ai.application.use_cases.llm_usage import LlmUsageUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
 from campuspulse_ai.application.use_cases.offices import OfficeMap
@@ -127,6 +128,7 @@ ORACLE_PROMPT = "oracle"
 UNDERSTAND_PROMPT = "understand"
 UNDERSTAND_PROMPT_VERSION = "v1"
 FILE_TIMEOUT_S = 30.0
+USAGE_TIMEOUT_S = 8.0  # the admin spend view waits at most this long for OpenRouter
 """Seconds for one Supabase Storage call (a 5 MB upload)."""
 
 
@@ -668,7 +670,35 @@ def wire_online(
             llm_tiers=llm.tiers,
             vector_store=adapters.vector_store,
         ),
+        usage=build_usage(settings, clock),
     )
+
+
+def _pinned_models(settings: Settings) -> list[str]:
+    """The model ids the service may call: the chat agent's and the LLM front end's (or the override)."""
+    if settings.llm_model:
+        return [settings.llm_model]
+    models: list[str] = []
+    for path in (settings.chat_agent_config, settings.llm_frontend_config):
+        try:
+            model = _yaml(resolve(path)).get("model")
+        except (OSError, ValueError):
+            continue
+        if isinstance(model, str) and model:
+            models.append(model)
+    return models
+
+
+def build_usage(settings: Settings, clock: Clock) -> LlmUsageUseCase:
+    """The admin spend view (P10.17): OpenRouter's record of the key, or "unavailable" without a key."""
+    source = None
+    if settings.openrouter_api_key is not None and settings.openrouter_api_key.get_secret_value():
+        import httpx
+
+        from campuspulse_ai.adapters.llm.openrouter_usage import OpenRouterKeyUsage
+
+        source = OpenRouterKeyUsage(settings.openrouter_api_key, httpx.Client(timeout=USAGE_TIMEOUT_S))
+    return LlmUsageUseCase(source, clock, _pinned_models(settings))
 
 
 def _yaml(path: Path) -> dict[str, Any]:
