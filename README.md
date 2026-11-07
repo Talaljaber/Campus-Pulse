@@ -26,11 +26,12 @@ about a minute while the AI service wakes up.
 
 | Script | What it does | First run | Later runs |
 |---|---|---|---|
-| `RUN_ME.bat <file.csv>` | Predicts a test file. Writes `predictions.csv` (default, with the LLM) and `predictions_offline.csv` (our model alone) | 5 to 10 min (installs Python 3.13 and packages) | About 1 min |
+| `RUN_ME.bat <file.csv>` | Predicts a test file (default `hidden_test.csv`) with the default setup, our model with the LLM. Writes `predictions.csv` | 5 to 10 min (installs Python 3.13 and packages) | About 1 min |
 | `START_APP.bat` | Runs the whole app locally: AI service on port 8000, website on http://localhost:3000. It uses the same hosted database | 10 to 15 min (also installs Node and builds the site) | About 1 min |
 
-Both scripts install whatever is missing, so a laptop with nothing installed works. Close the two server
-windows to stop the app.
+Run them from a terminal opened in the folder (in File Explorer, right-click inside the folder and choose
+**Open in Terminal**), typing `.\RUN_ME.bat` or `.\START_APP.bat`. Both scripts install whatever is missing,
+so a laptop with nothing installed works. Close the two server windows to stop the app.
 
 ## Prediction (the scored path)
 
@@ -100,7 +101,7 @@ Macro-F1. Evaluation uses scenario-held-out cross-validation and our own test se
 | Path | What |
 |---|---|
 | `services/ai/` | Python package `campuspulse_ai`, FastAPI service, `train.py`, `predict.py`, `evaluate.py` |
-| `apps/web/` | Next.js web app (student chat, staff desk, Pulse map, accounts, outbox) |
+| `apps/web/` | Next.js web app (student chat, staff desk, Pulse map, admin overview, accounts, outbox) |
 | `supabase/` | SQL migrations (Postgres, pgvector, row-level security) |
 | `models/frozen/v1/` | The shipped model, with a sha256 for every file in `MANIFEST.json` |
 | `config/` | Lexicons, prompts and LLM settings (pinned model IDs) |
@@ -146,6 +147,9 @@ The challenge rules require disclosing external services and pretrained models.
 **Other services**
 - **Supabase**: Postgres with pgvector, Auth and Realtime (app data, request embeddings, FAQ vectors).
 - **Render** hosts the FastAPI AI service. **Netlify** hosts the web app.
+- **OpenRouter key record** (`GET https://openrouter.ai/api/v1/key`): read by the AI service for the admin
+  Overview's AI cost card (spend today, this week and month, limit, key expiry). Only the key itself is sent;
+  the answer's label and ids are dropped and nothing is returned to the browser but the amounts.
 - **Linear**: ticket mirroring and status sync, in a separate demo workspace.
 - **Gmail SMTP**: notification emails, sent only to allow-listed demo inboxes or to an address its owner typed
   on their profile after ticking a consent box. Enforced in one place in code.

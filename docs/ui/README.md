@@ -438,4 +438,4 @@ Dictation for the student chat, through the browser's Web Speech API. It is offe
 | `/staff` | staff, admin | staff dashboard (P5.10) |
 | `/pulse` | staff, admin | live map, incidents and feed (P5.11) |
 | `/outbox` | staff, admin | outbox list with status filters (P5.15) |
-| `/lab` | admin | model lab (P5.12); the admin login lands here |
+| `/admin` | admin | Overview (P10.17): backlog, SLA, offices, request volume, AI handling, AI cost, delivery; the admin login lands here. The model lab (`/lab`, P5.12) was removed. |
