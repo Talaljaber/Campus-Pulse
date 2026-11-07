@@ -1,0 +1,854 @@
+{
+  "mode": "default predict.py run with OPENROUTER_API_KEY (LLM front end + tie-breaker)",
+  "llm_model": "deepseek/deepseek-v4.1-flash",
+  "generated_at": "2026-11-07T17:11:20+00:00",
+  "bootstrap": {
+    "resamples": 1000,
+    "seed": 0,
+    "interval": 0.95
+  },
+  "scores": [
+    {
+      "dataset": "our_test",
+      "lang": "all",
+      "target": "category",
+      "macro_f1": 0.9602,
+      "accuracy": 0.9596,
+      "ci_low": 0.9401,
+      "ci_high": 0.9782,
+      "n_rows": 396
+    },
+    {
+      "dataset": "our_test",
+      "lang": "en",
+      "target": "category",
+      "macro_f1": 0.96,
+      "accuracy": 0.9595,
+      "ci_low": 0.9244,
+      "ci_high": 0.9846,
+      "n_rows": 173
+    },
+    {
+      "dataset": "our_test",
+      "lang": "ar",
+      "target": "category",
+      "macro_f1": 0.97,
+      "accuracy": 0.9697,
+      "ci_low": 0.9384,
+      "ci_high": 0.9931,
+      "n_rows": 132
+    },
+    {
+      "dataset": "our_test",
+      "lang": "arabizi",
+      "target": "category",
+      "macro_f1": 0.9421,
+      "accuracy": 0.9451,
+      "ci_low": 0.8859,
+      "ci_high": 0.9851,
+      "n_rows": 91
+    },
+    {
+      "dataset": "our_test",
+      "lang": "all",
+      "target": "priority",
+      "macro_f1": 0.9722,
+      "accuracy": 0.9722,
+      "ci_low": 0.9536,
+      "ci_high": 0.987,
+      "n_rows": 396
+    },
+    {
+      "dataset": "our_test",
+      "lang": "en",
+      "target": "priority",
+      "macro_f1": 0.9939,
+      "accuracy": 0.9942,
+      "ci_low": 0.9806,
+      "ci_high": 1.0,
+      "n_rows": 173
+    },
+    {
+      "dataset": "our_test",
+      "lang": "ar",
+      "target": "priority",
+      "macro_f1": 0.9515,
+      "accuracy": 0.9545,
+      "ci_low": 0.9087,
+      "ci_high": 0.9835,
+      "n_rows": 132
+    },
+    {
+      "dataset": "our_test",
+      "lang": "arabizi",
+      "target": "priority",
+      "macro_f1": 0.9438,
+      "accuracy": 0.956,
+      "ci_low": 0.8824,
+      "ci_high": 0.9892,
+      "n_rows": 91
+    },
+    {
+      "dataset": "our_test_set1",
+      "lang": "all",
+      "target": "category",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 72
+    },
+    {
+      "dataset": "our_test_set1",
+      "lang": "en",
+      "target": "category",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 32
+    },
+    {
+      "dataset": "our_test_set1",
+      "lang": "ar",
+      "target": "category",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 24
+    },
+    {
+      "dataset": "our_test_set1",
+      "lang": "arabizi",
+      "target": "category",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 16
+    },
+    {
+      "dataset": "our_test_set1",
+      "lang": "all",
+      "target": "priority",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 72
+    },
+    {
+      "dataset": "our_test_set1",
+      "lang": "en",
+      "target": "priority",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 32
+    },
+    {
+      "dataset": "our_test_set1",
+      "lang": "ar",
+      "target": "priority",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 24
+    },
+    {
+      "dataset": "our_test_set1",
+      "lang": "arabizi",
+      "target": "priority",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 16
+    },
+    {
+      "dataset": "our_test_set2",
+      "lang": "all",
+      "target": "category",
+      "macro_f1": 0.972,
+      "accuracy": 0.9722,
+      "ci_low": 0.9231,
+      "ci_high": 1.0,
+      "n_rows": 72
+    },
+    {
+      "dataset": "our_test_set2",
+      "lang": "en",
+      "target": "category",
+      "macro_f1": 0.9111,
+      "accuracy": 0.9375,
+      "ci_low": 0.7642,
+      "ci_high": 1.0,
+      "n_rows": 32
+    },
+    {
+      "dataset": "our_test_set2",
+      "lang": "ar",
+      "target": "category",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 24
+    },
+    {
+      "dataset": "our_test_set2",
+      "lang": "arabizi",
+      "target": "category",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 16
+    },
+    {
+      "dataset": "our_test_set2",
+      "lang": "all",
+      "target": "priority",
+      "macro_f1": 0.9722,
+      "accuracy": 0.9722,
+      "ci_low": 0.9318,
+      "ci_high": 1.0,
+      "n_rows": 72
+    },
+    {
+      "dataset": "our_test_set2",
+      "lang": "en",
+      "target": "priority",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 32
+    },
+    {
+      "dataset": "our_test_set2",
+      "lang": "ar",
+      "target": "priority",
+      "macro_f1": 0.6444,
+      "accuracy": 0.9167,
+      "ci_low": 0.6061,
+      "ci_high": 1.0,
+      "n_rows": 24
+    },
+    {
+      "dataset": "our_test_set2",
+      "lang": "arabizi",
+      "target": "priority",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 16
+    },
+    {
+      "dataset": "our_test_set3",
+      "lang": "all",
+      "target": "category",
+      "macro_f1": 0.9634,
+      "accuracy": 0.963,
+      "ci_low": 0.9242,
+      "ci_high": 0.9917,
+      "n_rows": 108
+    },
+    {
+      "dataset": "our_test_set3",
+      "lang": "en",
+      "target": "category",
+      "macro_f1": 0.9791,
+      "accuracy": 0.9778,
+      "ci_low": 0.9187,
+      "ci_high": 1.0,
+      "n_rows": 45
+    },
+    {
+      "dataset": "our_test_set3",
+      "lang": "ar",
+      "target": "category",
+      "macro_f1": 0.972,
+      "accuracy": 0.9722,
+      "ci_low": 0.899,
+      "ci_high": 1.0,
+      "n_rows": 36
+    },
+    {
+      "dataset": "our_test_set3",
+      "lang": "arabizi",
+      "target": "category",
+      "macro_f1": 0.9194,
+      "accuracy": 0.9259,
+      "ci_low": 0.7666,
+      "ci_high": 1.0,
+      "n_rows": 27
+    },
+    {
+      "dataset": "our_test_set3",
+      "lang": "all",
+      "target": "priority",
+      "macro_f1": 0.9536,
+      "accuracy": 0.9537,
+      "ci_low": 0.91,
+      "ci_high": 0.9907,
+      "n_rows": 108
+    },
+    {
+      "dataset": "our_test_set3",
+      "lang": "en",
+      "target": "priority",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 45
+    },
+    {
+      "dataset": "our_test_set3",
+      "lang": "ar",
+      "target": "priority",
+      "macro_f1": 0.9441,
+      "accuracy": 0.9444,
+      "ci_low": 0.8466,
+      "ci_high": 1.0,
+      "n_rows": 36
+    },
+    {
+      "dataset": "our_test_set3",
+      "lang": "arabizi",
+      "target": "priority",
+      "macro_f1": 0.8918,
+      "accuracy": 0.8889,
+      "ci_low": 0.7417,
+      "ci_high": 1.0,
+      "n_rows": 27
+    },
+    {
+      "dataset": "our_test_set4",
+      "lang": "all",
+      "target": "category",
+      "macro_f1": 0.9316,
+      "accuracy": 0.9306,
+      "ci_low": 0.8848,
+      "ci_high": 0.967,
+      "n_rows": 144
+    },
+    {
+      "dataset": "our_test_set4",
+      "lang": "en",
+      "target": "category",
+      "macro_f1": 0.938,
+      "accuracy": 0.9375,
+      "ci_low": 0.8643,
+      "ci_high": 0.9872,
+      "n_rows": 64
+    },
+    {
+      "dataset": "our_test_set4",
+      "lang": "ar",
+      "target": "category",
+      "macro_f1": 0.9386,
+      "accuracy": 0.9375,
+      "ci_low": 0.86,
+      "ci_high": 1.0,
+      "n_rows": 48
+    },
+    {
+      "dataset": "our_test_set4",
+      "lang": "arabizi",
+      "target": "category",
+      "macro_f1": 0.905,
+      "accuracy": 0.9062,
+      "ci_low": 0.7559,
+      "ci_high": 1.0,
+      "n_rows": 32
+    },
+    {
+      "dataset": "our_test_set4",
+      "lang": "all",
+      "target": "priority",
+      "macro_f1": 0.9722,
+      "accuracy": 0.9722,
+      "ci_low": 0.9419,
+      "ci_high": 1.0,
+      "n_rows": 144
+    },
+    {
+      "dataset": "our_test_set4",
+      "lang": "en",
+      "target": "priority",
+      "macro_f1": 0.9832,
+      "accuracy": 0.9844,
+      "ci_low": 0.9433,
+      "ci_high": 1.0,
+      "n_rows": 64
+    },
+    {
+      "dataset": "our_test_set4",
+      "lang": "ar",
+      "target": "priority",
+      "macro_f1": 0.9628,
+      "accuracy": 0.9583,
+      "ci_low": 0.9028,
+      "ci_high": 1.0,
+      "n_rows": 48
+    },
+    {
+      "dataset": "our_test_set4",
+      "lang": "arabizi",
+      "target": "priority",
+      "macro_f1": 0.9644,
+      "accuracy": 0.9688,
+      "ci_low": 0.8727,
+      "ci_high": 1.0,
+      "n_rows": 32
+    },
+    {
+      "dataset": "validation",
+      "lang": "all",
+      "target": "category",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 62
+    },
+    {
+      "dataset": "validation",
+      "lang": "all",
+      "target": "priority",
+      "macro_f1": 1.0,
+      "accuracy": 1.0,
+      "ci_low": 1.0,
+      "ci_high": 1.0,
+      "n_rows": 62
+    }
+  ],
+  "confusions": {
+    "category_our_test": {
+      "labels": [
+        "Registration",
+        "IT Support",
+        "Finance",
+        "Transportation",
+        "Facilities",
+        "Academic Support"
+      ],
+      "matrix": [
+        [
+          61,
+          0,
+          0,
+          0,
+          0,
+          5
+        ],
+        [
+          0,
+          64,
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          64,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          65,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          63,
+          3
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          2,
+          63
+        ]
+      ]
+    },
+    "priority_our_test": {
+      "labels": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "matrix": [
+        [
+          131,
+          1,
+          0
+        ],
+        [
+          0,
+          122,
+          10
+        ],
+        [
+          0,
+          0,
+          132
+        ]
+      ]
+    },
+    "category_our_test_set1": {
+      "labels": [
+        "Registration",
+        "IT Support",
+        "Finance",
+        "Transportation",
+        "Facilities",
+        "Academic Support"
+      ],
+      "matrix": [
+        [
+          12,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          12,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          12,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          12,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          12,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          12
+        ]
+      ]
+    },
+    "priority_our_test_set1": {
+      "labels": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "matrix": [
+        [
+          24,
+          0,
+          0
+        ],
+        [
+          0,
+          24,
+          0
+        ],
+        [
+          0,
+          0,
+          24
+        ]
+      ]
+    },
+    "category_our_test_set2": {
+      "labels": [
+        "Registration",
+        "IT Support",
+        "Finance",
+        "Transportation",
+        "Facilities",
+        "Academic Support"
+      ],
+      "matrix": [
+        [
+          10,
+          0,
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          12,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          12,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          12,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          12,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          12
+        ]
+      ]
+    },
+    "priority_our_test_set2": {
+      "labels": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "matrix": [
+        [
+          24,
+          0,
+          0
+        ],
+        [
+          0,
+          22,
+          2
+        ],
+        [
+          0,
+          0,
+          24
+        ]
+      ]
+    },
+    "category_our_test_set3": {
+      "labels": [
+        "Registration",
+        "IT Support",
+        "Finance",
+        "Transportation",
+        "Facilities",
+        "Academic Support"
+      ],
+      "matrix": [
+        [
+          17,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          16,
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          0,
+          18,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          18,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          18,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          17
+        ]
+      ]
+    },
+    "priority_our_test_set3": {
+      "labels": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "matrix": [
+        [
+          35,
+          1,
+          0
+        ],
+        [
+          0,
+          32,
+          4
+        ],
+        [
+          0,
+          0,
+          36
+        ]
+      ]
+    },
+    "category_our_test_set4": {
+      "labels": [
+        "Registration",
+        "IT Support",
+        "Finance",
+        "Transportation",
+        "Facilities",
+        "Academic Support"
+      ],
+      "matrix": [
+        [
+          22,
+          0,
+          0,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          24,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          22,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          23,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          21,
+          3
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          2,
+          22
+        ]
+      ]
+    },
+    "priority_our_test_set4": {
+      "labels": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "matrix": [
+        [
+          48,
+          0,
+          0
+        ],
+        [
+          0,
+          44,
+          4
+        ],
+        [
+          0,
+          0,
+          48
+        ]
+      ]
+    }
+  }
+}

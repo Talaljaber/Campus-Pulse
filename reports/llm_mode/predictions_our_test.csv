@@ -1,0 +1,397 @@
+request_id,category,priority
+T1-0001,Registration,low
+T1-0002,Registration,medium
+T1-0003,IT Support,low
+T1-0004,IT Support,high
+T1-0005,Finance,medium
+T1-0006,Finance,high
+T1-0007,Transportation,medium
+T1-0008,Facilities,low
+T1-0009,Facilities,high
+T1-0010,Academic Support,low
+T1-0011,Academic Support,high
+T1-0012,Registration,medium
+T1-0013,IT Support,low
+T1-0014,IT Support,medium
+T1-0015,Finance,low
+T1-0016,Finance,high
+T1-0017,Transportation,medium
+T1-0018,Transportation,high
+T1-0019,Facilities,medium
+T1-0020,Academic Support,low
+T1-0021,Academic Support,high
+T1-0022,Registration,low
+T1-0023,Registration,high
+T1-0024,IT Support,medium
+T1-0025,Finance,low
+T1-0026,Finance,medium
+T1-0027,Transportation,low
+T1-0028,Transportation,high
+T1-0029,Facilities,medium
+T1-0030,Facilities,high
+T1-0031,Academic Support,medium
+T1-0032,Registration,low
+T1-0033,Registration,high
+T1-0034,IT Support,low
+T1-0035,IT Support,high
+T1-0036,Finance,medium
+T1-0037,Transportation,low
+T1-0038,Transportation,medium
+T1-0039,Facilities,low
+T1-0040,Facilities,high
+T1-0041,Academic Support,medium
+T1-0042,Academic Support,high
+T1-0043,Registration,medium
+T1-0044,IT Support,low
+T1-0045,IT Support,high
+T1-0046,Finance,low
+T1-0047,Finance,high
+T1-0048,Transportation,medium
+T1-0049,Facilities,low
+T1-0050,Facilities,medium
+T1-0051,Academic Support,low
+T1-0052,Academic Support,high
+T1-0053,Registration,medium
+T1-0054,Registration,high
+T1-0055,IT Support,medium
+T1-0056,Finance,low
+T1-0057,Finance,high
+T1-0058,Transportation,low
+T1-0059,Transportation,high
+T1-0060,Facilities,medium
+T1-0061,Academic Support,low
+T1-0062,Academic Support,medium
+T1-0063,Registration,low
+T1-0064,Registration,high
+T1-0065,IT Support,medium
+T1-0066,IT Support,high
+T1-0067,Finance,medium
+T1-0068,Transportation,low
+T1-0069,Transportation,high
+T1-0070,Facilities,low
+T1-0071,Facilities,high
+T1-0072,Academic Support,medium
+T2-0001,Registration,low
+T2-0002,Registration,high
+T2-0003,IT Support,low
+T2-0004,IT Support,high
+T2-0005,Finance,medium
+T2-0006,Finance,high
+T2-0007,Transportation,medium
+T2-0008,Facilities,low
+T2-0009,Facilities,high
+T2-0010,Academic Support,low
+T2-0011,Academic Support,high
+T2-0012,Registration,medium
+T2-0013,IT Support,low
+T2-0014,IT Support,high
+T2-0015,Finance,low
+T2-0016,Finance,high
+T2-0017,Transportation,medium
+T2-0018,Transportation,high
+T2-0019,Facilities,medium
+T2-0020,Academic Support,low
+T2-0021,Academic Support,high
+T2-0022,Academic Support,low
+T2-0023,Registration,high
+T2-0024,IT Support,medium
+T2-0025,Finance,low
+T2-0026,Finance,medium
+T2-0027,Transportation,low
+T2-0028,Transportation,high
+T2-0029,Facilities,medium
+T2-0030,Facilities,high
+T2-0031,Academic Support,medium
+T2-0032,Academic Support,low
+T2-0033,Registration,high
+T2-0034,IT Support,low
+T2-0035,IT Support,high
+T2-0036,Finance,medium
+T2-0037,Transportation,low
+T2-0038,Transportation,medium
+T2-0039,Facilities,low
+T2-0040,Facilities,high
+T2-0041,Academic Support,medium
+T2-0042,Academic Support,high
+T2-0043,Registration,medium
+T2-0044,IT Support,low
+T2-0045,IT Support,high
+T2-0046,Finance,low
+T2-0047,Finance,high
+T2-0048,Transportation,medium
+T2-0049,Facilities,low
+T2-0050,Facilities,medium
+T2-0051,Academic Support,low
+T2-0052,Academic Support,high
+T2-0053,Registration,medium
+T2-0054,Registration,high
+T2-0055,IT Support,medium
+T2-0056,Finance,low
+T2-0057,Finance,high
+T2-0058,Transportation,low
+T2-0059,Transportation,high
+T2-0060,Facilities,medium
+T2-0061,Academic Support,low
+T2-0062,Academic Support,medium
+T2-0063,Registration,low
+T2-0064,Registration,high
+T2-0065,IT Support,medium
+T2-0066,IT Support,high
+T2-0067,Finance,medium
+T2-0068,Transportation,low
+T2-0069,Transportation,high
+T2-0070,Facilities,low
+T2-0071,Facilities,high
+T2-0072,Academic Support,medium
+T3-0001,Academic Support,low
+T3-0002,Transportation,high
+T3-0003,Finance,high
+T3-0004,Facilities,low
+T3-0005,Academic Support,low
+T3-0006,Finance,medium
+T3-0007,Registration,medium
+T3-0008,Facilities,high
+T3-0009,IT Support,high
+T3-0010,Academic Support,medium
+T3-0011,Transportation,high
+T3-0012,Transportation,medium
+T3-0013,Academic Support,low
+T3-0014,Academic Support,high
+T3-0015,Registration,low
+T3-0016,IT Support,low
+T3-0017,Facilities,high
+T3-0018,Academic Support,high
+T3-0019,Transportation,medium
+T3-0020,Facilities,medium
+T3-0021,Transportation,low
+T3-0022,Academic Support,medium
+T3-0023,Facilities,high
+T3-0024,Academic Support,high
+T3-0025,Facilities,low
+T3-0026,Academic Support,medium
+T3-0027,Facilities,low
+T3-0028,Facilities,low
+T3-0029,Registration,low
+T3-0030,IT Support,medium
+T3-0031,Finance,low
+T3-0032,Transportation,low
+T3-0033,IT Support,low
+T3-0034,Transportation,low
+T3-0035,IT Support,medium
+T3-0036,Facilities,medium
+T3-0037,Academic Support,high
+T3-0038,Facilities,medium
+T3-0039,Facilities,high
+T3-0040,IT Support,high
+T3-0041,Finance,low
+T3-0042,Registration,medium
+T3-0043,Finance,medium
+T3-0044,Academic Support,low
+T3-0045,Academic Support,medium
+T3-0046,IT Support,high
+T3-0047,Transportation,low
+T3-0048,IT Support,high
+T3-0049,IT Support,medium
+T3-0050,Academic Support,low
+T3-0051,Finance,high
+T3-0052,Registration,low
+T3-0053,Transportation,medium
+T3-0054,Facilities,high
+T3-0055,Registration,medium
+T3-0056,IT Support,high
+T3-0057,Registration,high
+T3-0058,Finance,high
+T3-0059,Transportation,low
+T3-0060,Academic Support,medium
+T3-0061,Transportation,low
+T3-0062,Finance,medium
+T3-0063,Finance,low
+T3-0064,Facilities,medium
+T3-0065,Academic Support,low
+T3-0066,Registration,high
+T3-0067,Facilities,low
+T3-0068,Facilities,high
+T3-0069,Transportation,medium
+T3-0070,Transportation,high
+T3-0071,Facilities,high
+T3-0072,Registration,high
+T3-0073,Transportation,medium
+T3-0074,Finance,high
+T3-0075,Finance,medium
+T3-0076,Academic Support,medium
+T3-0077,Finance,medium
+T3-0078,Academic Support,low
+T3-0079,Finance,low
+T3-0080,Academic Support,low
+T3-0081,Registration,medium
+T3-0082,Registration,high
+T3-0083,Facilities,high
+T3-0084,Facilities,high
+T3-0085,IT Support,low
+T3-0086,Registration,medium
+T3-0087,Registration,high
+T3-0088,Academic Support,high
+T3-0089,Registration,low
+T3-0090,Registration,high
+T3-0091,Finance,medium
+T3-0092,Transportation,high
+T3-0093,Transportation,high
+T3-0094,Registration,medium
+T3-0095,IT Support,medium
+T3-0096,Finance,low
+T3-0097,Transportation,high
+T3-0098,Finance,high
+T3-0099,IT Support,low
+T3-0100,IT Support,high
+T3-0101,IT Support,medium
+T3-0102,Registration,low
+T3-0103,Transportation,medium
+T3-0104,Finance,high
+T3-0105,Academic Support,low
+T3-0106,IT Support,high
+T3-0107,Finance,low
+T3-0108,Registration,high
+T4-0001,Academic Support,low
+T4-0002,Finance,high
+T4-0003,Registration,high
+T4-0004,Facilities,medium
+T4-0005,Registration,high
+T4-0006,Facilities,low
+T4-0007,Transportation,medium
+T4-0008,Finance,high
+T4-0009,IT Support,medium
+T4-0010,Facilities,high
+T4-0011,Facilities,medium
+T4-0012,IT Support,medium
+T4-0013,Facilities,high
+T4-0014,IT Support,high
+T4-0015,Finance,medium
+T4-0016,Academic Support,medium
+T4-0017,Transportation,low
+T4-0018,Facilities,high
+T4-0019,Finance,low
+T4-0020,Transportation,medium
+T4-0021,Academic Support,low
+T4-0022,Academic Support,low
+T4-0023,Transportation,medium
+T4-0024,Transportation,low
+T4-0025,Finance,high
+T4-0026,IT Support,low
+T4-0027,Academic Support,high
+T4-0028,Finance,medium
+T4-0029,Academic Support,medium
+T4-0030,IT Support,medium
+T4-0031,Finance,medium
+T4-0032,Registration,low
+T4-0033,IT Support,high
+T4-0034,Registration,medium
+T4-0035,Academic Support,high
+T4-0036,Transportation,low
+T4-0037,Finance,high
+T4-0038,IT Support,high
+T4-0039,Facilities,low
+T4-0040,Registration,medium
+T4-0041,Registration,high
+T4-0042,Academic Support,medium
+T4-0043,Registration,low
+T4-0044,Transportation,medium
+T4-0045,Registration,low
+T4-0046,IT Support,high
+T4-0047,Transportation,high
+T4-0048,Facilities,low
+T4-0049,Registration,high
+T4-0050,Academic Support,high
+T4-0051,Academic Support,low
+T4-0052,Academic Support,low
+T4-0053,Finance,medium
+T4-0054,Academic Support,medium
+T4-0055,Transportation,high
+T4-0056,IT Support,high
+T4-0057,Academic Support,high
+T4-0058,Registration,low
+T4-0059,Facilities,medium
+T4-0060,Academic Support,medium
+T4-0061,Transportation,high
+T4-0062,Registration,high
+T4-0063,Finance,medium
+T4-0064,Facilities,medium
+T4-0065,Finance,high
+T4-0066,IT Support,medium
+T4-0067,IT Support,low
+T4-0068,Facilities,low
+T4-0069,Registration,medium
+T4-0070,Facilities,high
+T4-0071,Academic Support,medium
+T4-0072,Registration,low
+T4-0073,Registration,high
+T4-0074,IT Support,medium
+T4-0075,Facilities,low
+T4-0076,Transportation,medium
+T4-0077,Registration,low
+T4-0078,IT Support,high
+T4-0079,Academic Support,medium
+T4-0080,Registration,high
+T4-0081,Facilities,high
+T4-0082,Registration,low
+T4-0083,IT Support,low
+T4-0084,Finance,low
+T4-0085,IT Support,low
+T4-0086,Finance,high
+T4-0087,Transportation,medium
+T4-0088,Facilities,medium
+T4-0089,Finance,low
+T4-0090,Transportation,low
+T4-0091,Academic Support,low
+T4-0092,Academic Support,high
+T4-0093,Registration,high
+T4-0094,Finance,medium
+T4-0095,Academic Support,low
+T4-0096,IT Support,medium
+T4-0097,Transportation,low
+T4-0098,IT Support,high
+T4-0099,Transportation,medium
+T4-0100,Transportation,high
+T4-0101,Registration,high
+T4-0102,Registration,medium
+T4-0103,Academic Support,low
+T4-0104,Registration,low
+T4-0105,Finance,high
+T4-0106,Transportation,high
+T4-0107,Finance,low
+T4-0108,Transportation,high
+T4-0109,Finance,low
+T4-0110,Facilities,high
+T4-0111,Transportation,low
+T4-0112,Facilities,high
+T4-0113,Academic Support,high
+T4-0114,Transportation,medium
+T4-0115,Facilities,high
+T4-0116,Academic Support,low
+T4-0117,IT Support,medium
+T4-0118,Registration,low
+T4-0119,Facilities,high
+T4-0120,Facilities,high
+T4-0121,Transportation,low
+T4-0122,Facilities,high
+T4-0123,Registration,low
+T4-0124,IT Support,low
+T4-0125,Academic Support,medium
+T4-0126,Transportation,high
+T4-0127,Academic Support,medium
+T4-0128,Registration,high
+T4-0129,Academic Support,low
+T4-0130,Finance,high
+T4-0131,Finance,medium
+T4-0132,Facilities,high
+T4-0133,Academic Support,low
+T4-0134,Finance,low
+T4-0135,IT Support,low
+T4-0136,IT Support,low
+T4-0137,Facilities,high
+T4-0138,Transportation,low
+T4-0139,Academic Support,medium
+T4-0140,IT Support,low
+T4-0141,Facilities,medium
+T4-0142,Finance,medium
+T4-0143,IT Support,high
+T4-0144,IT Support,medium

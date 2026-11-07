@@ -42,8 +42,19 @@ This file lists every result we have, where it came from, and what it does not p
 | Set 3 (hard realistic) | 108 | 0.731 | 0.793 |
 | Set 4 (final blind set) | 144 | 0.751 | 0.676 |
 
-These are the offline model alone. With the LLM front end and tie-breaker (the default when a key is set), set 4
-reaches 0.925 category and 0.958 priority (README, "Prediction").
+These are the offline model alone. With the LLM front end and tie-breaker (the default when a key is set;
+`scripts/score_llm_mode.py`, `reports/llm_mode.json`, 2026-11-07):
+
+| Set | Rows | Category | Priority |
+|---|---|---|---|
+| `our_test` pooled | 396 | 0.960 (95% CI 0.94-0.98) | 0.972 (0.95-0.99) |
+| Set 1 | 72 | 1.000 | 1.000 |
+| Set 2 | 72 | 0.972 | 0.972 |
+| Set 3 | 108 | 0.963 | 0.954 |
+| Set 4 (final blind set) | 144 | 0.932 (0.88-0.97) | 0.972 (0.94-1.00) |
+| Official validation | 62 | 1.000 | 1.000 |
+
+By language (pooled): English 0.960 / 0.994, Arabic 0.970 / 0.952, Arabizi 0.942 / 0.944.
 
 ## 5. Locked holdout (120 rows: 60 English, 60 Arabic), scored once
 

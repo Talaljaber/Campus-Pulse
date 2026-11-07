@@ -1,0 +1,63 @@
+request_id,category,priority
+VA-0001,Registration,low
+VA-0002,Registration,low
+VA-0003,Registration,low
+VA-0004,Registration,low
+VA-0005,Finance,medium
+VA-0006,Transportation,medium
+VA-0007,Finance,medium
+VA-0008,Facilities,medium
+VA-0009,Academic Support,high
+VA-0010,Academic Support,high
+VA-0011,Facilities,medium
+VA-0012,Finance,medium
+VA-0013,IT Support,low
+VA-0014,IT Support,low
+VA-0015,Facilities,medium
+VA-0016,Registration,low
+VA-0017,Registration,low
+VA-0018,Finance,medium
+VA-0019,Academic Support,high
+VA-0020,Transportation,medium
+VA-0021,Academic Support,high
+VA-0022,Finance,medium
+VA-0023,IT Support,low
+VA-0024,Transportation,medium
+VA-0025,IT Support,low
+VA-0026,IT Support,low
+VA-0027,Finance,medium
+VA-0028,Academic Support,high
+VA-0029,Facilities,medium
+VA-0030,Finance,medium
+VA-0031,Transportation,medium
+VA-0032,Registration,low
+VA-0033,Facilities,medium
+VA-0034,Transportation,medium
+VA-0035,Transportation,medium
+VA-0036,Academic Support,high
+VA-0037,Academic Support,high
+VA-0038,Finance,medium
+VA-0039,Registration,low
+VA-0040,IT Support,low
+VA-0041,IT Support,low
+VA-0042,IT Support,low
+VA-0043,Registration,low
+VA-0044,Academic Support,high
+VA-0045,Finance,medium
+VA-0046,Facilities,medium
+VA-0047,Finance,medium
+VA-0048,Transportation,medium
+VA-0049,IT Support,low
+VA-0050,Facilities,medium
+VA-0051,IT Support,low
+VA-0052,Academic Support,high
+VA-0053,Finance,medium
+VA-0054,IT Support,low
+VA-0055,Registration,low
+VA-0056,Facilities,medium
+VA-0057,Transportation,medium
+VA-0058,Academic Support,high
+VA-0059,Academic Support,high
+VA-0060,Transportation,medium
+VA-0061,Registration,low
+VA-0062,Facilities,medium
