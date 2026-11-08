@@ -1,0 +1,62 @@
+{
+  "name": "chat_turn_status",
+  "description": "P10.18: a status question. `tickets` holds status cards of the caller's own tickets (never anyone else's).",
+  "method": "POST",
+  "path": "/v1/chat/turn",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "What's the status of my requests?",
+        "kind": "text"
+      }
+    ],
+    "proposal_token": null
+  },
+  "match": [
+    "messages"
+  ],
+  "status_code": 200,
+  "response": {
+    "mode": "agent",
+    "reply": "Your e-learning request is in progress and the office replied; your parking request is solved.",
+    "proposal": null,
+    "ticket_id": null,
+    "triage": null,
+    "clear_proposal": false,
+    "tickets": [
+      {
+        "ticket_id": "4f2a9c10-8b7e-4d3c-a1f2-0e9d8c7b0102",
+        "number": "4F2A9C10",
+        "title": "E-learning will not load",
+        "office": "it",
+        "category": "IT Support",
+        "priority": "high",
+        "status": "in_progress",
+        "awaiting_student": true,
+        "created_at": "2026-11-06T13:40:00+03:00",
+        "resolved_at": null
+      },
+      {
+        "ticket_id": "90d1e7a2-6c5b-4a39-8f7e-1d2c3b4a0103",
+        "number": "90D1E7A2",
+        "title": "Parking permit missing",
+        "office": "transport",
+        "category": "Transportation",
+        "priority": "low",
+        "status": "solved",
+        "awaiting_student": false,
+        "created_at": "2026-10-29T08:05:00+03:00",
+        "resolved_at": "2026-11-02T11:30:00+03:00"
+      }
+    ],
+    "correction": null,
+    "withdraw": null
+  }
+}

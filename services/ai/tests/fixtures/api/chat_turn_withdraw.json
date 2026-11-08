@@ -1,0 +1,48 @@
+{
+  "name": "chat_turn_withdraw",
+  "description": "P10.18: the student asks to close an open request. Nothing is closed yet: the client asks to confirm and then calls POST /v1/tickets/{ticket_id}/student-action with {\"action\": \"close\"}.",
+  "method": "POST",
+  "path": "/v1/chat/turn",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Please cancel my projector request",
+        "kind": "text"
+      }
+    ],
+    "proposal_token": null
+  },
+  "match": [
+    "messages"
+  ],
+  "status_code": 200,
+  "response": {
+    "mode": "agent",
+    "reply": "Close request #7C3E01B5? Nothing is closed until you confirm.",
+    "proposal": null,
+    "ticket_id": null,
+    "triage": null,
+    "clear_proposal": false,
+    "tickets": [],
+    "correction": null,
+    "withdraw": {
+      "ticket_id": "7c3e01b5-4a2d-4f8e-9b1c-2d3e4f5a0101",
+      "number": "7C3E01B5",
+      "title": "Projector broken in room H302",
+      "office": "facilities",
+      "category": "Facilities",
+      "priority": "medium",
+      "status": "new",
+      "awaiting_student": false,
+      "created_at": "2026-11-08T09:12:00+03:00",
+      "resolved_at": null
+    }
+  }
+}

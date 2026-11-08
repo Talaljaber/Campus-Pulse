@@ -3328,7 +3328,10 @@ Response `200`:
 
 | Fixture | Status | What it shows |
 | --- | --- | --- |
+| `chat_turn_correction` | 200 | P10.18: the student fixes a detail of an open ticket (H302 -> H203). `proposal` is the corrected request (its token carries `replaces`) and `correction.ticket` the open ticket it would replace. Confirm with `replace: true` to close the old one, or `replace: false` to keep both. |
 | `chat_turn_fallback` | 200 | No language model (no key, disabled or failing): the client shows the plain form. |
+| `chat_turn_status` | 200 | P10.18: a status question. `tickets` holds status cards of the caller's own tickets (never anyone else's). |
+| `chat_turn_withdraw` | 200 | P10.18: the student asks to close an open request. Nothing is closed yet: the client asks to confirm and then calls POST /v1/tickets/{ticket_id}/student-action with {"action": "close"}. |
 
 **Errors**
 
@@ -3655,6 +3658,7 @@ Response `200`:
 | Fixture | Status | What it shows |
 | --- | --- | --- |
 | `chat_confirm_error_expired` | 422 | An expired, tampered or foreign token is refused. |
+| `chat_confirm_replaced` | 200 | P10.18: a correction confirmed with `replace: true`: the corrected ticket is opened, then the replaced ticket (the token's `replaces`, the caller's own and still open) is commented on and closed, and returned as `closed_ticket`. |
 
 Error example (`chat_confirm_error_expired`, 422):
 
