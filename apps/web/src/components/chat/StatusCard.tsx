@@ -11,6 +11,11 @@ import { Icon } from "../ui/Icon";
 
 type Status = ChatTicketOut["status"];
 
+/** The request text of a ticket title: drops the internal "Category/priority: " prefix (office and priority show on the card). */
+export function plainTitle(title: string): string {
+  return title.replace(/^[^:\n]{1,40}\/(low|medium|high):\s*/i, "") || title;
+}
+
 const LABEL: Record<Status, DictKey> = {
   new: "chat.card.received",
   in_progress: "chat.card.inProgress",
@@ -92,7 +97,7 @@ export function StatusCard({ ticket }: StatusCardProps) {
   return (
     <article
       data-status={ticket.status}
-      aria-label={t("chat.card.cardLabel", { number: ticket.number, title: ticket.title, status })}
+      aria-label={t("chat.card.cardLabel", { number: ticket.number, title: plainTitle(ticket.title), status })}
       className="flex w-full max-w-prose flex-col gap-2 rounded-lg border border-line bg-surface-raised p-3 shadow-1"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -107,11 +112,11 @@ export function StatusCard({ ticket }: StatusCardProps) {
       </div>
       <Link
         href={`/requests/${encodeURIComponent(ticket.ticket_id)}`}
-        dir={textDir(ticket.title)}
+        dir={textDir(plainTitle(ticket.title))}
         aria-label={t("chat.card.open", { number: ticket.number })}
         className="font-semibold text-accent underline underline-offset-2"
       >
-        {ticket.title}
+        {plainTitle(ticket.title)}
       </Link>
       <div className="flex flex-wrap items-center gap-2 text-sm text-fg-2">
         <span>{officeLabel(ticket.office)}</span>

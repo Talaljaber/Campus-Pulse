@@ -241,7 +241,6 @@ export function RecordedCard({ ticketId, triage, proposal }: RecordedCardProps) 
       <h2 className="text-lg font-semibold text-fg-1">
         {ticketId ? t("chat.agent.recordedNumber", { number: ticketId.replace(/-/g, "").slice(0, 8).toUpperCase() }) : t("chat.agent.recorded")}
       </h2>
-      <p className="text-sm text-fg-2">{t("chat.agent.recordedDemo")}</p>
       {ticketId && (
         <div>
           <Link href={`/requests/${encodeURIComponent(ticketId)}`} className="font-semibold text-accent underline">

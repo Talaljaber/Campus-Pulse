@@ -203,7 +203,6 @@ export const en = {
     ticketStatusNoTitle: "Your ticket is now {status}.",
     updateGeneric: "You have a new update on your request.",
     agent: {
-      demo: "Demo: no real department is contacted.",
       welcome: "Tell me what you need. I suggest where it goes, and you decide whether to send it.",
       starterWifi: "The Wi-Fi is not working.",
       starterRegistration: "I need help with registration.",
@@ -229,7 +228,6 @@ export const en = {
       whyHint: "Based on a past staff correction: {category}, {priority} ({pct}% similar)",
       recorded: "Request recorded",
       recordedNumber: "Request recorded #{number}",
-      recordedDemo: "Demo only: no real department was contacted.",
       view: "View this request",
       errorExpired: "That suggestion has expired. Describe your request again.",
     },
@@ -473,7 +471,6 @@ export const en = {
     kind: { forward: "Forward", priority: "Priority change" },
   },
   myRequests: {
-    demo: "Demo: no real department is contacted.",
     empty: "No requests here",
     emptyHint: "Requests you send through Ask that become tickets appear here.",
     col: { department: "Department", updated: "Last update", deadline: "We aim to reply by" },

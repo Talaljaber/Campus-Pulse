@@ -44,7 +44,7 @@ test("a student signs in, asks about the bus timetable and gets a Transportation
 
   await page.getByLabel("Your request").fill(SENTENCE);
   await page.getByRole("button", { name: "Send request" }).click();
-  await expect(page.getByText("Demo: no real department is contacted.")).toBeVisible();
+  await expect(page.getByText(/no real department/)).toHaveCount(0);
   const proposal = page.getByRole("region", { name: "Suggested request" });
   await expect(proposal).toContainText("Department: Transport");
   await expect(proposal).not.toContainText("%");

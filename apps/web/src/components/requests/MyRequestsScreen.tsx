@@ -11,7 +11,6 @@ import { formatDateTime } from "@/lib/time";
 import { AppShell } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
 import { useOfficeLabel } from "../staff/office";
-import { Badge } from "../ui/Badge";
 import { DataTable, type Column, type SortState } from "../ui/DataTable";
 import { FilterGroup } from "../ui/FilterGroup";
 import { Loadable } from "../ui/Loadable";
@@ -72,11 +71,6 @@ export function MyRequestsScreen({ role, alias, name }: MyRequestsScreenProps) {
   return (
     <AppShell role={role} current="requests" name={name} alias={alias}>
       <PageHeader title={t("nav.requests")} />
-      <div>
-        <Badge tone="info" icon="info">
-          {t("myRequests.demo")}
-        </Badge>
-      </div>
       <FilterGroup
         onSubmit={() => {
           setApplied(draft);

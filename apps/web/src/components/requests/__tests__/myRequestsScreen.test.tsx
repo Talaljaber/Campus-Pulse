@@ -54,7 +54,7 @@ describe("MyRequestsScreen", () => {
       </LangScope>,
     );
     expect(m.my).toHaveBeenCalledWith("lina");
-    expect(screen.getByText("Demo: no real department is contacted.")).toBeInTheDocument();
+    expect(screen.queryByText(/no real department/)).toBeNull();
     const heads = within(screen.getByRole("table")).getAllByRole("columnheader").map((h) => h.textContent);
     expect(heads.join("|")).toMatch(/Ticket #.*Title.*Department.*Status.*Last update.*We aim to reply by/);
     expect(screen.getByText("Open one")).toBeInTheDocument();

@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { LangScope } from "@/i18n";
 import type { ChatTicketOut } from "@/lib/chat/agentTypes";
-import { StatusCard, StatusCards } from "../StatusCard";
+import { StatusCard, StatusCards, plainTitle } from "../StatusCard";
 
 const TICKET: ChatTicketOut = {
   ticket_id: "ab12cd34-0000-4000-8000-000000000009",
@@ -82,3 +82,10 @@ describe("StatusCard", () => {
   });
 });
 
+describe("plainTitle", () => {
+  it("drops the internal category/priority prefix and keeps any other title", () => {
+    expect(plainTitle("Facilities/medium: The projector in room H203 is broken.")).toBe("The projector in room H203 is broken.");
+    expect(plainTitle("IT Support/high: Wi-Fi down")).toBe("Wi-Fi down");
+    expect(plainTitle("Printer broken in H302")).toBe("Printer broken in H302");
+  });
+});

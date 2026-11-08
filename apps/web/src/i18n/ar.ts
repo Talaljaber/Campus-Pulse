@@ -197,7 +197,6 @@ export const ar: Dict = {
     ticketStatusNoTitle: "تذكرتك صارت {status}.",
     updateGeneric: "في تحديث جديد على طلبك.",
     agent: {
-      demo: "تجريبي: ما في أي قسم حقيقي بنتواصل معه.",
       welcome: "احكيلي شو بدك. بقترح وين بروح طلبك، وانت بتقرر إذا بدك ترسله.",
       starterWifi: "الواي فاي مش شغال.",
       starterRegistration: "بدي مساعدة بالتسجيل.",
@@ -223,7 +222,6 @@ export const ar: Dict = {
       whyHint: "بناءً على تصحيح سابق من الموظفين: {category}، {priority} (تشابه {pct}%)",
       recorded: "تم تسجيل الطلب",
       recordedNumber: "تم تسجيل الطلب #{number}",
-      recordedDemo: "تجريبي فقط: ما تم التواصل مع أي قسم حقيقي.",
       view: "شوف هالطلب",
       errorExpired: "انتهت صلاحية هالاقتراح. اكتب طلبك من جديد.",
     },
@@ -467,7 +465,6 @@ export const ar: Dict = {
     kind: { forward: "تحويل", priority: "تغيير أولوية" },
   },
   myRequests: {
-    demo: "تجريبي: ما في أي قسم حقيقي بنتواصل معه.",
     empty: "ما في طلبات هون",
     emptyHint: "الطلبات اللي بتبعتها من صفحة اسأل وبتصير تذاكر بتظهر هون.",
     col: { department: "القسم", updated: "آخر تحديث", deadline: "منحاول نرد قبل" },

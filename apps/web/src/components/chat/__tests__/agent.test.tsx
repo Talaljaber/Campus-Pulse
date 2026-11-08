@@ -134,7 +134,7 @@ describe("AgentScreen", () => {
       return json({}, 404);
     };
     renderScreen();
-    expect(screen.getByText("Demo: no real department is contacted.")).toBeInTheDocument();
+    expect(screen.queryByText(/no real department/)).toBeNull();
     await userEvent.type(screen.getByLabelText("Your request"), "My wifi is down in building M{Enter}");
     expect(await screen.findByText("I can send this to IT Support.")).toBeInTheDocument();
     expect(calls[0]?.body).toMatchObject({ proposal_token: null, messages: [{ role: "user", content: "My wifi is down in building M" }] });

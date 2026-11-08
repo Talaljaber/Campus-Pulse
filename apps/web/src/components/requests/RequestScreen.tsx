@@ -86,11 +86,6 @@ export function RequestScreen({ ticketId, role, alias, name }: RequestScreenProp
                 </>
               }
             />
-            <div>
-              <Badge tone="info" icon="info">
-                {t("myRequests.demo")}
-              </Badge>
-            </div>
             {(ticket.status === "new" || ticket.status === "in_progress") && (
               <p className="text-sm text-fg-2">{t("myRequests.deadline", { when: formatDateTime(ticket.sla_due_at, lang) })}</p>
             )}

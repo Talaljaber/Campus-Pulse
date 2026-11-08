@@ -114,7 +114,6 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
       <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-line bg-surface-1 shadow-card">
         <div className="shrink-0 border-b border-line bg-surface-raised px-4 py-3 sm:px-6 sm:py-4">
           <PageHeader title={t("chat.title")} subtitle={t("app.tagline")} />
-          <p className="mt-3 rounded-md bg-surface-2 px-3 py-2 text-sm text-fg-2">{t("chat.agent.demo")}</p>
         </div>
 
         <div ref={threadRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6" aria-label={t("chat.thread")}>
