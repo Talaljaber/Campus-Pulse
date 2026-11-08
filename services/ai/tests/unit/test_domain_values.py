@@ -75,7 +75,9 @@ def test_ports_are_runtime_checkable_protocols() -> None:
 
 def test_recipient_policy_allows_only_listed_and_rejects_all_when_empty() -> None:
     policy = RecipientPolicy(frozenset({"Demo.Student@Example.com"}))
-    policy.check("  demo.student@example.com ")
+    policy.check("  Demo.Student@example.COM ")  # whitespace and domain case only (P10 ARCHITECTURE)
+    with pytest.raises(RecipientNotAllowed):
+        policy.check("demo.student@example.com")  # the local part is kept as typed
     with pytest.raises(RecipientNotAllowed):
         policy.check("someone@gju.edu.jo")
     with pytest.raises(RecipientNotAllowed):

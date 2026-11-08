@@ -47,14 +47,16 @@ def test_turn_proposes_and_confirm_opens_a_ticket_with_its_follow_up() -> None:
     assert t.h.mail.sent
 
 
-def test_confirming_the_same_token_twice_is_422_and_opens_one_ticket() -> None:
+def test_confirming_the_same_token_twice_returns_the_same_ticket_and_opens_one() -> None:
+    # The durable claim store replays a completed confirm (a double tap or a network retry), so the
+    # second call gets the stored result instead of an error, and no second ticket is opened.
     client, t = chat_api()
     token = client.post("/v1/chat/preview", json={"text": TEXT}, headers=STUDENT).json()["token"]
     first = client.post("/v1/chat/confirm", json={"proposal_token": token}, headers=STUDENT)
     second = client.post("/v1/chat/confirm", json={"proposal_token": token}, headers=STUDENT)
     assert first.status_code == 200, first.text
-    assert second.status_code == 422 and second.json()["error"]["code"] == "invalid_input", second.text
-    assert "already sent" in second.text
+    assert second.status_code == 200, second.text
+    assert second.json()["ticket_id"] == first.json()["ticket_id"]
     assert len(t.tickets()) == 1
 
 

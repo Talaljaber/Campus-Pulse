@@ -63,7 +63,8 @@ def test_empty_allowlist_rejects_everything() -> None:
     ("address", "allowed"),
     [
         (DEMO_INBOX, True),
-        ("  CampusPulse.Support+Student17@GMAIL.com ", True),  # case and whitespace only
+        ("  campuspulse.support+student17@GMAIL.com ", True),  # domain case and whitespace only
+        ("CampusPulse.Support+Student17@gmail.com", False),  # the local part is kept as typed
         ("campuspulse.support@gmail.com", False),  # no plus-address wildcard
         ("campuspulse.support+student18@gmail.com", False),
         ("campuspulse.support+student17@mail.gmail.com", False),  # no subdomain wildcard

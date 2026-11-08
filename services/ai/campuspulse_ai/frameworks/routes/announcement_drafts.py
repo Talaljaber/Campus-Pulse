@@ -11,7 +11,10 @@ from campuspulse_ai.application.dto import (
     AnnouncementDraftOut,
     AnnouncementDraftVersionIn,
 )
-from campuspulse_ai.application.use_cases.announcement_drafts import AnnouncementDraft, DraftConflict
+from campuspulse_ai.composition.api import (  # re-exported: routes stay out of use_cases
+    AnnouncementDraft,
+    DraftConflict,
+)
 from campuspulse_ai.frameworks.api_contract import route_kwargs
 from campuspulse_ai.frameworks.auth import Principal, authorize
 from campuspulse_ai.frameworks.errors import not_wired

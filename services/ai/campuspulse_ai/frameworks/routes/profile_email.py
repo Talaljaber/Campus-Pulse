@@ -8,7 +8,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from campuspulse_ai.application.dto import ProfileEmailIn, ProfileEmailOut
-from campuspulse_ai.application.use_cases.profile_email import (
+from campuspulse_ai.composition.api import (  # re-exported: routes stay out of use_cases
     NotificationEmail,
     ProfileEmailDisabled,
     ProfileEmailRateLimited,
