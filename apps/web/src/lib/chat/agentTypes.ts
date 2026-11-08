@@ -16,6 +16,7 @@ export type ProposalQuestionOption = S["ClarificationOptionOut"];
 export type ProposalHint = S["HintOut"];
 export type ProposalWhy = S["ProposalWhyOut"];
 export type ChatTicketOut = S["ChatTicketOut"];
+export type ChatSourceOut = S["ChatSourceOut"];
 export type ChatCorrectionOut = S["ChatCorrectionOut"];
 export type ChatConfirmRequest = S["ChatConfirmRequest"];
 export type ChatConfirmResponse = S["ChatConfirmResponse"];

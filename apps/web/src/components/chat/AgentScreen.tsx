@@ -5,6 +5,7 @@ import { useAgent } from "@/hooks/useAgent";
 import { useT, type DictKey } from "@/i18n";
 import type { Role } from "@/lib/auth/routing";
 import type { AgentErrorKind, AgentMessage } from "@/lib/chat/agentReducer";
+import type { ChatSourceOut } from "@/lib/chat/agentTypes";
 import { textDir } from "../explain/text";
 import { AppShell } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
@@ -25,6 +26,23 @@ const ERROR_KEY: Record<AgentErrorKind, DictKey> = {
   expired: "chat.agent.errorExpired",
 };
 
+/** P10.19: "From: <title>" under an assistant reply, one line per document or announcement it used. Muted, not a link. */
+export function Sources({ sources }: { sources: readonly ChatSourceOut[] }) {
+  const t = useT();
+  return (
+    <ul aria-label={t("chat.agent.sources")} className="flex max-w-[85%] flex-col gap-0.5 sm:max-w-[72%]">
+      {sources.map((s) => (
+        <li key={s.id} className="flex items-start gap-1.5 text-xs text-fg-3">
+          <Icon name="book" size={14} className="mt-px shrink-0" />
+          <span dir="auto" className="min-w-0 break-words">
+            {t("chat.agent.sourceFrom", { title: s.title })}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** A plain message bubble. The student's sits at the start edge in the accent colour, the assistant's in grey. */
 function Bubble({ message }: { message: AgentMessage }) {
   const t = useT();
@@ -41,6 +59,7 @@ function Bubble({ message }: { message: AgentMessage }) {
       >
         {message.content}
       </p>
+      {!mine && message.sources && message.sources.length > 0 && <Sources sources={message.sources} />}
     </li>
   );
 }

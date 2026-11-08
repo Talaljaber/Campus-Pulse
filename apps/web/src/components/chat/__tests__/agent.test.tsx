@@ -125,6 +125,42 @@ describe("ProposalCard", () => {
   });
 });
 
+describe("AgentScreen sources (P10.19)", () => {
+  it("shows From: <title> under a reply that used documents, and nothing when it used none", async () => {
+    respond = () =>
+      json(
+        turn({
+          reply: "Refunds are full in the first week.",
+          sources: [
+            { id: "knowledge:6f1c", kind: "knowledge", title: "Student Handbook 2026" },
+            { id: "announcement:a1", kind: "announcement", title: "Fee deadline moved" },
+          ],
+        }),
+      );
+    renderScreen();
+    await userEvent.type(screen.getByLabelText("Your request"), "refund?{Enter}");
+    expect(await screen.findByText("Refunds are full in the first week.")).toBeInTheDocument();
+    const list = screen.getByRole("list", { name: "Sources" });
+    expect(within(list).getByText("From: Student Handbook 2026")).toBeInTheDocument();
+    expect(within(list).getByText("From: Fee deadline moved")).toBeInTheDocument();
+  });
+
+  it("has no sources line when the reply has none", async () => {
+    respond = () => json(turn({ reply: "Hello there." }));
+    renderScreen();
+    await userEvent.type(screen.getByLabelText("Your request"), "hi{Enter}");
+    expect(await screen.findByText("Hello there.")).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Sources" })).toBeNull();
+  });
+
+  it("says المصدر in Arabic", async () => {
+    respond = () => json(turn({ reply: "جواب", sources: [{ id: "knowledge:1", kind: "knowledge", title: "دليل الطالب" }] }));
+    renderScreen("ar");
+    await userEvent.type(screen.getByRole("textbox"), "سؤال{Enter}");
+    expect(await screen.findByText("المصدر: دليل الطالب")).toBeInTheDocument();
+  });
+});
+
 describe("AgentScreen", () => {
   it("happy path: turn, proposal, confirm, recorded with a link and the counterfactual under Why this?", async () => {
     respond = (url) => {
