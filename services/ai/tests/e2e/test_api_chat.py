@@ -11,7 +11,8 @@ from fixtures.backend_fakes import FakeFAQ, make_core
 from fixtures.chat import ScriptedAgent, build_chat, says
 from fixtures.lifecycle import ALIAS
 
-from campuspulse_ai.domain.journey import TicketHint
+from campuspulse_ai.application.use_cases.chat_ports import AgentReply
+from campuspulse_ai.domain.journey import TicketHint, ticket_number
 from campuspulse_ai.domain.values import FAQHit
 
 TEXT = "The Wi-Fi in building M is down"
@@ -162,3 +163,27 @@ def test_triage_route_never_honours_chat_confirmed() -> None:
         "/v1/triage", json={"text": "how to reset my password", "chat_confirmed": True}, headers=STUDENT
     )
     assert r.status_code == 200 and r.json()["action"]["type"] == "faq_answer" and t.tickets() == []
+
+
+def test_a_correction_confirmed_with_replace_closes_the_old_ticket_over_http() -> None:
+    """P10.18: the route passes `replace` through; `closed_ticket` is the old ticket as a closed card."""
+    agent = ScriptedAgent(phrase_text="I can send this to IT Support.")
+    client, t = chat_api(agent)
+    wrong = "The projector in room H302 is broken"
+    old = client.post("/v1/chat/preview", json={"text": wrong}, headers=STUDENT).json()["token"]
+    first = client.post("/v1/chat/confirm", json={"proposal_token": old}, headers=STUDENT)
+    old_id = first.json()["ticket_id"]
+    right = wrong.replace("H302", "H203")
+    refs = (ticket_number(old_id),)
+    agent.replies.append(AgentReply("x", "correct", ticket_refs=refs, corrected_text=right))
+    turn = client.post(
+        "/v1/chat/turn", json={"messages": [{"role": "user", "content": "I meant H203"}]}, headers=STUDENT
+    ).json()
+    assert turn["correction"]["ticket"]["ticket_id"] == old_id and turn["proposal"]["token"]
+    replace = {"proposal_token": turn["proposal"]["token"], "replace": True}
+    done = client.post("/v1/chat/confirm", json=replace, headers=STUDENT)
+    assert done.status_code == 200, done.text
+    body = done.json()
+    assert body["closed_ticket"]["ticket_id"] == old_id and body["closed_ticket"]["status"] == "closed"
+    statuses = {row["id"]: row["status"] for row in t.tickets()}
+    assert statuses == {old_id: "closed", body["ticket_id"]: "new"}
