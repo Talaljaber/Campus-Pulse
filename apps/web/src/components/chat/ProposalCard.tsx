@@ -5,7 +5,8 @@ import { useId, useState, type ReactNode } from "react";
 import { labelOf, useLang, useT, type DictKey } from "@/i18n";
 import type { CounterfactualView, TriageResponse } from "@/lib/ai/types";
 import { fetchCounterfactual } from "@/lib/chat/service";
-import type { ProposalOut } from "@/lib/chat/agentTypes";
+import type { ChatCorrectionOut, ProposalOut } from "@/lib/chat/agentTypes";
+import { changedWords } from "@/lib/chat/textDiff";
 import { CounterfactualHint } from "../explain/CounterfactualHint";
 import { textDir } from "../explain/text";
 import { useOfficeLabel } from "../staff/office";
@@ -86,10 +87,43 @@ function WhyDetails({ proposal }: { proposal: ProposalOut }) {
 export interface ProposalCardProps {
   proposal: ProposalOut;
   busy: boolean;
-  onConfirm: () => void;
+  /** "Yes". For a correction the argument says whether the old request is replaced (true) or both stay (false). */
+  onConfirm: (replace?: boolean) => void;
   onDecline: () => void;
   /** A clarifying chip was chosen: the option id. */
   onAnswer: (optionId: string) => void;
+  /** Set when the proposal is a fix for an open request: the card asks "Fix request #n?" and offers replace / separate / cancel. */
+  correction?: ChatCorrectionOut | null;
+}
+
+/** Old and new request text side by side (stacked on a phone); the words the fix changed are underlined. */
+function CorrectionDiff({ correction, text }: { correction: ChatCorrectionOut; text: string }) {
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-2 rounded-md bg-surface-2 p-3 text-sm">
+      <div>
+        <h3 className="font-semibold text-fg-1">{t("chat.card.oldText")} #{correction.ticket.number}</h3>
+        <p dir={textDir(correction.old_text)} className="text-fg-2">
+          {correction.old_text}
+        </p>
+      </div>
+      <div>
+        <h3 className="font-semibold text-fg-1">{t("chat.card.newText")}</h3>
+        <p dir={textDir(text)} className="text-fg-1">
+          {changedWords(correction.old_text, text).map((part, i) =>
+            part.changed ? (
+              <mark key={i} className="bg-transparent font-semibold text-fg-1 underline decoration-2 underline-offset-2">
+                {part.text}
+              </mark>
+            ) : (
+              <span key={i}>{part.text}</span>
+            ),
+          )}
+        </p>
+      </div>
+      <p className="text-fg-3">{t("chat.card.changedHint")}</p>
+    </div>
+  );
 }
 
 /**
@@ -97,7 +131,7 @@ export interface ProposalCardProps {
  * buttons. A FAQ answer is shown inside, with "Record a request anyway" instead of "Yes, send it".
  * Nothing is created until the student confirms.
  */
-export function ProposalCard({ proposal, busy, onConfirm, onDecline, onAnswer }: ProposalCardProps) {
+export function ProposalCard({ proposal, busy, onConfirm, onDecline, onAnswer, correction = null }: ProposalCardProps) {
   const t = useT();
   const { lang } = useLang();
   const officeLabel = useOfficeLabel();
@@ -105,12 +139,17 @@ export function ProposalCard({ proposal, busy, onConfirm, onDecline, onAnswer }:
   const action: DictKey =
     proposal.action_kind === "safety_alert" ? "chat.agent.actionSafety" : faq ? "chat.agent.actionFaq" : "chat.agent.actionTicket";
   const q = proposal.question;
+  const title = correction ? t("chat.card.fixTitle", { number: correction.ticket.number }) : t("chat.agent.cardTitle");
   return (
-    <section aria-label={t("chat.agent.cardTitle")} className="flex max-w-prose flex-col gap-3 rounded-lg border border-line bg-surface-1 p-4 shadow-1">
-      <h2 className="text-lg font-semibold text-fg-1">{t("chat.agent.cardTitle")}</h2>
-      <p dir={textDir(proposal.text)} className="text-fg-2">
-        {proposal.text}
-      </p>
+    <section aria-label={title} className="flex max-w-prose flex-col gap-3 rounded-lg border border-line bg-surface-1 p-4 shadow-1">
+      <h2 className="text-lg font-semibold text-fg-1">{title}</h2>
+      {correction ? (
+        <CorrectionDiff correction={correction} text={proposal.text} />
+      ) : (
+        <p dir={textDir(proposal.text)} className="text-fg-2">
+          {proposal.text}
+        </p>
+      )}
       <ul className="flex flex-col gap-1 text-fg-1">
         <li>{t("chat.agent.office", { office: officeLabel(proposal.office) })}</li>
         <li>{t("chat.agent.priority", { priority: labelOf("priority", proposal.priority, lang) })}</li>
@@ -141,14 +180,34 @@ export function ProposalCard({ proposal, busy, onConfirm, onDecline, onAnswer }:
         </div>
       )}
       <div className="flex flex-wrap gap-2">
-        {!q && (
-          <Button variant={faq ? "secondary" : "primary"} loading={busy} onClick={onConfirm}>
-            {faq ? t("chat.agent.recordAnyway") : t("chat.agent.yes")}
-          </Button>
+        {correction ? (
+          <>
+            {!q && (
+              <>
+                <Button loading={busy} onClick={() => onConfirm(true)}>
+                  {t("chat.card.replace", { number: correction.ticket.number })}
+                </Button>
+                <Button variant="secondary" disabled={busy} onClick={() => onConfirm(false)}>
+                  {t("chat.card.separate")}
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" disabled={busy} onClick={onDecline}>
+              {t("chat.card.cancel")}
+            </Button>
+          </>
+        ) : (
+          <>
+            {!q && (
+              <Button variant={faq ? "secondary" : "primary"} loading={busy} onClick={() => onConfirm()}>
+                {faq ? t("chat.agent.recordAnyway") : t("chat.agent.yes")}
+              </Button>
+            )}
+            <Button variant="secondary" disabled={busy} onClick={onDecline}>
+              {t("chat.agent.notNow")}
+            </Button>
+          </>
         )}
-        <Button variant="secondary" disabled={busy} onClick={onDecline}>
-          {t("chat.agent.notNow")}
-        </Button>
       </div>
       <Why>
         <WhyDetails proposal={proposal} />

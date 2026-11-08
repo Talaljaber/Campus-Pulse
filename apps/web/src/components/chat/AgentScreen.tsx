@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAgent } from "@/hooks/useAgent";
-import { useLang, useT, type DictKey } from "@/i18n";
+import { useT, type DictKey } from "@/i18n";
 import type { Role } from "@/lib/auth/routing";
 import type { AgentErrorKind, AgentMessage } from "@/lib/chat/agentReducer";
-import { speechLangFor } from "@/lib/voice/speech";
 import { textDir } from "../explain/text";
 import { AppShell } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
@@ -15,8 +14,9 @@ import { Icon } from "../ui/Icon";
 import { TextArea } from "../ui/TextField";
 import { Composer } from "./Composer";
 import { DistressCard } from "./DistressCard";
-import { MicButton } from "./MicButton";
 import { ProposalCard, RecordedCard } from "./ProposalCard";
+import { StatusCards } from "./StatusCard";
+import { WithdrawCard } from "./WithdrawCard";
 
 const ERROR_KEY: Record<AgentErrorKind, DictKey> = {
   generic: "chat.errorGeneric",
@@ -82,8 +82,12 @@ export interface AgentScreenProps {
  */
 export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps) {
   const t = useT();
-  const { lang } = useLang();
-  const agent = useAgent({ recorded: t("chat.agent.recorded"), declined: t("chat.agent.declined") });
+  const agent = useAgent({
+    recorded: t("chat.agent.recorded"),
+    declined: t("chat.agent.declined"),
+    closed: (number) => t("chat.card.closedNow", { number }),
+    kept: t("chat.card.kept"),
+  });
   const threadRef = useRef<HTMLDivElement>(null);
   const fallback = agent.mode === "fallback";
   const count = agent.messages.length;
@@ -98,7 +102,7 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
     } else {
       thread.scrollTop = thread.scrollHeight;
     }
-  }, [count, agent.proposal]);
+  }, [count, agent.proposal, agent.withdraw]);
 
   const chooseStarter = (text: string) => {
     setStarter("");
@@ -139,22 +143,36 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
                 <DistressCard message={m.triage?.message ?? m.content} />
               </li>
             ) : m.kind === "ticket" ? (
-              <li key={m.id}>
+              <li key={m.id} className="flex flex-col gap-2">
                 <RecordedCard ticketId={m.ticketId ?? null} triage={m.triage ?? null} proposal={m.proposal ?? null} />
+                {m.closedTicket && <StatusCards tickets={[m.closedTicket]} />}
               </li>
             ) : (
-              <Bubble key={m.id} message={m} />
+              <Fragment key={m.id}>
+                {(m.content.trim() !== "" || !m.tickets?.length) && <Bubble message={m} />}
+                {m.tickets && m.tickets.length > 0 && (
+                  <li>
+                    <StatusCards tickets={m.tickets} />
+                  </li>
+                )}
+              </Fragment>
             ),
           )}
           {agent.proposal && (
             <li>
               <ProposalCard
                 proposal={agent.proposal}
+                correction={agent.correction}
                 busy={agent.busy}
-                onConfirm={() => void agent.confirm()}
+                onConfirm={(replace) => void agent.confirm(replace)}
                 onDecline={agent.decline}
                 onAnswer={(option) => void agent.answer(option)}
               />
+            </li>
+          )}
+          {agent.withdraw && (
+            <li>
+              <WithdrawCard ticket={agent.withdraw} busy={agent.busy} onClose={() => void agent.closeWithdraw()} onKeep={agent.keepWithdraw} />
             </li>
           )}
           </ol>
@@ -165,7 +183,7 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
           )}
         </div>
 
-      <div className="shrink-0 border-t border-line bg-surface-raised p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-float sm:px-6">
+      <div className="shrink-0 border-t border-line bg-surface-raised px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6">
         {fallback ? (
           <FallbackForm key={count} initial={agent.messages[count - 1]?.role === "user" ? agent.draft : ""} busy={agent.busy} onCheck={(text) => void agent.check(text)} />
         ) : (
@@ -173,7 +191,6 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
             busy={agent.busy}
             initialText={starter}
             onSubmit={(text) => void agent.send(text)}
-            micSlot={(mic) => <MicButton lang={speechLangFor(lang)} onStart={mic.begin} onTranscript={mic.apply} disabled={agent.busy} />}
           />
         )}
       </div>

@@ -2,7 +2,6 @@ import type { SVGProps } from "react";
 
 /** Names of the built-in icons. */
 export type IconName =
-  | "mic"
   | "check"
   | "alert"
   | "info"
@@ -27,7 +26,9 @@ export type IconName =
   | "chart"
   | "home"
   | "megaphone"
-  | "chevron-down";
+  | "chevron-down"
+  | "send"
+  | "lock";
 
 const PATHS: Record<IconName, string> = {
   check: "M5 12.5l4.5 4.5L19 7.5",
@@ -39,7 +40,6 @@ const PATHS: Record<IconName, string> = {
   "chevrons-up": "M6 11l6-6 6 6 M6 19l6-6 6 6",
   spinner: "M12 3a9 9 0 019 9",
   dot: "M12 12m-4 0a4 4 0 108 0 4 4 0 10-8 0",
-  mic: "M12 3a3 3 0 00-3 3v6a3 3 0 006 0V6a3 3 0 00-3-3z M5 11a7 7 0 0014 0 M12 18v3",
   help: "M12 21a9 9 0 100-18 9 9 0 000 18z M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1.1-1.5 2.2 M12 17v.01",
   logout: "M9 4H5v16h4 M16 8l4 4-4 4 M20 12H9",
   globe:
@@ -57,6 +57,8 @@ const PATHS: Record<IconName, string> = {
   home: "M3 11l9-7.5 9 7.5 M5.5 9.5V20h13V9.5 M10 20v-5.5h4V20",
   megaphone: "M3 10v4h3l8 4V6L6 10H3z M17.5 9a4 4 0 010 6 M20 7a7 7 0 010 10",
   "chevron-down": "M6 9l6 6 6-6",
+  send: "M12 19V5 M5 12l7-7 7 7",
+  lock: "M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 017 0v3",
 };
 
 /** Props for {@link Icon}. */

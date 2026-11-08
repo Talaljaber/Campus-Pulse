@@ -31,7 +31,13 @@ export function preview(text: string, asked: readonly string[], answer?: string 
   });
 }
 
-/** `POST /v1/chat/confirm`: the student agreed; the service opens the request. */
-export function confirm(token: string): Promise<AiResult<ChatConfirmResponse>> {
-  return callAi<ChatConfirmResponse>("chat/confirm", { method: "POST", body: { proposal_token: token } });
+/**
+ * `POST /v1/chat/confirm`: the student agreed; the service opens the request. `replace` is sent only for a
+ * correction: `true` closes the old request too, `false` keeps both. A plain proposal sends the token alone.
+ */
+export function confirm(token: string, replace?: boolean): Promise<AiResult<ChatConfirmResponse>> {
+  return callAi<ChatConfirmResponse>("chat/confirm", {
+    method: "POST",
+    body: replace === undefined ? { proposal_token: token } : { proposal_token: token, replace },
+  });
 }
