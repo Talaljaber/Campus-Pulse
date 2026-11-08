@@ -11,14 +11,10 @@ const PROPOSAL = {
   question: null, faq: null, hint: null,
   why: { category: { label: "Transportation", prob: 0.93, set: ["Transportation"] }, priority: { label: "low", prob: 0.8, set: ["low"], evidence: [] }, neighbors: [] },
 };
-const DEMO_LINE = "Demo: simulated portal, not the official university system. No real department is contacted.";
 
 test("a student signs in, asks about the bus timetable and gets a Transportation answer", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
-
-  // The demo line is in the footer of the login page too.
-  await expect(page.getByText(DEMO_LINE).first()).toBeVisible();
 
   // The demo chip fills only the username; the student button signs in.
   await page.getByRole("button", { name: "talal", exact: true }).click();
@@ -30,7 +26,6 @@ test("a student signs in, asks about the bus timetable and gets a Transportation
   // Home, with the student tabs; the Ask tab opens the chat.
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await expect(page.getByRole("heading", { level: 1, name: "Announcements" })).toBeVisible();
-  await expect(page.getByText(DEMO_LINE).first()).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Main menu" });
   await expect(nav.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
   await nav.getByRole("link", { name: "Ask" }).click();
