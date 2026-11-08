@@ -57,11 +57,11 @@ test("a student's screens fit the phone: no page scroll, no tab-bar scroll, no g
   await shot(page, "student-profile-phone");
 });
 
-test("an admin's seven tabs fit a small phone without scrolling, and Ask is there for staff and admin", async ({ page }) => {
+test("an admin's eight tabs fit a small phone without scrolling, and Ask is there for staff and admin", async ({ page }) => {
   await page.setViewportSize(SMALL_PHONE);
   await signInAs(page, "admin");
   const nav = page.getByRole("navigation", { name: "Main menu" });
-  await expect(nav.getByRole("link")).toHaveCount(7);
+  await expect(nav.getByRole("link")).toHaveCount(8);
   await expect(nav.getByRole("link", { name: "Ask" })).toBeVisible();
   expect(await tabBarScrolls(page)).toBe(false);
   expect((await pageScrolls(page)).sideways).toBe(false);

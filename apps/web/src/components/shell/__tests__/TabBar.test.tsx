@@ -29,11 +29,11 @@ describe("TabBar", () => {
     ]);
   });
 
-  it("gives an admin the Overview first, then the staff tabs and Accounts (no model lab)", () => {
+  it("gives an admin the Overview and Knowledge first, then the staff tabs and Accounts (no model lab)", () => {
     render(<TabBar role="admin" current="accounts" />);
-    expect(pairs()[0]).toEqual(["Overview", "/admin"]);
-    expect(pairs().slice(6)).toEqual([["Accounts", "/admin/accounts"]]);
-    expect(links()).toHaveLength(7);
+    expect(pairs().slice(0, 2)).toEqual([["Overview", "/admin"], ["Knowledge", "/admin/knowledge"]]);
+    expect(pairs().slice(7)).toEqual([["Accounts", "/admin/accounts"]]);
+    expect(links()).toHaveLength(8);
     expect(pairs().some(([, href]) => href === "/lab")).toBe(false);
   });
 
