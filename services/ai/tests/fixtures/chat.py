@@ -22,6 +22,7 @@ from campuspulse_ai.application.use_cases.chat_ports import (
     Turn,
 )
 from campuspulse_ai.application.use_cases.issue_context import OpenTicket, PreparedIssue
+from campuspulse_ai.application.use_cases.knowledge_ports import KnowledgeSearch
 from campuspulse_ai.application.use_cases.proposals import derive_key
 from campuspulse_ai.config.paths import CONFIG_DIR
 from campuspulse_ai.domain.policy import DefaultDecisionPolicy
@@ -121,6 +122,7 @@ def build_chat(
     faq: FakeFAQ | None = None,
     core: FakeCore | None = None,
     preparer: FakePreparer | None = None,
+    knowledge: KnowledgeSearch | None = None,
 ) -> ChatHarness:
     """`agent="default"` = an empty ScriptedAgent, None = no LLM wired (fallback mode)."""
     c = build_test(core=core, faq=faq)
@@ -145,6 +147,7 @@ def build_chat(
         journey=h.journey,
         announcements=announcements,
         encoder=ConstEncoder(),
+        knowledge=knowledge,
     )
     return ChatHarness(c, h, uc, scripted, announcements)
 
