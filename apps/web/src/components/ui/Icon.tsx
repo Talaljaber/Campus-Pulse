@@ -28,7 +28,8 @@ export type IconName =
   | "megaphone"
   | "chevron-down"
   | "send"
-  | "lock";
+  | "lock"
+  | "book";
 
 const PATHS: Record<IconName, string> = {
   check: "M5 12.5l4.5 4.5L19 7.5",
@@ -59,6 +60,7 @@ const PATHS: Record<IconName, string> = {
   "chevron-down": "M6 9l6 6 6-6",
   send: "M12 19V5 M5 12l7-7 7 7",
   lock: "M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 017 0v3",
+  book: "M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3V4z M5 17a3 3 0 013-3h11",
 };
 
 /** Props for {@link Icon}. */

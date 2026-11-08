@@ -59,6 +59,10 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   // P9.10 ticket files: a multipart upload (forwarded as is by the proxy) and the 60-second signed link.
   rule("POST", "tickets/{id}/files"),
   rule("GET", "files/{id}/link"),
+  // P10.19 admin knowledge base: a multipart upload (forwarded as is), the list, and delete.
+  rule("POST", "admin/knowledge"),
+  rule("GET", "admin/knowledge"),
+  rule("DELETE", "admin/knowledge/{id}"),
 ];
 
 /** A path that passed the allow-list. */

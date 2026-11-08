@@ -1,6 +1,6 @@
 import type { AiFail } from "@/lib/ai/result";
 import type { TriageResponse } from "@/lib/ai/types";
-import type { AgentKind, AgentMode, AgentRole, ChatConfirmResponse, ChatCorrectionOut, ChatTicketOut, ChatTurnResponse, ProposalOut } from "./agentTypes";
+import type { AgentKind, AgentMode, AgentRole, ChatConfirmResponse, ChatCorrectionOut, ChatSourceOut, ChatTicketOut, ChatTurnResponse, ProposalOut } from "./agentTypes";
 
 export type AgentErrorKind = "generic" | "waking" | "session" | "expired";
 
@@ -15,6 +15,8 @@ export interface AgentMessage {
   proposal?: ProposalOut | null;
   /** A supportive reply to a distress text: shown as the distress card, never as a proposal. */
   distress?: boolean;
+  /** P10.19: what the reply used (announcements, knowledge-base documents); shown as "From: <title>". */
+  sources?: ChatSourceOut[];
   /** Status cards under this message (the person's own requests). */
   tickets?: ChatTicketOut[];
   /** The request this confirmation closed (a replaced one), shown as a Closed card. */
@@ -82,6 +84,7 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
       let correction = res.clear_proposal ? null : state.correction;
       let asked = state.asked;
       const tickets = res.tickets ?? [];
+      const sourced = res.sources && res.sources.length > 0 ? { sources: res.sources } : {};
       if (res.triage && (isDistress(res.triage) || res.ticket_id)) {
         messages.push({
           id: action.id,
@@ -91,6 +94,7 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
           ticketId: res.ticket_id,
           triage: res.triage,
           proposal: res.ticket_id ? state.proposal : null,
+          ...sourced,
         });
         proposal = null;
         correction = null;
@@ -107,6 +111,7 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
             kind: res.proposal ? "proposal" : "text",
             content: res.reply,
             ...(tickets.length > 0 ? { tickets } : {}),
+            ...sourced,
           });
         }
         if (res.clear_proposal) asked = [];

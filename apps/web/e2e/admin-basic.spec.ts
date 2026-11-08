@@ -130,3 +130,52 @@ test("the outbox works in Arabic and right to left with no sideways scroll on a 
   await expect(page.getByRole("table")).toContainText("مرفوضة");
   expect(await noHorizontalOverflow(page)).toBe(true);
 });
+
+test("the admin adds a document to the knowledge base and deletes another", async ({ page }) => {
+  await signInAs(page, "admin");
+  const nav = page.getByRole("navigation", { name: "Main menu" });
+  await nav.getByRole("link", { name: "Knowledge" }).click();
+  await expect(page).toHaveURL(/\/admin\/knowledge$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Knowledge" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Knowledge" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByText(/will not guess beyond them/)).toBeVisible();
+
+  const table = page.getByRole("table", { name: "Knowledge documents, newest first" });
+  await expect(table.locator("tbody tr")).toHaveCount(2);
+  await expect(table).toContainText("handbook-fees-2026.pdf");
+  await expect(table).toContainText("Pasted text");
+
+  // Paste text: the mock API answers with its fixture document, so the list keeps two rows.
+  await page.getByLabel("Title").fill("Student Handbook 2026: Fees and refunds");
+  await page.getByRole("radio", { name: "Paste text" }).check();
+  await page.getByLabel("Text", { exact: true }).fill("Refunds: full in the first week.");
+  await expect(page.getByText("32 of 200,000 characters")).toBeVisible();
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await expect(page.getByText("Added: Student Handbook 2026: Fees and refunds")).toBeVisible();
+
+  // Delete asks first.
+  await page.getByRole("button", { name: "Delete Library opening hours" }).click();
+  const dialog = page.getByRole("dialog", { name: "Delete this document?" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Delete document" }).click();
+  await expect(page.getByText("Deleted: Library opening hours")).toBeVisible();
+  await expect(table.locator("tbody tr")).toHaveCount(1);
+});
+
+test("Knowledge works in Arabic and right to left with no sideways scroll on a phone; staff cannot open it", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInAs(page, "admin");
+  await switchToArabic(page);
+  await page.goto("/admin/knowledge");
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.getByRole("heading", { level: 1, name: "المعرفة" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^حذف / }).first()).toBeVisible();
+  expect(await noHorizontalOverflow(page)).toBe(true);
+  await page.getByRole("radio", { name: "لصق نص" }).check();
+  expect(await noHorizontalOverflow(page)).toBe(true);
+
+  await page.context().clearCookies();
+  await signInAs(page, "staff");
+  await page.goto("/admin/knowledge");
+  await expect(page).toHaveURL(/\/staff$/);
+});
