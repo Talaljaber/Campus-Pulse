@@ -1,6 +1,6 @@
 import type { AiFail } from "@/lib/ai/result";
 import type { TriageResponse } from "@/lib/ai/types";
-import type { AgentKind, AgentMode, AgentRole, ChatConfirmResponse, ChatTurnResponse, ProposalOut } from "./agentTypes";
+import type { AgentKind, AgentMode, AgentRole, ChatConfirmResponse, ChatCorrectionOut, ChatTicketOut, ChatTurnResponse, ProposalOut } from "./agentTypes";
 
 export type AgentErrorKind = "generic" | "waking" | "session" | "expired";
 
@@ -15,11 +15,19 @@ export interface AgentMessage {
   proposal?: ProposalOut | null;
   /** A supportive reply to a distress text: shown as the distress card, never as a proposal. */
   distress?: boolean;
+  /** Status cards under this message (the person's own requests). */
+  tickets?: ChatTicketOut[];
+  /** The request this confirmation closed (a replaced one), shown as a Closed card. */
+  closedTicket?: ChatTicketOut | null;
 }
 
 export interface AgentState {
   messages: AgentMessage[];
   proposal: ProposalOut | null;
+  /** Set together with `proposal`: the open request the proposal would replace. */
+  correction: ChatCorrectionOut | null;
+  /** An open request the assistant asked to close; waits for "Close it" or "Keep it". */
+  withdraw: ChatTicketOut | null;
   mode: AgentMode;
   busy: boolean;
   error: AgentErrorKind | null;
@@ -29,7 +37,7 @@ export interface AgentState {
   draft: string;
 }
 
-export const INITIAL_AGENT: AgentState = { messages: [], proposal: null, mode: "agent", busy: false, error: null, asked: [], draft: "" };
+export const INITIAL_AGENT: AgentState = { messages: [], proposal: null, correction: null, withdraw: null, mode: "agent", busy: false, error: null, asked: [], draft: "" };
 
 export type AgentAction =
   | { type: "sent"; id: string; text: string }
@@ -39,7 +47,11 @@ export type AgentAction =
   | { type: "previewed"; proposal: ProposalOut; question?: string }
   | { type: "confirmed"; id: string; res: ChatConfirmResponse; text: string }
   | { type: "failed"; error: AgentErrorKind; clearProposal?: boolean }
-  | { type: "declined"; id: string; text: string };
+  | { type: "declined"; id: string; text: string }
+  /** "Close it" worked: the card becomes a Closed status card. */
+  | { type: "withdrawn"; id: string; text: string; ticket: ChatTicketOut }
+  /** "Keep it": nothing was closed. */
+  | { type: "withdrawKept"; id: string; text: string };
 
 /** Maps a failed call to the message kind. 422 means the proposal token is no longer valid. */
 export function agentErrorKind(fail: AiFail): AgentErrorKind {
@@ -67,7 +79,9 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
       const { res } = action;
       const messages = [...state.messages];
       let proposal = res.clear_proposal ? null : state.proposal;
+      let correction = res.clear_proposal ? null : state.correction;
       let asked = state.asked;
+      const tickets = res.tickets ?? [];
       if (res.triage && (isDistress(res.triage) || res.ticket_id)) {
         messages.push({
           id: action.id,
@@ -79,15 +93,25 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
           proposal: res.ticket_id ? state.proposal : null,
         });
         proposal = null;
+        correction = null;
         asked = [];
       } else {
-        if (res.proposal) proposal = res.proposal;
-        if (res.reply.trim()) {
-          messages.push({ id: action.id, role: "assistant", kind: res.proposal ? "proposal" : "text", content: res.reply });
+        if (res.proposal) {
+          proposal = res.proposal;
+          correction = res.correction ?? null;
+        }
+        if (res.reply.trim() || tickets.length > 0) {
+          messages.push({
+            id: action.id,
+            role: "assistant",
+            kind: res.proposal ? "proposal" : "text",
+            content: res.reply,
+            ...(tickets.length > 0 ? { tickets } : {}),
+          });
         }
         if (res.clear_proposal) asked = [];
       }
-      return { ...state, messages, proposal, asked, mode: res.mode, busy: false, error: null };
+      return { ...state, messages, proposal, correction, withdraw: res.withdraw ?? null, asked, mode: res.mode, busy: false, error: null };
     }
     case "turnFailed":
       return {
@@ -104,6 +128,7 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
           busy: false,
           error: null,
           proposal: null,
+          correction: null,
           asked: [],
           messages: [
             ...state.messages,
@@ -116,6 +141,7 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
         busy: false,
         error: null,
         proposal: action.proposal,
+        correction: null,
         asked: action.question && !state.asked.includes(action.question) ? [...state.asked, action.question] : state.asked,
       };
     }
@@ -125,6 +151,7 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
         busy: false,
         error: null,
         proposal: null,
+        correction: null,
         asked: [],
         messages: [
           ...state.messages,
@@ -136,16 +163,39 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
             ticketId: action.res.ticket_id,
             triage: action.res.triage,
             proposal: state.proposal,
+            closedTicket: action.res.closed_ticket ?? null,
           },
         ],
       };
     case "failed":
-      return { ...state, busy: false, error: action.error, proposal: action.clearProposal ? null : state.proposal };
+      return {
+        ...state,
+        busy: false,
+        error: action.error,
+        proposal: action.clearProposal ? null : state.proposal,
+        correction: action.clearProposal ? null : state.correction,
+      };
     case "declined":
       return {
         ...state,
         proposal: null,
+        correction: null,
         asked: [],
+        error: null,
+        messages: [...state.messages, { id: action.id, role: "assistant", kind: "text", content: action.text }],
+      };
+    case "withdrawn":
+      return {
+        ...state,
+        busy: false,
+        error: null,
+        withdraw: null,
+        messages: [...state.messages, { id: action.id, role: "assistant", kind: "text", content: action.text, tickets: [action.ticket] }],
+      };
+    case "withdrawKept":
+      return {
+        ...state,
+        withdraw: null,
         error: null,
         messages: [...state.messages, { id: action.id, role: "assistant", kind: "text", content: action.text }],
       };

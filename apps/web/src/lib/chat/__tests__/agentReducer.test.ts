@@ -106,3 +106,37 @@ describe("agentErrorKind and toWire", () => {
     expect(toWire([{ role: "user", content: "x".repeat(2500) }])[0]?.content).toHaveLength(2000);
   });
 });
+
+describe("agentReducer cards", () => {
+  const T = { ticket_id: "t1", number: "AB12CD34", title: "x", office: "it", category: "IT Support", priority: "low", status: "new", awaiting_student: false, created_at: "2026-11-01T00:00:00Z", resolved_at: null } as const;
+  const C = { ticket: T, old_text: "old" };
+
+  it("a turn with tickets keeps them on the assistant message, even with an empty reply", () => {
+    const s = agentReducer(sent(INITIAL_AGENT), { type: "turn", id: "a1", res: turn({ tickets: [T] }) });
+    expect(s.messages.at(-1)).toMatchObject({ role: "assistant", tickets: [T] });
+  });
+
+  it("a correction turn stores the correction with the proposal; clearing the proposal clears it", () => {
+    const s = agentReducer(sent(INITIAL_AGENT), { type: "turn", id: "a1", res: turn({ reply: "Fix?", proposal: P, correction: C }) });
+    expect(s.correction).toBe(C);
+    expect(agentReducer(s, { type: "declined", id: "a2", text: "ok" })).toMatchObject({ proposal: null, correction: null });
+  });
+
+  it("a withdraw turn sets the pending card; closing turns it into a Closed status card", () => {
+    const s = agentReducer(sent(INITIAL_AGENT), { type: "turn", id: "a1", res: turn({ reply: "Close?", withdraw: T }) });
+    expect(s.withdraw).toBe(T);
+    const done = agentReducer(s, { type: "withdrawn", id: "a2", text: "closed", ticket: { ...T, status: "closed" } });
+    expect(done.withdraw).toBeNull();
+    expect(done.messages.at(-1)?.tickets?.[0]).toMatchObject({ status: "closed" });
+    expect(agentReducer(s, { type: "withdrawKept", id: "a3", text: "kept" }).withdraw).toBeNull();
+  });
+
+  it("confirming a correction keeps the closed ticket on the ticket message", () => {
+    const triage = TRIAGE_FIXTURES.enMemory.response;
+    const s = agentReducer({ ...INITIAL_AGENT, proposal: P, correction: C }, {
+      type: "confirmed", id: "a1", text: "done", res: { triage, ticket_id: "tk", hint_applied: false, closed_ticket: { ...T, status: "closed" } },
+    });
+    expect(s.correction).toBeNull();
+    expect(s.messages.at(-1)).toMatchObject({ kind: "ticket", closedTicket: { status: "closed" } });
+  });
+});

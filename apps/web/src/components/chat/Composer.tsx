@@ -1,62 +1,56 @@
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
 import { useT } from "@/i18n";
-import { joinTranscript } from "@/lib/voice/speech";
-import { Button } from "../ui/Button";
-import { TextArea } from "../ui/TextField";
+import { cn } from "../ui/cn";
+import { Icon } from "../ui/Icon";
 
-/** What the composer hands to a render-prop `micSlot` so a dictation button can fill the text box. */
-export interface ComposerMicApi {
-  /** Call when dictation starts: remembers what is already typed so the transcript is appended to it. */
-  begin: () => void;
-  /** Call with the transcript so far: the text box becomes what was typed plus the transcript, and the message counts as voice. */
-  apply: (transcript: string) => void;
-}
+/** The box grows to about six lines (6 x 1.5rem) and then scrolls. */
+const MAX_HEIGHT_REM = 9;
 
 /** Props for {@link Composer}. */
 export interface ComposerProps {
-  /** The student sent a request. `mode` is `voice` only for a transcript they confirmed (P5.9). */
-  onSubmit: (text: string, mode: "text" | "voice") => void;
+  /** The student sent a message. */
+  onSubmit: (text: string) => void;
   /** A request is in flight: sending is disabled. */
   busy: boolean;
-  /** Where the microphone button goes: a node, or a function of {@link ComposerMicApi}. Empty when voice is not offered. */
-  micSlot?: ReactNode | ((api: ComposerMicApi) => ReactNode);
   /** Prefills the editor from a starter prompt; the user can always change it before sending. */
   initialText?: string;
 }
 
 /**
- * The message box. Enter sends, Shift+Enter adds a line, the send button is a real submit
- * button. The text is cleared only after it was handed to `onSubmit`. Direction follows what
- * is typed (`dir="auto"`), so Arabic and English both read correctly.
- *
- * Voice: a dictated transcript only fills the box. It is editable and is sent only when the
- * student presses send, with `mode` set to `voice`. Emptying the box resets the mode to `text`.
+ * The message box, like any chatbot: one rounded box, a textarea that grows from one line to about
+ * six, and a round send button inside it at the end of the line (the left in Arabic). Enter sends,
+ * Shift+Enter adds a line, and Enter while an IME is composing a word does nothing. The text is
+ * cleared only after it was handed to `onSubmit`. Direction follows what is typed (`dir="auto"`).
  */
-export function Composer({ onSubmit, busy, micSlot, initialText = "" }: ComposerProps) {
+export function Composer({ onSubmit, busy, initialText = "" }: ComposerProps) {
   const t = useT();
   const [text, setText] = useState(initialText);
-  const [voice, setVoice] = useState(false);
-  // What was typed before dictation began; the transcript is appended to it.
-  const [base, setBase] = useState("");
+  const areaRef = useRef<HTMLTextAreaElement>(null);
   const empty = text.trim() === "";
 
   // A new starter prompt replaces the text (adjusting state while rendering, not in an effect).
   const [seenInitial, setSeenInitial] = useState(initialText);
   if (initialText !== seenInitial) {
     setSeenInitial(initialText);
-    if (initialText) {
-      setText(initialText);
-      setVoice(false);
-    }
+    if (initialText) setText(initialText);
   }
+
+  // Grow with the content: reset, then measure.
+  useLayoutEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const max = MAX_HEIGHT_REM * parseFloat(getComputedStyle(document.documentElement).fontSize || "16");
+    el.style.height = `${Math.min(el.scrollHeight, max)}px`;
+    el.style.overflowY = el.scrollHeight > max ? "auto" : "hidden";
+  }, [text]);
 
   const send = () => {
     if (busy || empty) return;
-    onSubmit(text.trim(), voice ? "voice" : "text");
+    onSubmit(text.trim());
     setText("");
-    setVoice(false);
   };
   const onFormSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -69,37 +63,44 @@ export function Composer({ onSubmit, busy, micSlot, initialText = "" }: Composer
       send();
     }
   };
-  const onChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setText(e.target.value);
-    if (e.target.value.trim() === "") setVoice(false);
-  };
-
-  const mic: ComposerMicApi = {
-    begin: () => {
-      setBase(text);
-    },
-    apply: (transcript) => {
-      setText(joinTranscript(base, transcript));
-      setVoice(true);
-    },
-  };
+  const onChange = (e: ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value);
 
   return (
-    <form onSubmit={onFormSubmit} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-end gap-2 sm:flex">
-      <TextArea
-        label={t("chat.composerLabel")}
-        hideLabel
-        className="col-span-3 min-w-0 sm:flex-1"
-        placeholder={t("chat.placeholder")}
+    <form
+      onSubmit={onFormSubmit}
+      className={cn(
+        "mx-auto flex w-full max-w-5xl items-end gap-2 rounded-3xl border border-line-strong bg-input py-1.5 ps-4 pe-1.5",
+        "transition-colors duration-(--cp-motion-fast) hover:border-accent focus-within:border-accent",
+      )}
+    >
+      <label htmlFor="chat-composer" className="sr-only">
+        {t("chat.composerLabel")}
+      </label>
+      <textarea
+        id="chat-composer"
+        ref={areaRef}
+        dir="auto"
+        rows={1}
         value={text}
         onChange={onChange}
         onKeyDown={onKeyDown}
-        rows={2}
+        placeholder={t("chat.placeholder")}
+        style={{ maxHeight: `${MAX_HEIGHT_REM}rem` }}
+        className="min-h-9 min-w-0 flex-1 resize-none self-center bg-transparent py-1.5 text-base leading-6 text-fg-1 outline-none placeholder:text-fg-3"
       />
-      {typeof micSlot === "function" ? micSlot(mic) : micSlot}
-      <Button type="submit" loading={busy} disabled={empty}>
-        {t("chat.send")}
-      </Button>
+      <button
+        type="submit"
+        disabled={busy || empty}
+        aria-label={t("chat.send")}
+        aria-busy={busy || undefined}
+        className={cn(
+          "grid size-11 shrink-0 place-items-center rounded-full bg-accent text-on-accent",
+          "transition-[filter,opacity] duration-(--cp-motion-fast) hover:brightness-110 active:brightness-95",
+          "disabled:cursor-not-allowed disabled:opacity-45",
+        )}
+      >
+        {busy ? <Icon name="spinner" size={20} className="motion-safe:animate-spin" /> : <Icon name="send" size={20} />}
+      </button>
     </form>
   );
 }

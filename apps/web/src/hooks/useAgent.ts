@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { confirm, preview, sendTurn } from "@/lib/chat/agent";
+import { postStudentAction } from "@/lib/tickets/service";
 import { agentErrorKind, agentReducer, INITIAL_AGENT } from "@/lib/chat/agentReducer";
 
 /** Whether a failed turn means "the assistant is not available": the page then shows the plain form. */
@@ -14,7 +15,7 @@ function unavailable(fail: { status: number; waking: boolean }): boolean {
  * `chat/preview`; "Yes, send it" uses `chat/confirm`. The service decides; nothing is created here.
  * `texts` are the sentences the hook adds to the conversation itself (translated by the page).
  */
-export function useAgent(texts: { recorded: string; declined: string }) {
+export function useAgent(texts: { recorded: string; declined: string; closed: (number: string) => string; kept: string }) {
   const [state, dispatch] = useReducer(agentReducer, INITIAL_AGENT);
   const stateRef = useRef(state);
   const seq = useRef(0);
@@ -70,13 +71,16 @@ export function useAgent(texts: { recorded: string; declined: string }) {
     else dispatch({ type: "failed", error: agentErrorKind(res) });
   }, []);
 
-  /** "Yes, send it". */
-  const confirmProposal = useCallback(async () => {
+  /**
+   * "Yes, send it". For a correction, `replace` says whether the old request is closed too (true) or both stay
+   * (false); a plain proposal sends no `replace`.
+   */
+  const confirmProposal = useCallback(async (replace?: boolean) => {
     const cur = stateRef.current;
     if (!cur.proposal || cur.busy) return;
     dispatch({ type: "busy" });
     stateRef.current = { ...cur, busy: true };
-    const res = await confirm(cur.proposal.token);
+    const res = await confirm(cur.proposal.token, cur.correction ? (replace ?? false) : undefined);
     if (res.ok) dispatch({ type: "confirmed", id: nextId("a"), res: res.data, text: textsRef.current.recorded });
     else dispatch({ type: "failed", error: agentErrorKind(res), clearProposal: res.status === 422 });
   }, [nextId]);
@@ -87,5 +91,29 @@ export function useAgent(texts: { recorded: string; declined: string }) {
     dispatch({ type: "declined", id: nextId("a"), text: textsRef.current.declined });
   }, [nextId]);
 
-  return { ...state, send, check, answer, confirm: confirmProposal, decline };
+  /** "Close it": the requester closes their own request, then the card becomes a Closed status card. */
+  const closeWithdraw = useCallback(async () => {
+    const cur = stateRef.current;
+    const ticket = cur.withdraw;
+    if (!ticket || cur.busy) return;
+    dispatch({ type: "busy" });
+    stateRef.current = { ...cur, busy: true };
+    const res = await postStudentAction(ticket.ticket_id, { action: "close" });
+    if (res.ok) {
+      dispatch({
+        type: "withdrawn",
+        id: nextId("a"),
+        text: textsRef.current.closed(ticket.number),
+        ticket: { ...ticket, status: "closed", awaiting_student: false, resolved_at: res.data.resolved_at ?? new Date().toISOString() },
+      });
+    } else dispatch({ type: "failed", error: agentErrorKind(res) });
+  }, [nextId]);
+
+  /** "Keep it": nothing is sent. */
+  const keepWithdraw = useCallback(() => {
+    if (!stateRef.current.withdraw) return;
+    dispatch({ type: "withdrawKept", id: nextId("a"), text: textsRef.current.kept });
+  }, [nextId]);
+
+  return { ...state, send, check, answer, confirm: confirmProposal, decline, closeWithdraw, keepWithdraw };
 }

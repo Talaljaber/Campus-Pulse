@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans_Arabic, Inter } from "next/font/google";
 import { cookies, headers } from "next/headers";
 import { ServiceStatus } from "@/components/shell/ServiceStatus";
-import { SiteFooter } from "@/components/shell/SiteFooter";
 import { RtlProvider } from "@/components/ui/RtlProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import { LANG_COOKIE, dirOf, resolveLang } from "@/i18n";
@@ -32,7 +31,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="flex h-dvh flex-col">
               <ServiceStatus />
               <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-              <SiteFooter />
             </div>
           </ToastProvider>
         </RtlProvider>

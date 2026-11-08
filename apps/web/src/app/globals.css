@@ -37,9 +37,6 @@
   [data-band] :focus-visible {
     outline-color: var(--cp-on-band);
   }
-  [data-footer] :focus-visible {
-    outline-color: var(--cp-footer-link);
-  }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -67,6 +64,123 @@
     to {
       transform: scale(1.7);
       opacity: 0;
+    }
+  }
+}
+
+/* Chat status cards: one soft, one-shot animation per request status (new, solved, closed, merged); in
+   progress breathes softly in a loop. Only defined when motion is allowed, so under
+   prefers-reduced-motion the marks are simply their final state. Colours come from the card (currentColor). */
+.cp-st {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 16px;
+  height: 16px;
+}
+.cp-st-ring {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cp-st-ring {
+    animation: cp-st-ripple 0.9s ease-out 1;
+  }
+  .cp-st-in-progress i {
+    animation: cp-st-breathe 1.4s ease-in-out infinite;
+  }
+  .cp-st-in-progress i:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .cp-st-in-progress i:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  .cp-st-check {
+    stroke-dasharray: 1;
+    animation: cp-st-draw 0.6s ease-out 1 both;
+  }
+  .cp-st-solved {
+    border-radius: 9999px;
+    animation: cp-st-glow 0.95s ease-out 1;
+  }
+  .cp-st-pill-closed {
+    animation: cp-st-settle 0.7s ease-out 1 both;
+  }
+  .cp-st-merged i:first-child {
+    animation: cp-st-join-a 0.8s ease-out 1 both;
+  }
+  .cp-st-merged i:last-child {
+    animation: cp-st-join-b 0.8s ease-out 1 both;
+  }
+  @keyframes cp-st-ripple {
+    from {
+      transform: scale(0.6);
+      opacity: 0.7;
+    }
+    to {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+  @keyframes cp-st-breathe {
+    0%,
+    100% {
+      transform: scale(0.7);
+      opacity: 0.45;
+    }
+    50% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  @keyframes cp-st-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes cp-st-glow {
+    from {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--cp-ok) 45%, transparent);
+    }
+    to {
+      box-shadow: 0 0 0 8px color-mix(in srgb, var(--cp-ok) 0%, transparent);
+    }
+  }
+  @keyframes cp-st-settle {
+    from {
+      opacity: 0.35;
+      transform: translateY(-3px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes cp-st-join-a {
+    from {
+      transform: translateX(-7px);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  @keyframes cp-st-join-b {
+    from {
+      transform: translateX(7px);
+    }
+    to {
+      transform: translateX(0);
     }
   }
 }

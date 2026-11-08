@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { LangScope } from "@/i18n";
@@ -8,7 +8,6 @@ import { BuildingPicker } from "../BuildingPicker";
 import { ChatThread } from "../ChatThread";
 import { ClarificationBubble } from "../ClarificationBubble";
 import { Composer } from "../Composer";
-import { Disclaimer } from "../Disclaimer";
 import { DistressCard } from "../DistressCard";
 
 const q = TRIAGE_FIXTURES.arClarification.response.clarification!;
@@ -25,17 +24,40 @@ describe("Composer", () => {
     expect(onSubmit).not.toHaveBeenCalled();
     expect(box).toHaveValue("   line one\nline two");
     await user.keyboard("{Enter}");
-    expect(onSubmit).toHaveBeenCalledWith("line one\nline two", "text");
+    expect(onSubmit).toHaveBeenCalledWith("line one\nline two");
     expect(box).toHaveValue("");
   });
 
-  it("does not send while busy, and renders the mic slot", async () => {
+  it("does not send while busy, and the send button is disabled", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    render(<Composer onSubmit={onSubmit} busy micSlot={<button type="button">Mic</button>} />);
+    render(<Composer onSubmit={onSubmit} busy />);
     await user.type(screen.getByLabelText("Your request"), "hello{Enter}");
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Mic" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send request" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /mic|dictate/i })).not.toBeInTheDocument();
+  });
+
+  it("has the chatbot placeholder, a one-line textarea, and an IME composition does not send", () => {
+    const onSubmit = vi.fn();
+    render(<Composer onSubmit={onSubmit} busy={false} />);
+    const box = screen.getByLabelText("Your request");
+    expect(box).toHaveAttribute("placeholder", "Message CampusPulse…");
+    expect(box).toHaveAttribute("rows", "1");
+    fireEvent.change(box, { target: { value: "hi" } });
+    fireEvent.keyDown(box, { key: "Enter", isComposing: true });
+    expect(onSubmit).not.toHaveBeenCalled();
+    fireEvent.keyDown(box, { key: "Enter" });
+    expect(onSubmit).toHaveBeenCalledWith("hi");
+  });
+
+  it("the placeholder is Arabic in Arabic", () => {
+    render(
+      <LangScope lang="ar">
+        <Composer onSubmit={() => {}} busy={false} />
+      </LangScope>,
+    );
+    expect(screen.getByPlaceholderText("اكتب رسالتك…")).toBeInTheDocument();
   });
 
   it("the send button is a submit button that sends", async () => {
@@ -46,7 +68,7 @@ describe("Composer", () => {
     expect(send).toBeDisabled();
     await user.type(screen.getByLabelText("Your request"), "hi");
     await user.click(send);
-    expect(onSubmit).toHaveBeenCalledWith("hi", "text");
+    expect(onSubmit).toHaveBeenCalledWith("hi");
   });
 });
 
@@ -105,15 +127,11 @@ describe("BuildingPicker", () => {
   });
 });
 
-describe("DistressCard and Disclaimer", () => {
+describe("DistressCard", () => {
   it("shows the message as written and no result UI", () => {
     render(<DistressCard message="Call 911 if you are in danger." />);
     expect(screen.getByRole("status")).toHaveTextContent("Call 911 if you are in danger.");
     expect(screen.queryByRole("article")).not.toBeInTheDocument();
-  });
-  it("the disclaimer says prototype on synthetic data", () => {
-    render(<Disclaimer />);
-    expect(screen.getByText(/Integration-ready prototype on synthetic data/)).toBeInTheDocument();
   });
 });
 

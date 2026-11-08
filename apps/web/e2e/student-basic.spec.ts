@@ -11,14 +11,10 @@ const PROPOSAL = {
   question: null, faq: null, hint: null,
   why: { category: { label: "Transportation", prob: 0.93, set: ["Transportation"] }, priority: { label: "low", prob: 0.8, set: ["low"], evidence: [] }, neighbors: [] },
 };
-const DEMO_LINE = "Demo: simulated portal, not the official university system. No real department is contacted.";
 
 test("a student signs in, asks about the bus timetable and gets a Transportation answer", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
-
-  // The demo line is in the footer of the login page too.
-  await expect(page.getByText(DEMO_LINE).first()).toBeVisible();
 
   // The demo chip fills only the username; the student button signs in.
   await page.getByRole("button", { name: "talal", exact: true }).click();
@@ -30,7 +26,6 @@ test("a student signs in, asks about the bus timetable and gets a Transportation
   // Home, with the student tabs; the Ask tab opens the chat.
   await expect(page).toHaveURL(/localhost:\d+\/$/);
   await expect(page.getByRole("heading", { level: 1, name: "Announcements" })).toBeVisible();
-  await expect(page.getByText(DEMO_LINE).first()).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Main menu" });
   await expect(nav.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
   await nav.getByRole("link", { name: "Ask" }).click();
@@ -82,4 +77,50 @@ test("when the assistant is unavailable the ask page shows the plain form", asyn
   await page.getByRole("button", { name: "Send request" }).click();
   await page.getByRole("button", { name: "Check" }).click();
   await expect(page.getByRole("region", { name: "Suggested request" })).toContainText("Department: Transport");
+});
+
+const OLD_TICKET = {
+  ticket_id: "ab12cd34-0000-4000-8000-000000000009", number: "AB12CD34", title: "Printer broken in H302", office: "facilities",
+  category: "Facilities", priority: "medium", status: "new", awaiting_student: true, created_at: "2026-11-01T10:00:00Z", resolved_at: null,
+};
+const TURN = { mode: "agent", reply: "", proposal: null, ticket_id: null, triage: null, clear_proposal: false, tickets: [], correction: null, withdraw: null };
+
+test("the chat box is the plain one: no microphone, no demo footer, Enter sends, and status and correction cards work", async ({ page }) => {
+  await signInAs(page, "student");
+  await page.goto("/ask");
+  await expect(page.getByRole("heading", { level: 1, name: "Ask CampusPulse" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /dictate|microphone/i })).toHaveCount(0);
+  await expect(page.locator("[data-footer]")).toHaveCount(0);
+  const box = page.getByLabel("Your request");
+  await expect(box).toHaveAttribute("placeholder", "Message CampusPulse…");
+  await expect(page.getByRole("button", { name: "Send request" })).toBeDisabled();
+
+  // Status turn: one card with the status word and a link to the request.
+  await page.route("**/api/ai/chat/turn", (route) => {
+    const body = route.request().postDataJSON() as { messages: { content: string }[] };
+    const last = body.messages.at(-1)?.content ?? "";
+    if (last.startsWith("status")) return route.fulfill({ json: { ...TURN, reply: "You have one open request.", tickets: [OLD_TICKET] } });
+    return route.fulfill({ json: { ...TURN, reply: "Did you mean to fix #AB12CD34?", correction: { ticket: OLD_TICKET, old_text: "The printer in H302 is broken." }, proposal: { ...PROPOSAL, token: "tok-fix", text: "The printer in H203 is broken.", category: "Facilities", office: "facilities" } } });
+  });
+  await box.fill("status of my requests");
+  await box.press("Enter");
+  const card = page.getByRole("article");
+  await expect(card).toHaveAttribute("data-status", "new");
+  await expect(card).toContainText("Received");
+  await expect(card).toContainText("The office replied, please check");
+  await expect(card.getByRole("link", { name: "Open request #AB12CD34" })).toHaveAttribute("href", `/requests/${OLD_TICKET.ticket_id}`);
+
+  // Correction turn: replace sends replace true and shows the old request as Closed.
+  let confirmed: unknown = null;
+  await page.route("**/api/ai/chat/confirm", async (route) => {
+    confirmed = route.request().postDataJSON();
+    await route.fulfill({ json: { triage: { request_id: "r-1", status: "decided", flags: [], explanation: null, message: null }, ticket_id: TICKET_ID, hint_applied: false, closed_ticket: { ...OLD_TICKET, status: "closed", awaiting_student: false } } });
+  });
+  await box.fill("I wrote H302, it is H203");
+  await box.press("Enter");
+  await expect(page.getByRole("heading", { name: "Fix request #AB12CD34?" })).toBeVisible();
+  await page.getByRole("button", { name: "Yes, replace #AB12CD34" }).click();
+  await expect(page.getByText("Request recorded #AB12CD34")).toBeVisible();
+  expect(confirmed).toEqual({ proposal_token: "tok-fix", replace: true });
+  await expect(page.locator('article[data-status="closed"]')).toContainText("Closed");
 });
