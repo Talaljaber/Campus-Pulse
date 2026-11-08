@@ -152,7 +152,7 @@ class ProbabilisticClassifier(Protocol):
 
 @runtime_checkable
 class VectorStore(Protocol):
-    """Named collections: train, injection_exemplars, safety_exemplars, requests, memory, faq.
+    """Named collections: train, injection_exemplars, safety_exemplars, requests, memory, faq, knowledge.
 
     Cosine similarity, descending, deterministic tie-break on id. VectorHit.embedding only
     when filters["with_embedding"] is true. impls: LocalNumpyVectorStore, PgVectorStore.
@@ -175,6 +175,10 @@ class VectorStore(Protocol):
     def set_active(self, collection: str, id: str, active: bool) -> None: ...
 
     def count(self, collection: str, filters: Mapping[str, object] | None = None) -> int: ...
+
+    def delete(self, collection: str, ids: Sequence[str]) -> None:
+        """Remove these items; unknown ids are ignored (P10.19: the `knowledge` passages)."""
+        ...
 
 
 @runtime_checkable

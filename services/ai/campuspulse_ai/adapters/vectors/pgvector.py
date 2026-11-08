@@ -19,26 +19,30 @@ if TYPE_CHECKING:
     from campuspulse_ai.adapters.store.rest import RestApi as Client
 
 T = TypeVar("T")
+DELETE_BATCH = 100  # ids per DELETE ... ?id=in.(...) request (keeps the URL short)
 
 # collection -> (table, id column); the schema is supabase/migrations/0005_vectors.sql.
 COLLECTIONS: Mapping[str, tuple[str, str]] = {
     "requests": ("request_embeddings", "request_id"),
     "memory": ("memory_examples", "id"),
     "faq": ("faq", "id"),
+    "knowledge": ("knowledge_chunks", "id"),  # P10.19: supabase/migrations/0020_knowledge.sql
 }
 # Filters each collection understands (match_vectors ignores any other key).
 FILTER_KEYS: Mapping[str, frozenset[str]] = {
     "requests": frozenset({"building_id", "category", "since"}),
     "memory": frozenset({"active", "lang", "category", "since"}),
     "faq": frozenset({"lang"}),
+    "knowledge": frozenset({"office", "document_id"}),
 }
 
 
 class PgVectorStore:
     """VectorStore over the `match_vectors` / `vector_dim` RPCs and the vector tables.
 
-    Collections: `requests` (request_embeddings), `memory` (memory_examples), `faq`.
-    Needs a service-role client: the RPCs and request_embeddings are closed to client roles.
+    Collections: `requests` (request_embeddings), `memory` (memory_examples), `faq`, `knowledge`
+    (knowledge_chunks, P10.19). Needs a service-role client: the RPCs, request_embeddings and the
+    knowledge tables are closed to client roles.
 
     - `search` returns cosine hits, sim descending, ties broken by id. `filters["with_embedding"]`
       fills `VectorHit.embedding` (LD-14); the other filter keys are listed in FILTER_KEYS.
@@ -46,8 +50,10 @@ class PgVectorStore:
     - `upsert` writes rows by id. `requests` items need an existing `requests` row (FK); their
       `text` is not stored (search returns the request's text_norm). `memory`/`faq` ids must
       be UUIDs. Meta keys: requests {lang, category, priority, building_id, room, created_at},
-      memory {category, priority, author_id, created_at, active}, faq {answer, source_url, is_demo}.
-    - `set_active` works on `memory` only.
+      memory {category, priority, author_id, created_at, active}, faq {answer, source_url, is_demo},
+      knowledge {document_id (an existing knowledge_documents row), ord}; knowledge hits carry meta
+      {document_id, title, office, ord}.
+    - `set_active` works on `memory` only; `delete` removes rows by id (any collection).
 
     Raises ArtifactVersionMismatch at construction when the database dimension differs from
     `dim`, NotFound from `set_active` on a missing id, and StoreError for everything else
@@ -127,6 +133,16 @@ class PgVectorStore:
 
         return store_call(f"count {collection}", run) or 0
 
+    def delete(self, collection: str, ids: Sequence[str]) -> None:
+        table, id_col = _table(collection)
+        wanted = [_uuid(i) for i in ids]
+        for start in range(0, len(wanted), DELETE_BATCH):
+
+            def run(batch: list[str] = wanted[start : start + DELETE_BATCH]) -> Any:
+                return self._client.table(table).delete(returning=_minimal()).in_(id_col, batch).execute()
+
+            store_call(f"delete {collection}", run)
+
     def _row(self, collection: str, item: VectorItem) -> dict[str, Any]:
         self._check_dim(item.embedding)
         meta = item.meta
@@ -139,6 +155,15 @@ class PgVectorStore:
             row["text_norm"] = item.text
             row["author_id"] = meta.get("author_id") or None
             keys = ("category", "priority", "created_at", "active")
+        elif collection == "knowledge":
+            row["id"] = _uuid(item.id)
+            row["text"] = item.text
+            row["document_id"] = _uuid(str(meta.get("document_id") or ""))
+            ord_ = meta.get("ord")
+            if isinstance(ord_, bool) or not isinstance(ord_, int | float):
+                raise StoreError("knowledge items need a numeric meta 'ord'")
+            row["ord"] = int(ord_)
+            keys = ()
         else:
             row["id"] = _uuid(item.id)
             row["question"] = item.text

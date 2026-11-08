@@ -23,6 +23,7 @@ from campuspulse_ai.application.use_cases.clarify import ClarifyUseCase
 from campuspulse_ai.application.use_cases.escalate_sla import SlaReminderUseCase
 from campuspulse_ai.application.use_cases.explain import CounterfactualUseCase
 from campuspulse_ai.application.use_cases.incidents import IncidentsUseCase
+from campuspulse_ai.application.use_cases.knowledge import KnowledgeUseCase
 from campuspulse_ai.application.use_cases.llm_usage import LlmUsageUseCase
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
 from campuspulse_ai.application.use_cases.ports import FeedbackHandler, IdentityVerifier
@@ -94,6 +95,7 @@ class ApiServices:
     chat: ChatUseCase | None = None
     files: TicketFilesUseCase | None = None  # P9.10; without it the file routes answer 501
     usage: LlmUsageUseCase | None = None  # P10.17: admin LLM spend; without it the route answers 501
+    knowledge: KnowledgeUseCase | None = None  # P10.19: the knowledge base; without it the routes answer 501
 
 
 def build_identity(settings: Settings) -> IdentityVerifier | None:

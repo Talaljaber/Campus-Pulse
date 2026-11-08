@@ -30,6 +30,12 @@ proposal token bound to the caller's alias (`proposals.py`).
    Confirming with `replace` opens the corrected ticket, then (only when the token's `replaces` is the
    caller's own open ticket) comments on the old ticket and closes it, and returns it as `closed_ticket`.
    Every reply that says something was recorded or closed is a server template.
+8. P10.19 (docs/plan/p10/P10.19_knowledge_base.md). Every LLM turn searches the admin knowledge base with
+   the last user message (`KnowledgeSearch`: top `KNOWLEDGE_HITS` passages at or above
+   `KNOWLEDGE_MIN_SIM`) and offers the hits as CURRENT SOURCES (`knowledge:<document id>`). The response's
+   `sources` are the announcements and documents the model cited in `source_ids`, kept only when the
+   model's own words are the reply and the id was offered this turn. A failing knowledge read is logged
+   and the turn goes on without it.
 
 `preview(cmd, caller)` is the plain-form path (no LLM): classify, decision policy with a one-question budget,
 the route plan and FAQ answer, the staff-correction hint (raise-only priority). It writes nothing (except a
@@ -57,7 +63,7 @@ from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from campuspulse_ai.application import dto
 from campuspulse_ai.application.use_cases import responses as out
@@ -79,6 +85,7 @@ from campuspulse_ai.application.use_cases.issue_context import (
     PreparedIssue,
 )
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
+from campuspulse_ai.application.use_cases.knowledge_ports import KnowledgeHit, KnowledgeSearch
 from campuspulse_ai.application.use_cases.ports import Actor, Clarifier, TriageClassifier
 from campuspulse_ai.application.use_cases.proposals import ProposalClaims, sign, verify
 from campuspulse_ai.application.use_cases.sync_ticket import ticket_title
@@ -115,6 +122,11 @@ ANNOUNCEMENTS_SHOWN = 5
 OPEN_TICKETS_SHOWN = 5
 OPEN_TICKET_TEXT_CHARS = 300
 ANNOUNCEMENT_CHARS = 300
+KNOWLEDGE_HITS = 3
+"""P10.19: the closest knowledge-base passages offered to the model per turn (at or above the floor)."""
+SOURCES_SHOWN = 5
+"""P10.19: at most this many cited sources on a reply ("From: <title>")."""
+SOURCE_TITLE_CHARS = 200
 FIRST_NAME_CHARS = 30
 SHORT_MESSAGE_WORDS = 3
 NEIGHBORS_SHOWN = 3
@@ -281,6 +293,7 @@ class ChatUseCase:
         encoder: SentenceEncoder | None = None,
         claims: ChatClaimStore | None = None,
         preparer: IssueContextPreparer | None = None,
+        knowledge: KnowledgeSearch | None = None,
     ) -> None:
         self._classifier = classifier
         self._policy = policy
@@ -298,6 +311,7 @@ class ChatUseCase:
         self._encoder = encoder
         self._claims_store = claims or InMemoryChatClaimStore()
         self._preparer = preparer
+        self._knowledge = knowledge
 
     @property
     def llm_enabled(self) -> bool:
@@ -322,7 +336,7 @@ class ChatUseCase:
             return self._fallback(lang)
         claims, token_bad = self._claims(cmd.proposal_token, alias)
         mine = self._my_tickets(alias)
-        ctx = self._context(caller, lang, claims, mine)
+        ctx = self._context(caller, lang, claims, mine, question=last.content)
         turns = [Turn(role=m.role, content=m.content) for m in messages]
         open_tickets = self._open_tickets(alias, mine)
         agent_reply, prepared = self._reply_and_prepare(ctx, turns, open_tickets)
@@ -332,7 +346,7 @@ class ChatUseCase:
         if prepared is not None:
             advice = Priority(prepared.priority_recommendation) if prepared.priority_recommendation else None
             issue = _Issue(prepared.classifier_text, advice, prepared.duplicate_of, open_tickets, mine)
-        return self._answer(
+        response = self._answer(
             agent_reply,
             cmd.proposal_token or "",
             messages,
@@ -344,6 +358,7 @@ class ChatUseCase:
             later,
             issue,
         )
+        return _with_sources(response, agent_reply, ctx)
 
     def _open_tickets(self, alias: str, known: Sequence[_Open] = ()) -> list[_Open]:
         """The requester's open tickets with their texts, newest first. A failing read gives none. `known`
@@ -1030,6 +1045,7 @@ class ChatUseCase:
         lang: ReplyLang,
         claims: ProposalClaims | None,
         mine: Sequence[_Open] = (),
+        question: str = "",
     ) -> ChatContext:
         first_name: str | None = None
         if self._journey is not None and caller.alias:
@@ -1051,7 +1067,7 @@ class ChatUseCase:
             first_name=first_name,
             announcements=announcements,
             proposal=proposal,
-            sources=sources,
+            sources=(*sources, *self._knowledge_context(question)),
             requests=[self._request_line(o) for o in mine],
         )
 
@@ -1081,10 +1097,35 @@ class ChatUseCase:
                 kind="announcement",
                 text=line,
                 scope=_notice_scope(line),
+                title=a.title,
             )
             for a, line in zip(live, lines, strict=True)
         )
         return lines, sources
+
+    def _knowledge_context(self, question: str) -> tuple[GroundingSource, ...]:
+        """P10.19: the knowledge-base passages closest to the person's last message, one source per
+        document (its best passages joined, best first). Any failure (store, encoder) gives none: the
+        knowledge base only enriches a turn, it never breaks one."""
+        if self._knowledge is None or not question.strip():
+            return ()
+        try:
+            hits = list(self._knowledge.search(question, KNOWLEDGE_HITS))
+        except Exception:  # an advisory read must never take the chat down
+            log.warning("knowledge base unavailable for the chat", exc_info=True)
+            return ()
+        by_doc: dict[str, list[KnowledgeHit]] = {}
+        for hit in hits:
+            by_doc.setdefault(hit.document_id, []).append(hit)
+        return tuple(
+            GroundingSource(
+                id=f"knowledge:{doc_id}",
+                kind="knowledge",
+                text=f"{group[0].title}: " + "\n...\n".join(h.text for h in group),
+                title=group[0].title,
+            )
+            for doc_id, group in by_doc.items()
+        )
 
     def _text(self, lang: ReplyLang) -> Mapping[str, str]:
         return self._cfg.templates[lang]
@@ -1105,6 +1146,30 @@ class ChatUseCase:
     def _unclaimed(self, reply: str, fallback: str) -> str:
         """`_safe`, and the reply must not claim that a ticket was recorded or closed (nothing was)."""
         return fallback if _ACTION_CLAIM.search(reply) else self._safe(reply, fallback)
+
+
+def _with_sources(
+    response: dto.ChatTurnResponse, reply: AgentReply, ctx: ChatContext
+) -> dto.ChatTurnResponse:
+    """P10.19: `sources` = the announcements and knowledge documents the model cited, but only when its
+    own words are the reply (a server template cites nothing) and only ids really offered this turn; an id
+    the model made up is dropped. In citation order, without repeats, at most `SOURCES_SHOWN`."""
+    if response.reply != reply.reply or not reply.source_ids:
+        return response
+    offered = {s.id: s for s in ctx.sources if s.kind in ("announcement", "knowledge")}
+    cited: list[dto.ChatSourceOut] = []
+    for source_id in dict.fromkeys(reply.source_ids):
+        source = offered.get(source_id)
+        if source is None:
+            continue
+        kind: Literal["announcement", "knowledge"] = (
+            "knowledge" if source.kind == "knowledge" else "announcement"
+        )
+        title = " ".join(source.title.split())[:SOURCE_TITLE_CHARS] or kind
+        cited.append(dto.ChatSourceOut(id=source.id, kind=kind, title=title))
+        if len(cited) == SOURCES_SHOWN:
+            break
+    return response.model_copy(update={"sources": cited}) if cited else response
 
 
 def _notice_scope(text: str) -> str:

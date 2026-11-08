@@ -19,7 +19,8 @@ artifacts and every online adapter:
 7. The use cases: triage, clarify, feedback (live learning), the ticket lifecycle and SLA scanner,
    Pulse (embedding upsert and incident detection), batch, metrics, the red team (live memory on),
    the identity verifier, and UD-13 advisor routing (review assignment, `GET /v1/reviews`, review
-   and the P9.3 ticket lifecycle).
+   and the P9.3 ticket lifecycle), and the P10.19 knowledge base (`SupabaseKnowledgeStore` rows, passages
+   in pgvector's `knowledge` collection, PDFs read only when `pypdf` is installed), which the chat searches.
 
 `wire_online(settings, offline, adapters, clock)` does steps 6-7 over any adapters, so tests run the
 same wiring over `InMemoryRepository`, `LocalNumpyVectorStore` and fakes (`tests/unit/test_online.py`).
@@ -46,6 +47,7 @@ from campuspulse_ai.adapters.clarify.info_gain import InfoGainStrategy
 from campuspulse_ai.adapters.clock import SystemClock
 from campuspulse_ai.adapters.faq.retriever import VectorFAQRetriever
 from campuspulse_ai.adapters.integrations.supabase_sink import SupabaseSink
+from campuspulse_ai.adapters.knowledge.pdf_text import PypdfText
 from campuspulse_ai.adapters.llm.cost import InMemoryCostLogger
 from campuspulse_ai.adapters.llm.prompt import load_prompt
 from campuspulse_ai.adapters.notify.allowlist import AllowlistedNotifier
@@ -71,6 +73,8 @@ from campuspulse_ai.application.use_cases.feedback import FeedbackUseCase
 from campuspulse_ai.application.use_cases.file_ports import BlobStore, FileStore
 from campuspulse_ai.application.use_cases.incidents import IncidentActions, IncidentsUseCase
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
+from campuspulse_ai.application.use_cases.knowledge import KnowledgeUseCase
+from campuspulse_ai.application.use_cases.knowledge_ports import KnowledgeStore
 from campuspulse_ai.application.use_cases.llm_usage import LlmUsageUseCase
 from campuspulse_ai.application.use_cases.messages import Messages
 from campuspulse_ai.application.use_cases.metrics import MetricsUseCase
@@ -169,6 +173,7 @@ class OnlineAdapters:
     announcement_drafts: DraftStore | None = None
     files: FileStore | None = None  # P9.10: ticket file rows; with `blobs` it serves the file routes
     blobs: BlobStore | None = None  # P9.10: the private `ticket-files` bucket
+    knowledge: KnowledgeStore | None = None  # P10.19: document rows; passages are `vectors`' `knowledge`
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,6 +268,7 @@ def supabase_adapters(
     from campuspulse_ai.adapters.store.chat_claims_supabase import SupabaseChatClaimStore
     from campuspulse_ai.adapters.store.files_supabase import SupabaseFileStore
     from campuspulse_ai.adapters.store.journey_supabase import SupabaseJourneyStore
+    from campuspulse_ai.adapters.store.knowledge_supabase import SupabaseKnowledgeStore
     from campuspulse_ai.adapters.store.profile_email_supabase import SupabaseProfileEmailStore
     from campuspulse_ai.adapters.store.supabase_store import SupabaseRepository
     from campuspulse_ai.adapters.vectors.pgvector import PgVectorStore
@@ -298,6 +304,7 @@ def supabase_adapters(
         announcement_drafts=SupabaseDraftStore(client),
         files=SupabaseFileStore(client),
         blobs=_blob_store(settings),
+        knowledge=SupabaseKnowledgeStore(client),
     )
 
 
@@ -605,6 +612,19 @@ def wire_online(
         else None
     )
     triage = TriageUseCase(core, flow, repo, clock, marks=adapters.marks)
+    knowledge = (
+        KnowledgeUseCase(
+            adapters.knowledge,
+            adapters.vectors,
+            # the FAQ's space: the raw ONNX encoder, no translation (passages and questions alike)
+            offline.raw_encoder or offline.encoder,
+            clock,
+            pdf=PypdfText() if PypdfText.available() else None,
+            min_sim=settings.knowledge_min_sim,
+        )
+        if adapters.knowledge is not None
+        else None
+    )
     chat = build_chat(
         settings,
         classifier=core,
@@ -619,6 +639,7 @@ def wire_online(
         announcements=adapters.announcements,
         encoder=offline.encoder,
         claims=adapters.chat_claims,
+        knowledge=knowledge,
     )
     manifest = offline.manifest
     return ApiServices(
@@ -671,6 +692,7 @@ def wire_online(
             vector_store=adapters.vector_store,
         ),
         usage=build_usage(settings, clock),
+        knowledge=knowledge,
     )
 
 

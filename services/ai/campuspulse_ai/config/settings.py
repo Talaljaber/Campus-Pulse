@@ -13,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     chat_agent_enabled: bool = True
     chat_agent_allow_fallbacks: bool = True  # chat only: another provider may answer if one is rate-limited
     chat_agent_config: Path = Path("config/chat_agent.yaml")
+    # P10.19: a knowledge-base passage is offered to the chat only at this e5 cosine or above (calibrated on
+    # a short handbook, docs/plan/p10/P10.19_knowledge_base.md "Stream A report")
+    knowledge_min_sim: float = Field(default=0.82, gt=0.0, le=1.0)
 
     # Supabase (service role is server-side only)
     supabase_url: str | None = None

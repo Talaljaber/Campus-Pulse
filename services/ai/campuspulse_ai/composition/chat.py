@@ -25,6 +25,7 @@ from campuspulse_ai.application.use_cases.chat import ChatConfig, ChatUseCase
 from campuspulse_ai.application.use_cases.chat_claims import ChatClaimStore
 from campuspulse_ai.application.use_cases.chat_ports import ChatAgent
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
+from campuspulse_ai.application.use_cases.knowledge_ports import KnowledgeSearch
 from campuspulse_ai.application.use_cases.ports import Clarifier, TriageClassifier
 from campuspulse_ai.application.use_cases.proposals import derive_key
 from campuspulse_ai.application.use_cases.ticket_lifecycle import TicketLifecycleUseCase
@@ -95,6 +96,7 @@ def build_chat(
     encoder: SentenceEncoder,
     agent: ChatAgent | None = None,
     claims: ChatClaimStore | None = None,
+    knowledge: KnowledgeSearch | None = None,
 ) -> ChatUseCase | None:
     """The chat use case, or None without `AI_SERVICE_TOKEN` (proposals could not be signed; every route
     answers 401 in that case anyway). `agent` overrides the LLM wiring (tests)."""
@@ -124,4 +126,5 @@ def build_chat(
         announcements=announcements,
         encoder=encoder,
         claims=claims,
+        knowledge=knowledge,
     )

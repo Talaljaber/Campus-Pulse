@@ -36,10 +36,15 @@ class AgentReply:
 
 @dataclass(frozen=True, slots=True)
 class GroundingSource:
+    """A CURRENT SOURCE the model may state facts from and cite by `id`. P10.19 adds `knowledge` (passages
+    of an admin's document, id `knowledge:<document id>`) and `title`, the name a reply cites it by
+    ("From: <title>")."""
+
     id: str
-    kind: Literal["announcement", "faq", "routing_hint"]
+    kind: Literal["announcement", "faq", "routing_hint", "knowledge"]
     text: str
     scope: str = ""
+    title: str = ""
 
 
 @dataclass(frozen=True, slots=True)
