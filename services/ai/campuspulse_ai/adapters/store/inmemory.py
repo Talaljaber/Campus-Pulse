@@ -42,6 +42,7 @@ from campuspulse_ai.domain.values import (
 )
 
 OPEN_TICKET_STATUSES = ("new", "in_progress")
+DONE_TICKET_STATUSES = ("solved", "closed")
 REVIEW_OFFICE_BY_CATEGORY: Mapping[str, str] = {
     "Registration": "registrar",
     "IT Support": "it",
@@ -187,6 +188,24 @@ class InMemoryRepository:
             if r.get("requester_alias") == alias and r["status"] in OPEN_TICKET_STATUSES
         ]
         rows.sort(key=lambda r: (_ts(r["clock_started_at"]), r["id"]), reverse=True)
+        return [self._ticket(r) for r in rows[:limit]]
+
+    def recent_tickets_for_alias(self, alias: str, since: datetime, limit: int = 8) -> list[Ticket]:
+        start = _ts(codec.iso(since) or "")
+        rows = [
+            r
+            for r in self.tables["tickets"].values()
+            if r.get("requester_alias") == alias
+            and (
+                r["status"] in OPEN_TICKET_STATUSES
+                or (
+                    r["status"] in DONE_TICKET_STATUSES
+                    and r.get("resolved_at")
+                    and _ts(r["resolved_at"]) >= start
+                )
+            )
+        ]
+        rows.sort(key=lambda r: (_ts(r["created_at"]), r["_seq"]), reverse=True)
         return [self._ticket(r) for r in rows[:limit]]
 
     def save_ticket_link(self, link: TicketLink) -> None:
