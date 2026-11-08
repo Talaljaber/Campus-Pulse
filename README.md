@@ -139,13 +139,17 @@ The challenge rules require disclosing external services and pretrained models.
 - **Chat agent and issue preparer** (`deepseek/deepseek-v4.1-flash`, `config/chat_agent.yaml`): in the web app
   only. The agent writes replies and clarifying questions. The issue preparer summarises the request and may
   recommend raising a priority, with evidence quoted from the student's words. Neither sets the category.
+- **Knowledge base** (P10.19): documents an admin uploads are split into passages and embedded locally with the
+  same e5 encoder (no LLM, no translation); PDFs are read with `pypdf` (API only). Only the passages that match
+  the person's message are sent to the chat agent's LLM as sources, and the reply names the document it used.
 - **Arabizi translator** (`openai/gpt-4o-mini-2024-07-18`): an older optional path, used only when
   `LLM_ARABIZI_TRANSLATE=true` and the front end is off. Never part of a default or offline run.
 - **Data drafting** (`anthropic/claude-sonnet-5.5`, `anthropic/claude-haiku-5.5`): used once to draft
   augmentation data and our test sets; see Data below.
 
 **Other services**
-- **Supabase**: Postgres with pgvector, Auth and Realtime (app data, request embeddings, FAQ vectors).
+- **Supabase**: Postgres with pgvector, Auth and Realtime (app data, request embeddings, FAQ and knowledge-base
+  vectors).
 - **Render** hosts the FastAPI AI service. **Netlify** hosts the web app.
 - **OpenRouter key record** (`GET https://openrouter.ai/api/v1/key`): read by the AI service for the admin
   Overview's AI cost card (spend today, this week and month, limit, key expiry). Only the key itself is sent;
