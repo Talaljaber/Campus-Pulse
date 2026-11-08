@@ -4,6 +4,10 @@
 scripted fakes in tests. The LLM only talks: `AgentReply` has a reply text and an intent, never a
 category, priority, office or flag. Every method returns None when the model is unavailable or its output
 is unusable; the use case then answers in fallback mode.
+
+P10.18 adds the intents `status`, `correct`, `withdraw` and `separate`, and two hints on `AgentReply`:
+`ticket_refs` (ticket numbers the reply is about) and `corrected_text` (a corrected request). They are only
+hints: the use case checks every ref against the caller's own tickets and decides everything itself.
 """
 
 from __future__ import annotations
@@ -12,8 +16,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
-Intent = Literal["chat", "request", "confirm", "decline", "announcement"]
-INTENTS: tuple[Intent, ...] = ("chat", "request", "confirm", "decline", "announcement")
+Intent = Literal[
+    "chat", "request", "confirm", "decline", "announcement", "status", "correct", "withdraw", "separate"
+]
+INTENTS: tuple[Intent, ...] = (
+    "chat", "request", "confirm", "decline", "announcement", "status", "correct", "withdraw", "separate",
+)  # fmt: skip
 ReplyLang = Literal["en", "ar"]
 
 
@@ -22,6 +30,8 @@ class AgentReply:
     reply: str
     intent: Intent
     source_ids: tuple[str, ...] = ()
+    ticket_refs: tuple[str, ...] = ()
+    corrected_text: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +57,8 @@ class ChatContext:
     `first_name` is None for staff, admin and anyone without a display name; `role` is the caller's
     role (`student`, `staff`, `admin`); `lang` is the language the reply must be in (Arabic and
     Arabizi in -> `ar`); `announcements` are the live notices (quoted as data); `proposal` is the
-    summary of the pending, signed proposal when the token is valid.
+    summary of the pending, signed proposal when the token is valid; `requests` (P10.18) are one line per
+    recent ticket of the caller (number, status, office, created date, start of the text), quoted as data.
     """
 
     role: str
@@ -56,6 +67,7 @@ class ChatContext:
     announcements: Sequence[str] = field(default_factory=tuple)
     proposal: str | None = None
     sources: Sequence[GroundingSource] = field(default_factory=tuple)
+    requests: Sequence[str] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True, slots=True)

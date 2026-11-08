@@ -3,10 +3,10 @@
 # Never part of the scored offline path; runs only with OPENROUTER_API_KEY and CHAT_AGENT_ENABLED != false.
 # The model id is pinned; change it only with a new decision. Temperature 0 (project rule), responses cached.
 model: deepseek/deepseek-v4.1-flash      # alternative: qwen/qwen3.8-flash
-prompt_version: chat-v3
+prompt_version: chat-v4                   # P10.18: requests block, status/correct/withdraw/separate
 issue_context_enabled: true   # the LLM prepares the issue (and advises a priority) before every message, English too
 issue_context_prompt: config/prompts/issue_context_v2.md
-prompt_file: config/prompts/chat_agent_v3.md
+prompt_file: config/prompts/chat_agent_v4.md
 temperature: 0
 max_tokens: 500
 timeout_s: 12
@@ -36,6 +36,14 @@ templates:
     declined: "No problem, I have not recorded anything. Tell me if you need something else."
     already_open: "You already have an open request for this: #{number} (priority {priority}). I did not open another one."
     priority_raised: "You already have an open request for this: #{number}. I raised its priority to {priority} instead of opening another one."
+    # P10.18 (every one of these is said by the server, never by the model)
+    correction: "Did you mean to fix request #{number}? I can close #{number} and record the corrected request for {department}, or keep both if this is a separate problem."
+    withdraw: "Close request #{number}? Nothing is closed until you confirm."
+    withdraw_which: "Which request do you want to close? Pick it below."
+    withdraw_none: "You have no open requests to close."
+    status: "Here is where your requests stand."
+    status_none: "You have no requests from the last 30 days. Tell me what you need and I will prepare one."
+    confirmed_replaced: "Request recorded: #{number} for {department} (demo, no real department was contacted). Request #{old} is closed."
   ar:
     proposal: "بقدر أرسل طلبك إلى {department}. بدك أسجّل الطلب؟"
     proposal_faq: "{answer} إذا ما حلّت المشكلة، بقدر أسجّل طلب لـ{department} بكل الأحوال. بدك أسجّله؟"
@@ -49,6 +57,13 @@ templates:
     declined: "ولا يهمك، ما سجّلت شي. احكيلي إذا بدك شي ثاني."
     already_open: "عندك طلب مفتوح لنفس المشكلة: رقم #{number} (الأولوية {priority}). ما فتحت طلب ثاني."
     priority_raised: "عندك طلب مفتوح لنفس المشكلة: رقم #{number}. رفعت أولويته إلى {priority} بدل ما أفتح طلب جديد."
+    correction: "قصدك تصلّح الطلب رقم #{number}؟ بقدر أسكّر #{number} وأسجّل الطلب المصحّح لـ{department}، أو أخلّي الطلبين إذا هاي مشكلة ثانية."
+    withdraw: "بدك أسكّر الطلب رقم #{number}؟ ما رح يتسكّر إلا لما تأكّد."
+    withdraw_which: "أي طلب بدك تسكّره؟ اختاره من تحت."
+    withdraw_none: "ما عندك طلبات مفتوحة لتسكّرها."
+    status: "هاي حالة طلباتك."
+    status_none: "ما عندك طلبات بآخر 30 يوم. احكيلي شو بدك وبجهّزلك طلب."
+    confirmed_replaced: "تم تسجيل الطلب: رقم #{number} لـ{department} (عرض تجريبي، لم يتم التواصل مع أي قسم حقيقي). الطلب رقم #{old} تسكّر."
 priorities:
   en: {low: "low", medium: "medium", high: "high"}
   ar: {low: "منخفضة", medium: "متوسطة", high: "عالية"}
