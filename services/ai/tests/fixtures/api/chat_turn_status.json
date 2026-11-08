@@ -30,6 +30,7 @@
     "ticket_id": null,
     "triage": null,
     "clear_proposal": false,
+    "sources": [],
     "tickets": [
       {
         "ticket_id": "4f2a9c10-8b7e-4d3c-a1f2-0e9d8c7b0102",

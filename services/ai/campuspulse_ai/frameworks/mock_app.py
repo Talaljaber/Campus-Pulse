@@ -444,6 +444,33 @@ def build_router(store: FixtureStore) -> APIRouter:
         """LLM spend (fixture-backed)."""
         return _respond(store.pick("admin_usage", request, None))
 
+    @router.api_route(
+        **route_kwargs("admin_knowledge_upload"), dependencies=[Depends(_guard("admin_knowledge_upload"))]
+    )
+    def admin_knowledge_upload(
+        request: Request,
+        title: Annotated[str, Form(min_length=1, max_length=200)],
+        office: Annotated[str | None, Form()] = None,
+        text: Annotated[str | None, Form(max_length=200_000)] = None,
+        file: Annotated[UploadFile | None, File(description="PDF, .txt or .md, 5 MB at most.")] = None,
+    ) -> Any:
+        """Add a knowledge-base document (fixture-backed)."""
+        return _respond(store.pick("admin_knowledge_upload", request, None))
+
+    @router.api_route(
+        **route_kwargs("admin_knowledge_list"), dependencies=[Depends(_guard("admin_knowledge_list"))]
+    )
+    def admin_knowledge_list(request: Request) -> Any:
+        """List knowledge-base documents (fixture-backed)."""
+        return _respond(store.pick("admin_knowledge_list", request, None))
+
+    @router.api_route(
+        **route_kwargs("admin_knowledge_delete"), dependencies=[Depends(_guard("admin_knowledge_delete"))]
+    )
+    def admin_knowledge_delete(doc_id: str, request: Request) -> Any:
+        """Delete a knowledge-base document (fixture-backed)."""
+        return _respond(store.pick("admin_knowledge_delete", request, None))
+
     return router
 
 

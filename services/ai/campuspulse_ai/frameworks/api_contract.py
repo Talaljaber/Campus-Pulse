@@ -32,6 +32,9 @@ from campuspulse_ai.application.dto import (
     FileOut,
     HealthResponse,
     IncidentOut,
+    KnowledgeDeleteOut,
+    KnowledgeDocOut,
+    KnowledgeListOut,
     LlmUsageResponse,
     MetricsResponse,
     ProblemClusterOut,
@@ -790,6 +793,58 @@ ENDPOINTS: tuple[EndpointDoc, ...] = (
         response_model=LlmUsageResponse,
         errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_IMPLEMENTED),
         side_effects=("none (read-only)",),
+        tag="admin",
+    ),
+    EndpointDoc(
+        op_id="admin_knowledge_upload",
+        method="POST",
+        path="/v1/admin/knowledge",
+        summary="Add a knowledge-base document",
+        purpose=(
+            "Multipart: `title` (1 to 200 characters), optional `office`, and either `file` (PDF, plain "
+            "text or Markdown, 5 MB at most) or `text` (pasted, 200,000 characters at most). The text is "
+            "extracted, split into passages, embedded with the deployed encoder and stored; the chat then "
+            "uses the closest passages as sources it may quote. Text in a document is data, never "
+            "instructions to the assistant."
+        ),
+        roles=("admin",),
+        response_model=KnowledgeDocOut,
+        errors=(
+            ErrorCode.INVALID_INPUT,
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_IMPLEMENTED,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=("inserts a `knowledge_documents` row and its `knowledge_chunks` rows",),
+        tag="admin",
+    ),
+    EndpointDoc(
+        op_id="admin_knowledge_list",
+        method="GET",
+        path="/v1/admin/knowledge",
+        summary="List knowledge-base documents",
+        purpose="Every uploaded document, newest first, with its passage count (no text).",
+        roles=("admin",),
+        response_model=KnowledgeListOut,
+        errors=(ErrorCode.FORBIDDEN, ErrorCode.NOT_IMPLEMENTED, ErrorCode.STORE_UNAVAILABLE),
+        side_effects=("none (read-only)",),
+        tag="admin",
+    ),
+    EndpointDoc(
+        op_id="admin_knowledge_delete",
+        method="DELETE",
+        path="/v1/admin/knowledge/{doc_id}",
+        summary="Delete a knowledge-base document",
+        purpose="Deletes the document and all its passages; the chat stops using it at once.",
+        roles=("admin",),
+        response_model=KnowledgeDeleteOut,
+        errors=(
+            ErrorCode.FORBIDDEN,
+            ErrorCode.NOT_FOUND,
+            ErrorCode.NOT_IMPLEMENTED,
+            ErrorCode.STORE_UNAVAILABLE,
+        ),
+        side_effects=("deletes a `knowledge_documents` row and, by cascade, its passages",),
         tag="admin",
     ),
 )

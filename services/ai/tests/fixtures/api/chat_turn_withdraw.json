@@ -30,6 +30,7 @@
     "ticket_id": null,
     "triage": null,
     "clear_proposal": false,
+    "sources": [],
     "tickets": [],
     "correction": null,
     "withdraw": {

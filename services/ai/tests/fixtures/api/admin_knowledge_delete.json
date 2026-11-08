@@ -1,0 +1,19 @@
+{
+  "name": "admin_knowledge_delete",
+  "description": "An admin deletes a knowledge-base document (illustrative).",
+  "method": "DELETE",
+  "path": "/v1/admin/knowledge/{doc_id}",
+  "path_params": {
+    "doc_id": "6f1c2a9e-3b4d-4e5f-8a7b-1c2d3e4f5a6b"
+  },
+  "query": {},
+  "headers": {
+    "X-CP-Role": "admin"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "id": "6f1c2a9e-3b4d-4e5f-8a7b-1c2d3e4f5a6b",
+    "deleted": true
+  }
+}

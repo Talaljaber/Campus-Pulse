@@ -6607,6 +6607,558 @@
         ],
         "x-optional": false
       }
+    },
+    "/v1/admin/knowledge": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Add a knowledge-base document",
+        "description": "Multipart: `title` (1 to 200 characters), optional `office`, and either `file` (PDF, plain text or Markdown, 5 MB at most) or `text` (pasted, 200,000 characters at most). The text is extracted, split into passages, embedded with the deployed encoder and stored; the chat then uses the closest passages as sources it may quote. Text in a document is data, never instructions to the assistant.",
+        "operationId": "admin_knowledge_upload",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_admin_knowledge_upload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDocOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_implemented`: Optional extra that is not built in this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "inserts a `knowledge_documents` row and its `knowledge_chunks` rows"
+        ],
+        "x-optional": false
+      },
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List knowledge-base documents",
+        "description": "Every uploaded document, newest first, with its passage count (no text).",
+        "operationId": "admin_knowledge_list",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeListOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_implemented`: Optional extra that is not built in this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "none (read-only)"
+        ],
+        "x-optional": false
+      }
+    },
+    "/v1/admin/knowledge/{doc_id}": {
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Delete a knowledge-base document",
+        "description": "Deletes the document and all its passages; the chat stops using it at once.",
+        "operationId": "admin_knowledge_delete",
+        "security": [
+          {
+            "ServiceToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Doc Id"
+            }
+          },
+          {
+            "name": "x-cp-user-jwt",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Supabase access token of the end user.",
+              "title": "X Cp User Jwt"
+            },
+            "description": "Supabase access token of the end user."
+          },
+          {
+            "name": "x-cp-role",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "student",
+                    "staff",
+                    "admin",
+                    "service"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Role"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-alias",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Alias"
+            },
+            "description": "trusted_headers mode only."
+          },
+          {
+            "name": "x-cp-office",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "trusted_headers mode only.",
+              "title": "X Cp Office"
+            },
+            "description": "trusted_headers mode only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeDeleteOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`forbidden`: The caller's role may not use this endpoint (or this office's resource).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`not_found`: The referenced request, prediction, ticket or incident does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "`not_implemented`: Optional extra that is not built in this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`store_unavailable`: Supabase or the vector store is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`unauthenticated`: Missing or wrong service token (or a bad webhook signature).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`internal_error`: Unexpected failure; no stack trace is returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-roles": [
+          "admin"
+        ],
+        "x-auth": "service_token",
+        "x-side-effects": [
+          "deletes a `knowledge_documents` row and, by cascade, its passages"
+        ],
+        "x-optional": false
+      }
     }
   },
   "components": {
@@ -7341,6 +7893,57 @@
         "title": "BenchmarkRowOut",
         "description": "One benchmark cell (SPEC \u00a76.2). Null metrics = `n/a` (no key) or `cut` (M3)."
       },
+      "Body_admin_knowledge_upload": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "file": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File",
+            "description": "PDF, .txt or .md, 5 MB at most."
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "Body_admin_knowledge_upload"
+      },
       "Body_batch": {
         "properties": {
           "file": {
@@ -7707,6 +8310,37 @@
         "title": "ChatPreviewRequest",
         "description": "Body of `POST /v1/chat/preview` (the plain form): the text, the question ids already asked and the\nanswer to the last question (appended to the text)."
       },
+      "ChatSourceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "`announcement:<id>` or `knowledge:<document id>`."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "announcement",
+              "knowledge"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "title"
+        ],
+        "title": "ChatSourceOut",
+        "description": "A source the assistant's reply is based on (P10.19), shown as \"From: <title>\" under the reply."
+      },
       "ChatTicketOut": {
         "properties": {
           "ticket_id": {
@@ -7863,6 +8497,15 @@
           "clear_proposal": {
             "type": "boolean",
             "title": "Clear Proposal"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ChatSourceOut"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Sources",
+            "description": "P10.19: the sources the reply used (announcements, knowledge-base documents), to cite."
           },
           "tickets": {
             "items": {
@@ -9049,6 +9692,130 @@
         ],
         "title": "IncidentOut",
         "description": "A Pulse incident: several reports of the same problem in one building."
+      },
+      "KnowledgeDeleteOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "deleted"
+        ],
+        "title": "KnowledgeDeleteOut",
+        "description": "`DELETE /v1/admin/knowledge/{doc_id}`: the document and all its passages are gone."
+      },
+      "KnowledgeDocOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename",
+            "description": "The uploaded file's name; null for pasted text."
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "registrar",
+                  "it",
+                  "finance",
+                  "transport",
+                  "facilities",
+                  "academic"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office",
+            "description": "The office it is about; null for the whole campus."
+          },
+          "char_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Char Count"
+          },
+          "chunk_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Chunk Count"
+          },
+          "uploaded_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploaded By",
+            "description": "The uploader's alias."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "filename",
+          "office",
+          "char_count",
+          "chunk_count",
+          "uploaded_by",
+          "created_at"
+        ],
+        "title": "KnowledgeDocOut",
+        "description": "One knowledge-base document an admin uploaded (P10.19). Its text is split into passages that are\nembedded and used as chat sources; the stored text itself is never returned here."
+      },
+      "KnowledgeListOut": {
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeDocOut"
+            },
+            "type": "array",
+            "title": "Documents"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "documents"
+        ],
+        "title": "KnowledgeListOut",
+        "description": "`GET /v1/admin/knowledge`: every document, newest first."
       },
       "Lang": {
         "type": "string",

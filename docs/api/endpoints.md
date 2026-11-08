@@ -57,6 +57,9 @@ Every non-2xx response has this shape:
 - [`POST /v1/tickets/{ticket_id}/files`](#ticket_file_upload) Attach a file to a ticket
 - [`GET /v1/files/{file_id}/link`](#file_link) Get a signed link to a file
 - [`GET /v1/admin/usage`](#admin_usage) LLM spend
+- [`POST /v1/admin/knowledge`](#admin_knowledge_upload) Add a knowledge-base document
+- [`GET /v1/admin/knowledge`](#admin_knowledge_list) List knowledge-base documents
+- [`DELETE /v1/admin/knowledge/{doc_id}`](#admin_knowledge_delete) Delete a knowledge-base document
 - [Schemas](#schemas)
 
 <a id="announcement_drafts_list"></a>
@@ -3318,6 +3321,7 @@ Response `200`:
   "ticket_id": null,
   "triage": null,
   "clear_proposal": false,
+  "sources": [],
   "tickets": [],
   "correction": null,
   "withdraw": null
@@ -3909,6 +3913,199 @@ Response `200`:
 
 - none (read-only)
 
+<a id="admin_knowledge_upload"></a>
+## `POST /v1/admin/knowledge`
+
+**Add a knowledge-base document.** Multipart: `title` (1 to 200 characters), optional `office`, and either `file` (PDF, plain text or Markdown, 5 MB at most) or `text` (pasted, 200,000 characters at most). The text is extracted, split into passages, embedded with the deployed encoder and stored; the chat then uses the closest passages as sources it may quote. Text in a document is data, never instructions to the assistant.
+
+- **Roles:** `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+`multipart/form-data`: [Body_admin_knowledge_upload](#schema-body_admin_knowledge_upload)
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `title` | string | yes | min len 1 |
+| `office` | string \| null | no |  |
+| `text` | string \| null | no |  |
+| `file` | string \| null | no | PDF, .txt or .md, 5 MB at most |
+
+**Response `200`:** `application/json` [KnowledgeDocOut](#schema-knowledgedocout)
+
+**Example** (fixture `admin_knowledge_upload`): An admin uploads a PDF to the knowledge base (illustrative).
+
+`handbook-fees-2026.txt`:
+
+```csv
+Refunds: a student who withdraws in the first week gets the full fee back. Sample text, not a real policy.
+```
+
+```powershell
+curl.exe -s -X POST "$env:AI_URL/v1/admin/knowledge" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT" `
+  -F "file=@handbook-fees-2026.txt;type=text/csv" `
+  -F "title=Student Handbook 2026: Fees and refunds" `
+  -F "office=finance"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "6f1c2a9e-3b4d-4e5f-8a7b-1c2d3e4f5a6b",
+  "title": "Student Handbook 2026: Fees and refunds",
+  "filename": "handbook-fees-2026.txt",
+  "office": "finance",
+  "char_count": 18432,
+  "chunk_count": 24,
+  "uploaded_by": "admin",
+  "created_at": "2026-11-08T10:00:00+02:00"
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 501 | `not_implemented`: Optional extra that is not built in this deployment. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- inserts a `knowledge_documents` row and its `knowledge_chunks` rows
+
+<a id="admin_knowledge_list"></a>
+## `GET /v1/admin/knowledge`
+
+**List knowledge-base documents.** Every uploaded document, newest first, with its passage count (no text).
+
+- **Roles:** `admin`
+- **Auth:** service token
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [KnowledgeListOut](#schema-knowledgelistout)
+
+**Example** (fixture `admin_knowledge_list`): The knowledge-base documents, newest first (illustrative).
+
+```powershell
+curl.exe -s -X GET "$env:AI_URL/v1/admin/knowledge" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "documents": [
+    {
+      "id": "6f1c2a9e-3b4d-4e5f-8a7b-1c2d3e4f5a6b",
+      "title": "Student Handbook 2026: Fees and refunds",
+      "filename": "handbook-fees-2026.pdf",
+      "office": "finance",
+      "char_count": 18432,
+      "chunk_count": 24,
+      "uploaded_by": "admin",
+      "created_at": "2026-11-08T10:00:00+02:00"
+    },
+    {
+      "id": "0b9e8d7c-6a5b-4c3d-9e2f-1a0b9c8d7e6f",
+      "title": "Library opening hours",
+      "filename": null,
+      "office": null,
+      "char_count": 1240,
+      "chunk_count": 2,
+      "uploaded_by": "admin",
+      "created_at": "2026-11-07T15:30:00+02:00"
+    }
+  ]
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 501 | `not_implemented`: Optional extra that is not built in this deployment. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- none (read-only)
+
+<a id="admin_knowledge_delete"></a>
+## `DELETE /v1/admin/knowledge/{doc_id}`
+
+**Delete a knowledge-base document.** Deletes the document and all its passages; the chat stops using it at once.
+
+- **Roles:** `admin`
+- **Auth:** service token
+
+**Parameters**
+
+| Name | In | Type | Required | Notes |
+| --- | --- | --- | --- | --- |
+| `doc_id` | path | string | yes |  |
+
+Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
+
+**Request body**
+
+None.
+
+**Response `200`:** `application/json` [KnowledgeDeleteOut](#schema-knowledgedeleteout)
+
+**Example** (fixture `admin_knowledge_delete`): An admin deletes a knowledge-base document (illustrative).
+
+```powershell
+curl.exe -s -X DELETE "$env:AI_URL/v1/admin/knowledge/6f1c2a9e-3b4d-4e5f-8a7b-1c2d3e4f5a6b" `
+  -H "Authorization: Bearer $env:AI_SERVICE_TOKEN" `
+  -H "X-CP-User-JWT: $env:USER_JWT"
+```
+
+Response `200`:
+
+```json
+{
+  "id": "6f1c2a9e-3b4d-4e5f-8a7b-1c2d3e4f5a6b",
+  "deleted": true
+}
+```
+
+**Errors**
+
+| HTTP | Codes |
+| --- | --- |
+| 403 | `forbidden`: The caller's role may not use this endpoint (or this office's resource). |
+| 404 | `not_found`: The referenced request, prediction, ticket or incident does not exist. |
+| 501 | `not_implemented`: Optional extra that is not built in this deployment. |
+| 503 | `store_unavailable`: Supabase or the vector store is unreachable. |
+| 422 | `invalid_input`: Body, query or path failed validation, or the use case raised InvalidInput. |
+| 401 | `unauthenticated`: Missing or wrong service token (or a bad webhook signature). |
+| 500 | `internal_error`: Unexpected failure; no stack trace is returned. |
+
+**Side effects**
+
+- deletes a `knowledge_documents` row and, by cascade, its passages
+
 <a id="schemas"></a>
 ## Schemas
 
@@ -4059,6 +4256,16 @@ One benchmark cell (SPEC §6.2). Null metrics = `n/a` (no key) or `cut` (M3).
 | `n_groups` | integer \| null | yes |  |
 | `status` | `ok` \| `n/a` \| `cut` | yes |  |
 
+<a id="schema-body_admin_knowledge_upload"></a>
+### Body_admin_knowledge_upload
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `title` | string | yes | min len 1 |
+| `office` | string \| null | no |  |
+| `text` | string \| null | no |  |
+| `file` | string \| null | no | PDF, .txt or .md, 5 MB at most |
+
 <a id="schema-body_batch"></a>
 ### Body_batch
 
@@ -4182,6 +4389,17 @@ Body of `POST /v1/chat/preview` (the plain form): the text, the question ids alr
 | `asked` | array of string | no |  |
 | `answer` | string \| null | no |  |
 
+<a id="schema-chatsourceout"></a>
+### ChatSourceOut
+
+A source the assistant's reply is based on (P10.19), shown as "From: <title>" under the reply.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes | `announcement:<id>` or `knowledge:<document id>` |
+| `kind` | `announcement` \| `knowledge` | yes |  |
+| `title` | string | yes |  |
+
 <a id="schema-chatticketout"></a>
 ### ChatTicketOut
 
@@ -4223,6 +4441,7 @@ The assistant's next message. `mode: fallback` = no language model; the client s
 | `ticket_id` | string \| null | yes |  |
 | `triage` | [TriageResponse](#schema-triageresponse) \| null | yes |  |
 | `clear_proposal` | boolean | yes |  |
+| `sources` | array of [ChatSourceOut](#schema-chatsourceout) | no | P10.19: the sources the reply used (announcements, knowledge-base documents), to cite |
 | `tickets` | array of [ChatTicketOut](#schema-chatticketout) | no |  |
 | `correction` | [ChatCorrectionOut](#schema-chatcorrectionout) \| null | no |  |
 | `withdraw` | [ChatTicketOut](#schema-chatticketout) \| null | no |  |
@@ -4541,6 +4760,41 @@ A Pulse incident: several reports of the same problem in one building.
 | `opened_at` | string (date-time) | yes |  |
 | `resolved_at` | string (date-time) \| null | yes |  |
 | `simulated` | boolean | no | True when every member report is `simulate_pulse.py` traffic (P4.10); default `false` |
+
+<a id="schema-knowledgedeleteout"></a>
+### KnowledgeDeleteOut
+
+`DELETE /v1/admin/knowledge/{doc_id}`: the document and all its passages are gone.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `deleted` | boolean | yes |  |
+
+<a id="schema-knowledgedocout"></a>
+### KnowledgeDocOut
+
+One knowledge-base document an admin uploaded (P10.19). Its text is split into passages that are embedded and used as chat sources; the stored text itself is never returned here.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `id` | string | yes |  |
+| `title` | string | yes |  |
+| `filename` | string \| null | yes | The uploaded file's name; null for pasted text |
+| `office` | `registrar` \| `it` \| `finance` \| `transport` \| `facilities` \| `academic` \| null | yes | The office it is about; null for the whole campus |
+| `char_count` | integer | yes | >= 0.0 |
+| `chunk_count` | integer | yes | >= 0.0 |
+| `uploaded_by` | string \| null | yes | The uploader's alias |
+| `created_at` | string (date-time) | yes |  |
+
+<a id="schema-knowledgelistout"></a>
+### KnowledgeListOut
+
+`GET /v1/admin/knowledge`: every document, newest first.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `documents` | array of [KnowledgeDocOut](#schema-knowledgedocout) | yes |  |
 
 <a id="schema-lang"></a>
 ### Lang

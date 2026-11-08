@@ -1118,6 +1118,44 @@ class ChatTicketOut(_Model):
     resolved_at: datetime | None
 
 
+class ChatSourceOut(_Model):
+    """A source the assistant's reply is based on (P10.19), shown as "From: <title>" under the reply."""
+
+    id: str = Field(description="`announcement:<id>` or `knowledge:<document id>`.")
+    kind: Literal["announcement", "knowledge"]
+    title: str = Field(max_length=200)
+
+
+KnowledgeOffice = Literal["registrar", "it", "finance", "transport", "facilities", "academic"]
+
+
+class KnowledgeDocOut(_Model):
+    """One knowledge-base document an admin uploaded (P10.19). Its text is split into passages that are
+    embedded and used as chat sources; the stored text itself is never returned here."""
+
+    id: str
+    title: str = Field(max_length=200)
+    filename: str | None = Field(description="The uploaded file's name; null for pasted text.")
+    office: KnowledgeOffice | None = Field(description="The office it is about; null for the whole campus.")
+    char_count: int = Field(ge=0)
+    chunk_count: int = Field(ge=0)
+    uploaded_by: str | None = Field(description="The uploader's alias.")
+    created_at: datetime
+
+
+class KnowledgeListOut(_Model):
+    """`GET /v1/admin/knowledge`: every document, newest first."""
+
+    documents: list[KnowledgeDocOut]
+
+
+class KnowledgeDeleteOut(_Model):
+    """`DELETE /v1/admin/knowledge/{doc_id}`: the document and all its passages are gone."""
+
+    id: str
+    deleted: bool
+
+
 class ChatCorrectionOut(_Model):
     """The open ticket a correction would replace (P10.18). Shown with the corrected `proposal`: confirming
     with `replace: true` closes this ticket and opens the corrected one; `replace: false` keeps both."""
@@ -1142,6 +1180,11 @@ class ChatTurnResponse(_Model):
     ticket_id: str | None
     triage: TriageResponse | None
     clear_proposal: bool
+    sources: list[ChatSourceOut] = Field(
+        default_factory=list,
+        max_length=5,
+        description="P10.19: the sources the reply used (announcements, knowledge-base documents), to cite.",
+    )
     tickets: list[ChatTicketOut] = Field(default_factory=list, max_length=10)
     correction: ChatCorrectionOut | None = None
     withdraw: ChatTicketOut | None = None

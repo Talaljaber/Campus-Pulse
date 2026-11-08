@@ -1,0 +1,37 @@
+{
+  "name": "admin_knowledge_list",
+  "description": "The knowledge-base documents, newest first (illustrative).",
+  "method": "GET",
+  "path": "/v1/admin/knowledge",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "admin"
+  },
+  "request": null,
+  "status_code": 200,
+  "response": {
+    "documents": [
+      {
+        "id": "6f1c2a9e-3b4d-4e5f-8a7b-1c2d3e4f5a6b",
+        "title": "Student Handbook 2026: Fees and refunds",
+        "filename": "handbook-fees-2026.pdf",
+        "office": "finance",
+        "char_count": 18432,
+        "chunk_count": 24,
+        "uploaded_by": "admin",
+        "created_at": "2026-11-08T10:00:00+02:00"
+      },
+      {
+        "id": "0b9e8d7c-6a5b-4c3d-9e2f-1a0b9c8d7e6f",
+        "title": "Library opening hours",
+        "filename": null,
+        "office": null,
+        "char_count": 1240,
+        "chunk_count": 2,
+        "uploaded_by": "admin",
+        "created_at": "2026-11-07T15:30:00+02:00"
+      }
+    ]
+  }
+}

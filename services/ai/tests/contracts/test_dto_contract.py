@@ -72,6 +72,9 @@ REQUEST_MODELS: dict[str, type[BaseModel] | None] = {
     "ticket_file_upload": None,  # multipart, checked separately
     "file_link": None,
     "admin_usage": None,
+    "admin_knowledge_upload": None,  # multipart, checked separately
+    "admin_knowledge_list": None,
+    "admin_knowledge_delete": None,
 }
 QUERY_MODELS: dict[str, type[BaseModel]] = {
     "triage": dto.TriageQuery,
