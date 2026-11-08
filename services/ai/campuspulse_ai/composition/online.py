@@ -621,6 +621,9 @@ def wire_online(
             clock,
             pdf=PypdfText() if PypdfText.available() else None,
             min_sim=settings.knowledge_min_sim,
+            # Arabic questions are also searched translated (local opus-mt, or the LLM front end when on),
+            # so an Arabic question finds an English handbook; passages stay in the raw space.
+            query_encoder=offline.encoder if offline.raw_encoder is not None else None,
         )
         if adapters.knowledge is not None
         else None

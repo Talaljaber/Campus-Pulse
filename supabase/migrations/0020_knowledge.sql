@@ -1,7 +1,7 @@
 -- 0020_knowledge: the admin knowledge base the chat can quote (P10.19,
 -- docs/plan/p10/P10.19_knowledge_base.md). Depends on 0005 (pgvector, match_vectors).
 --   knowledge_documents  one row per uploaded document (no text: the text lives in its passages)
---   knowledge_chunks     its passages (~800 chars), embedded with the frozen e5 encoder (384-d, "query: ")
+--   knowledge_chunks     its passages (~400 chars), embedded with the frozen e5 encoder (384-d, "query: ")
 -- Only the AI service (service role) reads and writes them: no client role has any grant or policy.
 -- match_vectors is replaced with the same signature and gains a `knowledge` collection; the requests,
 -- memory and faq branches are copied unchanged from 0005.

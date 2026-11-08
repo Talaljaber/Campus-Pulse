@@ -52,12 +52,14 @@ MAX_TEXT_CHARS: Final = 200_000
 MAX_TITLE_CHARS: Final = 200
 MAX_FILENAME_CHARS: Final = 200
 MAX_PDF_PAGES: Final = 500
-CHUNK_CHARS: Final = 800
-OVERLAP_CHARS: Final = 100
+CHUNK_CHARS: Final = 400  # P10.19 review: 800 packed two topics together and diluted the match
+OVERLAP_CHARS: Final = 60
 MAX_PASSAGES: Final = 300
 EMBED_BATCH: Final = 32
 WRITE_BATCH: Final = 50
 QUERY_CHARS: Final = 1000
+_NON_LATIN: Final = re.compile("[؀-ۿ]")
+"""Arabic letters: such a question is also searched through the translating encoder."""
 """Only the start of a long question is embedded (e5 reads at most a few hundred tokens anyway)."""
 DEFAULT_MIN_SIM: Final = 0.82
 TEXT_EXTS: Final = frozenset({"txt", "md", "markdown", "text"})
@@ -181,7 +183,12 @@ class KnowledgeUseCase:
         *,
         pdf: PdfText | None = None,
         min_sim: float = DEFAULT_MIN_SIM,
+        query_encoder: SentenceEncoder | None = None,
     ) -> None:
+        """`query_encoder` (optional) is a second, translating encoder for questions not written in
+        English: the question is searched both as written and translated, and each passage keeps its best
+        similarity. It lets an Arabic question find an English handbook (and the reverse) without
+        re-embedding any passage."""
         if not 0.0 < min_sim <= 1.0:
             raise ValueError(f"min_sim must be in (0, 1], got {min_sim}")
         self._documents = documents
@@ -190,6 +197,7 @@ class KnowledgeUseCase:
         self._clock = clock
         self._pdf = pdf
         self.min_sim = min_sim
+        self._query_encoder = query_encoder
 
     # ------------------------------------------------------------ admin
 
@@ -270,7 +278,19 @@ class KnowledgeUseCase:
         if not text or k <= 0:
             return []
         query = [float(x) for x in self._encoder.encode([text])[0]]
-        hits = self._vectors.search(COLLECTION, query, k=k, min_sim=self.min_sim)
+        hits = list(self._vectors.search(COLLECTION, query, k=k, min_sim=self.min_sim))
+        if self._query_encoder is not None and _NON_LATIN.search(text):
+            try:
+                translated = [float(x) for x in self._query_encoder.encode([text])[0]]
+                more = self._vectors.search(COLLECTION, translated, k=k, min_sim=self.min_sim)
+            except Exception:  # the translated pass only adds recall; never fail the search for it
+                log.warning("translated knowledge search failed; using the direct one", exc_info=True)
+                more = []
+            best = {h.id: h for h in hits}
+            for h in more:
+                if h.id not in best or h.sim > best[h.id].sim:
+                    best[h.id] = h
+            hits = sorted(best.values(), key=lambda h: (-h.sim, h.id))[:k]
         return [
             KnowledgeHit(
                 document_id=str(h.meta.get("document_id") or ""),

@@ -238,7 +238,7 @@ def test_delete_removes_the_document_and_every_passage() -> None:
     r = rig()
     keep = r.use.upload(ADMIN, "Library", text="The library opens at 8:00.")
     gone = r.use.upload(ADMIN, "Refunds", text="\n\n".join(f"refund {i} " + "w" * 500 for i in range(4)))
-    assert gone.chunk_count == 4 and r.vectors.count(COLLECTION) == 5
+    assert gone.chunk_count >= 4 and r.vectors.count(COLLECTION) == gone.chunk_count + 1
     r.use.delete(ADMIN, gone.id)
     assert r.use.list_documents(ADMIN) == [keep] and r.vectors.count(COLLECTION) == 1
     assert r.use.search("refund policy") == []
@@ -254,6 +254,42 @@ def test_search_keeps_only_passages_at_or_above_the_floor() -> None:
     [hit] = r.use.search("can I get a refund?")
     assert (hit.document_id, hit.title, hit.office) == (doc.id, "Handbook", "finance") and hit.sim >= 0.5
     assert r.use.search("the wifi is down") == [] and r.use.search("   ") == []
+
+
+class Translator(TopicEncoder):
+    """A stand-in for the translating encoder: Arabic topic words become English before embedding."""
+
+    WORDS = {"استرداد": "refund", "المكتبة": "library"}
+
+    def encode(self, texts: Sequence[str]) -> list[list[float]]:
+        out = []
+        for text in texts:
+            for ar, en in self.WORDS.items():
+                text = text.replace(ar, en)
+            out.extend(super().encode([text]))
+        return out
+
+
+class BrokenTranslator(TopicEncoder):
+    def encode(self, texts: Sequence[str]) -> list[list[float]]:
+        raise RuntimeError("translator down")
+
+
+def test_an_arabic_question_also_searches_translated_and_keeps_the_best_score() -> None:
+    docs = InMemoryKnowledgeStore()
+    store = LocalNumpyVectorStore(TopicEncoder.dim, collections=(COLLECTION,))
+    plain = KnowledgeUseCase(docs, store, TopicEncoder(), Clock(), min_sim=0.5)
+    doc = plain.upload(ADMIN, "Handbook", None, text=HANDBOOK)
+    question = "بدي استرداد الرسوم"
+    assert plain.search(question) == []  # the English handbook is out of reach as written
+    both = KnowledgeUseCase(docs, store, TopicEncoder(), Clock(), min_sim=0.5, query_encoder=Translator())
+    [hit] = both.search(question)
+    assert hit.document_id == doc.id
+    assert both.search("the wifi is down") == []  # an English question is never translated
+    broken = KnowledgeUseCase(
+        docs, store, TopicEncoder(), Clock(), min_sim=0.5, query_encoder=BrokenTranslator()
+    )
+    assert broken.search(question) == []  # a failing translation falls back to the direct search
 
 
 # ---------------------------------------------------------------- chat grounding
