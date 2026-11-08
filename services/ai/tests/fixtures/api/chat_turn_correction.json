@@ -1,0 +1,88 @@
+{
+  "name": "chat_turn_correction",
+  "description": "P10.18: the student fixes a detail of an open ticket (H302 -> H203). `proposal` is the corrected request (its token carries `replaces`) and `correction.ticket` the open ticket it would replace. Confirm with `replace: true` to close the old one, or `replace: false` to keep both.",
+  "method": "POST",
+  "path": "/v1/chat/turn",
+  "path_params": {},
+  "query": {},
+  "headers": {
+    "X-CP-Role": "student",
+    "X-CP-Alias": "demo-17"
+  },
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Sorry, I meant H203, not H302",
+        "kind": "text"
+      }
+    ],
+    "proposal_token": null
+  },
+  "match": [
+    "messages"
+  ],
+  "status_code": 200,
+  "response": {
+    "mode": "agent",
+    "reply": "Did you mean to fix request #7C3E01B5? I can close #7C3E01B5 and record the corrected request for Facilities, or keep both if this is a separate problem.",
+    "proposal": {
+      "token": "eyJhbGlhcyI6ImRlbW8tMTciLCJyZXBsYWNlcyI6IjdjM2UwMWI1In0.7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e7a1e",
+      "text": "The projector in room H203 is broken",
+      "category": "Facilities",
+      "priority": "medium",
+      "office": "facilities",
+      "action_kind": "ticket",
+      "question": null,
+      "faq": null,
+      "hint": null,
+      "why": {
+        "category": {
+          "label": "Facilities",
+          "prob": 0.84,
+          "set": [
+            "Facilities"
+          ]
+        },
+        "priority": {
+          "label": "medium",
+          "prob": 0.7,
+          "set": [
+            "medium"
+          ],
+          "evidence": []
+        },
+        "neighbors": [
+          {
+            "text": "The projector in the lecture hall does not turn on",
+            "label": "Facilities",
+            "priority": "medium",
+            "sim": 0.86,
+            "source": "train",
+            "created_at": null
+          }
+        ]
+      }
+    },
+    "ticket_id": null,
+    "triage": null,
+    "clear_proposal": false,
+    "tickets": [],
+    "correction": {
+      "ticket": {
+        "ticket_id": "7c3e01b5-4a2d-4f8e-9b1c-2d3e4f5a0101",
+        "number": "7C3E01B5",
+        "title": "Projector broken in room H302",
+        "office": "facilities",
+        "category": "Facilities",
+        "priority": "medium",
+        "status": "new",
+        "awaiting_student": false,
+        "created_at": "2026-11-08T09:12:00+03:00",
+        "resolved_at": null
+      },
+      "old_text": "The projector in room H302 is broken"
+    },
+    "withdraw": null
+  }
+}

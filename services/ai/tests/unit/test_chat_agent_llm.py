@@ -149,7 +149,7 @@ def test_phrase_asks_for_the_department_and_the_facts_as_data() -> None:
 def test_the_pinned_yaml_is_valid_and_temperature_zero() -> None:
     raw = load_chat_yaml(Settings(_env_file=None))  # type: ignore[call-arg]
     assert raw["temperature"] == 0 and raw["model"] == "deepseek/deepseek-v4.1-flash"
-    assert raw["prompt_version"] == "chat-v3" and Path(REPO_ROOT / raw["prompt_file"]).is_file()
+    assert raw["prompt_version"] == "chat-v4" and Path(REPO_ROOT / raw["prompt_file"]).is_file()
 
 
 def test_library_notice_cannot_support_invented_workaround() -> None:
@@ -203,3 +203,49 @@ def test_the_quoted_notice_has_no_internal_kind_tag() -> None:
     ))
     reply = agent_over(client).reply(ctx, [Turn("user", "wifi is down")])
     assert reply is not None and "Library Wi-Fi is down" in reply.reply and "[outage]" not in reply.reply
+
+
+# --------------------------------------------------------------------------- P10.18 (prompt chat-v4)
+
+PROMPT_V4 = (REPO_ROOT / "config" / "prompts" / "chat_agent_v4.md").read_text(encoding="utf-8")
+
+
+def test_refs_and_corrected_text_parse_and_junk_is_dropped() -> None:
+    raw = json.dumps(
+        {"reply": "x", "intent": "correct", "ticket_refs": ["#7c3e01b5", 12345678, "nope", "7C3E01B5", True],
+         "corrected_text": "  The projector in room H203 is broken  "}
+    )  # fmt: skip
+    reply = parse_reply(raw)
+    assert reply is not None and reply.intent == "correct"
+    assert reply.ticket_refs == ("7C3E01B5", "12345678") and reply.corrected_text.endswith("H203 is broken")
+    junk = {"reply": "x", "intent": "status", "ticket_refs": "AB12CD34", "corrected_text": 4}
+    bad = parse_reply(json.dumps(junk))
+    assert bad is not None and bad.ticket_refs == () and bad.corrected_text == ""
+    for intent in ("status", "correct", "withdraw", "separate"):
+        assert parse_reply(ok("x", intent)) is not None
+
+
+def test_v4_puts_the_persons_requests_in_a_data_block() -> None:
+    client = ScriptedClient(ok())
+    chat = CachedChat(client, "pinned/model", DictCache(), max_tokens=500)
+    agent = ChatAgentLLM(chat, PROMPT_V4, "chat-v4")
+    line = "#7C3E01B5 | status: new | office: Facilities | created: 2026-11-08 | text: projector in H302"
+    agent.reply(ChatContext(role="student", lang="en", requests=[line]), [Turn("user", "status?")])
+    system = system_of(client)
+    assert "## DATA: THE PERSON'S REQUESTS" in system and json.dumps([line]) in system
+    assert "$requests" not in system and '"ticket_refs"' in system and '"corrected_text"' in system
+
+
+def test_server_worded_intents_survive_the_grounding_check() -> None:
+    """A correction or withdraw reply is never shown (the server uses a template), so an "operational"
+    word in it must not turn the intent into chat."""
+    answer = json.dumps(
+        {"reply": "The projector is down in H203.", "intent": "correct", "ticket_refs": ["7C3E01B5"]}
+    )
+    client = ScriptedClient(answer, ok("The Wi-Fi is down in M.", "status"))
+    agent = agent_over(client)
+    ctx = ChatContext(role="student", lang="en")
+    fixed = agent.reply(ctx, [Turn("user", "it is H203")])
+    assert fixed is not None and fixed.intent == "correct" and fixed.ticket_refs == ("7C3E01B5",)
+    shown = agent.reply(ctx, [Turn("user", "status?")])
+    assert shown is not None and shown.intent == "chat"  # a shown reply is still grounded

@@ -16,6 +16,20 @@ proposal token bound to the caller's alias (`proposals.py`).
 5. intent `confirm` with a valid token -> confirm, the reply is the template "Request recorded: #n for
    <department> (demo, no real department was contacted)"; without a valid token nothing is recorded;
 6. `decline` -> `clear_proposal`; `chat` / `announcement` -> the LLM reply (banned phrases -> template).
+7. P10.18 (docs/plan/p10/P10.18_chat_corrections.md). The agent sees the caller's recent tickets (open, or
+   solved/closed in the last 30 days) as a DATA block, and its `ticket_refs` are only hints checked against
+   that list, so another person's ticket is never shown or touched:
+   - `status` -> `tickets` (status cards) for the refs, else for every listed ticket;
+   - `correct` -> a proposal for the corrected text whose token carries `replaces` (the old open ticket),
+     returned with `correction`; the reply is a template asking "replace #n or keep both";
+   - `withdraw` -> `withdraw` (the open ticket to close; the client closes it with the student action);
+   - `separate` with a pending correction -> confirm with `replace=false`; a typed "yes" (`confirm`) on a
+     correction confirms with `replace=true`;
+   - a repeat the issue preparer names (`duplicate_of`) whose text mentions another room or building than
+     the open ticket becomes the same correction proposal instead of a follow-up comment.
+   Confirming with `replace` opens the corrected ticket, then (only when the token's `replaces` is the
+   caller's own open ticket) comments on the old ticket and closes it, and returns it as `closed_ticket`.
+   Every reply that says something was recorded or closed is a server template.
 
 `preview(cmd, caller)` is the plain-form path (no LLM): classify, decision policy with a one-question budget,
 the route plan and FAQ answer, the staff-correction hint (raise-only priority). It writes nothing (except a
@@ -42,8 +56,8 @@ import uuid
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from typing import Any
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
 from campuspulse_ai.application import dto
 from campuspulse_ai.application.use_cases import responses as out
@@ -67,11 +81,12 @@ from campuspulse_ai.application.use_cases.issue_context import (
 from campuspulse_ai.application.use_cases.journey_ports import JourneyStore
 from campuspulse_ai.application.use_cases.ports import Actor, Clarifier, TriageClassifier
 from campuspulse_ai.application.use_cases.proposals import ProposalClaims, sign, verify
+from campuspulse_ai.application.use_cases.sync_ticket import ticket_title
 from campuspulse_ai.application.use_cases.ticket_lifecycle import LifecycleChange, TicketLifecycleUseCase
 from campuspulse_ai.application.use_cases.triage import DISTRESS, TriageUseCase
 from campuspulse_ai.domain.entities import CoreResult, Prediction, Ticket
 from campuspulse_ai.domain.errors import CampusPulseError, InvalidInput, StoreError
-from campuspulse_ai.domain.journey import HintMatch, ticket_number
+from campuspulse_ai.domain.journey import HintMatch, StudentAction, ticket_number
 from campuspulse_ai.domain.labels import Category, Priority
 from campuspulse_ai.domain.policy import DefaultDecisionPolicy
 from campuspulse_ai.domain.ports import Clock, Repository, SentenceEncoder
@@ -82,6 +97,7 @@ from campuspulse_ai.domain.values import (
     Money,
     NormalizedRequest,
     Outcome,
+    TicketStatus,
 )
 
 log = logging.getLogger(__name__)
@@ -102,12 +118,36 @@ ANNOUNCEMENT_CHARS = 300
 FIRST_NAME_CHARS = 30
 SHORT_MESSAGE_WORDS = 3
 NEIGHBORS_SHOWN = 3
+MY_TICKETS_SHOWN = 8
+"""P10.18: the caller's recent tickets the agent sees (open, or solved/closed within `RECENT_DAYS`)."""
+RECENT_DAYS = 30
+MY_TICKET_LINE_CHARS = 200
+CARDS_MAX = 10
+RUNNING = frozenset({TicketStatus.NEW, TicketStatus.IN_PROGRESS})
+REPLACED_COMMENT = "Closed by the requester: replaced by #{number} (corrected details)."
+"""The public comment on a ticket a confirmed correction closes (staff read it, so it is in English)."""
 _ARABIC = re.compile("[؀-ۿ]")
 _NAME = re.compile(r"[^\W\d_]+")
 _TEMPLATE_KEYS = (
     "proposal", "proposal_faq", "more_detail", "confirmed", "confirmed_none", "no_proposal", "expired",
     "generic", "fallback", "declined", "already_open", "priority_raised",
+    "correction", "withdraw", "withdraw_which", "withdraw_none", "status", "status_none",
+    "confirmed_replaced",
 )  # fmt: skip
+_ROOM = re.compile(r"(?<![A-Za-z0-9])([A-Za-z])-?(\d{3,4})(?!\d)")
+"""A room code such as H302 or M-204 (a Latin building letter and the room number)."""
+_ROOM_WORD = re.compile(
+    r"(?:\broom|\bga3a|\bghorfe|قاعة|غرفة|قاعه|غرفه)\s*#?\s*(\d{2,4})(?!\d)", re.IGNORECASE
+)
+_BUILDING = re.compile(r"(?:\bbuilding|\bbldg|\bmabna|مبنى|مبنا)\s*([A-Za-z])(?![A-Za-z])", re.IGNORECASE)
+_NUMBER_IN_REPLY = re.compile(r"(?<![0-9A-Za-z])(?=[A-F]*[0-9])[0-9A-F]{8}(?![0-9A-Za-z])", re.IGNORECASE)
+_ACTION_CLAIM = re.compile(
+    r"\bI(?:'ve| have| just)? (?:closed|cancell?ed|withdrawn|recorded|opened|submitted)\b|"
+    r"\b(?:has|have) been (?:closed|cancell?ed|withdrawn|recorded)\b|"
+    r"تم (?:إغلاق|اغلاق|تسجيل|إلغاء|الغاء)",
+    re.IGNORECASE,
+)
+"""A model reply of a `chat` or `decline` turn must not claim a ticket was recorded or closed: nothing was."""
 _OFFICES = ("registrar", "it", "finance", "transport", "facilities", "academic")
 Later = list[Callable[[], None]]
 """Follow-up work of one call (the hint's delivery); the route runs it after the response."""
@@ -124,10 +164,31 @@ class _Open:
 
     ticket: Ticket
     text: str
+    created_at: datetime | None = None
 
     @property
     def number(self) -> str:
         return ticket_number(self.ticket.id)
+
+    @property
+    def running(self) -> bool:
+        return self.ticket.status in RUNNING
+
+    def card(self) -> dto.ChatTicketOut:
+        """The ticket as a chat status card (P10.18)."""
+        t = self.ticket
+        return dto.ChatTicketOut(
+            ticket_id=t.id,
+            number=self.number,
+            title=ticket_title(t),
+            office=t.office,
+            category=t.category,
+            priority=t.priority,
+            status=cast(dto.ChatTicketStatus, str(t.status)),
+            awaiting_student=t.awaiting_student,
+            created_at=self.created_at or t.clock_started_at or t.sla_due_at,
+            resolved_at=t.resolved_at,
+        )
 
     def for_preparer(self) -> OpenTicket:
         return OpenTicket(self.number, self.text, str(self.ticket.priority), str(self.ticket.status))
@@ -142,6 +203,8 @@ class _Issue:
     advice: Priority | None = None
     duplicate_of: str | None = None
     open_tickets: Sequence[_Open] = ()
+    mine: Sequence[_Open] = ()
+    """P10.18: the caller's recent tickets (the agent's "THE PERSON'S REQUESTS" block)."""
 
 
 class DuplicateOpenTicket(InvalidInput):
@@ -258,16 +321,17 @@ class ChatUseCase:
         if self._agent is None:
             return self._fallback(lang)
         claims, token_bad = self._claims(cmd.proposal_token, alias)
-        ctx = self._context(caller, lang, claims)
+        mine = self._my_tickets(alias)
+        ctx = self._context(caller, lang, claims, mine)
         turns = [Turn(role=m.role, content=m.content) for m in messages]
-        open_tickets = self._open_tickets(alias)
+        open_tickets = self._open_tickets(alias, mine)
         agent_reply, prepared = self._reply_and_prepare(ctx, turns, open_tickets)
         if agent_reply is None:
             return self._fallback(lang)
-        issue = _Issue(open_tickets=open_tickets)
+        issue = _Issue(open_tickets=open_tickets, mine=mine)
         if prepared is not None:
             advice = Priority(prepared.priority_recommendation) if prepared.priority_recommendation else None
-            issue = _Issue(prepared.classifier_text, advice, prepared.duplicate_of, open_tickets)
+            issue = _Issue(prepared.classifier_text, advice, prepared.duplicate_of, open_tickets, mine)
         return self._answer(
             agent_reply,
             cmd.proposal_token or "",
@@ -281,18 +345,44 @@ class ChatUseCase:
             issue,
         )
 
-    def _open_tickets(self, alias: str) -> list[_Open]:
-        """The requester's open tickets with their texts, newest first. A failing read gives none."""
+    def _open_tickets(self, alias: str, known: Sequence[_Open] = ()) -> list[_Open]:
+        """The requester's open tickets with their texts, newest first. A failing read gives none. `known`
+        tickets (already read this turn) are reused instead of reading their request again."""
         if not alias:
             return []
+        by_id = {o.ticket.id: o for o in known}
         try:
             tickets = self._repo.open_tickets_for_alias(alias, OPEN_TICKETS_SHOWN)
-            return [
-                _Open(t, self._repo.get_request(t.request_id).raw_text[:OPEN_TICKET_TEXT_CHARS])
-                for t in tickets
-            ]
+            found: list[_Open] = []
+            for t in tickets:
+                seen = by_id.get(t.id)
+                if seen is not None:
+                    found.append(_Open(t, seen.text, seen.created_at))
+                    continue
+                request = self._repo.get_request(t.request_id)
+                found.append(_Open(t, request.raw_text[:OPEN_TICKET_TEXT_CHARS], request.created_at))
+            return found
         except CampusPulseError:
             log.warning("open tickets unavailable for the chat", exc_info=True)
+            return []
+
+    def _my_tickets(self, alias: str) -> list[_Open]:
+        """P10.18: the caller's recent tickets (open, or solved/closed in the last `RECENT_DAYS` days),
+        newest first, at most `MY_TICKETS_SHOWN`. Only tickets whose request is the caller's own. A failing
+        read gives none, never an error."""
+        if not alias:
+            return []
+        since = self._clock.now() - timedelta(days=RECENT_DAYS)
+        try:
+            tickets = self._repo.recent_tickets_for_alias(alias, since, MY_TICKETS_SHOWN)
+            mine: list[_Open] = []
+            for t in tickets:
+                request = self._repo.get_request(t.request_id)
+                if request.alias == alias:
+                    mine.append(_Open(t, request.raw_text[:OPEN_TICKET_TEXT_CHARS], request.created_at))
+            return mine
+        except CampusPulseError:
+            log.warning("recent tickets unavailable for the chat", exc_info=True)
             return []
 
     def _reply_and_prepare(
@@ -335,7 +425,22 @@ class ChatUseCase:
     ) -> dto.ChatTurnResponse:
         issue = issue or _Issue()
         text = self._text(lang)
-        if reply.intent == "request":
+        intent: str = reply.intent
+        if intent == "status":
+            return self._status_turn(reply, issue.mine, lang)
+        if intent == "withdraw":
+            return self._withdraw_turn(reply, issue.mine, lang)
+        if intent == "correct":
+            target = _first_running(reply.ticket_refs, issue.mine)
+            if target is not None:
+                corrected = reply.corrected_text.strip() or _merged_text(target.text, _last_user(messages))
+                return self._correction_turn(target, corrected, caller, lang, issue.advice)
+            intent = "request"  # no open ticket of the caller to fix: an ordinary request
+        if intent == "separate":
+            if claims is not None and claims.replaces:
+                return self._confirm_turn(cmd_token, claims, caller, lang, later, replace=False)
+            intent = "request"
+        if intent == "request":
             if issue.text is not None and not issue.text:
                 return self._plain(text["more_detail"], clear=False)
             request_text = issue.text if issue.text is not None else _request_text(messages)
@@ -343,26 +448,124 @@ class ChatUseCase:
             if repeat is not None:
                 return repeat
             return self._proposal_turn(request_text, caller, lang, ctx, issue.advice)
-        if reply.intent == "confirm":
+        if intent == "confirm":
             if claims is None:  # nothing to confirm: never let the model's words claim a recorded request
                 return self._plain(text["expired"] if token_bad else text["no_proposal"], clear=token_bad)
-            try:
-                done = self._confirm_claims(cmd_token, claims, caller, later)
-            except DuplicateOpenTicket as dup:  # the same request is already open
-                return self._plain(self._already_open(dup.ticket, lang), clear=True)
-            except InvalidInput:  # the proposal was already sent
-                return self._plain(text["expired"], clear=True)
+            # A typed "yes" on a correction replaces the old ticket (the token says which one).
+            return self._confirm_turn(cmd_token, claims, caller, lang, later, replace=bool(claims.replaces))
+        if intent == "decline":
+            return self._plain(self._unclaimed(reply.reply, text["declined"]), clear=True)
+        return self._plain(self._unclaimed(reply.reply, text["generic"]), clear=False)
+
+    def _confirm_turn(
+        self,
+        cmd_token: str,
+        claims: ProposalClaims,
+        caller: Actor,
+        lang: ReplyLang,
+        later: Later | None,
+        *,
+        replace: bool,
+    ) -> dto.ChatTurnResponse:
+        text = self._text(lang)
+        try:
+            done = self._confirm_claims(cmd_token, claims, caller, later, replace=replace)
+        except DuplicateOpenTicket as dup:  # the same request is already open
+            return self._plain(self._already_open(dup.ticket, lang), clear=True)
+        except InvalidInput:  # the proposal was already sent
+            return self._plain(text["expired"], clear=True)
+        return dto.ChatTurnResponse(
+            mode="agent",
+            reply=self._confirmed_reply(done, lang),
+            proposal=None,
+            ticket_id=done.ticket_id,
+            triage=done.triage,
+            clear_proposal=True,
+            tickets=[done.closed_ticket] if done.closed_ticket is not None else [],
+        )
+
+    def _status_turn(self, reply: AgentReply, mine: Sequence[_Open], lang: ReplyLang) -> dto.ChatTurnResponse:
+        """Status cards of the caller's own tickets: the ones the agent named, else all of them. The agent's
+        words are kept only when they pass the post-check and name no ticket number outside the list."""
+        text = self._text(lang)
+        if not mine:
+            return self._plain(text["status_none"], clear=False)
+        picked = _pick(reply.ticket_refs, mine) or list(mine)
+        known = {o.number for o in mine}
+        named = {m.upper() for m in _NUMBER_IN_REPLY.findall(reply.reply)}
+        words = reply.reply if self._clean(reply.reply) and named <= known else text["status"]
+        return dto.ChatTurnResponse(
+            mode="agent",
+            reply=words,
+            proposal=None,
+            ticket_id=None,
+            triage=None,
+            clear_proposal=False,
+            tickets=[o.card() for o in picked[:CARDS_MAX]],
+        )
+
+    def _withdraw_turn(
+        self, reply: AgentReply, mine: Sequence[_Open], lang: ReplyLang
+    ) -> dto.ChatTurnResponse:
+        """Ask to confirm closing one open ticket of the caller. Nothing is closed here: the client calls the
+        student-action endpoint after the requester confirms. Without a valid ref the open tickets are
+        shown as cards so the requester can pick one."""
+        text = self._text(lang)
+        target = _first_running(reply.ticket_refs, mine)
+        if target is None:
+            running = [o for o in mine if o.running]
+            if not running:
+                return self._plain(text["withdraw_none"], clear=False)
             return dto.ChatTurnResponse(
                 mode="agent",
-                reply=self._confirmed_reply(done, lang),
+                reply=text["withdraw_which"],
                 proposal=None,
-                ticket_id=done.ticket_id,
-                triage=done.triage,
-                clear_proposal=True,
+                ticket_id=None,
+                triage=None,
+                clear_proposal=False,
+                tickets=[o.card() for o in running[:CARDS_MAX]],
             )
-        if reply.intent == "decline":
-            return self._plain(self._safe(reply.reply, text["declined"]), clear=True)
-        return self._plain(self._safe(reply.reply, text["generic"]), clear=False)
+        return dto.ChatTurnResponse(
+            mode="agent",
+            reply=text["withdraw"].format(number=target.number),
+            proposal=None,
+            ticket_id=None,
+            triage=None,
+            clear_proposal=False,
+            withdraw=target.card(),
+        )
+
+    def _correction_turn(
+        self,
+        target: _Open,
+        corrected: str,
+        caller: Actor,
+        lang: ReplyLang,
+        advice: Priority | None = None,
+    ) -> dto.ChatTurnResponse:
+        """A proposal for the corrected request whose token says it replaces `target`, plus the
+        `correction` card. The classifier and the decision policy still decide; a question may come first.
+        A "correction" with the very same words as the open ticket is a repeat: nothing new is proposed."""
+        if _norm(corrected) == _norm(target.text):
+            return self._plain(self._already_open(target.ticket, lang), clear=True)
+        asked = [ASKED_IN_CHAT] if "\n" in corrected else []
+        proposal = self._propose(corrected, asked, None, caller, advice, replaces=target.ticket.id)
+        if proposal.question is not None:
+            return self._plain(_question_text(proposal.question), clear=False)
+        reply = self._text(lang)["correction"].format(
+            number=target.number, department=self._department(proposal.office, lang)
+        )
+        return dto.ChatTurnResponse(
+            mode="agent",
+            reply=reply,
+            proposal=proposal,
+            ticket_id=None,
+            triage=None,
+            clear_proposal=False,
+            correction=dto.ChatCorrectionOut(
+                ticket=target.card(), old_text=target.text[:OPEN_TICKET_TEXT_CHARS]
+            ),
+        )
 
     def _repeat_turn(
         self,
@@ -382,6 +585,11 @@ class ChatUseCase:
         proposal = self._propose(request_text, [], None, caller, issue.advice)
         if proposal.question is not None or str(proposal.category) != str(match.ticket.category):
             return None  # unclear, or a different kind of problem: treat it as a new request
+        new_words = said.strip() or request_text
+        if _place_changed(match.text, new_words):  # same problem, other room: a fix, not a follow-up
+            return self._correction_turn(
+                match, _merged_text(match.text, new_words), caller, lang, issue.advice
+            )
         wanted = Priority(proposal.priority)
         text = self._text(lang)
         lifecycle = self._lifecycle
@@ -443,13 +651,16 @@ class ChatUseCase:
     def _priority_word(self, priority: Priority, lang: ReplyLang) -> str:
         return self._cfg.priorities[lang].get(str(priority), str(priority))
 
-    def _guard_duplicate(self, alias: str, text: str, request_id: str) -> None:
+    def _guard_duplicate(self, alias: str, text: str, request_id: str, replaces: str | None = None) -> None:
         """Refuses a confirmation whose text is already open as another ticket of the requester. The ticket
-        this very confirmation made (same request id) never counts, so a repeated confirm still returns it."""
+        this very confirmation made (same request id) never counts, so a repeated confirm still returns it;
+        neither does the ticket a correction replaces (`replaces`)."""
         wanted = _norm(text)
         if not wanted:
             return
         for open_ticket in self._open_tickets(alias):
+            if open_ticket.ticket.id == replaces:
+                continue
             if open_ticket.ticket.request_id != request_id and _norm(open_ticket.text) == wanted:
                 raise DuplicateOpenTicket(open_ticket.ticket)
 
@@ -524,6 +735,7 @@ class ChatUseCase:
         answer: str | None,
         caller: Actor,
         advice: Priority | None = None,
+        replaces: str | None = None,
     ) -> dto.ProposalOut:
         full = f"{text.strip()}\n{answer.strip()}" if answer and answer.strip() else text.strip()
         full = full[-REQUEST_TEXT_MAX:]
@@ -573,7 +785,7 @@ class ChatUseCase:
             exp = int(self._clock.now().timestamp()) + self._cfg.proposal_ttl_min * 60
             hint_id = hint.hint_id if hint is not None else None
             claims = ProposalClaims(
-                caller.alias or "", full, str(category), str(priority), plan.office, hint_id, exp
+                caller.alias or "", full, str(category), str(priority), plan.office, hint_id, exp, replaces
             )
             token = sign(self._key, claims)
         return self._proposal_out(
@@ -667,16 +879,25 @@ class ChatUseCase:
         self, cmd: dto.ChatConfirmRequest, caller: Actor, later: Later | None = None
     ) -> dto.ChatConfirmResponse:
         claims = verify(self._key, cmd.proposal_token, caller.alias or "", self._clock.now())
-        return self._confirm_claims(cmd.proposal_token, claims, caller, later)
+        return self._confirm_claims(cmd.proposal_token, claims, caller, later, replace=cmd.replace)
 
     def _confirm_claims(
-        self, token: str, claims: ProposalClaims, caller: Actor, later: Later | None
+        self,
+        token: str,
+        claims: ProposalClaims,
+        caller: Actor,
+        later: Later | None,
+        *,
+        replace: bool = False,
     ) -> dto.ChatConfirmResponse:
-        """Claim the token durably; repeated completed confirms return the stored result."""
+        """Claim the token durably; repeated completed confirms return the stored result.
+
+        `replace` (P10.18) closes the token's `replaces` ticket after the new ticket is opened; it is ignored
+        for a token without that claim."""
         signature = token.partition(".")[2]
         digest = hashlib.sha256(signature.encode("ascii")).hexdigest()
         request_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"campuspulse-chat:{digest}"))
-        self._guard_duplicate(caller.alias or "", claims.text, request_id)
+        self._guard_duplicate(caller.alias or "", claims.text, request_id, claims.replaces)
         claim = self._claims_store.claim(
             digest, caller.alias or "", request_id, datetime.fromtimestamp(claims.exp, tz=UTC)
         )
@@ -693,12 +914,44 @@ class ChatUseCase:
         applied = False
         if ticket_id and claims.hint_id and action is not None and action.type == ActionType.TICKET:
             applied = self._apply_hint(ticket_id, claims, later)
+        closed: dto.ChatTicketOut | None = None
         if ticket_id and action is not None and action.type == ActionType.TICKET:
             self._raise_to_reviewed(ticket_id, claims, triage, later)
-        result = dto.ChatConfirmResponse(triage=triage, ticket_id=ticket_id, hint_applied=applied)
+            if replace and claims.replaces:
+                closed = self._close_replaced(claims.replaces, ticket_id, caller, later)
+        result = dto.ChatConfirmResponse(
+            triage=triage, ticket_id=ticket_id, hint_applied=applied, closed_ticket=closed
+        )
         if not self._claims_store.complete(digest, result):
             raise StoreError("chat confirmation result could not be recorded")
         return result
+
+    def _close_replaced(
+        self, old_id: str, new_id: str, caller: Actor, later: Later | None
+    ) -> dto.ChatTicketOut | None:
+        """Close the ticket a confirmed correction replaces, only when it is the caller's own and still open.
+        The public comment goes first: a requester comment on a closed ticket would reopen it. Best effort:
+        a failure leaves the old ticket as it is and the new one stays recorded."""
+        lifecycle, alias = self._lifecycle, caller.alias or ""
+        if lifecycle is None or not alias or old_id == new_id:
+            return None
+        try:
+            ticket = self._repo.get_ticket(old_id)
+            request = self._repo.get_request(ticket.request_id)
+        except CampusPulseError:
+            log.warning("replaced ticket %s could not be read", old_id, exc_info=True)
+            return None
+        if request.alias != alias or ticket.status not in RUNNING:
+            return None
+        note = REPLACED_COMMENT.format(number=ticket_number(new_id))
+        self._comment_follow_up(lifecycle, old_id, caller, note, later)
+        try:
+            change = lifecycle.student_action(old_id, caller, StudentAction.CLOSE)
+        except (CampusPulseError, ValueError):
+            log.warning("replaced ticket %s was not closed", old_id, exc_info=True)
+            return None
+        self._later(lifecycle, change, later)
+        return _Open(change.ticket, request.raw_text, request.created_at).card()
 
     def _raise_to_reviewed(
         self, ticket_id: str, claims: ProposalClaims, triage: dto.TriageResponse, later: Later | None
@@ -753,9 +1006,12 @@ class ChatUseCase:
         if done.ticket_id is None:
             return text["generic"]
         ticket = self._repo.get_ticket(done.ticket_id)
-        return text["confirmed"].format(
-            number=ticket_number(ticket.id), department=self._department(ticket.office, lang)
-        )
+        number, department = ticket_number(ticket.id), self._department(ticket.office, lang)
+        if done.closed_ticket is not None:
+            return text["confirmed_replaced"].format(
+                number=number, department=department, old=done.closed_ticket.number
+            )
+        return text["confirmed"].format(number=number, department=department)
 
     # ------------------------------------------------------------------ helpers
 
@@ -768,7 +1024,13 @@ class ChatUseCase:
         except InvalidInput:
             return None, True
 
-    def _context(self, caller: Actor, lang: ReplyLang, claims: ProposalClaims | None) -> ChatContext:
+    def _context(
+        self,
+        caller: Actor,
+        lang: ReplyLang,
+        claims: ProposalClaims | None,
+        mine: Sequence[_Open] = (),
+    ) -> ChatContext:
         first_name: str | None = None
         if self._journey is not None and caller.alias:
             try:
@@ -780,6 +1042,8 @@ class ChatUseCase:
         proposal = None
         if claims is not None:
             proposal = f"{self._department(claims.office, 'en')}: {claims.text[:200]}"
+            if claims.replaces:
+                proposal += f" (a correction: it replaces request #{ticket_number(claims.replaces)})"
         announcements, sources = self._announcement_context()
         return ChatContext(
             role=caller.role,
@@ -788,7 +1052,16 @@ class ChatUseCase:
             announcements=announcements,
             proposal=proposal,
             sources=sources,
+            requests=[self._request_line(o) for o in mine],
         )
+
+    def _request_line(self, o: _Open) -> str:
+        """One line of the "THE PERSON'S REQUESTS" block: number, status, office, created date, text."""
+        created = o.created_at.date().isoformat() if o.created_at is not None else "unknown"
+        words = " ".join(o.text.split())[:MY_TICKET_LINE_CHARS]
+        office = self._department(o.ticket.office, "en")
+        status = o.ticket.status
+        return f"#{o.number} | status: {status} | office: {office} | created: {created} | text: {words}"
 
     def _announcement_lines(self) -> list[str]:
         return self._announcement_context()[0]
@@ -829,6 +1102,10 @@ class ChatUseCase:
     def _safe(self, reply: str, fallback: str) -> str:
         return reply if self._clean(reply) else fallback
 
+    def _unclaimed(self, reply: str, fallback: str) -> str:
+        """`_safe`, and the reply must not claim that a ticket was recorded or closed (nothing was)."""
+        return fallback if _ACTION_CLAIM.search(reply) else self._safe(reply, fallback)
+
 
 def _notice_scope(text: str) -> str:
     """Recognize only explicit place words; an unrecognized place stays unscoped."""
@@ -847,6 +1124,52 @@ def _request_text(messages: Sequence[dto.ChatMessage]) -> str:
             start = i + 1
     joined = "\n".join(m.content.strip() for m in messages[start:] if m.role == "user")
     return joined[-REQUEST_TEXT_MAX:]
+
+
+def _ref(raw: str) -> str:
+    return raw.strip().lstrip("#").strip().upper()
+
+
+def _pick(refs: Sequence[str], mine: Sequence[_Open]) -> list[_Open]:
+    """The caller's tickets the refs name, in ref order; refs to anything else are ignored."""
+    by_number = {o.number: o for o in mine}
+    picked: list[_Open] = []
+    for raw in refs:
+        found = by_number.get(_ref(raw))
+        if found is not None and found not in picked:
+            picked.append(found)
+    return picked
+
+
+def _first_running(refs: Sequence[str], mine: Sequence[_Open]) -> _Open | None:
+    """The first ref that is an open (new or in progress) ticket of the caller."""
+    return next((o for o in _pick(refs, mine) if o.running), None)
+
+
+def _places(text: str) -> frozenset[str]:
+    """Room codes (H302), room numbers and building letters a text names, normalized."""
+    found = {f"{m.group(1).upper()}{m.group(2)}" for m in _ROOM.finditer(text)}
+    found |= {f"room:{m.group(1)}" for m in _ROOM_WORD.finditer(text)}
+    found |= {f"building:{m.group(1).upper()}" for m in _BUILDING.finditer(text)}
+    return frozenset(found)
+
+
+def _place_changed(old: str, new: str) -> bool:
+    """The new words name a room or building the old request does not, and the old one named a place."""
+    before = _places(old)
+    return bool(before) and bool(_places(new) - before)
+
+
+def _merged_text(old: str, new: str) -> str:
+    """The corrected request: the old text with its one room code swapped for the one new room code, else
+    the old text followed by the new words."""
+    old_rooms = {f"{m.group(1).upper()}{m.group(2)}" for m in _ROOM.finditer(old)}
+    new_rooms = {f"{m.group(1).upper()}{m.group(2)}" for m in _ROOM.finditer(new)} - old_rooms
+    if len(old_rooms) == 1 and len(new_rooms) == 1:
+        [room] = new_rooms
+        return _ROOM.sub(room, old)
+    new = new.strip()
+    return f"{old.strip()}\n{new}" if new and _norm(new) not in _norm(old) else old.strip()
 
 
 def _last_user(messages: Sequence[dto.ChatMessage]) -> str:

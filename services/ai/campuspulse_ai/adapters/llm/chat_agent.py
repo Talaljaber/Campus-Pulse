@@ -2,10 +2,12 @@
 
 Two calls through `CachedChat` (pinned model, temperature 0, cached, never raises): `reply` (the next
 message and its intent) and `phrase` (one message that offers a proposal the server already decided).
-The model returns only `{"reply", "intent"}`; whatever else it adds is dropped, and a reply that is not a
-JSON object with a non-empty text and a known intent counts as a failure (None), so the use case falls
-back. The system prompt is `config/prompts/chat_agent_v1.md`, filled from a `ChatContext`; announcements and
-the pending proposal are passed as quoted JSON data, never as instructions.
+The model returns `{"reply", "intent", "source_ids", "ticket_refs", "corrected_text"}`; anything else is
+dropped, and a reply that is not a JSON object with a non-empty text and a known intent counts as a failure
+(None), so the use case falls back. Malformed `ticket_refs` or `corrected_text` are dropped (they are only
+hints the use case checks). The system prompt is the `prompt_file` of `config/chat_agent.yaml`, filled from
+a `ChatContext`; announcements, the pending proposal and the person's requests are passed as quoted JSON
+data, never as instructions.
 """
 
 from __future__ import annotations
@@ -33,6 +35,12 @@ log = logging.getLogger(__name__)
 
 JSON_OBJECT: dict[str, object] = {"type": "json_object"}
 REPLY_MAX_CHARS = 1200
+CORRECTED_MAX_CHARS = 1000
+REFS_MAX = 5
+_REF = re.compile(r"[0-9A-F]{8}")
+SERVER_WORDED = frozenset({"correct", "withdraw", "separate"})
+"""Intents whose reply text the person never sees (the server answers with a template), so the grounding
+check must not turn them into "chat" and lose the intent."""
 ROLE_STUDENT = "student"
 LANGUAGE_RULES = {
     "en": "Reply in English.",
@@ -89,7 +97,31 @@ def parse_reply(raw: str | None) -> AgentReply | None:
     ids = data.get("source_ids", [])
     if not isinstance(ids, list) or any(not isinstance(x, str) for x in ids):
         return None
-    return AgentReply(reply=text.strip(), intent=intent, source_ids=tuple(ids))
+    return AgentReply(
+        reply=text.strip(),
+        intent=intent,
+        source_ids=tuple(ids),
+        ticket_refs=_refs(data.get("ticket_refs")),
+        corrected_text=_corrected(data.get("corrected_text")),
+    )
+
+
+def _refs(raw: object) -> tuple[str, ...]:
+    """Ticket numbers as the server prints them ("#ab12cd34" -> "AB12CD34"); anything else is dropped."""
+    if not isinstance(raw, list):
+        return ()
+    refs: list[str] = []
+    for item in raw[:REFS_MAX]:
+        if isinstance(item, bool) or not isinstance(item, str | int):
+            continue
+        ref = str(item).strip().lstrip("#").strip().upper()
+        if _REF.fullmatch(ref) and ref not in refs:
+            refs.append(ref)
+    return tuple(refs)
+
+
+def _corrected(raw: object) -> str:
+    return raw.strip()[:CORRECTED_MAX_CHARS] if isinstance(raw, str) else ""
 
 
 def parse_phrase(raw: str | None) -> str | None:
@@ -155,6 +187,7 @@ class ChatAgentLLM:
             proposal=json.dumps(ctx.proposal, ensure_ascii=False) if ctx.proposal else "null",
             sources=json.dumps([{"id": s.id, "kind": s.kind, "text": s.text, "scope": s.scope}
                                 for s in ctx.sources], ensure_ascii=False),
+            requests=json.dumps(list(ctx.requests), ensure_ascii=False) if ctx.requests else "[]",
         )
 
     @staticmethod
@@ -200,7 +233,11 @@ class ChatAgentLLM:
             *({"role": t.role, "content": t.content} for t in turns),
         ]
         parsed = parse_reply(self._chat.ask(self._purpose, payload, wire, response_format=JSON_OBJECT))
-        if parsed is not None and not self._grounded(parsed.reply, parsed.source_ids, ctx):
+        if (
+            parsed is not None
+            and parsed.intent not in SERVER_WORDED
+            and not self._grounded(parsed.reply, parsed.source_ids, ctx)
+        ):
             log.info("chat agent: unsupported operational claim replaced (%s)", self._version)
             return AgentReply(self._safe(ctx, parsed.source_ids), "chat")
         if parsed is None:

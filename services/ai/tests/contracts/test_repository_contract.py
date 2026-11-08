@@ -414,6 +414,28 @@ def test_open_tickets_for_alias(h: Harness) -> None:
     assert h.repo.open_tickets_for_alias(f"{h.tag}-nobody") == []
 
 
+def test_recent_tickets_for_alias(h: Harness) -> None:
+    """P10.18: open tickets plus the ones solved or closed since the cut-off; merged and other people's
+    tickets never appear."""
+    req = h.repo.save_request(make_request(h))
+    other = h.repo.save_request(dataclasses.replace(make_request(h), alias=f"{h.tag}-other"))
+    since = datetime.now(UTC) - timedelta(days=30)
+
+    def done(status: TicketStatus, resolved: datetime) -> Ticket:
+        return dataclasses.replace(make_ticket(req.id, sla=T0, status=status), resolved_at=resolved)
+
+    open_one = h.repo.save_ticket(make_ticket(req.id, sla=T0))
+    solved = h.repo.save_ticket(done(TicketStatus.SOLVED, since + timedelta(days=1)))
+    closed = h.repo.save_ticket(done(TicketStatus.CLOSED, since + timedelta(days=2)))
+    h.repo.save_ticket(done(TicketStatus.CLOSED, since - timedelta(days=1)))  # too old
+    h.repo.save_ticket(make_ticket(req.id, sla=T0, status=TicketStatus.MERGED))
+    h.repo.save_ticket(make_ticket(other.id, sla=T0))
+    mine = h.repo.recent_tickets_for_alias(h.tag, since)
+    assert {t.id for t in mine} == {open_one.id, solved.id, closed.id}
+    assert len(h.repo.recent_tickets_for_alias(h.tag, since, limit=2)) == 2
+    assert h.repo.recent_tickets_for_alias(f"{h.tag}-nobody", since) == []
+
+
 def test_incidents_members_and_open_filter(h: Harness) -> None:
     r1 = h.repo.save_request(make_request(h))
     r2 = h.repo.save_request(make_request(h))

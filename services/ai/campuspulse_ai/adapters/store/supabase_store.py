@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, cast
 from campuspulse_ai.adapters.store import codec
 from campuspulse_ai.adapters.store.codec import Row
 from campuspulse_ai.adapters.store.inmemory import (
+    DONE_TICKET_STATUSES,
     OPEN_TICKET_STATUSES,
     advisor_contact,
     new_id,
@@ -177,6 +178,42 @@ class SupabaseRepository:
             ),
         )
         return self._tickets(rows)
+
+    def recent_tickets_for_alias(self, alias: str, since: datetime, limit: int = 8) -> list[Ticket]:
+        """Two small reads (open; solved or closed since `since`) merged newest created first."""
+        open_rows = self._rows(
+            "recent_tickets_for_alias open",
+            lambda: (
+                self._db.table("tickets")
+                .select("*")
+                .eq("requester_alias", alias)
+                .in_("status", list(OPEN_TICKET_STATUSES))
+                .order("created_at", desc=True)
+                .order("id", desc=True)
+                .limit(limit)
+                .execute()
+            ),
+        )
+        done_rows = self._rows(
+            "recent_tickets_for_alias done",
+            lambda: (
+                self._db.table("tickets")
+                .select("*")
+                .eq("requester_alias", alias)
+                .in_("status", list(DONE_TICKET_STATUSES))
+                .gte("resolved_at", codec.iso(since))
+                .order("created_at", desc=True)
+                .order("id", desc=True)
+                .limit(limit)
+                .execute()
+            ),
+        )
+        rows = sorted(
+            [*open_rows, *done_rows],
+            key=lambda r: (str(r.get("created_at") or ""), str(r["id"])),
+            reverse=True,
+        )
+        return self._tickets(rows[:limit])
 
     def save_ticket_link(self, link: TicketLink) -> None:
         self._upsert("ticket_links", codec.link_row(link), on_conflict="ticket_id,sink")
