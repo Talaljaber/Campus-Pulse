@@ -26,6 +26,9 @@
     "proposal": null,
     "ticket_id": null,
     "triage": null,
-    "clear_proposal": false
+    "clear_proposal": false,
+    "tickets": [],
+    "correction": null,
+    "withdraw": null
   }
 }

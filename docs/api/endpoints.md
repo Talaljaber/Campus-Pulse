@@ -3317,7 +3317,10 @@ Response `200`:
   },
   "ticket_id": null,
   "triage": null,
-  "clear_proposal": false
+  "clear_proposal": false,
+  "tickets": [],
+  "correction": null,
+  "withdraw": null
 }
 ```
 
@@ -3479,6 +3482,7 @@ Identity headers: `X-CP-User-JWT` (see [README › Auth](README.md#auth)).
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `proposal_token` | string | yes | min len 1 |
+| `replace` | boolean | no | default `false` |
 
 **Response `200`:** `application/json` [ChatConfirmResponse](#schema-chatconfirmresponse)
 
@@ -3641,7 +3645,8 @@ Response `200`:
     }
   },
   "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0010",
-  "hint_applied": false
+  "hint_applied": false,
+  "closed_ticket": null
 }
 ```
 
@@ -4122,22 +4127,34 @@ Category decision: the label, its probability and the conformal set.
 <a id="schema-chatconfirmrequest"></a>
 ### ChatConfirmRequest
 
-Body of `POST /v1/chat/confirm`.
+Body of `POST /v1/chat/confirm`. `replace` (P10.18) only counts for a correction proposal: true closes the ticket the token says it replaces, after the corrected one is opened; false keeps both.
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `proposal_token` | string | yes | min len 1 |
+| `replace` | boolean | no | default `false` |
 
 <a id="schema-chatconfirmresponse"></a>
 ### ChatConfirmResponse
 
-The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it.
+The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it. `closed_ticket` (P10.18): the old ticket a confirmed correction closed, as a status card.
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `triage` | [TriageResponse](#schema-triageresponse) | yes |  |
 | `ticket_id` | string \| null | yes |  |
 | `hint_applied` | boolean | yes |  |
+| `closed_ticket` | [ChatTicketOut](#schema-chatticketout) \| null | no |  |
+
+<a id="schema-chatcorrectionout"></a>
+### ChatCorrectionOut
+
+The open ticket a correction would replace (P10.18). Shown with the corrected `proposal`: confirming with `replace: true` closes this ticket and opens the corrected one; `replace: false` keeps both.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `ticket` | [ChatTicketOut](#schema-chatticketout) | yes |  |
+| `old_text` | string | yes | The start of the old ticket's request text |
 
 <a id="schema-chatmessage"></a>
 ### ChatMessage
@@ -4161,6 +4178,24 @@ Body of `POST /v1/chat/preview` (the plain form): the text, the question ids alr
 | `asked` | array of string | no |  |
 | `answer` | string \| null | no |  |
 
+<a id="schema-chatticketout"></a>
+### ChatTicketOut
+
+One of the requester's own tickets as a chat status card (P10.18). Never another person's ticket.
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `ticket_id` | string | yes |  |
+| `number` | string | yes | The short ticket number (`ticket_number`, 8 upper-case hex characters) |
+| `title` | string | yes |  |
+| `office` | string | yes |  |
+| `category` | [Category](#schema-category) | yes |  |
+| `priority` | [Priority](#schema-priority) | yes |  |
+| `status` | `new` \| `in_progress` \| `solved` \| `closed` \| `merged` | yes |  |
+| `awaiting_student` | boolean | yes | The office replied and waits for the requester |
+| `created_at` | string (date-time) | yes |  |
+| `resolved_at` | string (date-time) \| null | yes |  |
+
 <a id="schema-chatturnrequest"></a>
 ### ChatTurnRequest
 
@@ -4174,7 +4209,7 @@ Body of `POST /v1/chat/turn`: 1..20 messages, the last one from the user, and th
 <a id="schema-chatturnresponse"></a>
 ### ChatTurnResponse
 
-The assistant's next message. `mode: fallback` = no language model; the client shows the plain form. `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or a distress message was handled), `clear_proposal` when the client should drop its pending proposal.
+The assistant's next message. `mode: fallback` = no language model; the client shows the plain form. `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or a distress message was handled), `clear_proposal` when the client should drop its pending proposal.  P10.18: `tickets` are status cards for the requester's own tickets (a status question); `correction` is set together with `proposal` when the new request looks like a fix of an open ticket (wrong room, other detail): the client asks "replace #n or keep both"; `withdraw` asks the requester to confirm closing one of their open tickets (the client then calls `POST /v1/tickets/{id}/student-action` with `close`).
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -4184,6 +4219,9 @@ The assistant's next message. `mode: fallback` = no language model; the client s
 | `ticket_id` | string \| null | yes |  |
 | `triage` | [TriageResponse](#schema-triageresponse) \| null | yes |  |
 | `clear_proposal` | boolean | yes |  |
+| `tickets` | array of [ChatTicketOut](#schema-chatticketout) | no |  |
+| `correction` | [ChatCorrectionOut](#schema-chatcorrectionout) \| null | no |  |
+| `withdraw` | [ChatTicketOut](#schema-chatticketout) \| null | no |  |
 
 <a id="schema-clarificationoptionout"></a>
 ### ClarificationOptionOut

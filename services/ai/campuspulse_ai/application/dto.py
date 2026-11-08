@@ -1100,10 +1100,41 @@ class ProposalOut(_Model):
     why: ProposalWhyOut
 
 
+ChatTicketStatus = Literal["new", "in_progress", "solved", "closed", "merged"]
+
+
+class ChatTicketOut(_Model):
+    """One of the requester's own tickets as a chat status card (P10.18). Never another person's ticket."""
+
+    ticket_id: str
+    number: str = Field(description="The short ticket number (`ticket_number`, 8 upper-case hex characters).")
+    title: str
+    office: str
+    category: Category
+    priority: Priority
+    status: ChatTicketStatus
+    awaiting_student: bool = Field(description="The office replied and waits for the requester.")
+    created_at: datetime
+    resolved_at: datetime | None
+
+
+class ChatCorrectionOut(_Model):
+    """The open ticket a correction would replace (P10.18). Shown with the corrected `proposal`: confirming
+    with `replace: true` closes this ticket and opens the corrected one; `replace: false` keeps both."""
+
+    ticket: ChatTicketOut
+    old_text: str = Field(max_length=300, description="The start of the old ticket's request text.")
+
+
 class ChatTurnResponse(_Model):
     """The assistant's next message. `mode: fallback` = no language model; the client shows the plain form.
     `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or
-    a distress message was handled), `clear_proposal` when the client should drop its pending proposal."""
+    a distress message was handled), `clear_proposal` when the client should drop its pending proposal.
+
+    P10.18: `tickets` are status cards for the requester's own tickets (a status question); `correction` is
+    set together with `proposal` when the new request looks like a fix of an open ticket (wrong room, other
+    detail): the client asks "replace #n or keep both"; `withdraw` asks the requester to confirm closing one
+    of their open tickets (the client then calls `POST /v1/tickets/{id}/student-action` with `close`)."""
 
     mode: ChatMode
     reply: str
@@ -1111,6 +1142,9 @@ class ChatTurnResponse(_Model):
     ticket_id: str | None
     triage: TriageResponse | None
     clear_proposal: bool
+    tickets: list[ChatTicketOut] = Field(default_factory=list, max_length=10)
+    correction: ChatCorrectionOut | None = None
+    withdraw: ChatTicketOut | None = None
 
 
 class ChatPreviewRequest(_Model):
@@ -1123,17 +1157,21 @@ class ChatPreviewRequest(_Model):
 
 
 class ChatConfirmRequest(_Model):
-    """Body of `POST /v1/chat/confirm`."""
+    """Body of `POST /v1/chat/confirm`. `replace` (P10.18) only counts for a correction proposal: true closes
+    the ticket the token says it replaces, after the corrected one is opened; false keeps both."""
 
     proposal_token: str = Field(min_length=1, max_length=4000)
+    replace: bool = False
 
 
 class ChatConfirmResponse(_Model):
-    """The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it."""
+    """The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it.
+    `closed_ticket` (P10.18): the old ticket a confirmed correction closed, as a status card."""
 
     triage: TriageResponse
     ticket_id: str | None
     hint_applied: bool
+    closed_ticket: ChatTicketOut | None = None
 
 
 class FileOut(_Model):

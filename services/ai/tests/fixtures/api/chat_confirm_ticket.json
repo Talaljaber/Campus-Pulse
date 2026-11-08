@@ -151,7 +151,8 @@
       }
     },
     "ticket_id": "c1a9e3b7-2d4f-4e6a-9b8c-7d6e5f4a0010",
-    "hint_applied": false
+    "hint_applied": false,
+    "closed_ticket": null
   },
   "default": true
 }

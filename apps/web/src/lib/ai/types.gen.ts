@@ -1087,15 +1087,22 @@ export interface components {
         };
         /**
          * ChatConfirmRequest
-         * @description Body of `POST /v1/chat/confirm`.
+         * @description Body of `POST /v1/chat/confirm`. `replace` (P10.18) only counts for a correction proposal: true closes
+         *     the ticket the token says it replaces, after the corrected one is opened; false keeps both.
          */
         ChatConfirmRequest: {
             /** Proposal Token */
             proposal_token: string;
+            /**
+             * Replace
+             * @default false
+             */
+            replace: boolean;
         };
         /**
          * ChatConfirmResponse
          * @description The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it.
+         *     `closed_ticket` (P10.18): the old ticket a confirmed correction closed, as a status card.
          */
         ChatConfirmResponse: {
             triage: components["schemas"]["TriageResponse"];
@@ -1103,6 +1110,20 @@ export interface components {
             ticket_id: string | null;
             /** Hint Applied */
             hint_applied: boolean;
+            closed_ticket?: components["schemas"]["ChatTicketOut"] | null;
+        };
+        /**
+         * ChatCorrectionOut
+         * @description The open ticket a correction would replace (P10.18). Shown with the corrected `proposal`: confirming
+         *     with `replace: true` closes this ticket and opens the corrected one; `replace: false` keeps both.
+         */
+        ChatCorrectionOut: {
+            ticket: components["schemas"]["ChatTicketOut"];
+            /**
+             * Old Text
+             * @description The start of the old ticket's request text.
+             */
+            old_text: string;
         };
         /**
          * ChatMessage
@@ -1139,6 +1160,42 @@ export interface components {
             answer?: string | null;
         };
         /**
+         * ChatTicketOut
+         * @description One of the requester's own tickets as a chat status card (P10.18). Never another person's ticket.
+         */
+        ChatTicketOut: {
+            /** Ticket Id */
+            ticket_id: string;
+            /**
+             * Number
+             * @description The short ticket number (`ticket_number`, 8 upper-case hex characters).
+             */
+            number: string;
+            /** Title */
+            title: string;
+            /** Office */
+            office: string;
+            category: components["schemas"]["Category"];
+            priority: components["schemas"]["Priority"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "new" | "in_progress" | "solved" | "closed" | "merged";
+            /**
+             * Awaiting Student
+             * @description The office replied and waits for the requester.
+             */
+            awaiting_student: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Resolved At */
+            resolved_at: string | null;
+        };
+        /**
          * ChatTurnRequest
          * @description Body of `POST /v1/chat/turn`: 1..20 messages, the last one from the user, and the token of the
          *     proposal the assistant made last (if any, so that a "yes" can confirm it).
@@ -1154,6 +1211,11 @@ export interface components {
          * @description The assistant's next message. `mode: fallback` = no language model; the client shows the plain form.
          *     `proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or
          *     a distress message was handled), `clear_proposal` when the client should drop its pending proposal.
+         *
+         *     P10.18: `tickets` are status cards for the requester's own tickets (a status question); `correction` is
+         *     set together with `proposal` when the new request looks like a fix of an open ticket (wrong room, other
+         *     detail): the client asks "replace #n or keep both"; `withdraw` asks the requester to confirm closing one
+         *     of their open tickets (the client then calls `POST /v1/tickets/{id}/student-action` with `close`).
          */
         ChatTurnResponse: {
             /**
@@ -1169,6 +1231,10 @@ export interface components {
             triage: components["schemas"]["TriageResponse"] | null;
             /** Clear Proposal */
             clear_proposal: boolean;
+            /** Tickets */
+            tickets?: components["schemas"]["ChatTicketOut"][];
+            correction?: components["schemas"]["ChatCorrectionOut"] | null;
+            withdraw?: components["schemas"]["ChatTicketOut"] | null;
         };
         /**
          * ClarificationOptionOut

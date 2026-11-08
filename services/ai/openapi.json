@@ -7557,6 +7557,11 @@
             "maxLength": 4000,
             "minLength": 1,
             "title": "Proposal Token"
+          },
+          "replace": {
+            "type": "boolean",
+            "title": "Replace",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -7565,7 +7570,7 @@
           "proposal_token"
         ],
         "title": "ChatConfirmRequest",
-        "description": "Body of `POST /v1/chat/confirm`."
+        "description": "Body of `POST /v1/chat/confirm`. `replace` (P10.18) only counts for a correction proposal: true closes\nthe ticket the token says it replaces, after the corrected one is opened; false keeps both."
       },
       "ChatConfirmResponse": {
         "properties": {
@@ -7586,6 +7591,16 @@
           "hint_applied": {
             "type": "boolean",
             "title": "Hint Applied"
+          },
+          "closed_ticket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatTicketOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -7596,7 +7611,28 @@
           "hint_applied"
         ],
         "title": "ChatConfirmResponse",
-        "description": "The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it."
+        "description": "The ticket opened from a confirmed proposal. `hint_applied`: a past correction re-routed it.\n`closed_ticket` (P10.18): the old ticket a confirmed correction closed, as a status card."
+      },
+      "ChatCorrectionOut": {
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/ChatTicketOut"
+          },
+          "old_text": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Old Text",
+            "description": "The start of the old ticket's request text."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ticket",
+          "old_text"
+        ],
+        "title": "ChatCorrectionOut",
+        "description": "The open ticket a correction would replace (P10.18). Shown with the corrected `proposal`: confirming\nwith `replace: true` closes this ticket and opens the corrected one; `replace: false` keeps both."
       },
       "ChatMessage": {
         "properties": {
@@ -7670,6 +7706,82 @@
         ],
         "title": "ChatPreviewRequest",
         "description": "Body of `POST /v1/chat/preview` (the plain form): the text, the question ids already asked and the\nanswer to the last question (appended to the text)."
+      },
+      "ChatTicketOut": {
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "title": "Ticket Id"
+          },
+          "number": {
+            "type": "string",
+            "title": "Number",
+            "description": "The short ticket number (`ticket_number`, 8 upper-case hex characters)."
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "office": {
+            "type": "string",
+            "title": "Office"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/Priority"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "in_progress",
+              "solved",
+              "closed",
+              "merged"
+            ],
+            "title": "Status"
+          },
+          "awaiting_student": {
+            "type": "boolean",
+            "title": "Awaiting Student",
+            "description": "The office replied and waits for the requester."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ticket_id",
+          "number",
+          "title",
+          "office",
+          "category",
+          "priority",
+          "status",
+          "awaiting_student",
+          "created_at",
+          "resolved_at"
+        ],
+        "title": "ChatTicketOut",
+        "description": "One of the requester's own tickets as a chat status card (P10.18). Never another person's ticket."
       },
       "ChatTurnRequest": {
         "properties": {
@@ -7751,6 +7863,34 @@
           "clear_proposal": {
             "type": "boolean",
             "title": "Clear Proposal"
+          },
+          "tickets": {
+            "items": {
+              "$ref": "#/components/schemas/ChatTicketOut"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Tickets"
+          },
+          "correction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatCorrectionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "withdraw": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatTicketOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -7764,7 +7904,7 @@
           "clear_proposal"
         ],
         "title": "ChatTurnResponse",
-        "description": "The assistant's next message. `mode: fallback` = no language model; the client shows the plain form.\n`proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or\na distress message was handled), `clear_proposal` when the client should drop its pending proposal."
+        "description": "The assistant's next message. `mode: fallback` = no language model; the client shows the plain form.\n`proposal` is set when the assistant proposes a request, `ticket_id`/`triage` when one was recorded (or\na distress message was handled), `clear_proposal` when the client should drop its pending proposal.\n\nP10.18: `tickets` are status cards for the requester's own tickets (a status question); `correction` is\nset together with `proposal` when the new request looks like a fix of an open ticket (wrong room, other\ndetail): the client asks \"replace #n or keep both\"; `withdraw` asks the requester to confirm closing one\nof their open tickets (the client then calls `POST /v1/tickets/{id}/student-action` with `close`)."
       },
       "ClarificationOptionOut": {
         "properties": {
