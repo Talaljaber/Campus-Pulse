@@ -188,6 +188,21 @@ class LocalNumpyVectorStore:
     def count(self, collection: str, filters: Mapping[str, object] | None = None) -> int:
         return len(self._matching(self._get(collection), dict(filters or {})))
 
+    def delete(self, collection: str, ids: Sequence[str]) -> None:
+        """Remove the items with these ids; unknown ids (or an unknown collection) are ignored."""
+        self._writable()
+        coll = self._collections.get(collection)
+        gone = set(ids)
+        if coll is None or not gone & coll.index.keys():
+            return
+        keep = [i for i, id in enumerate(coll.ids) if id not in gone]
+        fresh = _Collection(self.dim)
+        for i in keep:
+            _append(fresh, coll.ids[i], coll.texts[i], coll.langs[i], coll.metas[i], coll.active[i])
+        if keep:
+            fresh.matrix = coll.matrix[keep]
+        self._collections[collection] = fresh
+
     def _matching(self, coll: _Collection, f: Mapping[str, object]) -> list[int]:
         want_active = bool(f["active"]) if f.get("active") is not None else True
         lang = f.get("lang")

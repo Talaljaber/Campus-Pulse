@@ -267,3 +267,41 @@ def test_memory_store_stats_and_active_parse_rows() -> None:
     assert stats.last_added_at == datetime(2026, 11, 3, 9, tzinfo=UTC)
     first = memory.active()[0]
     assert first.embedding == (1.0, 0.0, 0.0, 0.0) and first.author_id == "" and first.lang == Lang.AR
+
+
+# ---------------------------------------------------------------- P10.19 knowledge collection
+
+DOC = "00000000-0000-4000-8000-0000000000d0"
+
+
+def test_knowledge_upsert_rows_and_delete_by_id() -> None:
+    client = FakeClient()
+    store = PgVectorStore(client, DIM)
+    item = VectorItem(
+        ID,
+        (1.0, 0, 0, 0),
+        "Refunds stop after week two.",
+        Lang.EN,
+        {"document_id": DOC, "ord": 0.0, "title": "Handbook", "office": None},
+    )
+    store.upsert("knowledge", [item])
+    [(op, args, kwargs)] = client.last("knowledge_chunks")[:1]
+    assert op == "upsert" and kwargs["on_conflict"] == "id"
+    assert args[0] == [
+        {
+            "id": ID,
+            "text": "Refunds stop after week two.",
+            "document_id": DOC,
+            "ord": 0,
+            "embedding": [1.0, 0.0, 0.0, 0.0],
+            "lang": "en",
+        }
+    ]
+    with pytest.raises(StoreError, match="ord"):
+        store.upsert("knowledge", [VectorItem(ID, (1.0, 0, 0, 0), "x", Lang.EN, {"document_id": DOC})])
+    ids = [f"00000000-0000-4000-8000-{i:012d}" for i in range(150)]
+    store.delete("knowledge", ids)
+    deletes = [ops for name, ops in client.calls if name == "knowledge_chunks" and ops[0][0] == "delete"]
+    assert [len(ops[1][1][1]) for ops in deletes] == [100, 50] and deletes[0][1][1][0] == "id"
+    with pytest.raises(StoreError, match="UUIDs"):
+        store.delete("knowledge", ["not-a-uuid"])
