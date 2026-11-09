@@ -4370,13 +4370,13 @@ The open ticket a correction would replace (P10.18). Shown with the corrected `p
 <a id="schema-chatmessage"></a>
 ### ChatMessage
 
-One message of the conversation. The client tags the assistant messages it got from a proposal (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts after the last of them.
+One message of the conversation. The client tags the assistant messages it got from a proposal (`kind: proposal`), a recorded ticket (`kind: ticket`), or a declined or cleared proposal (`kind: declined`, P10.21). The next request starts after the last `ticket` or `declined` message, so a request the person dropped never leaks into the next one.
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `role` | `user` \| `assistant` | yes |  |
 | `content` | string | yes | min len 1 |
-| `kind` | `text` \| `proposal` \| `ticket` | no | default `"text"` |
+| `kind` | `text` \| `proposal` \| `ticket` \| `declined` | no | default `"text"` |
 
 <a id="schema-chatpreviewrequest"></a>
 ### ChatPreviewRequest

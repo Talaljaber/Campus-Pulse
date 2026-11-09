@@ -149,7 +149,7 @@ def test_phrase_asks_for_the_department_and_the_facts_as_data() -> None:
 def test_the_pinned_yaml_is_valid_and_temperature_zero() -> None:
     raw = load_chat_yaml(Settings(_env_file=None))  # type: ignore[call-arg]
     assert raw["temperature"] == 0 and raw["model"] == "deepseek/deepseek-v4.1-flash"
-    assert raw["prompt_version"] == "chat-v5" and Path(REPO_ROOT / raw["prompt_file"]).is_file()
+    assert raw["prompt_version"] == "chat-v6" and Path(REPO_ROOT / raw["prompt_file"]).is_file()
 
 
 def test_library_notice_cannot_support_invented_workaround() -> None:

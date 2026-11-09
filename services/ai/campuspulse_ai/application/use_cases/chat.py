@@ -10,7 +10,8 @@ proposal token bound to the caller's alias (`proposals.py`).
    (persisted, admin review, the existing distress reply) and returns it, even when the LLM is off;
 3. no LLM wired, or the LLM fails or answers invalid JSON: `mode: "fallback"` (the web shows the form);
 4. intent `request`: `request_text` = the user messages after the last assistant message of kind
-   `proposal` or `ticket`, last 1000 chars -> `_propose` (a question to ask, or a proposal phrased by a
+   `ticket` or `declined` (P10.21; the issue preparer sees only these too), last 1000 chars ->
+   `_propose` (a question to ask, or a proposal phrased by a
    second LLM call and post-checked: it must name the localized department and use none of the banned
    phrases, else the template sentence is used);
 5. intent `confirm` with a valid token -> confirm, the reply is the template "Request recorded: #n for
@@ -339,7 +340,10 @@ class ChatUseCase:
         ctx = self._context(caller, lang, claims, mine, question=last.content)
         turns = [Turn(role=m.role, content=m.content) for m in messages]
         open_tickets = self._open_tickets(alias, mine)
-        agent_reply, prepared = self._reply_and_prepare(ctx, turns, open_tickets)
+        # The preparer writes the request text, so it sees only the current request: a dropped one (declined,
+        # cleared) or an already recorded one must not leak into it (P10.21). The agent keeps the whole talk.
+        current = turns[_request_start(messages):]
+        agent_reply, prepared = self._reply_and_prepare(ctx, turns, open_tickets, current)
         if agent_reply is None:
             return self._fallback(lang)
         issue = _Issue(open_tickets=open_tickets, mine=mine)
@@ -401,7 +405,11 @@ class ChatUseCase:
             return []
 
     def _reply_and_prepare(
-        self, ctx: ChatContext, turns: Sequence[Turn], open_tickets: Sequence[_Open] = ()
+        self,
+        ctx: ChatContext,
+        turns: Sequence[Turn],
+        open_tickets: Sequence[_Open] = (),
+        current: Sequence[Turn] | None = None,
     ) -> tuple[AgentReply | None, PreparedIssue | None]:
         """The agent's reply and, when enabled, the issue preparation. They run side by side so one slow
         model call does not double the wait. The preparation only enriches the turn (a clean request text
@@ -414,7 +422,7 @@ class ChatUseCase:
         now = self._clock.now().isoformat()
         with ThreadPoolExecutor(max_workers=1) as pool:
             known = [o.for_preparer() for o in open_tickets]
-            future = pool.submit(self._preparer.prepare, turns, now, known)
+            future = pool.submit(self._preparer.prepare, turns if current is None else current, now, known)
             reply = agent.reply(ctx, turns)
             try:
                 prepared = future.result()
@@ -1181,13 +1189,19 @@ def _notice_scope(text: str) -> str:
     return ""
 
 
-def _request_text(messages: Sequence[dto.ChatMessage]) -> str:
-    """The user messages after the last assistant message of kind proposal or ticket, last 1000 chars."""
+def _request_start(messages: Sequence[dto.ChatMessage]) -> int:
+    """Where the current request starts: after the last assistant message that ended one (a recorded ticket,
+    or a proposal the person declined or the server cleared, P10.21)."""
     start = 0
     for i, m in enumerate(messages):
-        if m.role == "assistant" and m.kind == "ticket":
+        if m.role == "assistant" and m.kind in ("ticket", "declined"):
             start = i + 1
-    joined = "\n".join(m.content.strip() for m in messages[start:] if m.role == "user")
+    return start
+
+
+def _request_text(messages: Sequence[dto.ChatMessage]) -> str:
+    """The user messages of the current request (`_request_start`), last 1000 chars."""
+    joined = "\n".join(m.content.strip() for m in messages[_request_start(messages):] if m.role == "user")
     return joined[-REQUEST_TEXT_MAX:]
 
 

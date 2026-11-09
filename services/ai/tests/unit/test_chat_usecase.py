@@ -11,6 +11,7 @@ from fixtures.chat import (
     STAFF,
     Caller,
     ChatHarness,
+    FakePreparer,
     ScriptedAgent,
     assistant,
     build_chat,
@@ -346,6 +347,35 @@ def test_request_text_preserves_problem_after_proposal_and_resets_after_ticket()
     assert t.core.calls[-1][0] == "my wifi is down\nalso the printer is jammed"
     t.uc.turn(turn_of(user("a"), assistant("t", "ticket"), user("b"), assistant("why?"), user("c")), Caller())
     assert t.core.calls[-1][0] == "b\nc"
+
+
+def test_a_declined_request_never_leaks_into_the_next_one() -> None:
+    """P10.21, a live bug: a bus accident the person declined ("Not now") came back inside a later transcript
+    request and made it a high-priority safety alert."""
+    agent = ScriptedAgent(replies=[says("x", "request")])
+    t = build_chat(agent=agent)
+    history = (
+        user("the bus made an accident near the main gate"),
+        assistant("I can record a safety alert.", "proposal"),
+        assistant("Okay, nothing was sent.", "declined"),
+        user("I need my transcript"),
+    )
+    t.uc.turn(turn_of(*history), Caller())
+    assert t.core.calls[-1][0] == "I need my transcript"
+
+
+def test_the_preparer_sees_only_the_current_request_and_the_agent_the_whole_talk() -> None:
+    preparer = FakePreparer(None)
+    agent = ScriptedAgent(replies=[says("x", "chat")])
+    t = build_chat(agent=agent, preparer=preparer)
+    history = (
+        user("the bus made an accident near the main gate"),
+        assistant("No problem, nothing recorded.", "declined"),
+        user("I need my transcript"),
+    )
+    t.uc.turn(turn_of(*history), Caller())
+    assert [m.content for m in preparer.calls[0]] == ["I need my transcript"]
+    assert len(agent.reply_calls[0][1]) == 3
 
 
 def test_arabic_and_arabizi_ask_for_arabic_and_staff_get_neutral_context() -> None:

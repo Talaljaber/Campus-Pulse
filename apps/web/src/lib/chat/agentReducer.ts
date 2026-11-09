@@ -112,7 +112,9 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
           messages.push({
             id: action.id,
             role: "assistant",
-            kind: res.proposal ? "proposal" : "text",
+            // "declined" ends the request on the server's side too (P10.21): what came before it never
+            // leaks into the next request
+            kind: res.proposal ? "proposal" : res.clear_proposal ? "declined" : "text",
             content: res.reply,
             ...(tickets.length > 0 ? { tickets } : {}),
             ...sourced,
@@ -191,7 +193,7 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
         correction: null,
         asked: [],
         error: null,
-        messages: [...state.messages, { id: action.id, role: "assistant", kind: "text", content: action.text }],
+        messages: [...state.messages, { id: action.id, role: "assistant", kind: "declined", content: action.text }],
       };
     case "withdrawn":
       return {

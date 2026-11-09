@@ -139,4 +139,14 @@ describe("agentReducer cards", () => {
     expect(s.correction).toBeNull();
     expect(s.messages.at(-1)).toMatchObject({ kind: "ticket", closedTicket: { status: "closed" } });
   });
+
+  it("marks the end of a dropped request as declined, so it never leaks into the next one (P10.21)", () => {
+    const notNow = agentReducer({ ...INITIAL_AGENT, proposal: P }, { type: "declined", id: "a1", text: "Okay, nothing was sent." });
+    expect(notNow.messages.at(-1)).toMatchObject({ role: "assistant", kind: "declined" });
+    const cleared = agentReducer(sent({ ...INITIAL_AGENT, proposal: P }), { type: "turn", id: "a2", res: turn({ reply: "No problem.", clear_proposal: true }) });
+    expect(cleared.messages.at(-1)).toMatchObject({ kind: "declined" });
+    const plain = agentReducer(sent(INITIAL_AGENT), { type: "turn", id: "a3", res: turn({ reply: "Hello." }) });
+    expect(plain.messages.at(-1)).toMatchObject({ kind: "text" });
+    expect(toWire(notNow.messages).at(-1)).toEqual({ role: "assistant", content: "Okay, nothing was sent.", kind: "declined" });
+  });
 });

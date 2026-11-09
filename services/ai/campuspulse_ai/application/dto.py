@@ -1043,14 +1043,15 @@ class SlaScanOut(_Model):
 # --- chat agent (P9.8) ------------------------------------------------------------------------------
 
 ChatRole = Literal["user", "assistant"]
-ChatMessageKind = Literal["text", "proposal", "ticket"]
+ChatMessageKind = Literal["text", "proposal", "ticket", "declined"]
 ChatMode = Literal["agent", "fallback"]
 
 
 class ChatMessage(_Model):
     """One message of the conversation. The client tags the assistant messages it got from a proposal
-    (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts
-    after the last of them."""
+    (`kind: proposal`), a recorded ticket (`kind: ticket`), or a declined or cleared proposal
+    (`kind: declined`, P10.21). The next request starts after the last `ticket` or `declined` message, so a
+    request the person dropped never leaks into the next one."""
 
     role: ChatRole
     content: str = Field(min_length=1, max_length=2000)

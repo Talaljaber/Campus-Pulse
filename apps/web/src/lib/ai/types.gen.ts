@@ -1186,8 +1186,9 @@ export interface components {
         /**
          * ChatMessage
          * @description One message of the conversation. The client tags the assistant messages it got from a proposal
-         *     (`kind: proposal`) or a recorded ticket (`kind: ticket`); the request text of the next proposal starts
-         *     after the last of them.
+         *     (`kind: proposal`), a recorded ticket (`kind: ticket`), or a declined or cleared proposal
+         *     (`kind: declined`, P10.21). The next request starts after the last `ticket` or `declined` message, so a
+         *     request the person dropped never leaks into the next one.
          */
         ChatMessage: {
             /**
@@ -1202,7 +1203,7 @@ export interface components {
              * @default text
              * @enum {string}
              */
-            kind: "text" | "proposal" | "ticket";
+            kind: "text" | "proposal" | "ticket" | "declined";
         };
         /**
          * ChatPreviewRequest
