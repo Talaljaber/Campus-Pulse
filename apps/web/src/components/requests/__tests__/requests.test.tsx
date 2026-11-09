@@ -22,8 +22,9 @@ vi.mock("@/lib/repos/tickets", () => ({ listMyTickets: m.listMy, listLastActivit
 vi.mock("../../ui/Toast", () => ({ useToast: () => ({ show: m.toast }) }));
 
 import { useMyRequests } from "@/hooks/useMyRequests";
-import { messageReopens, showStudentActions } from "@/lib/tickets/requester";
+import { canCloseOwn, messageReopens, showStudentActions } from "@/lib/tickets/requester";
 import { RequestScreen } from "../RequestScreen";
+import { StudentActions } from "../StudentActions";
 
 const ticket = (o: Partial<TicketRow> = {}): TicketRow => ({
   id: "aaaaaaaa-1",
@@ -83,6 +84,16 @@ describe("requester rules", () => {
     expect(show("new", false)).toBe(false);
     expect(show("closed", false)).toBe(false);
     expect(show("closed", true)).toBe(false);
+  });
+
+  it("offers Close this request on a running request staff are not waiting on (P10.24)", () => {
+    const can = (status: string, awaiting_student: boolean) => canCloseOwn({ status, awaiting_student });
+    expect(can("new", false)).toBe(true);
+    expect(can("in_progress", false)).toBe(true);
+    expect(can("in_progress", true)).toBe(false); // the three answer buttons show instead
+    expect(can("solved", false)).toBe(false);
+    expect(can("closed", false)).toBe(false);
+    expect(can("merged", false)).toBe(false);
   });
 
   it("says a message reopens only a solved or closed request", () => {
@@ -211,5 +222,25 @@ describe("RequestScreen", () => {
   it("shows not found for a ticket that is not mine", () => {
     show(state(null));
     expect(screen.getByRole("alert")).toHaveTextContent("This request does not exist, or you cannot open it.");
+  });
+});
+
+describe("Close this request (P10.24)", () => {
+  it("asks first, then closes; Keep open cancels", async () => {
+    const onAct = vi.fn();
+    render(<StudentActions ticket={{ status: "in_progress", awaiting_student: false }} onAct={onAct} />);
+    await userEvent.click(screen.getByRole("button", { name: "Close this request" }));
+    await userEvent.click(screen.getByRole("button", { name: "Keep open" }));
+    expect(onAct).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Close this request" }));
+    await userEvent.click(screen.getByRole("button", { name: "Yes, close it" }));
+    expect(onAct).toHaveBeenCalledWith("close");
+  });
+
+  it("is not offered on a closed or merged request", () => {
+    const { rerender } = render(<StudentActions ticket={{ status: "closed", awaiting_student: false }} onAct={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Close this request" })).not.toBeInTheDocument();
+    rerender(<StudentActions ticket={{ status: "merged", awaiting_student: false }} onAct={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Close this request" })).not.toBeInTheDocument();
   });
 });

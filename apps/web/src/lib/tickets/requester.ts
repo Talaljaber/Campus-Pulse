@@ -12,6 +12,15 @@ export function showStudentActions(t: Pick<TicketRow, "status" | "awaiting_stude
   return ANSWERABLE.has(t.status) && (t.awaiting_student || t.status === "solved");
 }
 
+/**
+ * "Close this request": a running request (new or in progress) that staff are not waiting on can be closed
+ * by its requester at any time, for example when the problem went away (P10.24). The three answer buttons
+ * cover the other cases.
+ */
+export function canCloseOwn(t: Pick<TicketRow, "status" | "awaiting_student">): boolean {
+  return (t.status === "new" || t.status === "in_progress") && !showStudentActions(t);
+}
+
 /** A message on a solved or closed ticket reopens it (done server-side). */
 export function messageReopens(status: string): boolean {
   return status === "solved" || status === "closed";
