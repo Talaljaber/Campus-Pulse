@@ -5,7 +5,7 @@ import { failFromNetwork, failFromResponse, type AiFail, type AiResult } from ".
 export type AiPath = string;
 
 export interface AiFetchInit {
-  method: "GET" | "POST" | "PUT" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   /** JSON-serialisable body, or `FormData` for the batch upload. */
   body?: unknown;
   /** The signed-in user's Supabase access token, forwarded as `X-CP-User-JWT`. `null` for public calls. */

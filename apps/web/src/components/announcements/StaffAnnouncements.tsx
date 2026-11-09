@@ -32,6 +32,7 @@ import { FilterGroup } from "../ui/FilterGroup";
 import { Loadable } from "../ui/Loadable";
 import { Select } from "../ui/Select";
 import { TextArea, TextField } from "../ui/TextField";
+import { SuggestedDrafts } from "./SuggestedDrafts";
 
 /** Props for {@link StaffAnnouncements}. */
 export interface StaffAnnouncementsProps {
@@ -175,6 +176,7 @@ export function StaffAnnouncements({ role, alias, name = null, office }: StaffAn
   return (
     <AppShell role={role} current="announcements" name={name} alias={alias}>
       <PageHeader title={t("nav.announcements")} subtitle={t("announcements.subtitle")} />
+      <SuggestedDrafts />
       <FilterGroup
         legend={t("announcements.form.legend")}
         submitLabel={t("announcements.form.submit")}

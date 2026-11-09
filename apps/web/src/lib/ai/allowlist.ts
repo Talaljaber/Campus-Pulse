@@ -4,7 +4,7 @@
  * purpose: `integrations/linear/webhook` (authenticated by its own HMAC, never from a browser).
  */
 
-export type AiMethod = "GET" | "POST" | "PUT" | "DELETE";
+export type AiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 /** One id segment (UUIDs and slugs). No dots, slashes or percent signs, so no traversal. */
 const ID = "[A-Za-z0-9_-]{1,64}";
@@ -63,6 +63,11 @@ export const AI_ALLOWLIST: readonly Rule[] = [
   rule("POST", "admin/knowledge"),
   rule("GET", "admin/knowledge"),
   rule("DELETE", "admin/knowledge/{id}"),
+  // Suggested announcement drafts from incidents: list, edit, publish, dismiss.
+  rule("GET", "announcement-drafts"),
+  rule("PATCH", "announcement-drafts/{id}"),
+  rule("POST", "announcement-drafts/{id}/publish"),
+  rule("POST", "announcement-drafts/{id}/dismiss"),
 ];
 
 /** A path that passed the allow-list. */

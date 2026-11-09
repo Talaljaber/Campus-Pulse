@@ -123,6 +123,28 @@ def test_a_fourth_report_attaches_without_a_new_issue(c: BackendTestContainer) -
     assert [n["alias"] for n in c.notifications() if "building M" in str(n["payload"])].count("sim-04") == 1
 
 
+def test_a_new_incident_suggests_one_announcement_draft_to_its_office(c: BackendTestContainer) -> None:
+    """P10.23: the third report opens the incident and suggests a draft; the fourth adds none."""
+    drafts = c.extras["drafts"]
+    report(c, 1), report(c, 2)
+    assert drafts.calls == []
+    third = report(c, 3)
+    [(incident_id, office, title, body)] = drafts.calls
+    assert third.action is not None and incident_id == third.action.incident_id and office == "it"
+    assert title == "IT Support: known problem in building M"
+    assert "building M" in body and "المبنى M" in body and "no need to send another request" in body
+    report(c, 4)
+    assert len(drafts.calls) == 1
+
+
+def test_a_failing_draft_store_never_stops_the_incident(c: BackendTestContainer) -> None:
+    c.extras["drafts"].fail = True
+    for n in range(1, 3):
+        report(c, n)
+    third = report(c, 3)
+    assert third.action is not None and third.action.type == "incident_merge"
+
+
 def test_an_unrelated_it_complaint_in_the_same_building_keeps_its_own_ticket(c: BackendTestContainer) -> None:
     for n in range(1, 4):
         report(c, n)

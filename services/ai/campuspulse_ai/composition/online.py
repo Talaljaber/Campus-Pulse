@@ -503,7 +503,10 @@ def wire_online(
         prompt_version=config.llm.prompt_version,
         enabled=bool(llm.oracles),
     )
-    incident_actions = IncidentActions(act, sinks, repo, adapters.reads, notifier, clock, messages)
+    # P10.23: a new incident suggests an announcement draft to its office's staff
+    store = adapters.announcement_drafts
+    drafts = AnnouncementDraftsUseCase(store) if store is not None else None
+    incident_actions = IncidentActions(act, sinks, repo, adapters.reads, notifier, clock, messages, drafts)
     directory = adapters.directory
     assigner = (
         ReviewAssigner(
@@ -679,11 +682,7 @@ def wire_online(
             if adapters.announcements is not None
             else None
         ),
-        announcement_drafts=(
-            AnnouncementDraftsUseCase(adapters.announcement_drafts)
-            if adapters.announcement_drafts is not None
-            else None
-        ),
+        announcement_drafts=drafts,
         profile_email=(ProfileEmailService(adapters.profile_email, opt_in_enabled=settings.email_opt_in)
                        if adapters.profile_email is not None else None),
         health=HealthInfo(

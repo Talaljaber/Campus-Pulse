@@ -33,6 +33,10 @@ describe("matchAllowed", () => {
     ["POST", ["admin", "knowledge"]],
     ["GET", ["admin", "knowledge"]],
     ["DELETE", ["admin", "knowledge", ID]],
+    ["GET", ["announcement-drafts"]],
+    ["PATCH", ["announcement-drafts", ID]],
+    ["POST", ["announcement-drafts", ID, "publish"]],
+    ["POST", ["announcement-drafts", ID, "dismiss"]],
   ])("allows %s %j", (method, segments) => {
     expect(matchAllowed(method, segments)).not.toBeNull();
   });
@@ -85,6 +89,13 @@ describe("matchAllowed", () => {
     ["DELETE", ["admin", "knowledge", ".."]],
     ["DELETE", ["admin", "knowledge", "a.b"]],
     ["DELETE", ["admin", "knowledge", ID, "chunks"]],
+    ["POST", ["announcement-drafts"]],
+    ["GET", ["announcement-drafts", ID]],
+    ["PUT", ["announcement-drafts", ID]],
+    ["DELETE", ["announcement-drafts", ID]],
+    ["GET", ["announcement-drafts", ID, "publish"]],
+    ["PATCH", ["announcement-drafts", ID, "publish"]],
+    ["PATCH", ["announcement-drafts", ".."]],
   ])("rejects %s %j", (method, segments) => {
     expect(matchAllowed(method, segments)).toBeNull();
   });

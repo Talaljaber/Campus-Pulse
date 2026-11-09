@@ -16,7 +16,7 @@ import logging
 import uuid
 from collections.abc import Iterable, Sequence
 from datetime import timedelta
-from typing import Literal
+from typing import Literal, Protocol
 
 from campuspulse_ai.application import dto
 from campuspulse_ai.application.use_cases import responses as out
@@ -55,6 +55,47 @@ DEFAULT_LIST_LIMIT = 20
 MAX_LIST_LIMIT = 100
 RESOLVED: Literal["resolved"] = "resolved"
 
+# P10.23: the categories in the Arabic half of a suggested announcement (the office names students know).
+_CATEGORY_AR: dict[str, str] = {
+    "Academic Support": "الدعم الأكاديمي",
+    "Registration": "التسجيل",
+    "IT Support": "الدعم التقني",
+    "Finance": "الشؤون المالية",
+    "Transportation": "النقل",
+    "Facilities": "المرافق",
+}
+
+
+class DraftSuggester(Protocol):
+    """Where a new incident's suggested announcement goes (`AnnouncementDraftsUseCase.suggest`). One draft per
+    incident: a repeated call for the same incident changes nothing (the store's unique key)."""
+
+    def suggest(self, incident_id: str, office: str, title: str, body: str) -> object: ...
+
+
+def suggested_announcement(incident: Incident) -> tuple[str, str]:
+    """The draft a new incident suggests to its office's staff: a short title and an English plus Arabic body.
+    Staff edit it before publishing; nothing reaches students until they do."""
+    category = str(incident.category)
+    category_ar = _CATEGORY_AR.get(category, category)
+    if incident.building:
+        title = f"{category}: known problem in building {incident.building}"
+        en_where, ar_where = f"in building {incident.building}", f"في المبنى {incident.building}"
+    else:
+        title = f"{category}: known problem on campus"
+        en_where, ar_where = "on campus", "في الحرم الجامعي"
+    english = (
+        f"Several students have reported the same {category} problem {en_where}. The team knows about it "
+        "and is working on it, so there is no need to send another request. We will post an update here "
+        "when it is fixed."
+    )
+    arabic = (
+        f"وصلتنا عدة بلاغات عن نفس المشكلة ({category_ar}) {ar_where}. الفريق على علم بها ويعمل على حلها، "
+        "فلا داعي لإرسال طلب جديد. سننشر تحديثاً هنا عند حلها."
+    )
+    body = f"{english}\n\n{arabic}"
+    return title[:120], body[:1000]
+
 
 class IncidentActions:
     """The action-engine side of an incident decision (ARCHITECTURE §2.1 [13]).
@@ -82,8 +123,10 @@ class IncidentActions:
         notifier: Notifier,
         clock: Clock,
         messages: Messages,
+        drafts: DraftSuggester | None = None,
     ) -> None:
         self._act = act
+        self._drafts = drafts
         self._mirror = TicketMirror(sinks, repo)
         self._repo = repo
         self._reads = reads
@@ -128,6 +171,8 @@ class IncidentActions:
         for absorbed in decision.absorbed:  # duplicates folded in (D-021): Linear marks them Duplicate
             self._mirror.push(absorbed, skip=(RECORD_SINK,))
         self._broadcast(incident, reporters)
+        if decision.kind == "new":
+            self._suggest(incident)
         self._event("incident.merged", incident, {"request_id": request.id, "kind": decision.kind})
         lang = request.normalized.lang if request.normalized else Lang.EN
         message = self._messages.for_lang(lang).incident_merged.format(
@@ -187,6 +232,18 @@ class IncidentActions:
             tags=(INCIDENT_TAG,),
         )
         return self._act.open_ticket(ticket)
+
+    def _suggest(self, incident: Incident) -> None:
+        """P10.23: a new incident suggests an announcement to its office's staff (Announcements page). A
+        failure is logged and never stops the merge."""
+        if self._drafts is None:
+            return
+        title, body = suggested_announcement(incident)
+        try:
+            office = self._act.office_for(incident.category, incident.priority)
+            self._drafts.suggest(incident.id, office, title, body)
+        except Exception:  # an advisory step must never take the triage down
+            log.warning("announcement draft for incident %s not suggested", incident.id, exc_info=True)
 
     def _merge_earlier(self, incident: Incident, members: Sequence[str], request: Request) -> list[Request]:
         """Move the earlier members' tickets into the incident; returns their requests (reporters)."""

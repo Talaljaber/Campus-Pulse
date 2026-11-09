@@ -60,7 +60,7 @@ async function handle(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
 
   const search = req.nextUrl.search;
   const result = await aiFetch<unknown>(`${allowed.path}${search}`, {
-    method: req.method as "GET" | "POST" | "PUT" | "DELETE",
+    method: req.method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
     body,
     userJwt,
     timeoutMs: allowed.public ? 3_000 : undefined,
@@ -75,4 +75,5 @@ async function handle(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
 export const GET = handle;
 export const POST = handle;
 export const PUT = handle;
+export const PATCH = handle;
 export const DELETE = handle;

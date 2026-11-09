@@ -110,6 +110,20 @@ def understander(clock: FrozenClock) -> RuleBasedUnderstander:
     )
 
 
+
+@dataclass
+class RecordingDrafts:
+    """P10.23: records the announcement drafts new incidents suggest (`DraftSuggester`)."""
+
+    calls: list[tuple[str, str, str, str]] = field(default_factory=list)
+    fail: bool = False
+
+    def suggest(self, incident_id: str, office: str, title: str, body: str) -> object:
+        if self.fail:
+            raise RuntimeError("draft store down")
+        self.calls.append((incident_id, office, title, body))
+        return None
+
 @dataclass
 class BackendTestContainer:
     """The wired use cases plus every fake, so tests can script inputs and inspect side effects."""
@@ -225,10 +239,11 @@ def build_test(
         enabled=bool(oracle.script) if llm_enabled is None else llm_enabled,
     )
     incidents: IncidentsUseCase | None = None
+    drafts = RecordingDrafts()
     if pulse_encoder is not None:  # P4.10: the real detector and incident actions over local stores
         vectors = LocalNumpyVectorStore(pulse_encoder.dim, collections=("requests",))
         detector = WindowedCentroidDetector(repo, vectors, clock, tau_inc, INCIDENT_WINDOW_MIN)
-        actions = IncidentActions(act, chosen, repo, repo, notifier, clock, msgs)
+        actions = IncidentActions(act, chosen, repo, repo, notifier, clock, msgs, drafts)
         pulse = Pulse(vectors=vectors, encoder=pulse_encoder, incidents=detector, actions=actions)
         incidents = IncidentsUseCase(repo, repo, chosen, notifier, clock, msgs, marks=repo,
                                      student_inbox=acfg.student_inbox)  # fmt: skip
@@ -268,7 +283,7 @@ def build_test(
         triage=TriageUseCase(core, flow, repo, clock, marks=repo),
         clarify=ClarifyUseCase(core, flow, repo, clock),
         sync=SyncTicketUseCase(chosen, repo, notifier, clock, msgs, student_inbox=acfg.student_inbox),
-        extras={"incidents": incidents} if incidents else {},
+        extras={"incidents": incidents, "drafts": drafts} if incidents else {},
     )
 
 
