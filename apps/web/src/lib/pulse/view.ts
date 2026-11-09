@@ -53,6 +53,34 @@ export function ringsOf(state: Pick<PulseState, "incidents">, buildings: readonl
     });
 }
 
+/** One request in a building, for the list under the map when a building is chosen. */
+export interface BuildingRequest {
+  id: string;
+  createdAt: string;
+  room: string | null;
+  category: string | null;
+  priority: string | null;
+  simulated: boolean;
+}
+
+/** The requests located in one building (matched by id or code), newest first, with their labels. */
+export function buildingRequests(
+  state: Pick<PulseState, "requests" | "labels">,
+  building: Pick<Building, "id" | "code">,
+): BuildingRequest[] {
+  return Object.values(state.requests)
+    .filter((r) => r.building_id === building.id || r.building_id === building.code)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id))
+    .map((r) => ({
+      id: r.id,
+      createdAt: r.created_at,
+      room: r.room,
+      category: state.labels[r.id]?.category ?? null,
+      priority: state.labels[r.id]?.priority ?? null,
+      simulated: r.simulated,
+    }));
+}
+
 /** Open incidents as view models, newest first, optionally only one building's. */
 export function openIncidents(state: Pick<PulseState, "incidents">, buildingId: string | null = null): IncidentView[] {
   return Object.values(state.incidents)

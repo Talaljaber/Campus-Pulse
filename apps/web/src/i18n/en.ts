@@ -590,6 +590,16 @@ export const en = {
     simulated: "SIMULATED",
     selectedBuilding: "Building {code}, {name}",
     clearBuilding: "Show all buildings",
+    building: {
+      title: "Requests in building {code}",
+      empty: "No requests in this building yet",
+      emptyHint: "Requests that name this building appear here as they arrive.",
+      priority: "{priority} priority",
+      room: "Room {room}",
+      unlabelled: "Request being classified",
+      open: "Open ticket #{number}",
+      noTicket: "No ticket your office can open (another office, or answered without a ticket).",
+    },
     incident: {
       empty: "No open incidents",
       emptyHint: "When several students report the same problem in one building, an incident opens here.",

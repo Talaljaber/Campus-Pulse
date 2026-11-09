@@ -47,6 +47,12 @@ export async function listTicketsForRequest(sb: Sb, requestId: string): Promise<
   return unwrap(await sb.from("tickets").select("*").eq("request_id", requestId).order("created_at", { ascending: true }));
 }
 
+/** The tickets of several requests (the Pulse building list). RLS decides which the caller may read. */
+export async function listTicketsForRequests(sb: Sb, requestIds: readonly string[]): Promise<TicketRow[]> {
+  if (requestIds.length === 0) return [];
+  return unwrap(await sb.from("tickets").select("*").in("request_id", [...requestIds]).order("created_at", { ascending: true }));
+}
+
 /** External links (Linear, ...) of the given tickets. */
 export async function listTicketLinks(sb: Sb, ticketIds: string[]): Promise<TicketLinkRow[]> {
   if (ticketIds.length === 0) return [];

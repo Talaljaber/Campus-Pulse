@@ -584,6 +584,16 @@ export const ar: Dict = {
     simulated: "محاكاة",
     selectedBuilding: "المبنى {code}، {name}",
     clearBuilding: "اعرض كل المباني",
+    building: {
+      title: "الطلبات في المبنى {code}",
+      empty: "لا توجد طلبات في هذا المبنى بعد",
+      emptyHint: "الطلبات التي تذكر هذا المبنى تظهر هنا عند وصولها.",
+      priority: "أولوية {priority}",
+      room: "الغرفة {room}",
+      unlabelled: "جارٍ تصنيف الطلب",
+      open: "افتح التذكرة #{number}",
+      noTicket: "لا توجد تذكرة يمكن لمكتبك فتحها (مكتب آخر، أو تمت الإجابة دون تذكرة).",
+    },
     incident: {
       empty: "ما في حوادث مفتوحة",
       emptyHint: "لما كذا طالب يبلّغوا عن نفس المشكلة بنفس المبنى، بتنفتح حادثة هون.",

@@ -5,7 +5,7 @@ import type { OutboxRow } from "@/lib/repos/outbox";
 import type { PredictionBrief } from "@/lib/repos/predictions";
 import type { LocatedRequest } from "@/lib/repos/requests";
 import { FEED_LIMIT, INITIAL_PULSE, incidentSimulated, pulseReducer, type PulseAction, type PulseState } from "../state";
-import { dotsOf, openIncidents, ringsOf } from "../view";
+import { buildingRequests, dotsOf, openIncidents, ringsOf } from "../view";
 
 const req = (id: string, o: Partial<LocatedRequest> = {}): LocatedRequest => ({
   id,
@@ -194,5 +194,22 @@ describe("pulseReducer: snapshot, broadcasts and the feed", () => {
     const s = run([snapshot({ requests, predictions: requests.map((r) => pred(r.id)) })]);
     expect(s.feed).toHaveLength(FEED_LIMIT);
     expect(s.feed[0]!.id).toBe(`req:r${FEED_LIMIT + 9}`);
+  });
+});
+
+describe("buildingRequests", () => {
+  it("keeps one building's requests (by id or code), newest first, with their labels", () => {
+    const state = {
+      requests: {
+        a: req("a", { building_id: "L", created_at: "2026-11-08T09:00:00Z", room: "L1" }),
+        b: req("b", { building_id: "L", created_at: "2026-11-08T10:00:00Z" }),
+        c: req("c", { building_id: "M" }),
+      },
+      labels: { a: { category: "IT Support", priority: "high" } },
+    };
+    const out = buildingRequests(state, { id: "L", code: "L" });
+    expect(out.map((x) => x.id)).toEqual(["b", "a"]);
+    expect(out[1]).toMatchObject({ room: "L1", category: "IT Support", priority: "high" });
+    expect(out[0]).toMatchObject({ category: null, priority: null });
   });
 });

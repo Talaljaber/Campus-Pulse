@@ -2,6 +2,8 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { LangScope } from "@/i18n";
 import type { FeedEvent } from "@/lib/pulse/state";
+import type { BuildingRequest } from "@/lib/pulse/view";
+import { BuildingRequests } from "../BuildingRequests";
 import { EventFeed } from "../EventFeed";
 
 const NOW = new Date("2026-11-08T10:00:00Z").getTime();
@@ -67,5 +69,35 @@ describe("EventFeed", () => {
     render(<EventFeed now={NOW} events={[ev({ category: "Future Category" })]} />);
     expect(screen.getByText(/Future Category request/)).toBeInTheDocument();
     spy.mockRestore();
+  });
+});
+
+describe("BuildingRequests (a building chosen on the map)", () => {
+  const r = (o: Partial<BuildingRequest>): BuildingRequest => ({
+    id: "r1",
+    createdAt: "2026-11-08T09:50:00Z",
+    room: "L204",
+    category: "IT Support",
+    priority: "medium",
+    simulated: false,
+    ...o,
+  });
+  const ticket = { id: "ab12cd34-0000-4000-8000-000000000001", status: "in_progress" };
+
+  it("lists each request with its labels, room and age, and links the ticket the office can open", () => {
+    render(<BuildingRequests now={NOW} requests={[r({}), r({ id: "r2", category: "Facilities", priority: "low", room: null })]} tickets={new Map([["r1", ticket]])} />);
+    expect(screen.getByText("IT Support · Medium priority")).toBeInTheDocument();
+    expect(screen.getByText("Room L204")).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: /Open ticket #AB12CD34/ });
+    expect(link).toHaveAttribute("href", "/staff/tickets/ab12cd34-0000-4000-8000-000000000001");
+    expect(within(link).getByText("In progress")).toBeInTheDocument();
+    // the Facilities request has no ticket this office can open
+    expect(screen.getByText("Facilities · Low priority")).toBeInTheDocument();
+    expect(screen.getByText(/No ticket your office can open/)).toBeInTheDocument();
+  });
+
+  it("says so when the building has no requests", () => {
+    render(<BuildingRequests requests={[]} tickets={new Map()} />);
+    expect(screen.getByText("No requests in this building yet")).toBeInTheDocument();
   });
 });

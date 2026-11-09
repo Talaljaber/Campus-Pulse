@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import { useMapBuildings } from "@/hooks/useMapBuildings";
 import { usePulse } from "@/hooks/usePulse";
+import { useRequestTickets } from "@/hooks/useRequestTickets";
 import { useLang, useT, type DictKey } from "@/i18n";
-import { dotsOf, openIncidents, ringsOf } from "@/lib/pulse/view";
+import { buildingRequests, dotsOf, openIncidents, ringsOf } from "@/lib/pulse/view";
 import { AppShell } from "../shell/AppShell";
 import { PageHeader } from "../shell/PageHeader";
 import { Badge } from "../ui/Badge";
@@ -12,6 +13,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Loadable } from "../ui/Loadable";
 import { useToast } from "../ui/Toast";
+import { BuildingRequests } from "./BuildingRequests";
 import { EventFeed } from "./EventFeed";
 import { IncidentList } from "./IncidentList";
 import { buildingName, CampusMap, IncidentRing, MapLegend, RequestDot, tidyLabel } from "./map";
@@ -44,6 +46,8 @@ export function PulseScreen({ role, alias = null, name = null }: PulseScreenProp
   const rings = useMemo(() => ringsOf(pulse.state, buildings), [pulse.state, buildings]);
   const incidents = useMemo(() => openIncidents(pulse.state, selected), [pulse.state, selected]);
   const selectedBuilding = buildings.find((b) => b.id === selected);
+  const inBuilding = useMemo(() => (selectedBuilding ? buildingRequests(pulse.state, selectedBuilding) : []), [pulse.state, selectedBuilding]);
+  const tickets = useRequestTickets(inBuilding.map((r) => r.id));
 
   const onResolve = async (id: string, note?: string) => {
     const out = await pulse.resolve(id, note);
@@ -83,6 +87,13 @@ export function PulseScreen({ role, alias = null, name = null }: PulseScreenProp
               )}
               <IncidentList incidents={incidents} buildings={buildings} onResolve={onResolve} />
             </Card>
+            {selectedBuilding && (
+              <Card title={t("pulse.building.title", { code: selectedBuilding.code })}>
+                <div className="max-h-[28rem] overflow-y-auto">
+                  <BuildingRequests requests={inBuilding} tickets={tickets} />
+                </div>
+              </Card>
+            )}
             <Card title={t("pulse.feed")}>
               <div className="max-h-[28rem] overflow-y-auto">
                 <EventFeed events={pulse.state.feed} />
