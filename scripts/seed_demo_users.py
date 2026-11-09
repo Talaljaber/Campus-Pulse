@@ -78,7 +78,7 @@ ENGINEERING = "Faculty of Engineering (demo)"
 BUSINESS = "Faculty of Business (demo)"
 
 DEMO_USERS: tuple[DemoUser, ...] = (
-    DemoUser("talal", "student", None, "talal", "Talal Demo", "20230017", ENGINEERING,
+    DemoUser("talal", "student", None, "talal", "Talal Jaber", "20230017", ENGINEERING,
              previous=("student-demo-17@demo.local",)),
     DemoUser("lina", "student", None, "lina", "Lina Haddad", "20230042", BUSINESS),
     DemoUser("omar", "student", None, "omar", "Omar Saleh", "20220311", ENGINEERING),

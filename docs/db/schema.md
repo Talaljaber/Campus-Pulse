@@ -324,7 +324,7 @@ The seed files are `supabase/seed/*.sql`, loaded by `supabase db reset` (`config
 
   | Login | Role | Office | Alias | Display name |
   | --- | --- | --- | --- | --- |
-  | `talal@demo.local` | student | — | `talal` | Talal Demo (no. 20230017) |
+  | `talal@demo.local` | student | — | `talal` | Talal Jaber (no. 20230017) |
   | `lina@demo.local` | student | — | `lina` | Lina Haddad (20230042) |
   | `omar@demo.local` | student | — | `omar` | Omar Saleh (20220311) |
   | `registrar`, `it`, `finance`, `transport`, `facilities`, `academic` `@demo.local` | staff | the office | `staff-<office>` | `<Office> Desk (demo)` |
