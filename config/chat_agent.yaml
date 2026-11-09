@@ -3,10 +3,10 @@
 # Never part of the scored offline path; runs only with OPENROUTER_API_KEY and CHAT_AGENT_ENABLED != false.
 # The model id is pinned; change it only with a new decision. Temperature 0 (project rule), responses cached.
 model: deepseek/deepseek-v4.1-flash      # alternative: qwen/qwen3.8-flash
-prompt_version: chat-v6                   # P10.21: a taken-back proposal is a decline (v5: P10.19 knowledge-base sources)
+prompt_version: chat-v7                   # P10.25: a place answered after "where?" is a request (v6: P10.21 take-back)
 issue_context_enabled: true   # the LLM prepares the issue (and advises a priority) before every message, English too
 issue_context_prompt: config/prompts/issue_context_v2.md
-prompt_file: config/prompts/chat_agent_v6.md
+prompt_file: config/prompts/chat_agent_v7.md
 temperature: 0
 max_tokens: 500
 timeout_s: 12

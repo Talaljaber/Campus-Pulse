@@ -8,7 +8,7 @@ import type { ChatConfirmResponse, ChatTurnResponse, ProposalOut } from "@/lib/c
 vi.mock("@/hooks/useSignIn", () => ({ useSignOut: () => vi.fn() }));
 
 import { AgentScreen } from "../AgentScreen";
-import { ProposalCard } from "../ProposalCard";
+import { ProposalCard, RecordedCard } from "../ProposalCard";
 
 const TICKET_ID = "ab12cd34-0000-4000-8000-000000000001";
 
@@ -123,6 +123,20 @@ describe("ProposalCard", () => {
     render(<ProposalCard proposal={hinted} busy={false} onConfirm={vi.fn()} onDecline={vi.fn()} onAnswer={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: "Why this?" }));
     expect(screen.getByText(/Based on a past staff correction: IT Support, High \(93% similar\)/)).toBeInTheDocument();
+  });
+});
+
+describe("RecordedCard for a report that joined an incident (P10.25)", () => {
+  it("shows the service's sentence about the incident, and nothing extra for a plain ticket", () => {
+    const base = TRIAGE_FIXTURES.enMemory.response;
+    const merged = {
+      ...base,
+      action: { ...base.action!, type: "incident_merge" as const, message: "Other students in building M reported the same problem (4 reports so far)." },
+    };
+    const { rerender } = render(<RecordedCard ticketId={TICKET_ID} triage={merged} proposal={null} />);
+    expect(screen.getByText(/Other students in building M reported the same problem/)).toBeInTheDocument();
+    rerender(<RecordedCard ticketId={TICKET_ID} triage={base} proposal={null} />);
+    expect(screen.queryByText(/Other students in building M/)).not.toBeInTheDocument();
   });
 });
 

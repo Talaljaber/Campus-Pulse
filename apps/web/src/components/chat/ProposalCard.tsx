@@ -236,11 +236,18 @@ export function RecordedCard({ ticketId, triage, proposal }: RecordedCardProps) 
     if (res.ok) setView(res.data);
   };
   const hasWhy = proposal !== null || hint !== null;
+  // P10.25: a report that joined an open incident says so (the service's own sentence, in the person's language)
+  const merged = triage?.action?.type === "incident_merge" ? triage.action.message : null;
   return (
     <section role="status" className="flex max-w-prose flex-col gap-3 rounded-lg border-2 border-ok bg-surface-1 p-4">
       <h2 className="text-lg font-semibold text-fg-1">
         {ticketId ? t("chat.agent.recordedNumber", { number: ticketId.replace(/-/g, "").slice(0, 8).toUpperCase() }) : t("chat.agent.recorded")}
       </h2>
+      {merged && (
+        <p dir="auto" className="text-fg-2">
+          {merged}
+        </p>
+      )}
       {ticketId && (
         <div>
           <Link href={`/requests/${encodeURIComponent(ticketId)}`} className="font-semibold text-accent underline">
