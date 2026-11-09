@@ -121,7 +121,8 @@ class RecordingDrafts:
     def suggest(self, incident_id: str, office: str, title: str, body: str) -> object:
         if self.fail:
             raise RuntimeError("draft store down")
-        self.calls.append((incident_id, office, title, body))
+        if all(c[0] != incident_id for c in self.calls):  # one draft per incident, like the store
+            self.calls.append((incident_id, office, title, body))
         return None
 
 @dataclass

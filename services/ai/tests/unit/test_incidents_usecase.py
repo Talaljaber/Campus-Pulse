@@ -124,7 +124,8 @@ def test_a_fourth_report_attaches_without_a_new_issue(c: BackendTestContainer) -
 
 
 def test_a_new_incident_suggests_one_announcement_draft_to_its_office(c: BackendTestContainer) -> None:
-    """P10.23: the third report opens the incident and suggests a draft; the fourth adds none."""
+    """P10.23: the third report opens the incident and suggests a draft; the fourth asks again, and the store
+    keeps the one draft."""
     drafts = c.extras["drafts"]
     report(c, 1), report(c, 2)
     assert drafts.calls == []

@@ -67,7 +67,7 @@ _CATEGORY_AR: dict[str, str] = {
 
 
 class DraftSuggester(Protocol):
-    """Where a new incident's suggested announcement goes (`AnnouncementDraftsUseCase.suggest`). One draft per
+    """Where an incident's suggested announcement goes (`AnnouncementDraftsUseCase.suggest`). One draft per
     incident: a repeated call for the same incident changes nothing (the store's unique key)."""
 
     def suggest(self, incident_id: str, office: str, title: str, body: str) -> object: ...
@@ -171,8 +171,9 @@ class IncidentActions:
         for absorbed in decision.absorbed:  # duplicates folded in (D-021): Linear marks them Duplicate
             self._mirror.push(absorbed, skip=(RECORD_SINK,))
         self._broadcast(incident, reporters)
-        if decision.kind == "new":
-            self._suggest(incident)
+        # Every merge, not only a new incident: the store keeps one draft per incident (a repeat changes
+        # nothing, a dismissed one stays dismissed), and an incident opened before drafts existed gets one.
+        self._suggest(incident)
         self._event("incident.merged", incident, {"request_id": request.id, "kind": decision.kind})
         lang = request.normalized.lang if request.normalized else Lang.EN
         message = self._messages.for_lang(lang).incident_merged.format(
