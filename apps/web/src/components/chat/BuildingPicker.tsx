@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { useLang, useT } from "@/i18n";
+import { buildingName } from "../pulse/map/campus";
 
 /** The slice of a `buildings` row the picker needs. */
 export interface PickableBuilding {
@@ -40,7 +41,7 @@ export function BuildingPicker({ buildings, value, onChange, disabled }: Buildin
         <option value="">{t("chat.noBuilding")}</option>
         {buildings.map((b) => (
           <option key={b.id} value={b.id}>
-            {`${b.code} · ${lang === "ar" ? b.name_ar : b.name_en}`}
+            {buildingName(b, lang) ? `${b.code} · ${buildingName(b, lang)}` : b.code}
           </option>
         ))}
       </select>

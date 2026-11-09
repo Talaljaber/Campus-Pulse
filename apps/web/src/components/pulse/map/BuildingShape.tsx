@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { useLang, useT } from "@/i18n";
-import { footprintOf, type Building } from "./campus";
+import { buildingName, footprintOf, tidyLabel, type Building } from "./campus";
 
 /** Props for {@link BuildingShape}. */
 export interface BuildingShapeProps {
@@ -23,8 +23,8 @@ export function BuildingShape({ b, selected = false, onSelect }: BuildingShapePr
   const { lang } = useLang();
   if (b.map_x === null || b.map_y === null) return null;
   const { w, h } = footprintOf(b.code);
-  const name = lang === "ar" ? b.name_ar : b.name_en;
-  const label = t(selected ? "map.buildingSelected" : "map.building", { code: b.code, name });
+  const name = buildingName(b, lang);
+  const label = tidyLabel(t(selected ? "map.buildingSelected" : "map.building", { code: b.code, name }));
   const x = b.map_x - w / 2;
   const y = b.map_y - h / 2;
 
@@ -79,7 +79,7 @@ export function BuildingShape({ b, selected = false, onSelect }: BuildingShapePr
       <g aria-hidden="true" style={{ direction: lang === "ar" ? "rtl" : "ltr" }}>
         <text
           x={b.map_x}
-          y={b.map_y - 4}
+          y={name ? b.map_y - 4 : b.map_y + 8}
           textAnchor="middle"
           fontSize={24}
           fontWeight={700}
@@ -87,9 +87,11 @@ export function BuildingShape({ b, selected = false, onSelect }: BuildingShapePr
         >
           {b.code}
         </text>
-        <text x={b.map_x} y={b.map_y + 16} textAnchor="middle" fontSize={12} className="fill-fg-2">
-          {name}
-        </text>
+        {name && (
+          <text x={b.map_x} y={b.map_y + 16} textAnchor="middle" fontSize={12} className="fill-fg-2">
+            {name}
+          </text>
+        )}
       </g>
     </g>
   );

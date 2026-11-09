@@ -11,7 +11,7 @@ import { TextArea } from "../ui/TextField";
 import { CATEGORY_TONE, PRIORITY_TONE } from "../ui/tone";
 import { useDuration } from "../ui/useDuration";
 import { useNow } from "../explain/useNow";
-import type { Building } from "./map/campus";
+import { buildingName, tidyLabel, type Building } from "./map/campus";
 
 /** Props for {@link IncidentList}. */
 export interface IncidentListProps {
@@ -40,7 +40,7 @@ export function IncidentList({ incidents, buildings = [], onResolve, now }: Inci
 
   const where = (id: string) => {
     const b = buildings.find((x) => x.id === id || x.code === id);
-    return b ? t("pulse.incident.inBuilding", { code: b.code, name: lang === "ar" ? b.name_ar : b.name_en }) : id;
+    return b ? tidyLabel(t("pulse.incident.inBuilding", { code: b.code, name: buildingName(b, lang) })) : id;
   };
 
   const close = () => {

@@ -56,21 +56,31 @@ export const QUAD = { cx: 500, cy: 300, rx: 190, ry: 80 } as const;
 
 /**
  * The fictional campus used by `/dev/ui` and the tests until the DB seed exists.
- * Letters A to M without I and J.
+ * Letters A to M without I and J. Only L (the library) has a name; the others are letters only.
  */
 export const FIXTURE_BUILDINGS: readonly Building[] = [
-  { id: "A", code: "A", name_en: "Administration", name_ar: "الإدارة", map_x: 140, map_y: 100 },
-  { id: "B", code: "B", name_en: "Business", name_ar: "كلية الأعمال", map_x: 330, map_y: 95 },
-  { id: "C", code: "C", name_en: "Computing", name_ar: "كلية الحاسوب", map_x: 520, map_y: 95 },
-  { id: "D", code: "D", name_en: "Library", name_ar: "المكتبة", map_x: 720, map_y: 95 },
-  { id: "E", code: "E", name_en: "Engineering", name_ar: "كلية الهندسة", map_x: 880, map_y: 250 },
-  { id: "F", code: "F", name_en: "Sciences", name_ar: "كلية العلوم", map_x: 880, map_y: 380 },
-  { id: "G", code: "G", name_en: "Student Services", name_ar: "خدمات الطلبة", map_x: 700, map_y: 520 },
-  { id: "H", code: "H", name_en: "Health Centre", name_ar: "المركز الصحي", map_x: 500, map_y: 520 },
-  { id: "K", code: "K", name_en: "Cafeteria", name_ar: "الكافتيريا", map_x: 300, map_y: 520 },
-  { id: "L", code: "L", name_en: "Lecture Halls", name_ar: "قاعات المحاضرات", map_x: 110, map_y: 390 },
-  { id: "M", code: "M", name_en: "Technology Centre", name_ar: "مركز التقنية", map_x: 110, map_y: 250 },
+  { id: "A", code: "A", name_en: "", name_ar: "", map_x: 140, map_y: 100 },
+  { id: "B", code: "B", name_en: "", name_ar: "", map_x: 330, map_y: 95 },
+  { id: "C", code: "C", name_en: "", name_ar: "", map_x: 520, map_y: 95 },
+  { id: "D", code: "D", name_en: "", name_ar: "", map_x: 720, map_y: 95 },
+  { id: "E", code: "E", name_en: "", name_ar: "", map_x: 880, map_y: 250 },
+  { id: "F", code: "F", name_en: "", name_ar: "", map_x: 880, map_y: 380 },
+  { id: "G", code: "G", name_en: "", name_ar: "", map_x: 700, map_y: 520 },
+  { id: "H", code: "H", name_en: "", name_ar: "", map_x: 500, map_y: 520 },
+  { id: "K", code: "K", name_en: "", name_ar: "", map_x: 300, map_y: 520 },
+  { id: "L", code: "L", name_en: "Library", name_ar: "المكتبة", map_x: 110, map_y: 390 },
+  { id: "M", code: "M", name_en: "", name_ar: "", map_x: 110, map_y: 250 },
 ];
+
+/** The building's name in the UI language; "" when it has none (only L, the library, is named). */
+export function buildingName(b: Pick<Building, "name_en" | "name_ar">, lang: "en" | "ar"): string {
+  return (lang === "ar" ? b.name_ar : b.name_en).trim();
+}
+
+/** Removes the separator an empty `{name}` leaves in "Building {code}, {name}": "Building M, " -> "Building M". */
+export function tidyLabel(s: string): string {
+  return s.replace(/\s*[,،]\s*(?=$|[,،])/g, "").trim();
+}
 
 /** FNV-1a, 32 bit. Stable across runs and platforms. */
 export function hash32(s: string): number {

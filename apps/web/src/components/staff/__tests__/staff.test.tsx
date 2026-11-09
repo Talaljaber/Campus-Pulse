@@ -132,7 +132,7 @@ describe("IncidentList", () => {
   it("shows title, building name, counts and age", () => {
     render(<IncidentList incidents={[incident]} buildings={FIXTURE_BUILDINGS} now={NOW.getTime()} />);
     expect(screen.getByText("Wi-Fi outage in building M")).toBeInTheDocument();
-    expect(screen.getByText("Building M, Technology Centre")).toBeInTheDocument();
+    expect(screen.getByText("Building M")).toBeInTheDocument();
     expect(screen.getByText("4 reports")).toBeInTheDocument();
     expect(screen.getByText("Opened 20 min ago")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Resolve" })).not.toBeInTheDocument();

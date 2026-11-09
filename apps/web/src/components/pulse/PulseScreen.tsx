@@ -14,7 +14,7 @@ import { Loadable } from "../ui/Loadable";
 import { useToast } from "../ui/Toast";
 import { EventFeed } from "./EventFeed";
 import { IncidentList } from "./IncidentList";
-import { CampusMap, IncidentRing, MapLegend, RequestDot } from "./map";
+import { buildingName, CampusMap, IncidentRing, MapLegend, RequestDot, tidyLabel } from "./map";
 
 /** Props for {@link PulseScreen}. */
 export interface PulseScreenProps {
@@ -74,7 +74,7 @@ export function PulseScreen({ role, alias = null, name = null }: PulseScreenProp
               {selectedBuilding && (
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <Badge tone="info" icon={null}>
-                    {t("pulse.selectedBuilding", { code: selectedBuilding.code, name: lang === "ar" ? selectedBuilding.name_ar : selectedBuilding.name_en })}
+                    {tidyLabel(t("pulse.selectedBuilding", { code: selectedBuilding.code, name: buildingName(selectedBuilding, lang) }))}
                   </Badge>
                   <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>
                     {t("pulse.clearBuilding")}

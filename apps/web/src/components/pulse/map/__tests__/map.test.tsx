@@ -5,7 +5,7 @@ import { LangScope } from "@/i18n";
 import { FIXTURE_DOTS, FIXTURE_RINGS } from "@/lib/fixtures/map";
 import { BuildingShape } from "../BuildingShape";
 import { CampusMap } from "../CampusMap";
-import { FIXTURE_BUILDINGS, dotPosition, footprintOf } from "../campus";
+import { FIXTURE_BUILDINGS, dotPosition, footprintOf, tidyLabel } from "../campus";
 import { IncidentRing } from "../IncidentRing";
 import { MapLegend } from "../MapLegend";
 import { RequestDot } from "../RequestDot";
@@ -100,7 +100,7 @@ describe("CampusMap", () => {
     expect(svg).toHaveAttribute("viewBox", "0 0 1000 600");
     expect([...ar.querySelectorAll("rect")].map((r) => [r.getAttribute("x"), r.getAttribute("y")].join())).toEqual(enRects);
     // ...while the labels are Arabic, in a right-to-left run.
-    expect(within(svg as unknown as HTMLElement).getByLabelText("المبنى M، مركز التقنية")).toBeInTheDocument();
+    expect(within(svg as unknown as HTMLElement).getByLabelText("المبنى M")).toBeInTheDocument();
     expect(svg.querySelector('[data-building="M"] g')).toHaveStyle({ direction: "rtl" });
   });
 
@@ -119,12 +119,22 @@ describe("CampusMap", () => {
     await user.keyboard(" ");
     expect(onBuildingClick).toHaveBeenCalledTimes(2);
 
-    await user.click(screen.getByRole("button", { name: "Building M, Technology Centre" }));
+    await user.click(screen.getByRole("button", { name: "Building M" }));
     expect(onBuildingClick).toHaveBeenLastCalledWith("M");
     expect(onBuildingClick).toHaveBeenCalledTimes(3);
 
-    const selected = screen.getByRole("button", { name: "Building C, Computing, selected" });
+    const selected = screen.getByRole("button", { name: "Building C, selected" });
     expect(selected).toHaveAttribute("aria-pressed", "true");
+    // only L, the library, has a name
+    expect(screen.getByRole("button", { name: "Building L, Library" })).toBeInTheDocument();
+    expect(screen.getByText("Library")).toBeInTheDocument();
+  });
+
+  it("tidyLabel drops the separator an empty name leaves, in both languages", () => {
+    expect(tidyLabel("Building M, ")).toBe("Building M");
+    expect(tidyLabel("Building M, , selected")).toBe("Building M, selected");
+    expect(tidyLabel("المبنى M، ")).toBe("المبنى M");
+    expect(tidyLabel("Building L, Library")).toBe("Building L, Library");
   });
 
   it("draws overlay children above the buildings: 20 fixture dots and the incident ring", () => {

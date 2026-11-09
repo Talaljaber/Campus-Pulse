@@ -5,6 +5,8 @@ export {
   FIXTURE_BUILDINGS,
   MAP_HEIGHT,
   MAP_WIDTH,
+  buildingName,
+  tidyLabel,
   dotPosition,
   footprintOf,
   hash32,
