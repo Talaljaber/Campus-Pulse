@@ -60,6 +60,7 @@ const turn = (o: Partial<ChatTurnResponse>): ChatTurnResponse => ({
 });
 
 beforeEach(() => {
+  localStorage.clear(); // the chat is saved per alias (lib/chat/persist)
   calls.length = 0;
   respond = () => json({}, 404);
   vi.stubGlobal(

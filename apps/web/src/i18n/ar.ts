@@ -250,6 +250,7 @@ export const ar: Dict = {
       starterTransport: "عندي مشكلة بالمواصلات.",
       assistant: "كامبس بلس",
       sourceFrom: "المصدر: {title}",
+      newChat: "محادثة جديدة",
       sources: "المصادر",
       fallbackNote: "المساعد مش متوفر هلأ. اكتب طلبك تحت وتأكد وين رح يروح.",
       formLabel: "طلبك",

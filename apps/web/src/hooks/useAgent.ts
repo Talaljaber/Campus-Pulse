@@ -4,6 +4,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import { confirm, preview, sendTurn } from "@/lib/chat/agent";
 import { postStudentAction } from "@/lib/tickets/service";
 import { agentErrorKind, agentReducer, INITIAL_AGENT } from "@/lib/chat/agentReducer";
+import { loadChat, saveChat } from "@/lib/chat/persist";
 
 /** Whether a failed turn means "the assistant is not available": the page then shows the plain form. */
 function unavailable(fail: { status: number; waking: boolean }): boolean {
@@ -14,8 +15,12 @@ function unavailable(fail: { status: number; waking: boolean }): boolean {
  * The ask page state: free text goes to `chat/turn`; the fallback form and the question chips use
  * `chat/preview`; "Yes, send it" uses `chat/confirm`. The service decides; nothing is created here.
  * `texts` are the sentences the hook adds to the conversation itself (translated by the page).
+ * With an `alias`, the conversation survives a page reload for 24 hours (lib/chat/persist).
  */
-export function useAgent(texts: { recorded: string; declined: string; closed: (number: string) => string; kept: string }) {
+export function useAgent(
+  texts: { recorded: string; declined: string; closed: (number: string) => string; kept: string },
+  alias?: string | null,
+) {
   const [state, dispatch] = useReducer(agentReducer, INITIAL_AGENT);
   const stateRef = useRef(state);
   const seq = useRef(0);
@@ -25,6 +30,27 @@ export function useAgent(texts: { recorded: string; declined: string; closed: (n
     stateRef.current = state;
     textsRef.current = texts;
   }, [state, texts]);
+
+  // Restore after mount (localStorage is not readable during the server render), then save every change.
+  // The untouched initial state is never saved, so the first render cannot wipe the saved chat before
+  // the restore lands; "reset" returns a fresh copy, so New chat does clear it.
+  useEffect(() => {
+    if (!alias) return;
+    const saved = loadChat(alias);
+    if (saved) {
+      // keep new message ids clear of the restored ones (React keys)
+      seq.current = saved.messages.reduce((max, m) => Math.max(max, Number(m.id.replace(/^\D+/, "")) || 0), 0);
+      dispatch({ type: "restored", saved });
+    }
+  }, [alias]);
+  useEffect(() => {
+    if (alias && state !== INITIAL_AGENT) saveChat(alias, state);
+  }, [alias, state]);
+
+  /** "New chat": clears the conversation here and in storage. */
+  const reset = useCallback(() => {
+    if (!stateRef.current.busy) dispatch({ type: "reset" });
+  }, []);
 
   const nextId = useCallback((prefix: string) => `${prefix}${++seq.current}`, []);
 
@@ -115,5 +141,5 @@ export function useAgent(texts: { recorded: string; declined: string; closed: (n
     dispatch({ type: "withdrawKept", id: nextId("a"), text: textsRef.current.kept });
   }, [nextId]);
 
-  return { ...state, send, check, answer, confirm: confirmProposal, decline, closeWithdraw, keepWithdraw };
+  return { ...state, send, check, answer, confirm: confirmProposal, decline, closeWithdraw, keepWithdraw, reset };
 }

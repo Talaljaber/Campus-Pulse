@@ -106,7 +106,7 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
     declined: t("chat.agent.declined"),
     closed: (number) => t("chat.card.closedNow", { number }),
     kept: t("chat.card.kept"),
-  });
+  }, alias);
   const threadRef = useRef<HTMLDivElement>(null);
   const fallback = agent.mode === "fallback";
   const count = agent.messages.length;
@@ -132,7 +132,15 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
     <AppShell role={role} current="ask" name={name} alias={alias} workspace>
       <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-line bg-surface-1 shadow-card">
         <div className="shrink-0 border-b border-line bg-surface-raised px-4 py-3 sm:px-6 sm:py-4">
-          <PageHeader title={t("chat.title")} subtitle={t("app.tagline")} />
+          <div className="flex items-start justify-between gap-3">
+            <PageHeader title={t("chat.title")} subtitle={t("app.tagline")} />
+            {(count > 0 || agent.proposal || agent.withdraw) && (
+              <Button variant="secondary" size="sm" className="shrink-0 gap-1.5" disabled={agent.busy} onClick={agent.reset}>
+                <Icon name="plus" size={16} />
+                {t("chat.agent.newChat")}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div ref={threadRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6" aria-label={t("chat.thread")}>

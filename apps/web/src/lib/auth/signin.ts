@@ -1,3 +1,4 @@
+import { clearSavedChats } from "../chat/persist";
 import type { Sb } from "../supabase/types";
 import { fetchProfile } from "./profile";
 import { homeFor, safeNext, type Role } from "./routing";
@@ -49,7 +50,8 @@ export async function signIn(
   return { ok: true, role: profile.role, destination: safeNext(next, homeFor(profile.role)) };
 }
 
-/** Ends the session (clears the cookies through the browser client). */
+/** Ends the session (clears the cookies through the browser client) and forgets the saved chats. */
 export async function signOut(sb: Sb): Promise<void> {
+  clearSavedChats();
   await sb.auth.signOut();
 }

@@ -53,7 +53,11 @@ export type AgentAction =
   /** "Close it" worked: the card becomes a Closed status card. */
   | { type: "withdrawn"; id: string; text: string; ticket: ChatTicketOut }
   /** "Keep it": nothing was closed. */
-  | { type: "withdrawKept"; id: string; text: string };
+  | { type: "withdrawKept"; id: string; text: string }
+  /** The conversation saved before a page reload (lib/chat/persist). */
+  | { type: "restored"; saved: Pick<AgentState, "messages" | "proposal" | "correction" | "withdraw" | "asked" | "draft"> }
+  /** "New chat": start over. */
+  | { type: "reset" };
 
 /** Maps a failed call to the message kind. 422 means the proposal token is no longer valid. */
 export function agentErrorKind(fail: AiFail): AgentErrorKind {
@@ -204,5 +208,10 @@ export function agentReducer(state: AgentState, action: AgentAction): AgentState
         error: null,
         messages: [...state.messages, { id: action.id, role: "assistant", kind: "text", content: action.text }],
       };
+    case "restored":
+      // only into an untouched page: never over a conversation the person already started
+      return state.messages.length === 0 && !state.busy ? { ...INITIAL_AGENT, ...action.saved } : state;
+    case "reset":
+      return { ...INITIAL_AGENT }; // a fresh object: the hook saves it, which clears the stored chat
   }
 }

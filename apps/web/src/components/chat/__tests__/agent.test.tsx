@@ -47,6 +47,7 @@ const turn = (o: Partial<ChatTurnResponse>): ChatTurnResponse => ({
 const confirmed: ChatConfirmResponse = { triage: TRIAGE_FIXTURES.enMemory.response, ticket_id: TICKET_ID, hint_applied: false };
 
 beforeEach(() => {
+  localStorage.clear(); // the chat is saved per alias (lib/chat/persist)
   calls.length = 0;
   respond = () => json({ error: { code: "not_found", message: "no", details: null } }, 404);
   vi.stubGlobal(
@@ -122,6 +123,46 @@ describe("ProposalCard", () => {
     render(<ProposalCard proposal={hinted} busy={false} onConfirm={vi.fn()} onDecline={vi.fn()} onAnswer={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: "Why this?" }));
     expect(screen.getByText(/Based on a past staff correction: IT Support, High \(93% similar\)/)).toBeInTheDocument();
+  });
+});
+
+describe("AgentScreen keeps the chat across a reload", () => {
+  it("shows the same conversation after a reload, and New chat clears it", async () => {
+    respond = () => json(turn({ reply: "Which building is it in?" }));
+    const first = renderScreen();
+    await userEvent.type(screen.getByLabelText("Your request"), "mate we have a wifi issue{Enter}");
+    expect(await screen.findByText("Which building is it in?")).toBeInTheDocument();
+    first.unmount();
+
+    renderScreen(); // the page opened again
+    expect(await screen.findByText("Which building is it in?")).toBeInTheDocument();
+    expect(screen.getByText("mate we have a wifi issue")).toBeInTheDocument();
+
+    // the next turn carries the restored history
+    respond = () => json(turn({ reply: "Thanks." }));
+    await userEvent.type(screen.getByLabelText("Your request"), "L{Enter}");
+    await screen.findByText("Thanks.");
+    const sentTurn = calls.at(-1)?.body as { messages: Array<{ content: string }> };
+    expect(sentTurn.messages.map((m) => m.content)).toEqual(["mate we have a wifi issue", "Which building is it in?", "L"]);
+
+    await userEvent.click(screen.getByRole("button", { name: "New chat" }));
+    expect(screen.queryByText("Which building is it in?")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New chat" })).not.toBeInTheDocument();
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("does not show one person's chat to another", async () => {
+    respond = () => json(turn({ reply: "Which building is it in?" }));
+    const first = renderScreen();
+    await userEvent.type(screen.getByLabelText("Your request"), "wifi{Enter}");
+    await screen.findByText("Which building is it in?");
+    first.unmount();
+    render(
+      <LangScope lang="en">
+        <AgentScreen alias="omar" role="student" />
+      </LangScope>,
+    );
+    await waitFor(() => expect(screen.queryByText("Which building is it in?")).not.toBeInTheDocument());
   });
 });
 

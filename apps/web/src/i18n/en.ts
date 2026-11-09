@@ -256,6 +256,7 @@ export const en = {
       starterTransport: "I have a transport issue.",
       assistant: "CampusPulse",
       sourceFrom: "From: {title}",
+      newChat: "New chat",
       sources: "Sources",
       fallbackNote: "The assistant is not available right now. Describe your request below and check where it would go.",
       formLabel: "Your request",
