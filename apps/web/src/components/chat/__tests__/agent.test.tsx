@@ -126,6 +126,23 @@ describe("ProposalCard", () => {
   });
 });
 
+describe("AgentScreen typing indicator", () => {
+  it("shows three dots while the reply is on its way, then the reply instead", async () => {
+    let release: (r: Response) => void = () => {};
+    respond = () => json(turn({ reply: "unused" }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>((resolve) => { release = resolve; })),
+    );
+    renderScreen();
+    await userEvent.type(screen.getByLabelText("Your request"), "hello{Enter}");
+    expect(await screen.findByRole("status", { name: "CampusPulse is typing" })).toBeInTheDocument();
+    release(json(turn({ reply: "Hi there." })));
+    expect(await screen.findByText("Hi there.")).toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: "CampusPulse is typing" })).not.toBeInTheDocument();
+  });
+});
+
 describe("AgentScreen keeps the chat across a reload", () => {
   it("shows the same conversation after a reload, and New chat clears it", async () => {
     respond = () => json(turn({ reply: "Which building is it in?" }));

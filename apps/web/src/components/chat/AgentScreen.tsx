@@ -64,6 +64,26 @@ function Bubble({ message }: { message: AgentMessage }) {
   );
 }
 
+/** "CampusPulse is typing": three dots in an assistant bubble while a reply is on its way. The dots stay
+ * still for people who turn off motion; the label is read out once. */
+export function TypingIndicator() {
+  const t = useT();
+  return (
+    <li className="flex flex-col items-start gap-1" aria-label={t("chat.agent.typing")} role="status">
+      <span className="text-xs text-fg-3">{t("chat.agent.assistant")}</span>
+      <span className="flex items-center gap-1 rounded-2xl bg-surface-2 px-3 py-3 shadow-1" aria-hidden="true">
+        {[0, 150, 300].map((delay) => (
+          <span
+            key={delay}
+            className="size-2 animate-bounce rounded-full bg-fg-3 motion-reduce:animate-none"
+            style={{ animationDelay: `${delay}ms` }}
+          />
+        ))}
+      </span>
+    </li>
+  );
+}
+
 /** The plain form used when the assistant is not available: type, "Check", then the same card. */
 function FallbackForm({ initial, busy, onCheck }: { initial: string; busy: boolean; onCheck: (text: string) => void }) {
   const t = useT();
@@ -121,7 +141,7 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
     } else {
       thread.scrollTop = thread.scrollHeight;
     }
-  }, [count, agent.proposal, agent.withdraw]);
+  }, [count, agent.proposal, agent.withdraw, agent.busy]);
 
   const chooseStarter = (text: string) => {
     setStarter("");
@@ -184,6 +204,7 @@ export function AgentScreen({ alias, name, role = "student" }: AgentScreenProps)
               </Fragment>
             ),
           )}
+          {agent.busy && !fallback && <TypingIndicator />}
           {agent.proposal && (
             <li>
               <ProposalCard
